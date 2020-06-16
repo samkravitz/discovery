@@ -71,7 +71,7 @@ typedef enum InstructionSetFormat {
 
 
 // determine if the condition field of an instruction is true, given the state of the CPSR
-bool isConditionMet(Instruction, arm &);
+bool isConditionMet(Instruction, arm_7tdmi &);
 
 // determine which type of operation the instruction is
 InstructionSetFormat_t getInstructionFormat(Instruction);

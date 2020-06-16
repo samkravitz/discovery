@@ -1,2 +1,2 @@
-tests: cpu/tests/tests.cpp cpu/arm.h cpu/arm.cpp cpu/common.h cpu/cpu.h cpu/cpu.cpp cpu/instruction.h cpu/instruction.cpp cpu/decode.h cpu/decode.cpp
-	g++ -g -o tests cpu/tests/tests.cpp cpu/arm.h cpu/arm.cpp cpu/common.h cpu/cpu.h cpu/cpu.cpp cpu/instruction.h cpu/instruction.cpp cpu/decode.h cpu/decode.cpp
+tests: cpu/tests/tests.cpp cpu/arm_7tdmi.h cpu/arm_7tdmi.cpp cpu/common.h cpu/cpu.h cpu/cpu.cpp cpu/instruction.h cpu/instruction.cpp cpu/decode.h cpu/decode.cpp
+	g++ -g -o tests cpu/arm_7tdmi.h cpu/arm_7tdmi.cpp cpu/common.h cpu/cpu.h cpu/cpu.cpp cpu/instruction.h cpu/instruction.cpp cpu/tests/tests.cpp cpu/decode.h cpu/decode.cpp

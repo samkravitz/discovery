@@ -4,9 +4,10 @@
 
 #include "instruction.h"
 #include "common.h"
+#include "arm_7tdmi.h"
 
 // determine if the condition field of an instruction is true, given the state of the CPSR
-bool isConditionMet(Instruction instruction, arm &cpu) {
+bool isConditionMet(Instruction instruction, arm_7tdmi &cpu) {
     uint8_t nFlag = instruction >> 31 & 0x1;
     uint8_t zFlag = instruction >> 30 & 0x1;
     uint8_t cFlag = instruction >> 29 & 0x1;

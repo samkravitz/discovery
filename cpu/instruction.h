@@ -27,8 +27,53 @@ typedef enum Condition {
     // 0b1111 is a noop
 } Condition_t;
 
+
+/* see docs/arm_instruction_set_bitfield.png to see a visual of the different types of instructions,
+ * here are the abbreviations that I'm using:
+ * 
+ * DP - Data Processing/PSR Transfer
+ * MUL - Multiply 
+ * MULL - Multiply Long
+ * SDS - Single Data Swap
+ * BEX - Branch and Exchange
+ * HDT_RO - Halfword Data Transfer: register offset
+ * HDT_IO - Halfword Data Transfer: immediate offset
+ * SDT - Single Data Transfer
+ * UNDEF - Undefined
+ * BDT - Block Data Transfer
+ * B - Branch
+ * CDT -  Coprocessor Data Transfer
+ * CDO - Coprocessor Data Operation
+ * CRT - Coprocessor Register Transfer
+ * INT - Software Interrupt
+ */
+typedef enum InstructionSetFormat {
+    // not one of ARM's types - but I wanted to include an unknown case
+    UNKNOWN_INSTRUCTION_FORMAT = 0,
+    
+    DP,
+    MUL,
+    MULL,
+    SDS,
+    BEX,
+    HDT_RO,
+    HDT_IO,
+    SDT,
+    UNDEF,
+    BDT,
+    B,
+    CDT,
+    CDO,
+    CRT,
+    INT,
+} InstructionSetFormat_t;
+
+
 // determine if the condition field of an instruction is true, given the state of the CPSR
 bool isConditionMet(Instruction, arm &);
+
+// determine which type of operation the instruction is
+InstructionSetFormat_t getInstructionFormat(Instruction);
 
 
 #endif // INSTRUCTION_H

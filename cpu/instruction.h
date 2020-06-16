@@ -1,6 +1,7 @@
 #ifndef INSTRUCTION_H
 #define INSTRUCTION_H
 
+#include <stdint.h>
 #include "common.h"
 #include "cpu.h"
 
@@ -50,7 +51,7 @@ typedef enum Condition {
 typedef enum InstructionSetFormat {
     // not one of ARM's types - but I wanted to include an unknown case
     UNKNOWN_INSTRUCTION_FORMAT = 0,
-    
+
     DP,
     MUL,
     MULL,
@@ -74,6 +75,9 @@ bool isConditionMet(Instruction, arm &);
 
 // determine which type of operation the instruction is
 InstructionSetFormat_t getInstructionFormat(Instruction);
+
+// get subset of instruction for purposes like destination register, opcode, shifts
+uint32_t getInstructionSubset(Instruction, int, int);
 
 
 #endif // INSTRUCTION_H

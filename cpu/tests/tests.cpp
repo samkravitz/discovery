@@ -133,10 +133,27 @@ void instructionSetFormatTests() {
     assert(getInstructionFormat(branch) != BEX);
 }
 
+void instructionSubsetTests() {
+    Instruction a = 0b00000000000000000000000000000000;
+    Instruction b = 0b00000000000000000000000000001011;
+    Instruction c = 0b11001000000000000000000000000000;
+    Instruction d = 0b11000000000000000000110010011011;
+
+    assert(getInstructionSubset(a, 3, 0) == 0b0000);
+    assert(getInstructionSubset(b, 3, 0) == 0b1011);
+    assert(getInstructionSubset(c, 31, 28) == 0b1100);
+    assert(getInstructionSubset(d, 11, 0) == 0b110010011011);
+    assert(getInstructionSubset(c, 27, 27) == 0b1);
+
+    // flipped order of operands
+    assert(getInstructionSubset(b, 0, 4) == 0b0000);
+}
+
 int main() {
     conditionFlagTests();
     instructionConditionFieldTests();
-    instructionSetFormatTests();
+    //instructionSetFormatTests();
+    instructionSubsetTests();
     return 0;
 }
 

@@ -51,3 +51,25 @@ InstructionSetFormat_t getInstructionFormat(Instruction instruction) {
     std::cerr << "Unknown Instruction Format: " << bs << "\n";
     return UNKNOWN_INSTRUCTION_FORMAT;
 }
+
+/* get subset of instruction for purposes like destination register, opcode, shifts
+ * All instructions have data hidden within their codes;
+ * ex: A branch instruction holds the offset in bits [23-0]
+ * This function will extract the bits.
+ * Since the reference I am using is in reverse bit order, end >= start must be true
+ * 
+ * ex: getInstructionSubset(0b11110000, 7, 4) = 0b1111
+ */
+uint32_t getInstructionSubset(Instruction instruction, int end, int start) {
+    if (end < start) return 0;
+
+    std::bitset<32> instr(instruction);
+    uint32_t subset = 0;
+
+    for (int i = end; i >= start; --i) {
+        subset <<= 1;
+        subset |= instr[i];
+    }
+
+    return subset;
+}

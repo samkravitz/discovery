@@ -12,7 +12,7 @@ class arm_7tdmi {
         // getters / setters
         uint8_t getConditionCodeFlag(ConditionCodeFlag);
         void setConditionCodeFlag(ConditionCodeFlag, uint8_t);
-        Word getCpsr() { return cpsr; }
+        Word getCpsr();
 
     private:
         /* ARM state - 15 general purpose registers and 1 non-gp

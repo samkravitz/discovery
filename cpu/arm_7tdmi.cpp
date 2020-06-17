@@ -10,6 +10,8 @@ arm_7tdmi::arm_7tdmi() {
     for (int i = 0; i < 5; ++i) spsr[i] = 0;
 }
 
+Word arm_7tdmi::getCpsr() { return cpsr; }
+
 uint8_t arm_7tdmi::getConditionCodeFlag(ConditionCodeFlag_t flag) {
     Word shield = 0b10000000000000000000000000000000; // 32 bits
     switch (flag) {

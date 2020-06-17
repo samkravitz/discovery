@@ -1,6 +1,4 @@
 #include "cpu.h"
-#include "instruction.h"
-#include "common.h"
 
 // initialize mode and state of cpu
 cpu::cpu() : arm() {
@@ -8,7 +6,7 @@ cpu::cpu() : arm() {
     state = ARM;
 }
 
-void cpu::execute() {
+void cpu::execute(Instruction instruction) {
     switch (this->getState()) {
         case ARM:
             //this->arm.execute(instruction);

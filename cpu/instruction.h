@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include "common.h"
-#include "cpu.h"
+#include "arm_7tdmi.h"
 
 // 32 bit ARM instruction
 typedef Word Instruction;

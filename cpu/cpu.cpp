@@ -9,7 +9,7 @@ cpu::cpu() : arm() {
 void cpu::execute(Instruction instruction) {
     switch (this->getState()) {
         case ARM:
-            //this->arm.execute(instruction);
+            this->arm.execute(instruction);
             break;
         case THUMB:
             // this->thumb.execute(instruction);

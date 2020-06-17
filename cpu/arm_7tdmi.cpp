@@ -2,6 +2,7 @@
 #include <bitset>
 
 #include "arm_7tdmi.h"
+#include "arm_alu.inl"
 
 // zero out fields
 arm_7tdmi::arm_7tdmi() {    
@@ -56,5 +57,14 @@ void arm_7tdmi::setConditionCodeFlag(ConditionCodeFlag_t flag, uint8_t bit) {
 }
 
 void arm_7tdmi::execute(Instruction instruction) {
-    
+    if (!isConditionMet(instruction, *this)) return;
+
+    switch(getInstructionFormat(instruction)) {
+
+        case DP:
+            executeALUInstruction(*this, instruction);
+            break;
+        default:
+            std::cerr << "Cannot execute instruction: " << instruction << "\n";
+    }
 }

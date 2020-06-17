@@ -55,4 +55,6 @@ void arm_7tdmi::setConditionCodeFlag(ConditionCodeFlag_t flag, uint8_t bit) {
     cpsr = (Word) bs.to_ulong();
 }
 
-void arm_7tdmi::execute() {}
+void arm_7tdmi::execute(Instruction instruction) {
+    
+}

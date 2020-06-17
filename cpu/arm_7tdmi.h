@@ -2,12 +2,13 @@
 #define ARM_7TDMI_H
 
 #include "common.h"
+#include "instruction.h"
 
 class arm_7tdmi {
     public:
         arm_7tdmi();
         ~arm_7tdmi() {};
-        void execute();
+        void execute(Instruction);
 
         // getters / setters
         uint8_t getConditionCodeFlag(ConditionCodeFlag);

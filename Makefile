@@ -10,6 +10,5 @@ cpu.o: cpu/cpu.h cpu/cpu.cpp
 instruction.o: cpu/instruction.h cpu/instruction.cpp
 	g++ -c cpu/instruction.cpp
 
-
 clean:
 	rm -f tests *.o

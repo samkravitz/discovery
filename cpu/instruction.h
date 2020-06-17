@@ -3,7 +3,9 @@
 
 #include <stdint.h>
 #include "common.h"
-#include "arm_7tdmi.h"
+
+//forward declaration of arm class
+class arm_7tdmi;
 
 // 32 bit ARM instruction
 typedef Word Instruction;

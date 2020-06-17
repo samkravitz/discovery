@@ -1,2 +1,4 @@
 .vscode/
 tests
+catch.hpp
+*.o

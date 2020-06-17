@@ -1,4 +1,6 @@
-#include <assert.h>
+#define CATCH_CONFIG_MAIN
+#include "catch.hpp"
+
 #include <iostream>
 #include <bitset>
 
@@ -6,37 +8,33 @@
 #include "../common.h"
 #include "../instruction.h"
 
-// assert macro with additional debugging info courtesy of
-// https://stackoverflow.com/questions/2193544/how-to-print-additional-information-when-assert-fails
-#define ASSERT(left,operator,right) { if(!((left) operator (right))){ std::cerr << "ASSERT FAILED: " << #left << #operator << #right << " @ " << __FILE__ << " (" << __LINE__ << "). " << #left << "=" << (left) << "; " << #right << "=" << (right) << std::endl; } }
-
-void conditionFlagTests() {
+TEST_CASE("ConditionFlagTests", "[condition_flag]") {
     cpu a;
     
-    // assert all flags are 0 upon initialization
-    assert(a.arm.getConditionCodeFlag(N) == 0);
-    assert(a.arm.getConditionCodeFlag(Z) == 0);
-    assert(a.arm.getConditionCodeFlag(C) == 0);
-    assert(a.arm.getConditionCodeFlag(V) == 0);
+    // REQUIRE all flags are 0 upon initialization
+    REQUIRE(a.arm.getConditionCodeFlag(N) == 0);
+    REQUIRE(a.arm.getConditionCodeFlag(Z) == 0);
+    REQUIRE(a.arm.getConditionCodeFlag(C) == 0);
+    REQUIRE(a.arm.getConditionCodeFlag(V) == 0);
 
     // set N, C, and V flags to 1
     a.arm.setConditionCodeFlag(N, 1);
     a.arm.setConditionCodeFlag(C, 1);
     a.arm.setConditionCodeFlag(V, 1);
 
-    // assert N, C, and V flags are now 1 and Z is still 0
-    assert(a.arm.getConditionCodeFlag(N) == 1);
-    assert(a.arm.getConditionCodeFlag(C) == 1);
-    assert(a.arm.getConditionCodeFlag(V) == 1);
-    assert(a.arm.getConditionCodeFlag(Z) == 0);
+    // REQUIRE N, C, and V flags are now 1 and Z is still 0
+    REQUIRE(a.arm.getConditionCodeFlag(N) == 1);
+    REQUIRE(a.arm.getConditionCodeFlag(C) == 1);
+    REQUIRE(a.arm.getConditionCodeFlag(V) == 1);
+    REQUIRE(a.arm.getConditionCodeFlag(Z) == 0);
 
-    // now set Z flag to 1 and assert it got changed
+    // now set Z flag to 1 and REQUIRE it got changed
     a.arm.setConditionCodeFlag(Z, 1);
-    assert(a.arm.getConditionCodeFlag(Z) == 1);
+    REQUIRE(a.arm.getConditionCodeFlag(Z) == 1);
 
-    // set N back to 0 and assert it got changed
+    // set N back to 0 and REQUIRE it got changed
     a.arm.setConditionCodeFlag(N, 0);
-    assert(a.arm.getConditionCodeFlag(N) == 0);
+    REQUIRE(a.arm.getConditionCodeFlag(N) == 0);
     
     // try setting the code of a non recognized flag (should print some error message)
     a.arm.setConditionCodeFlag((ConditionCodeFlag_t) 9, 1);
@@ -44,29 +42,29 @@ void conditionFlagTests() {
     a.arm.setConditionCodeFlag(Z, 4);
 }
 
-void instructionConditionFieldTests() {
+TEST_CASE("InstructionConditionField", "[instruction_condition_field]") {
     cpu a;
     Instruction i = 0b00000000000000000000000000000000; // 32 bits
 
     // a zerod cpu should match a zero'd instruction
-    assert(isConditionMet(i, a.arm) == true);
+    REQUIRE(isConditionMet(i, a.arm) == true);
 
     i = 0b10000000000000000000000000000000; // n flag
 
-    // n flag set with zero'd cpu should assert false
-    assert(isConditionMet(i, a.arm) == false);
+    // n flag set with zero'd cpu should REQUIRE false
+    REQUIRE(isConditionMet(i, a.arm) == false);
 
     // set N, C, and V flags to 1
     a.arm.setConditionCodeFlag(N, 1);
     a.arm.setConditionCodeFlag(C, 1);
     a.arm.setConditionCodeFlag(V, 1);
     
-    // with cpu condition bits at 1011, should still assert false with this instruction
-    assert(isConditionMet(i, a.arm) == false);
+    // with cpu condition bits at 1011, should still REQUIRE false with this instruction
+    REQUIRE(isConditionMet(i, a.arm) == false);
 
     i = 0b10110000000000000000000000000000;
     // however, this instruction should be true
-    assert(isConditionMet(i, a.arm) == true);
+    REQUIRE(isConditionMet(i, a.arm) == true);
 
     // set N, C, and V flags to 0 and Z to 1
     a.arm.setConditionCodeFlag(N, 0);
@@ -75,18 +73,18 @@ void instructionConditionFieldTests() {
     a.arm.setConditionCodeFlag(Z, 1);
 
     // 0100 should be false with this condition
-    assert(isConditionMet(i, a.arm) == false);
+    REQUIRE(isConditionMet(i, a.arm) == false);
 
     // but true with this one
     i = 0b01000000000000000000000000000000;
-    assert(isConditionMet(i, a.arm) == true);
+    REQUIRE(isConditionMet(i, a.arm) == true);
 }
 
-void instructionSetFormatTests() {
+TEST_CASE("InstructionSetFormat", "[instruction_set_format]") {
     Instruction i = 0;
     
     // zero'd instruction is actually a valid data processing instruction
-    assert(getInstructionFormat(i) == DP);
+    REQUIRE(getInstructionFormat(i) == DP);
 
     // see docs/arm_instruction_set_bitfield.png to see which bits should be set for which instruction formats
     //  (one's digit of instruction) -                10987654321098765432109876543210
@@ -108,52 +106,43 @@ void instructionSetFormatTests() {
 
     // comparing these hypothetical instructions with their truth,
     // in somewhat random order to make sure order is irrelvant for this function
-    ASSERT(getInstructionFormat(hdtImmediateOffset), ==, HDT_IO);
-    ASSERT(getInstructionFormat(branchExchange), ==,BEX);
-    ASSERT(getInstructionFormat(softwareInterrupt), ==, INT);
-    ASSERT(getInstructionFormat(singleDataSwap), ==, SDS);
-    ASSERT(getInstructionFormat(multiplyLong), ==, MULL);
-    ASSERT(getInstructionFormat(multiply), ==, MUL);
-    ASSERT(getInstructionFormat(coprocessorRegisterTransfer), ==, CRT);
-    ASSERT(getInstructionFormat(undefined), ==, UNDEF);
-    ASSERT(getInstructionFormat(hdtRegisterOffset), ==, HDT_RO);
-    ASSERT(getInstructionFormat(singleDataTransfer), ==, SDT);
-    ASSERT(getInstructionFormat(blockDataTransfer), ==, BDT);
-    ASSERT(getInstructionFormat(coprocessorDataOperation), ==, CDO);
-    ASSERT(getInstructionFormat(coprocessorDataTransfer), ==, CDT);
-    ASSERT(getInstructionFormat(branch), ==, B);
-    ASSERT(getInstructionFormat(dataProcessing), ==, DP);
+    REQUIRE(getInstructionFormat(hdtImmediateOffset) == HDT_IO);
+    REQUIRE(getInstructionFormat(branchExchange) == BEX);
+    REQUIRE(getInstructionFormat(softwareInterrupt) == INT);
+    REQUIRE(getInstructionFormat(singleDataSwap) == SDS);
+    REQUIRE(getInstructionFormat(multiplyLong) == MULL);
+    REQUIRE(getInstructionFormat(multiply) == MUL);
+    REQUIRE(getInstructionFormat(coprocessorRegisterTransfer) == CRT);
+    REQUIRE(getInstructionFormat(undefined) == UNDEF);
+    REQUIRE(getInstructionFormat(hdtRegisterOffset) == HDT_RO);
+    REQUIRE(getInstructionFormat(singleDataTransfer) == SDT);
+    REQUIRE(getInstructionFormat(blockDataTransfer) == BDT);
+    REQUIRE(getInstructionFormat(coprocessorDataOperation) == CDO);
+    REQUIRE(getInstructionFormat(coprocessorDataTransfer) ==  CDT);
+    REQUIRE(getInstructionFormat(branch) == B);
+    REQUIRE(getInstructionFormat(dataProcessing) == DP);
 
     // some random ones that should be false
-    assert(getInstructionFormat(hdtRegisterOffset) != BEX);
-    assert(getInstructionFormat(singleDataTransfer) != MUL);
-    assert(getInstructionFormat(blockDataTransfer) != UNDEF);
-    assert(getInstructionFormat(coprocessorDataOperation) != HDT_RO);
-    assert(getInstructionFormat(coprocessorDataTransfer) != DP);
-    assert(getInstructionFormat(branch) != BEX);
+    REQUIRE(getInstructionFormat(hdtRegisterOffset) != BEX);
+    REQUIRE(getInstructionFormat(singleDataTransfer) != MUL);
+    REQUIRE(getInstructionFormat(blockDataTransfer) != UNDEF);
+    REQUIRE(getInstructionFormat(coprocessorDataOperation) != HDT_RO);
+    REQUIRE(getInstructionFormat(coprocessorDataTransfer) != DP);
+    REQUIRE(getInstructionFormat(branch) != BEX);
 }
 
-void instructionSubsetTests() {
+TEST_CASE("InstructionSubset", "[instruction_subset]") {
     Instruction a = 0b00000000000000000000000000000000;
     Instruction b = 0b00000000000000000000000000001011;
     Instruction c = 0b11001000000000000000000000000000;
     Instruction d = 0b11000000000000000000110010011011;
 
-    assert(getInstructionSubset(a, 3, 0) == 0b0000);
-    assert(getInstructionSubset(b, 3, 0) == 0b1011);
-    assert(getInstructionSubset(c, 31, 28) == 0b1100);
-    assert(getInstructionSubset(d, 11, 0) == 0b110010011011);
-    assert(getInstructionSubset(c, 27, 27) == 0b1);
+    REQUIRE(getInstructionSubset(a, 3, 0) == 0b0000);
+    REQUIRE(getInstructionSubset(b, 3, 0) == 0b1011);
+    REQUIRE(getInstructionSubset(c, 31, 28) == 0b1100);
+    REQUIRE(getInstructionSubset(d, 11, 0) == 0b110010011011);
+    REQUIRE(getInstructionSubset(c, 27, 27) == 0b1);
 
     // flipped order of operands
-    assert(getInstructionSubset(b, 0, 4) == 0b0000);
+    REQUIRE(getInstructionSubset(b, 0, 4) == 0b0000);
 }
-
-int main() {
-    conditionFlagTests();
-    instructionConditionFieldTests();
-    //instructionSetFormatTests();
-    instructionSubsetTests();
-    return 0;
-}
-

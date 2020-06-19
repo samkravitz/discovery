@@ -43,41 +43,106 @@ TEST_CASE("ConditionFlagTests", "[condition_flag]") {
 }
 
 TEST_CASE("InstructionConditionField", "[instruction_condition_field]") {
+    arm_instruction z_set                       =      0b00000000000000000000000000000000; // 32 bits, Z Set
+    arm_instruction z_clear                     =      0b00010000000000000000000000000000;
+    arm_instruction c_set                       =      0b00100000000000000000000000000000;
+    arm_instruction c_clear                     =      0b00110000000000000000000000000000;
+    arm_instruction n_set                       =      0b01000000000000000000000000000000;
+    arm_instruction n_clear                     =      0b01010000000000000000000000000000;
+    arm_instruction v_set                       =      0b01100000000000000000000000000000;
+    arm_instruction v_clear                     =      0b01110000000000000000000000000000;
+    arm_instruction c_set_and_z_clear           =      0b10000000000000000000000000000000;
+    arm_instruction c_clear_or_z_set            =      0b10010000000000000000000000000000;
+    arm_instruction n_equal_v                   =      0b10100000000000000000000000000000;
+    arm_instruction n_not_equal_v               =      0b10110000000000000000000000000000;
+    arm_instruction z_clear_and_n_equal_v       =      0b11000000000000000000000000000000;
+    arm_instruction z_set_or_n_not_equal_v      =      0b11010000000000000000000000000000;
+    arm_instruction always                      =      0b11100000000000000000000000000000;
+    arm_instruction noop                        =      0b11110000000000000000000000000000;
+
+    // a couple of fresh cpu instances to test with
+    cpu z;
+    cpu c;
+    cpu n;
+    cpu v;
+
+    // z 
+    REQUIRE(util::condition_met(z_set, z.arm) == false);
+    REQUIRE(util::condition_met(z_clear, z.arm) == true);
+    z.arm.set_condition_code_flag(Z, 1);
+    REQUIRE(util::condition_met(z_set, z.arm) == true);
+
+    // c 
+    REQUIRE(util::condition_met(c_set, c.arm) == false);
+    REQUIRE(util::condition_met(c_clear, c.arm) == true);
+    c.arm.set_condition_code_flag(C, 1);
+    REQUIRE(util::condition_met(c_set, c.arm) == true);
+
+    // n 
+    REQUIRE(util::condition_met(n_set, n.arm) == false);
+    REQUIRE(util::condition_met(n_clear, n.arm) == true);
+    n.arm.set_condition_code_flag(N, 1);
+    REQUIRE(util::condition_met(n_set, n.arm) == true);
+
+    // v 
+    REQUIRE(util::condition_met(v_set, v.arm) == false);
+    REQUIRE(util::condition_met(v_clear, v.arm) == true);
+    v.arm.set_condition_code_flag(V, 1);
+    REQUIRE(util::condition_met(v_set, v.arm) == true);
+
+    // c set and z clear
+    REQUIRE(util::condition_met(c_set_and_z_clear, z.arm) == false);
+    z.arm.set_condition_code_flag(Z, 0);
+    z.arm.set_condition_code_flag(C, 1);
+    REQUIRE(util::condition_met(c_set_and_z_clear, z.arm) == true);
+
+    // c clear or z set
+    REQUIRE(util::condition_met(c_clear_or_z_set, z.arm) == false);
+    z.arm.set_condition_code_flag(Z, 1);
+    REQUIRE(util::condition_met(c_clear_or_z_set, z.arm) == true);
+    z.arm.set_condition_code_flag(Z, 0);
+    z.arm.set_condition_code_flag(C, 0);
+    REQUIRE(util::condition_met(c_clear_or_z_set, z.arm) == true);
+    z.arm.set_condition_code_flag(Z, 1);
+    REQUIRE(util::condition_met(c_clear_or_z_set, z.arm) == true);
+
+    // n equals v
+    REQUIRE(util::condition_met(n_equal_v, n.arm) == false);
+    REQUIRE(util::condition_met(n_not_equal_v, n.arm) == true);
+    n.arm.set_condition_code_flag(V, 1);
+    REQUIRE(util::condition_met(n_equal_v, n.arm) == true);
+    REQUIRE(util::condition_met(n_not_equal_v, n.arm) == false);
+
+    // z clear and (n equal v)
+    REQUIRE(util::condition_met(z_clear_and_n_equal_v, n.arm) == true);
+    n.arm.set_condition_code_flag(Z, 1);
+    REQUIRE(util::condition_met(z_clear_and_n_equal_v, n.arm) == false);
+
+    // make a new cpu because this is getting confusing
     cpu a;
-    arm_instruction i = 0b00000000000000000000000000000000; // 32 bits
 
-    // a zerod cpu should match a zero'd arm_instruction
-    REQUIRE(util::condition_met(i, a.arm) == true);
-
-    i = 0b10000000000000000000000000000000; // n flag
-
-    // n flag set with zero'd cpu should REQUIRE false
-    REQUIRE(util::condition_met(i, a.arm) == false);
-
-    // set N, C, and V flags to 1
-    a.arm.set_condition_code_flag(N, 1);
-    a.arm.set_condition_code_flag(C, 1);
-    a.arm.set_condition_code_flag(V, 1);
-    
-    // with cpu condition bits at 1011, should still REQUIRE false with this instruction
-    REQUIRE(util::condition_met(i, a.arm) == false);
-
-    i = 0b10110000000000000000000000000000;
-    // however, this instruction should be true
-    REQUIRE(util::condition_met(i, a.arm) == true);
-
-    // set N, C, and V flags to 0 and Z to 1
-    a.arm.set_condition_code_flag(N, 0);
-    a.arm.set_condition_code_flag(C, 0);
-    a.arm.set_condition_code_flag(V, 0);
+    // z set or (n not equal v)
+    REQUIRE(util::condition_met(z_set_or_n_not_equal_v, a.arm) == false);
     a.arm.set_condition_code_flag(Z, 1);
+    REQUIRE(util::condition_met(z_set_or_n_not_equal_v, a.arm) == true);
+    a.arm.set_condition_code_flag(N, 1);
+    REQUIRE(util::condition_met(z_set_or_n_not_equal_v, a.arm) == true);
+    a.arm.set_condition_code_flag(Z, 0);
+    REQUIRE(util::condition_met(z_set_or_n_not_equal_v, a.arm) == true);
 
-    // 0100 should be false with this condition
-    REQUIRE(util::condition_met(i, a.arm) == false);
+    // always
+    REQUIRE(util::condition_met(always, a.arm) == true);
+    REQUIRE(util::condition_met(always, z.arm) == true);
+    REQUIRE(util::condition_met(always, c.arm) == true);
+    REQUIRE(util::condition_met(always, v.arm) == true);
+    REQUIRE(util::condition_met(always, n.arm) == true);
 
-    // but true with this one
-    i = 0b01000000000000000000000000000000;
-    REQUIRE(util::condition_met(i, a.arm) == true);
+    // never
+    REQUIRE(util::condition_met(noop, a.arm) == false);
+    REQUIRE(util::condition_met(noop, z.arm) == false);
+    REQUIRE(util::condition_met(noop, c.arm) == false);
+    REQUIRE(util::condition_met(noop, v.arm) == false);
+    REQUIRE(util::condition_met(noop, n.arm) == false);
 }
 
 TEST_CASE("InstructionSetFormat", "[instruction_set_format]") {
@@ -87,7 +152,7 @@ TEST_CASE("InstructionSetFormat", "[instruction_set_format]") {
     REQUIRE(util::get_instruction_format(i) == DP);
 
     // see docs/arm_instruction_set_bitfield.png to see which bits should be set for which instruction formats
-    //  (one's digit of instruction) -                10987654321098765432109876543210
+    //  (one's digit of instruction) -                    10987654321098765432109876543210
     arm_instruction dataProcessing               =      0b00000000000000000000000000000000;
     arm_instruction multiply                     =      0b00000000000000000000000010010000;
     arm_instruction multiplyLong                 =      0b00000000100000000000000010010000;

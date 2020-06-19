@@ -32,14 +32,13 @@ bool util::condition_met(arm_instruction instruction, arm_7tdmi &cpu) {
         case EQ: return cpu.get_condition_code_flag(Z); // Z set
         case NE: return !cpu.get_condition_code_flag(Z); // Z clear
         case CS: return cpu.get_condition_code_flag(C); // C set
-        case CC: return cpu.get_condition_code_flag(C); // C clear
+        case CC: return !cpu.get_condition_code_flag(C); // C clear
         case MI: return cpu.get_condition_code_flag(N); // N set
         case PL: return !cpu.get_condition_code_flag(N); // N Clear
-
         case VS: return cpu.get_condition_code_flag(V); // V set
         case VC: return !cpu.get_condition_code_flag(V); // V clear
-        case HI: return cpu.get_condition_code_flag(N) && !cpu.get_condition_code_flag(Z); // C set and Z clear
-        case LS: return !cpu.get_condition_code_flag(N) || cpu.get_condition_code_flag(Z); // C clear or Z set
+        case HI: return cpu.get_condition_code_flag(C) && !cpu.get_condition_code_flag(Z); // C set and Z clear
+        case LS: return !cpu.get_condition_code_flag(C) || cpu.get_condition_code_flag(Z); // C clear or Z set
         case GE: return cpu.get_condition_code_flag(N) == cpu.get_condition_code_flag(V); // N equals V
         case LT: return cpu.get_condition_code_flag(N) != cpu.get_condition_code_flag(V); // N not equal V
         case GT: return !cpu.get_condition_code_flag(Z) && (cpu.get_condition_code_flag(N) == cpu.get_condition_code_flag(V)); // Z clear AND (N equals V)
@@ -47,6 +46,7 @@ bool util::condition_met(arm_instruction instruction, arm_7tdmi &cpu) {
         case AL: return true; // always
         default: // should never happen
             std::cerr << "Unrecognized condition field: " << instruction << "\n";
+            return false;
     }
 }
 

@@ -3,6 +3,7 @@
 
 #include "arm_7tdmi.h"
 #include "arm_alu.inl"
+#include "util.h"
 
 // zero out fields
 arm_7tdmi::arm_7tdmi() {    
@@ -11,10 +12,8 @@ arm_7tdmi::arm_7tdmi() {
     for (int i = 0; i < 5; ++i) spsr[i] = 0;
 }
 
-Word arm_7tdmi::getCpsr() { return cpsr; }
-
-uint8_t arm_7tdmi::getConditionCodeFlag(ConditionCodeFlag_t flag) {
-    Word shield = 0b10000000000000000000000000000000; // 32 bits
+uint8_t arm_7tdmi::get_condition_code_flag(condition_code_flag_t flag) {
+    word shield = 0b10000000000000000000000000000000; // 32 bits
     switch (flag) {
         case N:
         case Z:
@@ -27,7 +26,7 @@ uint8_t arm_7tdmi::getConditionCodeFlag(ConditionCodeFlag_t flag) {
     }
 }
 
-void arm_7tdmi::setConditionCodeFlag(ConditionCodeFlag_t flag, uint8_t bit) {
+void arm_7tdmi::set_condition_code_flag(condition_code_flag_t flag, uint8_t bit) {
     // bit can only be 0 or 1
     if (bit > 1) {
         std::cerr << "Error: set bit must be 0 or 1, it is: " << bit << "\n";
@@ -53,13 +52,13 @@ void arm_7tdmi::setConditionCodeFlag(ConditionCodeFlag_t flag, uint8_t bit) {
             return;
     }
 
-    cpsr = (Word) bs.to_ulong();
+    cpsr = (word) bs.to_ulong();
 }
 
-void arm_7tdmi::execute(Instruction instruction) {
-    if (!isConditionMet(instruction, *this)) return;
+void arm_7tdmi::execute(arm_instruction instruction) {
+    if (!util::condition_met(instruction, *this)) return;
 
-    switch(getInstructionFormat(instruction)) {
+    switch(util::get_instruction_format(instruction)) {
 
         case DP:
             executeALUInstruction(*this, instruction);

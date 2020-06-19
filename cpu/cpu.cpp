@@ -6,7 +6,7 @@ cpu::cpu() : arm() {
     state = ARM;
 }
 
-void cpu::execute(Instruction instruction) {
+void cpu::execute(arm_instruction instruction) {
     switch (this->getState()) {
         case ARM:
             this->arm.execute(instruction);

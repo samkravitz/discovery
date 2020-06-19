@@ -3,6 +3,6 @@
 #include "arm_7tdmi.h"
 //#include "instruction.h"
 
-inline void executeALUInstruction(arm_7tdmi &arm, Instruction instruction) {
+inline void executeALUInstruction(arm_7tdmi &arm, arm_instruction instruction) {
     std::cout << "Got to the ALU!\n";
 }

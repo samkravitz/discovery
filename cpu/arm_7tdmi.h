@@ -2,18 +2,17 @@
 #define ARM_7TDMI_H
 
 #include "common.h"
-#include "instruction.h"
 
 class arm_7tdmi {
     public:
         arm_7tdmi();
         ~arm_7tdmi() {};
-        void execute(Instruction);
+        void execute(arm_instruction);
 
         // getters / setters
-        uint8_t getConditionCodeFlag(ConditionCodeFlag);
-        void setConditionCodeFlag(ConditionCodeFlag, uint8_t);
-        Word getCpsr();
+        uint8_t get_condition_code_flag(condition_code_flag_t);
+        void set_condition_code_flag(condition_code_flag_t, uint8_t);
+        word getCpsr() { return cpsr; };
 
     private:
         /* ARM state - 15 general purpose registers and 1 non-gp
@@ -31,8 +30,8 @@ class arm_7tdmi {
          * In THUMB state,bit [0] is zero and bits [31:1] contain the PC.
          * 
          */
-        Word registers[16]; // 16 general purpose registers
-        Word cpsr; // R16 CPSR (Current Program Status Register). This contains condition code flags and the current mode bits.
+        word registers[16]; // 16 general purpose registers
+        word cpsr; // R16 CPSR (Current Program Status Register). This contains condition code flags and the current mode bits.
         
         /*
          * Five Saved Program Status Registers (SPSRs) for use by exception handlers. These registers:
@@ -41,7 +40,7 @@ class arm_7tdmi {
          *  • set the processor operating mode
          * 
          */
-        Word spsr[5]; // 
+        word spsr[5]; // 
 
 };
 

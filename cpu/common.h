@@ -1,9 +1,9 @@
 /* discovery
- * License: MIT
+ * License: GPLv2
  * See LICENSE.txt for full license text
  * 
  * FILE: common.h
- * DATE: June 19, 2020
+ * DATE: June 27, 2020
  * DESCRIPTION: common typedefs throughout arm7tdmi use
  */
 
@@ -66,9 +66,9 @@ typedef enum Condition {
 /* see docs/arm_instruction_set_bitfield.png to see a visual of the different types of instructions,
  * here are the abbreviations that I'm using:
  * 
- * DP - Data Processing/PSR Transfer
+ * DP - Data Processing
+ * PSR - PSR Transfer
  * MUL - Multiply 
- * MULL - Multiply Long
  * SDS - Single Data Swap
  * BEX - Branch and Exchange
  * HDT_RO - Halfword Data Transfer: register offset
@@ -87,8 +87,8 @@ typedef enum InstructionSetFormat {
     UNKNOWN_INSTRUCTION_FORMAT = 0,
 
     DP,
+    PSR,
     MUL,
-    MULL,
     SDS,
     BEX,
     HDT_RO,

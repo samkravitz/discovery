@@ -56,6 +56,15 @@ bool util::condition_met(arm_instruction instruction, arm_7tdmi &cpu) {
 instruction_set_format_t util::get_instruction_format(arm_instruction instruction) {
     if ((instruction >> 4 & 0b111111111111111111111111) == 0b000100101111111111110001) return BEX; // BEX
     if ((instruction >> 25 & 0b111) == 0b101) return B; // Branch
+
+    if ((instruction & 0xD900000) == 0x1000000) {
+        if ((instruction & 0x80) && (instruction & 0x10) && ((instruction & 0x2000000) == 0)) {
+            if ((instruction >> 5 & 0x3) == 0) return SDS;
+            else return HDT_IO;
+        } 
+        else return PSR;
+    }
+    // 
     if ((instruction >> 26 & 0b11) == 0b00) return DP; // Data Processing / PSR Transfer
     if (((instruction >> 4 & 0b1111) == 0b1001) && ((instruction >> 22 & 0b111111) == 0b000000)) return MUL; // Multiply
     if (((instruction >> 4 & 0b1111) == 0b1001) && ((instruction >> 23 & 0b11111) == 0b00001)) return MULL; // Multiply Long
@@ -83,3 +92,10 @@ instruction_set_format_t util::get_instruction_format(arm_instruction instructio
     std::cerr << "Unknown Instruction Format: " << bs << "\n";
     return UNKNOWN_INSTRUCTION_FORMAT;
 }
+
+1101100100000000000000000000
+0001000000000000000000000000                                
+&____________________________
+   1000000000000000000000000
+
+   10000000000000000000000000

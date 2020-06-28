@@ -42,6 +42,9 @@ class arm_7tdmi {
         void set_condition_code_flag(condition_code_flag_t, uint8_t);
         registers_struct get_registers() { return registers; }
 
+        // instruction execution
+        void branch_exchange(arm_instruction);
+
     private:
         /* ARM state - 15 general purpose registers and 1 non-gp
 

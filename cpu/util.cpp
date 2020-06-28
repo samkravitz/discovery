@@ -1,3 +1,12 @@
+/* discovery
+ * License: GPLv2
+ * See LICENSE.txt for full license text
+ * 
+ * FILE: util.cpp
+ * DATE: June 27, 2020
+ * DESCRIPTION: utility function implementations
+ */
+
 #include <iostream>
 #include <bitset>
 #include "util.h"
@@ -55,47 +64,39 @@ bool util::condition_met(arm_instruction instruction, arm_7tdmi &cpu) {
 // basically each instruction has its own required bits that need to be set, this function just looks for those bits
 instruction_set_format_t util::get_instruction_format(arm_instruction instruction) {
     if ((instruction >> 4 & 0b111111111111111111111111) == 0b000100101111111111110001) return BEX; // BEX
-    if ((instruction >> 25 & 0b111) == 0b101) return B; // Branch
+    else if ((instruction >> 25 & 0b111) == 0b101) return B; // Branch
 
-    if ((instruction & 0xD900000) == 0x1000000) {
-        if ((instruction & 0x80) && (instruction & 0x10) && ((instruction & 0x2000000) == 0)) {
-            if ((instruction >> 5 & 0x3) == 0) return SDS;
+    else if ((instruction & 0xD900000) == 0x1000000) { // 24th bit is 1;
+        if ((instruction & 0x80) && (instruction & 0x10) && ((instruction & 0x2000000) == 0)) { // 7th bit is 1, 4th bit is 1, 25th bit is 0
+            if ((instruction >> 5 & 0x3) == 0) return SDS; // bits 5-6 are 00
             else return HDT_IO;
         } 
         else return PSR;
     }
-    // 
-    if ((instruction >> 26 & 0b11) == 0b00) return DP; // Data Processing / PSR Transfer
-    if (((instruction >> 4 & 0b1111) == 0b1001) && ((instruction >> 22 & 0b111111) == 0b000000)) return MUL; // Multiply
-    if (((instruction >> 4 & 0b1111) == 0b1001) && ((instruction >> 23 & 0b11111) == 0b00001)) return MULL; // Multiply Long
-    if ((instruction >> 26 & 0b11) == 0b01) return SDT; // Single Data Transfer
-    if (((instruction >> 4 & 0b1) == 0b1)
-        && ((instruction >> 7 & 0b1) == 0b1)
-        && ((instruction >> 22 & 0b1) == 0b1)
-        && ((instruction >> 25 & 0b111) == 0b000)) return HDT_IO; // Halfword Data Transfer - immediate offset
-    if (((instruction >> 4 & 0b1) == 0b1)
-        && ((instruction >> 7 & 0b11111) == 0b00001)
-        && ((instruction >> 22 & 0b1) == 0b0)
-        && ((instruction >> 25 & 0b111) == 0b000)) return HDT_RO; // Halfword Data Transfer - register offset
-    if ((instruction >> 25 & 0b111) == 0b100) return BDT; // Block Data Transfer
-    if (((instruction >> 4 & 0b11111111) == 0b00001001)
-        && ((instruction >> 20 & 0b11) == 0b00)
-        && ((instruction >> 23 & 0b11111) == 0b00010)) return SDS; // Single Data Swap
-    if ((instruction >> 24 & 0b1111) == 0b1111) return INT; // Software Interrupt
-    if (((instruction >> 4 & 0b1) == 0b0) && ((instruction >> 24 & 0b1111) == 0b1110)) return CDO; // Coprocessor Data Operation
-    if ((instruction >> 25 & 0b111) == 0b110) return CDT; // Coprocessor Data Transfer
-    if (((instruction >> 4 & 0b1) == 0b1) && ((instruction >> 24 & 0b1111) == 0b1110)) return CRT; // Coprocessor Register Transfer
-    if (((instruction >> 4 & 0b1) == 0b1) && ((instruction >> 25 & 0b111) == 0b011)) return UNDEF; // Undefined
-    
-    // Unknown instruction format
-    std::bitset<32> bs(instruction);
-    std::cerr << "Unknown Instruction Format: " << bs << "\n";
-    return UNKNOWN_INSTRUCTION_FORMAT;
+
+    else if ((instruction >> 26 & 0x3) == 0x0) { // bits 26-27 are 0
+        if ((instruction & 0x80) && ((instruction & 0x10) == 0)) { // 7th bit is 1, 4th bit is 0
+            if (instruction & 0x2000000) return DP; // 25th bit is 1
+            else if ((instruction & 0x100000) && ((instruction >> 23 & 0x3) == 0x2)) return DP; // 20th bit is 1, 24-23th bit is 10
+            else if(((instruction >> 23) & 0x3) != 0x2) return DP;
+            else return MUL;
+        }
+
+        else if ((instruction & 0x80) && (instruction & 0x10)) { // 7th bit is 1, 4th bit is 1
+            if ((instruction >> 4 & 0xF) == 0x9) { // bits 7-4 are 1001
+                if(instruction & 0x2000000) return DP; // 25th bit is 1
+                else if(((instruction >> 23) & 0x3) == 0x2) return SDS; // bits 24-23 are 10
+                else return MUL;
+            }
+            else if (instruction & 0x2000000) return DP;
+            else return HDT_IO;
+        }
+
+        else return DP;
+    }
+
+    else if ((instruction >> 26 & 0x3) == 0x1) return SDT; // bits 27-26 are 01
+    else if ((instruction >> 25 & 0x7) == 0x4) return BDT; // bits 27-25 are 100
+    else if ((instruction >> 24 & 0xF) == 0xF) return INT; // bits
+    else return UNDEF;
 }
-
-1101100100000000000000000000
-0001000000000000000000000000                                
-&____________________________
-   1000000000000000000000000
-
-   10000000000000000000000000

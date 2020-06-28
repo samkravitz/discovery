@@ -35,11 +35,21 @@ class arm_7tdmi {
     public:
         arm_7tdmi();
         ~arm_7tdmi() {};
-        void execute(arm_instruction);
 
+        void fetch();
+        void decode(arm_instruction);
+        void execute(arm_instruction);
+        
         // getters / setters
         uint8_t get_condition_code_flag(condition_code_flag_t);
         void set_condition_code_flag(condition_code_flag_t, uint8_t);
+
+        state_t get_state() { return state; }
+        void set_state(state_t s) { state = s; }
+
+        cpu_mode_t get_mode() { return mode; }
+        void set_mode(cpu_mode_t m) { mode = m; }
+
         registers_struct get_registers() { return registers; }
 
         // instruction execution
@@ -62,6 +72,9 @@ class arm_7tdmi {
          * 
          */
         registers_struct registers;
+        word current_instruction;
+        state_t state;
+        cpu_mode_t mode;
 }; 
 
 #endif // ARM_7TDMI_H

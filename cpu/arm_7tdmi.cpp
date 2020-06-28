@@ -5,7 +5,10 @@
 #include "arm_alu.inl"
 #include "util.h"
 
-arm_7tdmi::arm_7tdmi() {}
+arm_7tdmi::arm_7tdmi() {
+    state = USR;
+    mode = ARM;
+}
 
 uint8_t arm_7tdmi::get_condition_code_flag(condition_code_flag_t flag) {
     word shield = 0b10000000000000000000000000000000; // 32 bits
@@ -54,7 +57,9 @@ void arm_7tdmi::execute(arm_instruction instruction) {
     if (!util::condition_met(instruction, *this)) return;
 
     switch(util::get_instruction_format(instruction)) {
-
+        case BEX:
+            branch_exchange(instruction);
+            break;
         case DP:
             executeALUInstruction(*this, instruction);
             break;

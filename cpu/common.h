@@ -19,12 +19,6 @@ typedef uint32_t arm_instruction;
 
 // cpu state
 typedef enum State {
-    ARM,
-    THUMB
-} state_t;
-
-// cpu mode 
-typedef enum Mode {
     USR, // The normal ARM program execution state
     FIQ, // Designed to support a data transfer or channel process
     IRQ, // Used for general-purpose interrupt handling
@@ -32,6 +26,12 @@ typedef enum Mode {
     ABT, // Entered after a data or instruction prefetch abort
     SYS, // A privileged user mode for the operating system
     UND // Entered when an undefined instruction is executed
+} state_t;
+
+// cpu mode 
+typedef enum Mode {
+    ARM,
+    THUMB
 } cpu_mode_t;
 
 // condition code flag of program status register

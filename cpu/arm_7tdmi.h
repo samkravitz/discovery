@@ -35,7 +35,9 @@ class arm_7tdmi {
     public:
         arm_7tdmi();
         ~arm_7tdmi() {};
-
+        
+        registers_struct registers;
+        
         void fetch();
         void decode(arm_instruction);
         void execute(arm_instruction);
@@ -49,8 +51,6 @@ class arm_7tdmi {
 
         cpu_mode_t get_mode() { return mode; }
         void set_mode(cpu_mode_t m) { mode = m; }
-
-        registers_struct get_registers() { return registers; }
 
         // instruction execution
         void branch_exchange(arm_instruction);
@@ -71,7 +71,6 @@ class arm_7tdmi {
          * In THUMB state,bit [0] is zero and bits [31:1] contain the PC.
          * 
          */
-        registers_struct registers;
         word current_instruction;
         state_t state;
         cpu_mode_t mode;

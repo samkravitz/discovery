@@ -8,6 +8,7 @@
 arm_7tdmi::arm_7tdmi() {
     state = USR;
     mode = ARM;
+    registers = {}; // zero out registers
 }
 
 uint8_t arm_7tdmi::get_condition_code_flag(condition_code_flag_t flag) {

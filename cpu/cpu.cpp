@@ -2,8 +2,8 @@
 
 // initialize mode and state of cpu
 cpu::cpu() : arm() {
-    mode = USR;
-    state = ARM;
+    state = USR;
+    mode = ARM;
 }
 
 void cpu::execute(arm_instruction instruction) {

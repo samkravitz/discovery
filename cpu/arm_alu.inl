@@ -18,7 +18,6 @@
  */
 inline void arm_7tdmi::branch_exchange(arm_instruction instruction) {
     uint32_t Rn = util::get_instruction_subset(instruction, 3, 0);
-
     switch (Rn) {
         case 0x0:
             registers.r15 = registers.r0;
@@ -67,7 +66,8 @@ inline void arm_7tdmi::branch_exchange(arm_instruction instruction) {
             break;
         case 0xF:
             std::cerr << "Undefined behavior: r15 as operand\n";
-            break;
+            set_state(UND);
+            return;
         default:
             std::cerr << "Unknown register: " << Rn << "\n";
             break;

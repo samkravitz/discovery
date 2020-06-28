@@ -1,7 +1,7 @@
-tests: arm_7tdmi.o cpu.o util.o cpu/tests/tests.cpp
-	g++ -o tests arm_7tdmi.o cpu.o util.o cpu/tests/tests.cpp
+tests: arm_7tdmi.o cpu.o util.o cpu/tests/tests.cpp cpu/tests/instruction_tests.cpp
+	g++ -o tests arm_7tdmi.o cpu.o util.o cpu/tests/tests.cpp cpu/tests/instruction_tests.cpp
 
-arm_7tdmi.o: cpu/arm_7tdmi.h cpu/arm_7tdmi.cpp
+arm_7tdmi.o: cpu/arm_7tdmi.h cpu/arm_7tdmi.cpp cpu/arm_alu.inl
 	g++ -c cpu/arm_7tdmi.cpp cpu/arm_alu.inl
 
 cpu.o: cpu/cpu.h cpu/cpu.cpp

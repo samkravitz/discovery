@@ -68,3 +68,53 @@ void arm_7tdmi::execute(arm_instruction instruction) {
             std::cerr << "Cannot execute instruction: " << instruction << "\n";
     }
 }
+
+word arm_7tdmi::get_register(uint32_t reg) {
+    switch (reg) {
+        case 0x0: return registers.r0;
+        case 0x1: return registers.r1;
+        case 0x2: return registers.r2;
+        case 0x3: return registers.r3;
+        case 0x4: return registers.r4;
+        case 0x5: return registers.r5;
+        case 0x6: return registers.r6;
+        case 0x7: return registers.r7;
+        case 0x8: return registers.r8;
+        case 0x9: return registers.r9;
+        case 0xa: return registers.r10;
+        case 0xb: return registers.r11;
+        case 0xc: return registers.r12;
+        case 0xd: return registers.r13;
+        case 0xe: return registers.r14;
+        case 0xf: return registers.r15;
+        case 0x10: return registers.cpsr;
+        default:
+            std::cerr << "Unknown register: " << reg << "\n";
+            return 0;
+    }
+}
+
+void arm_7tdmi::set_register(uint32_t reg, word val) {
+    switch (reg) {
+        case 0x0: registers.r0 = val; break;
+        case 0x1: registers.r1 = val; break;
+        case 0x2: registers.r2 = val; break;
+        case 0x3: registers.r3 = val; break;
+        case 0x4: registers.r4 = val; break;
+        case 0x5: registers.r5 = val; break;
+        case 0x6: registers.r6 = val; break;
+        case 0x7: registers.r7 = val; break;
+        case 0x8: registers.r8 = val; break;
+        case 0x9: registers.r9 = val; break;
+        case 0xa: registers.r10 = val; break;
+        case 0xb: registers.r11 = val; break;
+        case 0xc: registers.r12 = val; break;
+        case 0xd: registers.r13 = val; break;
+        case 0xe: registers.r14 = val; break;
+        case 0xf: registers.r15 = val; break;
+        case 0x10: registers.cpsr = val; break;
+        default:
+            std::cerr << "Unknown register: " << reg << "\n";
+            break;
+    }
+}

@@ -103,4 +103,23 @@ typedef enum InstructionSetFormat {
     INT,
 } instruction_set_format_t;
 
+typedef enum DataProcessingOpcodes {
+    AND = 0b0000, // op1 AND op2
+    EOR = 0b0001, // op1 XOR op2
+    SUB = 0b0000, // op1 - op2
+    RSB = 0b0001, // op2 - op1
+    ADD = 0b0000, // op1 + op2
+    ADC = 0b0001, // op1 + op2 + carry
+    SBC = 0b0000, // op1 - op2 + carry - 1
+    RSC = 0b0001, // op2 - op1 + carry - 1
+    TST = 0b0000, // as AND, but result is not written
+    TEQ = 0b0001, // as EOR, but result is not written
+    CMP = 0b0000, // as SUB, but result is not written
+    CMN = 0b0001, // as ADD, but result is not written
+    ORR = 0b0000, // op1 OR op2
+    MOV = 0b0001, // op2 (op1 is ignored)
+    BIC = 0b0000, // op1 AND NOT op2 (bit clear)
+    MVN = 0b0001 // NOT op2 (op1 is ignored)
+} dp_opcodes_t;
+
 #endif //  COMMON_H

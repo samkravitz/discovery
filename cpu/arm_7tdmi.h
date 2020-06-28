@@ -52,8 +52,12 @@ class arm_7tdmi {
         cpu_mode_t get_mode() { return mode; }
         void set_mode(cpu_mode_t m) { mode = m; }
 
+        word get_register(uint32_t);
+        void set_register(uint32_t reg, word val);
+
         // instruction execution
         void branch_exchange(arm_instruction);
+        void data_processing(arm_instruction);
 
     private:
         /* ARM state - 15 general purpose registers and 1 non-gp

@@ -78,6 +78,44 @@ inline void arm_7tdmi::branch_exchange(arm_instruction instruction) {
     else set_mode(ARM);
 }
 
+inline void arm_7tdmi::data_processing(arm_instruction instruction) {
+    // immediate operand bit
+    bool immediate = util::get_instruction_subset(instruction, 25, 25) == 0x1;
+    // set condition code
+    bool set_condition_code = util::get_instruction_subset(instruction, 20, 20) == 0x1;
+
+    word Rd = util::get_instruction_subset(instruction, 15, 12); // destination register
+    word Rn = util::get_instruction_subset(instruction, 19, 16); // source register
+    word op1 = get_register(Rn);
+    word op2;
+    
+    // determine op2 based on whether it's encoded as an immeidate value or register shift
+    if (immediate) {
+        op2 = util::get_instruction_subset(instruction, 7, 0);
+        uint32_t rotate = util::get_instruction_subset(instruction, 11, 8);
+        rotate *= 2; // rotate by twice the value in the rotate field
+
+        // # of bits in a word (should be 32)
+        size_t num_bits = sizeof(word);
+
+        // perform right rotation
+        for (int i = 0; i < rotate; ++i) {
+            uint8_t dropped_lsb = op2 & 1;  
+            op2 >>= 1;
+            op2 |= (1 << num_bits);
+        }
+
+    } else { // op2 is shifted register
+
+    }
+
+    // decode opcode (bits 24-21)
+    switch((dp_opcodes_t) util::get_instruction_subset(instruction, 24, 21)) {
+        case AND: 
+    }
+
+}
+
 inline void executeALUInstruction(arm_7tdmi &arm, arm_instruction instruction) {
     std::cout << "Got to the ALU!\n";
 }

@@ -145,6 +145,7 @@ TEST_CASE("InstructionConditionField", "[instruction_condition_field]") {
     REQUIRE(util::condition_met(noop, n.arm) == false);
 }
 
+// #TODO - test cases for Instruction Set Format
 TEST_CASE("InstructionSetFormat", "[instruction_set_format]") {
     arm_instruction i = 0;
     
@@ -175,7 +176,6 @@ TEST_CASE("InstructionSetFormat", "[instruction_set_format]") {
     REQUIRE(util::get_instruction_format(branchExchange) == BEX);
     REQUIRE(util::get_instruction_format(softwareInterrupt) == INT);
     REQUIRE(util::get_instruction_format(singleDataSwap) == SDS);
-    REQUIRE(util::get_instruction_format(multiplyLong) == MULL);
     REQUIRE(util::get_instruction_format(multiply) == MUL);
     REQUIRE(util::get_instruction_format(coprocessorRegisterTransfer) == CRT);
     REQUIRE(util::get_instruction_format(undefined) == UNDEF);

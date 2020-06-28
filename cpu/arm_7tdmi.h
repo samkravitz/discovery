@@ -3,6 +3,34 @@
 
 #include "common.h"
 
+struct registers_struct {
+    // general purpose registers
+    word r0;
+    word r1;
+    word r2;
+    word r3;
+    word r4;
+    word r5;
+    word r6;
+    word r7;
+    word r8;
+    word r9;
+    word r10;
+    word r11;
+    word r12;
+    word r13;
+    word r14; // subroutine link registers
+    word r15; // program counter
+
+    // special registers
+    word cpsr;
+    word spsr0;
+    word spsr1;
+    word spsr2;
+    word spsr3;
+    word spsr4;
+};
+
 class arm_7tdmi {
     public:
         arm_7tdmi();
@@ -12,7 +40,7 @@ class arm_7tdmi {
         // getters / setters
         uint8_t get_condition_code_flag(condition_code_flag_t);
         void set_condition_code_flag(condition_code_flag_t, uint8_t);
-        word getCpsr() { return cpsr; };
+        registers_struct get_registers() { return registers; }
 
     private:
         /* ARM state - 15 general purpose registers and 1 non-gp
@@ -30,18 +58,7 @@ class arm_7tdmi {
          * In THUMB state,bit [0] is zero and bits [31:1] contain the PC.
          * 
          */
-        word registers[16]; // 16 general purpose registers
-        word cpsr; // R16 CPSR (Current Program Status Register). This contains condition code flags and the current mode bits.
-        
-        /*
-         * Five Saved Program Status Registers (SPSRs) for use by exception handlers. These registers:
-         *  • hold information about the most recently performed ALU operation
-         *  • control the enabling and disabling of interrupts
-         *  • set the processor operating mode
-         * 
-         */
-        word spsr[5]; // 
-
-};
+        registers_struct registers;
+}; 
 
 #endif // ARM_7TDMI_H

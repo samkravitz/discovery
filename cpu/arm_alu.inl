@@ -88,6 +88,7 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
     word Rn = util::get_instruction_subset(instruction, 19, 16); // source register
     word op1 = get_register(Rn);
     word op2;
+    word result;
     
     // determine op2 based on whether it's encoded as an immeidate value or register shift
     if (immediate) {
@@ -96,13 +97,12 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
         rotate *= 2; // rotate by twice the value in the rotate field
 
         // # of bits in a word (should be 32)
-        size_t num_bits = sizeof(word);
-
+        size_t num_bits = sizeof(word) * 8;
         // perform right rotation
         for (int i = 0; i < rotate; ++i) {
             uint8_t dropped_lsb = op2 & 1;  
             op2 >>= 1;
-            op2 |= (1 << num_bits);
+            op2 = op2 | (1 << num_bits - 1);
         }
 
     } else { // op2 is shifted register
@@ -112,6 +112,13 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
     // decode opcode (bits 24-21)
     switch((dp_opcodes_t) util::get_instruction_subset(instruction, 24, 21)) {
         case AND: 
+            result = op1 & op2;
+            set_register(Rd, result);
+            break;
+        
+        default:
+            std::cerr << "Unrecognized data processing opcode: " << util::get_instruction_subset(instruction, 24, 21) << "\n";
+            break;
     }
 
 }

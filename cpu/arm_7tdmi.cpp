@@ -62,7 +62,7 @@ void arm_7tdmi::execute(arm_instruction instruction) {
             branch_exchange(instruction);
             break;
         case DP:
-            executeALUInstruction(*this, instruction);
+            data_processing(instruction);
             break;
         default:
             std::cerr << "Cannot execute instruction: " << instruction << "\n";

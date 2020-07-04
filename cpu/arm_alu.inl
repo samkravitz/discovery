@@ -117,6 +117,8 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
         if ((shift & 1) == 1) { // shift amount contained in bottom byte of Rs
             word Rs = util::get_instruction_subset(instruction, 11, 8);
             shift_amount = get_register(Rs) & 0xFF;
+            // if this amount is 0, skip shifting
+            if (shift_amount == 0) goto decode_opcode;
         } else { // shift contained in immediate value in instruction
             shift_amount = util::get_instruction_subset(instruction, 11, 7);
         }
@@ -135,8 +137,7 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
             case 0b01:
                 if (shift_amount != 0) { // normal LSR
                     for (int i = 0; i < shift_amount; ++i) {
-                        carry_out = 
-                        op2 & 1;
+                        carry_out = op2 & 1;
                         op2 >>= 1;
                     }
                 } else { // special encoding for LSR #32
@@ -179,6 +180,7 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
         set_condition_code_flag(C, carry_out);
     }
 
+    decode_opcode:
     // decode opcode (bits 24-21)
     switch((dp_opcodes_t) util::get_instruction_subset(instruction, 24, 21)) {
         case AND: 

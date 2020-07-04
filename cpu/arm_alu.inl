@@ -89,6 +89,9 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
     word op1 = get_register(Rn);
     word op2;
     word result;
+
+    // # of bits in a word (should be 32)
+    size_t num_bits = sizeof(word) * 8;
     
     // determine op2 based on whether it's encoded as an immeidate value or register shift
     if (immediate) {
@@ -96,8 +99,6 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
         uint32_t rotate = util::get_instruction_subset(instruction, 11, 8);
         rotate *= 2; // rotate by twice the value in the rotate field
 
-        // # of bits in a word (should be 32)
-        size_t num_bits = sizeof(word) * 8;
         // perform right rotation
         for (int i = 0; i < rotate; ++i) {
             uint8_t dropped_lsb = op2 & 1;  
@@ -110,6 +111,7 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
         word shifted_register = util::get_instruction_subset(instruction, 3, 0);
         word shift_type = util::get_instruction_subset(instruction, 6, 5);
         word shift_amount;
+        uint8_t carry_out = get_condition_code_flag(C);
 
         // get shift amount
         if ((shift & 1) == 1) { // shift amount contained in bottom byte of Rs
@@ -124,26 +126,57 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
             // LSL
             case 0b00:
                 for (int i = 0; i < shift_amount; ++i) {
-                    
+                    carry_out = (op2 >> num_bits - 1) & 1;
+                    op2 <<= 1;
                 }
                 break;
             
             // LSR
             case 0b01:
-
+                if (shift_amount != 0) { // normal LSR
+                    for (int i = 0; i < shift_amount; ++i) {
+                        carry_out = 
+                        op2 & 1;
+                        op2 >>= 1;
+                    }
+                } else { // special encoding for LSR #32
+                    carry_out = (op2 >> num_bits - 1) & 1;
+                    op2 = 0;
+                }
                 break;
             
             // ASR
             case 0b10:
-
+                if (shift_amount != 0) {
+                    for (int i = 0; i < shift_amount; ++i) {
+                        carry_out  = op2 & 1;
+                        uint8_t msb = (op2 >> num_bits - 1) & 1;; // most significant bit
+                        op2 >>= 1;
+                        op2 = op2 | (msb << num_bits - 1);
+                    }
+                } else { // special encoding for ASR #32
+                    carry_out = (op2 >> num_bits - 1) & 1;
+                    op2 = carry_out == 0 ? 0 : (word) ~0;
+                }
                 break;
             
             // ROR
             case 0b11:
-
+                if (shift_amount != 0) { // normal rotate right
+                    for (int i = 0; i < shift_amount; ++i) {
+                        carry_out = op2 & 1;
+                        uint8_t dropped_lsb = op2 & 1;  
+                        op2 >>= 1;
+                        op2 = op2 | (dropped_lsb << num_bits - 1);
+                    }
+                } else { // rotate right extended
+                    carry_out = op2 & 1;
+                    op2 >>= 1;
+                    op2 = op2 | (get_condition_code_flag(C) << num_bits - 1);
+                }
                 break;
-
         }
+        set_condition_code_flag(C, carry_out);
     }
 
     // decode opcode (bits 24-21)

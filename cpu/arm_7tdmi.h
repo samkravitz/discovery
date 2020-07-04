@@ -58,6 +58,7 @@ class arm_7tdmi {
         // instruction execution
         void branch_exchange(arm_instruction);
         void data_processing(arm_instruction);
+        void multiply(arm_instruction);
 
     private:
         /* ARM state - 15 general purpose registers and 1 non-gp

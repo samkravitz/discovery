@@ -127,6 +127,7 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
         switch (shift_type) {
             // LSL
             case 0b00:
+                if (shift_amount == 0) carry_out = get_condition_code_flag(C); // preserve C flag
                 for (int i = 0; i < shift_amount; ++i) {
                     carry_out = (op2 >> num_bits - 1) & 1;
                     op2 <<= 1;
@@ -151,7 +152,7 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
                 if (shift_amount != 0) {
                     for (int i = 0; i < shift_amount; ++i) {
                         carry_out  = op2 & 1;
-                        uint8_t msb = (op2 >> num_bits - 1) & 1;; // most significant bit
+                        uint8_t msb = (op2 >> num_bits - 1) & 1; // most significant bit
                         op2 >>= 1;
                         op2 = op2 | (msb << num_bits - 1);
                     }

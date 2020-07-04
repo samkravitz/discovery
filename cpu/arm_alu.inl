@@ -104,9 +104,46 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
             op2 >>= 1;
             op2 = op2 | (dropped_lsb << num_bits - 1);
         }
-
     } else { // op2 is shifted register
+        op2 = op1;
+        word shift = util::get_instruction_subset(instruction, 11, 4);
+        word shifted_register = util::get_instruction_subset(instruction, 3, 0);
+        word shift_type = util::get_instruction_subset(instruction, 6, 5);
+        word shift_amount;
 
+        // get shift amount
+        if ((shift & 1) == 1) { // shift amount contained in bottom byte of Rs
+            word Rs = util::get_instruction_subset(instruction, 11, 8);
+            shift_amount = get_register(Rs) & 0xFF;
+        } else { // shift contained in immediate value in instruction
+            shift_amount = util::get_instruction_subset(instruction, 11, 7);
+        }
+
+        // perform shift
+        switch (shift_type) {
+            // LSL
+            case 0b00:
+                for (int i = 0; i < shift_amount; ++i) {
+                    
+                }
+                break;
+            
+            // LSR
+            case 0b01:
+
+                break;
+            
+            // ASR
+            case 0b10:
+
+                break;
+            
+            // ROR
+            case 0b11:
+
+                break;
+
+        }
     }
 
     // decode opcode (bits 24-21)
@@ -133,6 +170,14 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
             break;
         case ADC:
             result = op1 + op2 + get_condition_code_flag(C);
+            set_register(Rd, result);
+            break;
+        case SBC:
+            result = op1 - op2 + get_condition_code_flag(C) - 1;
+            set_register(Rd, result);
+            break;
+        case RSC:
+            result = op2 - op1 + get_condition_code_flag(C) - 1;
             set_register(Rd, result);
             break;
         default:

@@ -1,5 +1,5 @@
 .vscode/
-tests
+test
 discovery
 catch.hpp
 *.o

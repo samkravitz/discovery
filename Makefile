@@ -1,10 +1,10 @@
-all: discovery tests
+all: discovery test
 
 discovery: arm_7tdmi.o cpu.o util.o discovery.cpp
 	g++ -g -o discovery arm_7tdmi.o cpu.o util.o discovery.cpp
 
-tests: arm_7tdmi.o cpu.o util.o cpu/tests/tests.cpp cpu/tests/instruction_tests.cpp cpu/tests/data_processing_tests.cpp
-	g++ -o tests arm_7tdmi.o cpu.o util.o cpu/tests/tests.cpp cpu/tests/instruction_tests.cpp cpu/tests/data_processing_tests.cpp
+test: arm_7tdmi.o cpu.o util.o cpu/tests/tests.cpp cpu/tests/instruction_tests.cpp cpu/tests/data_processing_tests.cpp
+	g++ -o test arm_7tdmi.o cpu.o util.o cpu/tests/tests.cpp cpu/tests/instruction_tests.cpp cpu/tests/data_processing_tests.cpp
 
 arm_7tdmi.o: cpu/arm_7tdmi.h cpu/arm_7tdmi.cpp
 	g++ -g -c cpu/arm_7tdmi.cpp cpu/arm_alu.inl
@@ -16,4 +16,4 @@ util.o: cpu/util.h cpu/util.cpp
 	g++ -c cpu/util.cpp
 
 clean:
-	rm -f discovery tests *.o
+	rm -f discovery test *.o

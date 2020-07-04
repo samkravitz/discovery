@@ -104,3 +104,23 @@ TEST_CASE("ADC", "[data_processing]") {
 
     REQUIRE(arm.registers.r13 == 100 + 2146304 + 1);
 }
+
+// 0010|00|1|0001|0|0010|1000|000000001111
+TEST_CASE("SBC", "[data_processing]") {
+    arm_7tdmi arm;
+
+    // will use condition code Z clear, 0001s
+    arm.set_condition_code_flag(C, 1);
+
+    // source r1, dest r2
+    arm.registers.r1 = 0b10010000110100010010000001101111;
+    arm.registers.r7 = 0b10;
+
+    // add carry with immediate value 2146304 and carry set
+    arm_instruction i1 = 0b00010000110100010010000001100111;
+    arm.execute(i1);
+
+    word result = 0b10010000110100010010000001101111 - 0b10000000000000000000000000000001;
+    REQUIRE(arm.registers.r2 == (result + 0 - 1));
+}
+

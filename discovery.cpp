@@ -4,17 +4,20 @@
 int main() {
     std::cout << "Gameboy emulator!" << "\n";
     arm_7tdmi arm;
-    
-    arm.registers.r1 = 4; // 0b0100
-    arm.registers.r2 = 15; // 0b1111
 
-    // condition N == V, 0b1010
-    // op1 = r1 = 4
-    // dest = r10
-    // op2 = LSL #4 on r2 = 15, should be 240
-    // 0b1010|00|0|0100|0|0001|1010|00100 000 0010;
-    arm_instruction i = 0b10100000100000011010001000000010;
-    arm.execute(i);
-    //REQUIRE(arm.registers.r10 == 64);
+    // will use condition code Z clear, 0001s
+    arm.set_condition_code_flag(C, 1);
+
+    // source r1, dest r2
+    arm.registers.r1 = 0b10010000110100010010000001101111;
+    arm.registers.r7 = 0b10;
+
+    // add carry with immediate value 2146304 and carry set
+    // 0001 00 0 0110 1000 1 0010 0000 0110 0111;
+    arm_instruction i1 = 0b00010000110100010010000001100111;
+    arm.execute(i1);
+
+    word result = 0b10010000110100010010000001101111 - 0b10000000000000000000000000000001;
+    //REQUIRE(arm.registers.r2 == (result + 0 - 1));
     return 0;
 }

@@ -107,11 +107,11 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
             op2 = op2 | (dropped_lsb << num_bits - 1);
         }
     } else { // op2 is shifted register
-        op2 = op1;
         word shift = util::get_instruction_subset(instruction, 11, 4);
         word shifted_register = util::get_instruction_subset(instruction, 3, 0);
         word shift_type = util::get_instruction_subset(instruction, 6, 5);
         word shift_amount;
+        op2 = get_register(shifted_register);
 
         // get shift amount
         if ((shift & 1) == 1) { // shift amount contained in bottom byte of Rs

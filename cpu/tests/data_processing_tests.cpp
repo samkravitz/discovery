@@ -73,7 +73,18 @@ TEST_CASE("RSB", "[data_processing]") {
 }
 
 TEST_CASE("ADD", "[data_processing]") {
+    arm_7tdmi arm;
     
+    arm.registers.r1 = 4; // 0b0100
+    arm.registers.r2 = 15; // 0b1111
+
+    // condition N == V, 0b1010
+    // op1 = r1 = 4
+    // dest = r10
+    // op2 = LSL #4 on r2 = 15, should be 240
+    arm_instruction i = 0b10100000100000011010001000000010;
+    arm.execute(i);
+    REQUIRE(arm.registers.r10 == 244);
 }
 
 TEST_CASE("ADC", "[data_processing]") {
@@ -88,7 +99,6 @@ TEST_CASE("ADC", "[data_processing]") {
     arm.registers.r1 = 100;
 
     // add carry with immediate value 2146304 and carry set
-    //                       0010|00|1|0001|0|0010|1000|000000001111
     arm_instruction i1 = 0b00100010101000011101100110000011;
     arm.execute(i1);
 

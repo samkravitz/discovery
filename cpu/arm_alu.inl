@@ -102,7 +102,7 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
         for (int i = 0; i < rotate; ++i) {
             uint8_t dropped_lsb = op2 & 1;  
             op2 >>= 1;
-            op2 = op2 | (1 << num_bits - 1);
+            op2 = op2 | (dropped_lsb << num_bits - 1);
         }
 
     } else { // op2 is shifted register
@@ -117,6 +117,10 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
             break;
         case EOR:
             result = op1 ^ op2;
+            set_register(Rd, result);
+            break;
+        case SUB:
+            result = op1 - op2;
             set_register(Rd, result);
             break;
         default:

@@ -5,14 +5,16 @@ int main() {
     std::cout << "Gameboy emulator!" << "\n";
     arm_7tdmi arm;
 
-    // will use condition code GE, N == V
-    arm.set_condition_code_flag(N, 1);
-    arm.set_condition_code_flag(V, 1);
+    // will use condition code C set, 0010
+    arm.set_condition_code_flag(C, 1);
 
-    // source r3, dest r4
-    arm.registers.r3 = 0b11110000111100001111000011110000;
+    // source r4, dest r6
+    arm.registers.r4 = 30;
 
-    arm_instruction i = 0b10100010000000110100001011111111;
-    arm.execute(i);
+    // sub with immediate value 12
+    arm_instruction i1 = 0b00100010010001000110111100000011;
+    arm.execute(i1);
+    // 30 - 12 = 18
+    //REQUIRE(arm.registers.r6 == 18);
     return 0;
 }

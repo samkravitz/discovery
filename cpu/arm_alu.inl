@@ -89,6 +89,7 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
     word op1 = get_register(Rn);
     word op2;
     word result;
+    uint8_t carry_out = 2;
 
     // # of bits in a word (should be 32)
     size_t num_bits = sizeof(word) * 8;
@@ -111,7 +112,6 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
         word shifted_register = util::get_instruction_subset(instruction, 3, 0);
         word shift_type = util::get_instruction_subset(instruction, 6, 5);
         word shift_amount;
-        uint8_t carry_out = get_condition_code_flag(C);
 
         // get shift amount
         if ((shift & 1) == 1) { // shift amount contained in bottom byte of Rs
@@ -177,9 +177,14 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
                 }
                 break;
         }
-        set_condition_code_flag(C, carry_out);
+
+        if (set_condition_code) set_condition_code_flag(C, carry_out);
     }
 
+    // for arithmetic operations that use a carry bit, this will either equal
+    // - the carry out bit of the barrel shifter (if a register shift was applied), or
+    // - the existing condition code flag from the cpsr
+    uint8_t carry;
     decode_opcode:
     // decode opcode (bits 24-21)
     switch((dp_opcodes_t) util::get_instruction_subset(instruction, 24, 21)) {
@@ -204,15 +209,18 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
             set_register(Rd, result);
             break;
         case ADC:
-            result = op1 + op2 + get_condition_code_flag(C);
+            carry = carry_out == 2 ? get_condition_code_flag(C) : carry_out;
+            result = op1 + op2 + carry;
             set_register(Rd, result);
             break;
         case SBC:
-            result = op1 - op2 + get_condition_code_flag(C) - 1;
+            carry = carry_out == 2 ? get_condition_code_flag(C) : carry_out;
+            result = op1 - op2 + carry - 1;
             set_register(Rd, result);
             break;
         case RSC:
-            result = op2 - op1 + get_condition_code_flag(C) - 1;
+            carry = carry_out == 2 ? get_condition_code_flag(C) : carry_out;
+            result = op2 - op1 + carry - 1;
             set_register(Rd, result);
             break;
         default:

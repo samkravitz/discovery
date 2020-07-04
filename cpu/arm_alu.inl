@@ -127,6 +127,14 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
             result = op2 - op1;
             set_register(Rd, result);
             break;
+        case ADD:
+            result = op1 + op2;
+            set_register(Rd, result);
+            break;
+        case ADC:
+            result = op1 + op2 + get_condition_code_flag(C);
+            set_register(Rd, result);
+            break;
         default:
             std::cerr << "Unrecognized data processing opcode: " << util::get_instruction_subset(instruction, 24, 21) << "\n";
             break;

@@ -37,3 +37,19 @@ TEST_CASE("branch_exchange") {
     REQUIRE(arm.get_mode() == ARM); // mode unchanged
 }
 
+TEST_CASE("multiply") {
+    arm_7tdmi arm;
+
+    arm.set_condition_code_flag(Z, 1);
+
+    // 0b0000000000asRdxxRnxxRsxx1001Rmxx
+    // r3 = r1 * r2 => rd = rm * rs
+    arm_instruction i1 = 0b00000000000000110000001010010111;
+    arm.execute(i1);
+    REQUIRE(arm.registers.r3 == 14);
+
+    // r4 = r1 * r2 + 2
+    arm_instruction i2 = 0b00000000001001000010001010010111;
+    arm.execute(i2);
+    REQUIRE(arm.registers.r4 == 16);
+}

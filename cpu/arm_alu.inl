@@ -193,7 +193,7 @@ inline void arm_7tdmi::multiply(arm_instruction instruction) {
     word Rs = util::get_instruction_subset(instruction, 11, 8); // source register
     word Rn = util::get_instruction_subset(instruction, 15, 12); // second operand
     word Rd = util::get_instruction_subset(instruction, 19, 16); // destination register
-    bool accumulate = util::get_instruction_subset(instruction, 21, 21);
+    bool accumulate = util::get_instruction_subset(instruction, 21, 21);    
 
     if(Rd == Rm) {
         std::cout << "Rd must not be the same as Rm" << std::endl;
@@ -210,7 +210,7 @@ inline void arm_7tdmi::multiply(arm_instruction instruction) {
             // multiply form of the instruction gives Rd:=Rm*Rs,
             // Rn is set to zero for compatibility with possible future instructionset upgrades
             word val = Rm * Rs;
-            Rn = 0;
+            Rn = 0b0000;
             set_register(Rd, val);
         }
     }

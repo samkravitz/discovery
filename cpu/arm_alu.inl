@@ -192,37 +192,45 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
         case AND: 
             result = op1 & op2;
             set_register(Rd, result);
+            if (set_condition_code) update_flags_logical(op1, op2, result);
             break;
         case EOR:
             result = op1 ^ op2;
             set_register(Rd, result);
+            if (set_condition_code) update_flags_logical(op1, op2, result);
             break;
         case SUB:
             result = op1 - op2;
             set_register(Rd, result);
+            if (set_condition_code) update_flags_subtraction(op1, op2, result);
             break;
         case RSB:
             result = op2 - op1;
             set_register(Rd, result);
+            if (set_condition_code) update_flags_subtraction(op2, op1, result);
             break;
         case ADD:
             result = op1 + op2;
             set_register(Rd, result);
+            if (set_condition_code) update_flags_addition(op1, op2, result);
             break;
         case ADC:
             carry = carry_out == 2 ? get_condition_code_flag(C) : carry_out;
             result = op1 + op2 + carry;
             set_register(Rd, result);
+            if (set_condition_code) update_flags_addition(op1, op2, result);
             break;
         case SBC:
             carry = carry_out == 2 ? get_condition_code_flag(C) : carry_out;
             result = op1 - op2 + carry - 1;
             set_register(Rd, result);
+            if (set_condition_code) update_flags_subtraction(op1, op2, result);
             break;
         case RSC:
             carry = carry_out == 2 ? get_condition_code_flag(C) : carry_out;
             result = op2 - op1 + carry - 1;
             set_register(Rd, result);
+            if (set_condition_code) update_flags_subtraction(op2, op1, result);
             break;
         default:
             std::cerr << "Unrecognized data processing opcode: " << util::get_instruction_subset(instruction, 24, 21) << "\n";

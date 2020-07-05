@@ -118,3 +118,18 @@ void arm_7tdmi::set_register(uint32_t reg, word val) {
             break;
     }
 }
+
+// update cpsr flags after a logical operation
+void arm_7tdmi::update_flags_logical(word op1, word op2, word result) {
+
+}
+
+// update cpsr flags after an addition operation
+void arm_7tdmi::update_flags_addition(word op1, word op2, word result) {
+
+}
+
+// update cpsr flags after a subtraction operation
+void arm_7tdmi::update_flags_subtraction(word op1, word op2, word result) {
+
+}

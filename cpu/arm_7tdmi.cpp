@@ -120,8 +120,16 @@ void arm_7tdmi::set_register(uint32_t reg, word val) {
 }
 
 // update cpsr flags after a logical operation
-void arm_7tdmi::update_flags_logical(word op1, word op2, word result) {
+void arm_7tdmi::update_flags_logical(word op1, word op2, word result, uint8_t carry_out) {
+    // C flag will be set to the carry out from the barrel shifter
+    set_condition_code_flag(C, carry_out);
 
+    // Z flag will be set if and only if the result is all zeros
+    uint8_t new_z = result == 0 ? 1 : 0;
+    set_condition_code_flag(Z, new_z);
+
+    // N flag will be set to the logical value of bit 31 of the result
+    set_condition_code_flag(N, result & 0x80000000); // 0x80000000 is 1 followed by 31 zeros in binary
 }
 
 // update cpsr flags after an addition operation

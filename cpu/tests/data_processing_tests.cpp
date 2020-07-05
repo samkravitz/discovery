@@ -157,3 +157,21 @@ TEST_CASE("TST", "[data_processing]") {
 
 TEST_CASE("TEQ", "[data_processing]") { }
 
+TEST_CASE("CMP", "[data_processing]") {
+    arm_7tdmi arm;
+
+    // source r5
+    arm.registers.r5 = 32;
+    arm.registers.r14 = 0b10000000000000000000000000000000;
+
+    // CMP with 32 - immediate val 32
+    //  0b0001 00 1 1010 1 0101 0010 0000 00100000;
+    arm_instruction i1 = 0b00010011010101010010000000100000;
+    arm.execute(i1);
+
+    REQUIRE(arm.get_condition_code_flag(C) == 0);
+    REQUIRE(arm.get_condition_code_flag(Z) == 1);
+    REQUIRE(arm.get_condition_code_flag(V) == 0);
+    REQUIRE(arm.get_condition_code_flag(N) == 0);
+}
+

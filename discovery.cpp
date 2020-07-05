@@ -6,18 +6,17 @@ int main() {
     arm_7tdmi arm;
 
     // will use condition code Z clear, 0001s
-    arm.set_condition_code_flag(C, 1);
 
     // source r1, dest r2
-    arm.registers.r1 = 0b10010000110100010010000001101111;
-    arm.registers.r7 = 0b10;
+    arm.registers.r1 = 100;
+    arm.registers.r11 = 0b10000000000000000000000001010101; // 7 digits
 
-    // add carry with immediate value 2146304 and carry set
-    // 0001 00 0 0110 1000 1 0010 0000 0110 0111;
-    arm_instruction i1 = 0b00010000110100010010000001100111;
+    // reverse subtract carry with ASR with destination register 11 shifted 7 times (10)
+    // 0001 00 0 0111 1 0001 0010 00111 100 1011;
+    arm_instruction i1 = 0b00010000111100010010001111001011;
     arm.execute(i1);
 
-    word result = 0b10010000110100010010000001101111 - 0b10000000000000000000000000000001;
-    //REQUIRE(arm.registers.r2 == (result + 0 - 1));
+    word result = 0b11111111000000000000000000000000 - 100 + 1 - 1;
+    //REQUIRE(arm.registers.r2 == result);
     return 0;
 }

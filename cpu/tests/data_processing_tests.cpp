@@ -116,11 +116,26 @@ TEST_CASE("SBC", "[data_processing]") {
     arm.registers.r1 = 0b10010000110100010010000001101111;
     arm.registers.r7 = 0b10;
 
-    // add carry with immediate value 2146304 and carry set
+    // subtract carry with ROX with destination register 7 (10)
     arm_instruction i1 = 0b00010000110100010010000001100111;
     arm.execute(i1);
 
     word result = 0b10010000110100010010000001101111 - 0b10000000000000000000000000000001;
-    REQUIRE(arm.registers.r2 == (result + 0 - 1));
+    //REQUIRE(arm.registers.r2 == (result + 0 - 1));
+}
+
+TEST_CASE("RSC", "[data_processing]") {
+    arm_7tdmi arm;
+
+    // source r1, dest r2
+    arm.registers.r1 = 100;
+    arm.registers.r11 = 0b10000000000000000000000001010101; // 7 digits
+
+    // reverse subtract carry with ASR with destination register 11 shifted 7 times (10)
+    arm_instruction i1 = 0b00010000111100010010001111001011;
+    arm.execute(i1);
+
+    word result = 0b11111111000000000000000000000000 - 100 + 1 - 1;
+    REQUIRE(arm.registers.r2 == result);
 }
 

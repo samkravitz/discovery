@@ -155,3 +155,5 @@ TEST_CASE("TST", "[data_processing]") {
     REQUIRE(arm.get_condition_code_flag(V) == 1);
 }
 
+TEST_CASE("TEQ", "[data_processing]") { }
+

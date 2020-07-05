@@ -175,3 +175,22 @@ TEST_CASE("CMP", "[data_processing]") {
     REQUIRE(arm.get_condition_code_flag(N) == 0);
 }
 
+TEST_CASE("CMN", "[data_processing]") {
+    arm_7tdmi arm;
+
+    // source r5
+    arm.registers.r5 = 0xFFFFFFFF;
+    arm.registers.r14 = 0b11110000000000000000000000000000;
+    arm.registers.r12 = 28;
+
+    // CMP with 32 - immediate val 32
+    //  0b0001 00 1 1011 1 0101 0010 1100 0011 1110;
+    arm_instruction i1 = 0b00010011011101010010110000111110;
+    arm.execute(i1);
+
+    REQUIRE(arm.get_condition_code_flag(C) == 1);
+    REQUIRE(arm.get_condition_code_flag(Z) == 0);
+    REQUIRE(arm.get_condition_code_flag(V) == 0);
+    REQUIRE(arm.get_condition_code_flag(N) == 0);
+}
+

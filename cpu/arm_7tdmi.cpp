@@ -166,7 +166,29 @@ void arm_7tdmi::update_flags_addition(word op1, word op2, word result) {
 // update cpsr flags after a subtraction operation
 void arm_7tdmi::update_flags_subtraction(word op1, word op2, word result) {
     // C flag will be set to the carry out of bit 31 of the ALU
+    if (result > op1 || result > op2) {
+        set_condition_code_flag(C, 1);
+    } else {
+        set_condition_code_flag(C, 0);
+    }
+
     // Z flag will be set if and only if the result was zero
+    uint8_t new_z = result == 0 ? 1 : 0;
+    set_condition_code_flag(Z, new_z);
+
     // N flag will be set to the value of bit 31 of the result
+    uint8_t new_n = result & 0x80000000 ? 1 : 0;
+    set_condition_code_flag(N, new_n); // 0x80000000 is 1 followed by 31 zeros in binary
+
     // V flag will be set overflow occurs into bit 31 of the result
+    uint8_t op1_msb = op1 & 0x80000000 ? 1 : 0;
+    uint8_t op2_msb = op2 & 0x80000000 ? 1 : 0;
+    uint8_t result_msb = result & 0x80000000 ? 1 : 0;
+    if (op1_msb == 0 && op2_msb == 1 && result_msb == 1) {
+        set_condition_code_flag(V, 1);
+    } else if (op1_msb == 1 && op2_msb == 0 && result_msb == 0) {
+        set_condition_code_flag(V, 1);
+    } else {
+        set_condition_code_flag(V, 0);
+    }
 }

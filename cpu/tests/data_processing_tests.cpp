@@ -139,3 +139,19 @@ TEST_CASE("RSC", "[data_processing]") {
     REQUIRE(arm.registers.r2 == result);
 }
 
+TEST_CASE("TST", "[data_processing]") {
+    arm_7tdmi arm;
+
+    // source r9, shifted register r14
+    arm.registers.r9 = 0b10000000000000000000000000000000;
+    arm.registers.r14 = 0b10000000000000000000000000000000;
+
+    // TST with ASR #32
+    arm_instruction i1 = 0b00010001000110010010000001001110;
+    arm.execute(i1);
+
+    REQUIRE(arm.get_condition_code_flag(C) == 1);
+    REQUIRE(arm.get_condition_code_flag(Z) == 0);
+    REQUIRE(arm.get_condition_code_flag(V) == 1);
+}
+

@@ -60,7 +60,7 @@ class arm_7tdmi {
         void data_processing(arm_instruction);
 
         // misc
-        void update_flags_logical(word, word, word, uint8_t);
+        void update_flags_logical(word, uint8_t);
         void update_flags_addition(word, word, word);
         void update_flags_subtraction(word, word, word);
 

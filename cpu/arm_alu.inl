@@ -192,12 +192,12 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
         case AND: 
             result = op1 & op2;
             set_register(Rd, result);
-            if (set_condition_code) update_flags_logical(op1, op2, result, carry);
+            if (set_condition_code) update_flags_logical(result, carry);
             break;
         case EOR:
             result = op1 ^ op2;
             set_register(Rd, result);
-            if (set_condition_code) update_flags_logical(op1, op2, result, carry);
+            if (set_condition_code) update_flags_logical(result, carry);
             break;
         case SUB:
             result = op1 - op2;
@@ -231,11 +231,11 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
             break;
         case TST:
             result = op1 & op2;
-            update_flags_logical(op1, op2, result, carry);
+            update_flags_logical(result, carry);
             break;
         case TEQ:
             result = op1 ^ op2;
-            update_flags_logical(op1, op2, result, carry);
+            update_flags_logical(result, carry);
             break;
         case CMP:
             result = op1 - op2;
@@ -248,7 +248,7 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
         case ORR:
             result = op1 | op2;
             set_register(Rd, result);
-            if (set_condition_code) update_flags_logical(op1, op2, result, carry);
+            if (set_condition_code) update_flags_logical(result, carry);
             break;
         default:
             std::cerr << "Unrecognized data processing opcode: " << util::get_instruction_subset(instruction, 24, 21) << "\n";

@@ -120,7 +120,7 @@ void arm_7tdmi::set_register(uint32_t reg, word val) {
 }
 
 // update cpsr flags after a logical operation
-void arm_7tdmi::update_flags_logical(word op1, word op2, word result, uint8_t carry_out) {
+void arm_7tdmi::update_flags_logical(word result, uint8_t carry_out) {
     // C flag will be set to the carry out from the barrel shifter
     set_condition_code_flag(C, carry_out);
 

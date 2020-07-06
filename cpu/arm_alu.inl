@@ -260,6 +260,11 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
             set_register(Rd, result);
             if (set_condition_code) update_flags_logical(result, carry);
             break;
+        case MVN:
+            result = ~op2;
+            set_register(Rd, result);
+            if (set_condition_code) update_flags_logical(result, carry);
+            break;
         default:
             std::cerr << "Unrecognized data processing opcode: " << util::get_instruction_subset(instruction, 24, 21) << "\n";
             break;

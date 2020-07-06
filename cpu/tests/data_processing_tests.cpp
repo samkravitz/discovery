@@ -228,3 +228,5 @@ TEST_CASE("MOV", "[data_processing]") {
 }
 
 TEST_CASE("BIC", "[data_processing]") { }
+
+TEST_CASE("MVN", "[data_processing]") { }

@@ -226,3 +226,5 @@ TEST_CASE("MOV", "[data_processing]") {
     REQUIRE(arm.get_condition_code_flag(N) == 0);
     REQUIRE(arm.get_register(0) == 32);
 }
+
+TEST_CASE("BIC", "[data_processing]") { }

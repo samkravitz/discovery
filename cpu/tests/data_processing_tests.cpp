@@ -211,3 +211,18 @@ TEST_CASE("ORR", "[data_processing]") {
     REQUIRE(arm.get_condition_code_flag(N) == 1);
     REQUIRE(arm.get_register(14) == 0xFFFFFFFF);
 }
+
+TEST_CASE("MOV", "[data_processing]") {
+    arm_7tdmi arm;
+
+    // dest r0
+    // MOV immediate val 32 into r0
+    // 0b0001 00 1 1101 0 0101 0000 0000 00010000;
+    arm_instruction i1 = 0b00010011101001010000000000100000;
+    arm.execute(i1);
+
+    REQUIRE(arm.get_condition_code_flag(C) == 0);
+    REQUIRE(arm.get_condition_code_flag(Z) == 0);
+    REQUIRE(arm.get_condition_code_flag(N) == 0);
+    REQUIRE(arm.get_register(0) == 32);
+}

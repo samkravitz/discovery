@@ -61,6 +61,9 @@ void arm_7tdmi::execute(arm_instruction instruction) {
         case BEX:
             branch_exchange(instruction);
             break;
+        case B:
+            branch_link(instruction);
+            break;
         case DP:
             data_processing(instruction);
             break;
@@ -96,7 +99,7 @@ word arm_7tdmi::get_register(uint32_t reg) {
 
 void arm_7tdmi::set_register(int reg, word val) {
     switch (reg) {
-        // all banks share r0 - r17
+        // all banks share r0 - r7
         case 0x0: registers.r0 = val; break;
         case 0x1: registers.r1 = val; break;
         case 0x2: registers.r2 = val; break;

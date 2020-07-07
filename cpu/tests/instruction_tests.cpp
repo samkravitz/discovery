@@ -37,3 +37,22 @@ TEST_CASE("branch_exchange") {
     REQUIRE(arm.get_mode() == ARM); // mode unchanged
 }
 
+TEST_CASE("branch_link") {
+    arm_7tdmi arm1;
+
+    // 1110 101 0 000000000000000000000000 
+    arm_instruction i1 = 0b11101010000000000000000000000101;
+
+    // branch offset 20
+    arm1.execute(i1);
+    REQUIRE(arm1.registers.r15 == 20);
+
+    arm_7tdmi arm2;
+
+    arm_instruction i2 = 0b11101010000000000000000000000101;
+
+    // branch offset 20
+    arm1.execute(i2);
+    REQUIRE(arm1.registers.r15 == 20);
+}
+

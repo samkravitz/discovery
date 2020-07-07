@@ -32,6 +32,28 @@ inline void arm_7tdmi::branch_exchange(arm_instruction instruction) {
     else set_mode(ARM);
 }
 
+inline void arm_7tdmi::branch_link(arm_instruction instruction) {
+    bool link = util::get_instruction_subset(instruction, 24, 24) == 0x1;
+    word offset = util::get_instruction_subset(instruction, 23, 0);
+    bool is_neg = offset >> 23 == 0x1;
+
+    offset <<= 2;
+
+    // maintain sign by padding offset sign extension to 32 bits with 1s
+    if (is_neg) {
+        offset |= 0b11111100000000000000000000000000;
+    }
+
+    if (link) {
+        // write the old PC into the link register of the current bank
+        // The PC value written into r14 is adjusted to allow for the prefetch, and contains the
+        // address of the instruction following the branch and link instruction
+        set_register(14, get_register(15) + sizeof(arm_instruction));
+    }
+
+    set_register(15, get_register(15) + offset);
+}
+
 inline void arm_7tdmi::data_processing(arm_instruction instruction) {
     // immediate operand bit
     bool immediate = util::get_instruction_subset(instruction, 25, 25) == 0x1;

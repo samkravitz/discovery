@@ -159,6 +159,10 @@ void arm_7tdmi::set_register(int reg, word val) {
 
         case 0xd:
             switch(get_state()) {
+                case USR:
+                case SYS:
+                    registers.r13 = val;
+                    break;
                 case FIQ:
                     registers.r13_fiq = val;
                     break;
@@ -179,6 +183,10 @@ void arm_7tdmi::set_register(int reg, word val) {
 
         case 0xe:
             switch(get_state()) {
+                case USR:
+                case SYS:
+                    registers.r14 = val;
+                    break;
                 case FIQ:
                     registers.r14_fiq = val;
                     break;

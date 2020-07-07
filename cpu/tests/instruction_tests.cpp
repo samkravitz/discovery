@@ -48,11 +48,11 @@ TEST_CASE("branch_link") {
     REQUIRE(arm1.registers.r15 == 20);
 
     arm_7tdmi arm2;
+    arm2.registers.r15 = 100;
+    arm_instruction i2 = 0b11101010111111111111111111110110; // offset should expand to -40 in 2s compliment
 
-    arm_instruction i2 = 0b11101010000000000000000000000101;
-
-    // branch offset 20
-    arm1.execute(i2);
-    REQUIRE(arm1.registers.r15 == 20);
+    // branch offset -40
+    arm2.execute(i2);
+    REQUIRE(arm2.registers.r15 == 60);
 }
 

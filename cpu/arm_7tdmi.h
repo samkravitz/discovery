@@ -22,13 +22,38 @@ struct registers_struct {
     word r14; // subroutine link registers
     word r15; // program counter
 
+    // fiq registers
+    word r8_fiq;
+    word r9_fiq;
+    word r10_fiq;
+    word r11_fiq;
+    word r12_fiq;
+    word r13_fiq;
+    word r14_fiq;
+
+    // svc registers
+    word r13_svc;
+    word r14_svc;
+
+    // abt registers
+    word r13_abt;
+    word r14_abt;
+
+    // irq registers
+    word r13_irq;
+    word r14_irq;
+
+    // und registers
+    word r13_und;
+    word r14_und;
+
     // special registers
     word cpsr;
-    word spsr0;
-    word spsr1;
-    word spsr2;
-    word spsr3;
-    word spsr4;
+    word spsr_fiq;
+    word spsr_svc;
+    word spsr_abt;
+    word spsr_irq;
+    word spsr_und;
 };
 
 class arm_7tdmi {

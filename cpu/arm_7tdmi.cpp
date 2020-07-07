@@ -94,8 +94,9 @@ word arm_7tdmi::get_register(uint32_t reg) {
     }
 }
 
-void arm_7tdmi::set_register(uint32_t reg, word val) {
+void arm_7tdmi::set_register(int reg, word val) {
     switch (reg) {
+        // all banks share r0 - r17
         case 0x0: registers.r0 = val; break;
         case 0x1: registers.r1 = val; break;
         case 0x2: registers.r2 = val; break;
@@ -104,15 +105,120 @@ void arm_7tdmi::set_register(uint32_t reg, word val) {
         case 0x5: registers.r5 = val; break;
         case 0x6: registers.r6 = val; break;
         case 0x7: registers.r7 = val; break;
-        case 0x8: registers.r8 = val; break;
-        case 0x9: registers.r9 = val; break;
-        case 0xa: registers.r10 = val; break;
-        case 0xb: registers.r11 = val; break;
-        case 0xc: registers.r12 = val; break;
-        case 0xd: registers.r13 = val; break;
-        case 0xe: registers.r14 = val; break;
-        case 0xf: registers.r15 = val; break;
-        case 0x10: registers.cpsr = val; break;
+
+        case 0x8:
+            switch (get_state()) {
+                case FIQ:
+                    registers.r8_fiq = val;
+                    break;
+                default:
+                    registers.r8 = val;
+                    break;
+            }
+            break;
+        case 0x9:
+            switch (get_state()) {
+                case FIQ:
+                    registers.r9_fiq = val;
+                    break;
+                default:
+                    registers.r9 = val;
+                    break;
+            }
+            break;
+        case 0xa:
+            switch (get_state()) {
+                case FIQ:
+                    registers.r10_fiq = val;
+                    break;
+                default:
+                    registers.r10 = val;
+                    break;
+            }
+            break;
+        case 0xb:
+            switch (get_state()) {
+                case FIQ:
+                    registers.r11_fiq = val;
+                    break;
+                default:
+                    registers.r11 = val;
+                    break;
+            }
+            break;
+        case 0xc:
+            switch (get_state()) {
+                case FIQ:
+                    registers.r12_fiq = val;
+                    break;
+                default:
+                    registers.r12 = val;
+                    break;
+            }
+            break;
+
+        case 0xd:
+            switch(get_state()) {
+                case FIQ:
+                    registers.r13_fiq = val;
+                    break;
+                case SVC:
+                    registers.r13_svc = val;
+                    break;
+                case ABT:
+                    registers.r13_abt = val;
+                    break;
+                case IRQ:
+                    registers.r13_irq = val;
+                    break;
+                case UND:
+                    registers.r13_und = val;
+                    break;
+            }
+            break;
+
+        case 0xe:
+            switch(get_state()) {
+                case FIQ:
+                    registers.r14_fiq = val;
+                    break;
+                case SVC:
+                    registers.r14_svc = val;
+                    break;
+                case ABT:
+                    registers.r14_abt = val;
+                    break;
+                case IRQ:
+                    registers.r14_irq = val;
+                    break;
+                case UND:
+                    registers.r14_und = val;
+                    break;
+            }
+            break;
+
+
+        case 0xf: registers.r15 = val; break; // all banks share r15
+        case 0x10: registers.cpsr = val; break; // all banks share cpsr
+        case 0x11:
+            switch(get_state()) {
+                case FIQ:
+                    registers.spsr_fiq = val;
+                    break;
+                case SVC:
+                    registers.spsr_svc = val;
+                    break;
+                case ABT:
+                    registers.spsr_abt = val;
+                    break;
+                case IRQ:
+                    registers.spsr_irq = val;
+                    break;
+                case UND:
+                    registers.spsr_und = val;
+                    break;
+            }
+            break;
         default:
             std::cerr << "Unknown register: " << reg << "\n";
             break;

@@ -78,7 +78,7 @@ class arm_7tdmi {
         void set_mode(cpu_mode_t m) { mode = m; }
 
         word get_register(uint32_t);
-        void set_register(uint32_t reg, word val);
+        void set_register(int reg, word val);
 
         // instruction execution
         void branch_exchange(arm_instruction);

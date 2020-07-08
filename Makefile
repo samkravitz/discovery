@@ -16,7 +16,7 @@ util.o: cpu/util.h cpu/util.cpp
 	g++ -c cpu/util.cpp
 
 memory.o: memory/memory.h memory/memory.cpp
-	g++ -c memory/memory.cpp
+	g++ -g -c memory/memory.cpp
 
 clean:
 	rm -f discovery test *.o

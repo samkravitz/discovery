@@ -248,6 +248,32 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
 
 }
 
+// allow access to CPSR and SPSR registers
+inline void arm_7tdmi::psr_transfer(arm_instruction instruction) {
+    bool spsr = util::get_instruction_subset(instruction, 22, 22) == 1 ? 1 : 0;
+
+    if (util::get_instruction_subset(instruction, 21, 16) == 0b001111) { // MRS (transfer PSR contents to register)
+        word Rd = util::get_instruction_subset(instruction, 15, 12);
+        if (Rd == 15) {
+            std::cerr << "Can't use r15 as a PSR destination register" << "\n";
+            return;
+        }
+
+        if (spsr) { // Rd <- spsr_<mode>
+            set_register(Rd, get_register(17));
+        } else { // Rd <- cpsr
+            set_register(Rd, get_register(16));
+        }
+    } else if (util::get_instruction_subset(instruction, 21, 12) == 0b1010011111) { // MSR (transfer register contents to PSR)
+
+    } else if (util::get_instruction_subset(instruction, 21, 12) == 0b1010001111) { // MSR (transfer register contents or immediate value to PSR flag bits only)
+
+    } else {
+        std::cerr << "Bad PSR transfer instruction!" << "\n";
+        return;
+    }
+}
+
 inline void executeALUInstruction(arm_7tdmi &arm, arm_instruction instruction) {
     std::cout << "Got to the ALU!\n";
 }

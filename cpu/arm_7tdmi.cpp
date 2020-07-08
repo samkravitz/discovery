@@ -67,6 +67,9 @@ void arm_7tdmi::execute(arm_instruction instruction) {
         case DP:
             data_processing(instruction);
             break;
+        case PSR:
+            psr_transfer(instruction);
+            break;
         default:
             std::cerr << "Cannot execute instruction: " << instruction << "\n";
     }

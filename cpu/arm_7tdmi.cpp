@@ -73,6 +73,9 @@ void arm_7tdmi::execute(arm_instruction instruction) {
         case PSR:
             psr_transfer(instruction);
             break;
+        case SDT:
+            single_data_transfer(instruction);
+            break;
         default:
             std::cerr << "Cannot execute instruction: " << instruction << "\n";
     }

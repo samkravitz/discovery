@@ -355,6 +355,19 @@ inline void arm_7tdmi::psr_transfer(arm_instruction instruction) {
     }
 }
 
+// store or load single value to/from memory
+inline void single_data_transfer(arm_instruction instruction) {
+    bool immediate = util::get_instruction_subset(instruction, 25, 25) == 1;
+    bool pre_index = util::get_instruction_subset(instruction, 24, 24) == 1;  // bit 24 set = pre index, bit 24 0 = post index
+    bool up = util::get_instruction_subset(instruction, 23, 23) == 1;         // bit 23 set = up, bit 23 0 = down
+    bool byte = util::get_instruction_subset(instruction, 22, 22) == 1;       // bit 22 set = byte, bit 23 0 = word
+    bool write_back = util::get_instruction_subset(instruction, 21, 21) == 1; // bit 21 set = write address into base, bit 21 0 = no write back
+    bool load = util::get_instruction_subset(instruction, 20, 20) == 1;       // bit 20 set = load, bit 20 0 = store
+    word Rn = util::get_instruction_subset(instruction, 19, 16);
+    bool Rd = util::get_instruction_subset(instruction, 15, 12);
+    word offset = util::get_instruction_subset(instruction, 11, 0);
+}
+
 inline void executeALUInstruction(arm_7tdmi &arm, arm_instruction instruction) {
     std::cout << "Got to the ALU!\n";
 }

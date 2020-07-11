@@ -265,10 +265,23 @@ inline void arm_7tdmi::psr_transfer(arm_instruction instruction) {
             set_register(Rd, get_register(16));
         }
     } else if (util::get_instruction_subset(instruction, 21, 12) == 0b1010011111) { // MSR (transfer register contents to PSR)
-
+        word Rm = util::get_instruction_subset(instruction, 3, 0);
+        if (Rm == 15) {
+            std::cerr << "Can't use r15 as a PSR source register" << "\n";
+            return;
+        }
+        
+        // TODO - is it okay to set entire SPR to contents of Rm?
+        // ARM instruction manual says set bits[31:0] but also says to leave reserved bits alone
+        if (spsr) { // spsr_<mode> <- Rm
+            set_register(17, get_register(Rm));
+        } else { // cpsr <- Rm
+            set_register(16, get_register(Rm));
+        }
     } else if (util::get_instruction_subset(instruction, 21, 12) == 0b1010001111) { // MSR (transfer register contents or immediate value to PSR flag bits only)
-
-    } else {
+        bool immediate = util::get_instruction_subset(instruction, 25, 25) == 1;
+        
+    } else { // should not execute
         std::cerr << "Bad PSR transfer instruction!" << "\n";
         return;
     }

@@ -280,7 +280,46 @@ inline void arm_7tdmi::psr_transfer(arm_instruction instruction) {
         }
     } else if (util::get_instruction_subset(instruction, 21, 12) == 0b1010001111) { // MSR (transfer register contents or immediate value to PSR flag bits only)
         bool immediate = util::get_instruction_subset(instruction, 25, 25) == 1;
-        
+        word transfer_value;
+        // # of bits in a word (should be 32)
+        size_t num_bits = sizeof(word) * 8;
+
+        if (immediate) { // rotate on immediate value 
+            transfer_value = util::get_instruction_subset(instruction, 7, 0);
+            uint32_t rotate = util::get_instruction_subset(instruction, 11, 8);
+            rotate *= 2; // rotate by twice the value in the rotate field
+
+            // perform right rotation
+            for (int i = 0; i < rotate; ++i) {
+                uint8_t dropped_lsb = transfer_value & 1;  
+                transfer_value >>= 1;
+                transfer_value |= (dropped_lsb << num_bits - 1);
+            }
+        } else { // use value in register
+            transfer_value = util::get_instruction_subset(3, 0);
+        }
+
+        // clear bits [27-0] of transfer_value
+        transfer_value >>= 28;
+        transfer_value <<= 28;
+
+        word old_spr_value;
+        if (spsr) {
+            old_spr_value = get_register(17);
+        } else {
+            old_spr_value = get_register(16);
+        }
+
+        // move transfer value into flag bits[31:28] of SPR
+        old_spr_value <<= 4;
+        old_spr_value >>= 4;
+        old_spr_value |= transfer_value;
+        if (spsr) {
+            set_register(17, transfer_value);
+        } else {
+            set_register(16, transfer_value);
+        }
+
     } else { // should not execute
         std::cerr << "Bad PSR transfer instruction!" << "\n";
         return;

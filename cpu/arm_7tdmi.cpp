@@ -109,8 +109,8 @@ word arm_7tdmi::get_register(uint32_t reg) {
             }
         case 0xb:
             switch (get_state()) {
-                case FIQ: registers.r11_fiq;
-                default: registers.r11;
+                case FIQ: return registers.r11_fiq;
+                default: return registers.r11;
             }
         case 0xc:
             switch (get_state()) {

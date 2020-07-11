@@ -132,6 +132,7 @@ TEST_CASE("RSC", "[data_processing]") {
     arm.registers.r11 = 0b10000000000000000000000001010101; // 7 digits
 
     // reverse subtract carry with ASR with destination register 11 shifted 7 times (10)
+    // 0001 00 0 0111 1 0001 0010 00111 10 0 1011;
     arm_instruction i1 = 0b00010000111100010010001111001011;
     arm.execute(i1);
 

@@ -85,15 +85,66 @@ word arm_7tdmi::get_register(uint32_t reg) {
         case 0x5: return registers.r5;
         case 0x6: return registers.r6;
         case 0x7: return registers.r7;
-        case 0x8: return registers.r8;
-        case 0x9: return registers.r9;
-        case 0xa: return registers.r10;
-        case 0xb: return registers.r11;
-        case 0xc: return registers.r12;
-        case 0xd: return registers.r13;
-        case 0xe: return registers.r14;
-        case 0xf: return registers.r15;
-        case 0x10: return registers.cpsr;
+
+        case 0x8:
+            switch (get_state()) {
+                case FIQ: return registers.r8_fiq;
+                default: return registers.r8;
+            }
+        case 0x9:
+            switch (get_state()) {
+                case FIQ: return registers.r9_fiq;
+                default: return registers.r9;
+            }
+        case 0xa:
+            switch (get_state()) {
+                case FIQ: return registers.r10_fiq;
+                default: return registers.r10;
+            }
+        case 0xb:
+            switch (get_state()) {
+                case FIQ: registers.r11_fiq;
+                default: registers.r11;
+            }
+        case 0xc:
+            switch (get_state()) {
+                case FIQ: return registers.r12_fiq;
+                default: return registers.r12;
+            }
+
+        case 0xd:
+            switch(get_state()) {
+                case USR:
+                case SYS: return registers.r13;
+                case FIQ: return registers.r13_fiq;
+                case SVC: return registers.r13_svc;
+                case ABT: return registers.r13_abt;
+                case IRQ: return registers.r13_irq;
+                case UND: return registers.r13_und;
+            }
+
+        case 0xe:
+            switch(get_state()) {
+                case USR:
+                case SYS: return registers.r14;
+                case FIQ: return registers.r14_fiq;
+                case SVC: return registers.r14_svc;
+                case ABT: return registers.r14_abt;
+                case IRQ: return registers.r14_irq;
+                case UND: return registers.r14_und;
+            }
+
+        case 0xf: return registers.r15; // all banks share r15
+        case 0x10: return registers.cpsr;// all banks share cpsr
+        case 0x11:
+            switch(get_state()) {
+                case FIQ: return registers.spsr_fiq;
+                case SVC: return registers.spsr_svc;
+                case ABT: return registers.spsr_abt;
+                case IRQ: return registers.spsr_irq;
+                case UND: return registers.spsr_und;
+            }
+            break;
         default:
             std::cerr << "Unknown register: " << reg << "\n";
             return 0;

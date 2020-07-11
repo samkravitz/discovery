@@ -84,6 +84,7 @@ class arm_7tdmi {
         void branch_exchange(arm_instruction);
         void branch_link(arm_instruction);
         void data_processing(arm_instruction);
+        void multiply(arm_instruction);
         void psr_transfer(arm_instruction);
 
         // misc

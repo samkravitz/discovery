@@ -67,6 +67,8 @@ void arm_7tdmi::execute(arm_instruction instruction) {
         case DP:
             data_processing(instruction);
             break;
+        case MUL:
+            multiply(instruction);
         case PSR:
             psr_transfer(instruction);
             break;

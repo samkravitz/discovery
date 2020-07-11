@@ -248,6 +248,35 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
 
 }
 
+inline void arm_7tdmi::multiply(arm_instruction instruction) {
+    // assign registers
+    word Rm = util::get_instruction_subset(instruction, 3, 0); // first operand
+    word Rs = util::get_instruction_subset(instruction, 11, 8); // source register
+    word Rn = util::get_instruction_subset(instruction, 15, 12); // second operand
+    word Rd = util::get_instruction_subset(instruction, 19, 16); // destination register
+    bool accumulate = util::get_instruction_subset(instruction, 21, 21);    
+
+    if(Rd == Rm) {
+        std::cout << "Rd must not be the same as Rm" << std::endl;
+        return;
+    } else if (Rd == get_register(15) || Rm == get_register(15)) {
+        std::cout << "Register 15 may not be used as destination nor operand register" << std::endl;
+        return;
+    }
+    
+    if(accumulate) {
+        // multiply-accumulate form gives Rd:=Rm*Rs+Rn
+        word val = Rm * Rs + Rn;
+        set_register(Rd, val);
+    } else {
+        // multiply form of the instruction gives Rd:=Rm*Rs,
+        // Rn is set to zero for compatibility with possible future instructionset upgrades
+        word val = Rm * Rs;
+        set_register(Rn, 0);
+        set_register(Rd, val);
+    }
+}
+
 // allow access to CPSR and SPSR registers
 inline void arm_7tdmi::psr_transfer(arm_instruction instruction) {
     bool spsr = util::get_instruction_subset(instruction, 22, 22) == 1 ? 1 : 0;

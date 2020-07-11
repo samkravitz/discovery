@@ -296,7 +296,7 @@ inline void arm_7tdmi::psr_transfer(arm_instruction instruction) {
                 transfer_value |= (dropped_lsb << num_bits - 1);
             }
         } else { // use value in register
-            transfer_value = util::get_instruction_subset(3, 0);
+            transfer_value = util::get_instruction_subset(instruction, 3, 0);
         }
 
         // clear bits [27-0] of transfer_value

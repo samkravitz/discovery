@@ -149,6 +149,7 @@ word arm_7tdmi::get_register(uint32_t reg) {
             std::cerr << "Unknown register: " << reg << "\n";
             return 0;
     }
+    return 100; // should never happen
 }
 
 void arm_7tdmi::set_register(int reg, word val) {

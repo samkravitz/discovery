@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include "common.h"
 #include "../cpu/common.h"
 
 class Memory {
@@ -10,12 +11,13 @@ class Memory {
         Memory();
         ~Memory();
 
+        uint8_t memory[GBA_MEM_SIZE];
+        
         void load_rom(char *);
         arm_instruction get_instruction(word);
         uint8_t *get_memory() { return memory; }
     
     private:
-        uint8_t *memory;
         std::size_t size;
 };
 

@@ -4,26 +4,26 @@
 #include <iostream>
 #include <sys/stat.h>
 
-Memory::Memory() {}
-
-Memory::~Memory() {
-    delete memory;
+Memory::Memory() {
+    for (int i = 0; i < GBA_MEM_SIZE; ++i) memory[i] = 0;
 }
 
+Memory::~Memory() {}
+
 void Memory::load_rom(char *name) {
-    struct stat results;
+    // struct stat results;
     
-    if (stat(name, &results) != 0) return;
-    memory = new uint8_t[results.st_size];
-    size = results.st_size;
+    // if (stat(name, &results) != 0) return;
+    // memory = new uint8_t[results.st_size];
+    // size = results.st_size;
 
-    std::ifstream rom(name, std::ios::in | std::ios::binary);
-    if (!rom) return;
+    // std::ifstream rom(name, std::ios::in | std::ios::binary);
+    // if (!rom) return;
 
-    for (int i = 0; i < size; ++i) {
-        rom.read((char *) &memory[i], sizeof(uint8_t));
-        std::cout << std::hex << (int) memory[i] << std::endl;
-    }
+    // for (int i = 0; i < size; ++i) {
+    //     rom.read((char *) &memory[i], sizeof(uint8_t));
+    //     std::cout << std::hex << (int) memory[i] << std::endl;
+    // }
     
 }
 

@@ -73,7 +73,18 @@ TEST_CASE("RSB", "[data_processing]") {
 }
 
 TEST_CASE("ADD", "[data_processing]") {
+    arm_7tdmi arm;
     
+    arm.registers.r1 = 4; // 0b0100
+    arm.registers.r2 = 15; // 0b1111
+
+    // condition N == V, 0b1010
+    // op1 = r1 = 4
+    // dest = r10
+    // op2 = LSL #4 on r2 = 15, should be 240
+    arm_instruction i = 0b10100000100000011010001000000010;
+    arm.execute(i);
+    REQUIRE(arm.registers.r10 == 244);
 }
 
 TEST_CASE("ADC", "[data_processing]") {
@@ -88,9 +99,134 @@ TEST_CASE("ADC", "[data_processing]") {
     arm.registers.r1 = 100;
 
     // add carry with immediate value 2146304 and carry set
-    //                       0010|00|1|0001|0|0010|1000|000000001111
     arm_instruction i1 = 0b00100010101000011101100110000011;
     arm.execute(i1);
 
     REQUIRE(arm.registers.r13 == 100 + 2146304 + 1);
 }
+
+// 0010|00|1|0001|0|0010|1000|000000001111
+TEST_CASE("SBC", "[data_processing]") {
+    arm_7tdmi arm;
+
+    // will use condition code Z clear, 0001s
+    arm.set_condition_code_flag(C, 1);
+
+    // source r1, dest r2
+    arm.registers.r1 = 0b10010000110100010010000001101111;
+    arm.registers.r7 = 0b10;
+
+    // subtract carry with ROX with destination register 7 (10)
+    arm_instruction i1 = 0b00010000110100010010000001100111;
+    arm.execute(i1);
+
+    word result = 0b10010000110100010010000001101111 - 0b10000000000000000000000000000001;
+    //REQUIRE(arm.registers.r2 == (result + 0 - 1));
+}
+
+TEST_CASE("RSC", "[data_processing]") {
+    arm_7tdmi arm;
+
+    // source r1, dest r2
+    arm.registers.r1 = 100;
+    arm.registers.r11 = 0b10000000000000000000000001010101; // 7 digits
+
+    // reverse subtract carry with ASR with destination register 11 shifted 7 times (10)
+    arm_instruction i1 = 0b00010000111100010010001111001011;
+    arm.execute(i1);
+
+    word result = 0b11111111000000000000000000000000 - 100 + 1 - 1;
+    REQUIRE(arm.registers.r2 == result);
+}
+
+TEST_CASE("TST", "[data_processing]") {
+    arm_7tdmi arm;
+
+    // source r9, shifted register r14
+    arm.registers.r9 = 0b10000000000000000000000000000000;
+    arm.registers.r14 = 0b10000000000000000000000000000000;
+
+    // TST with ASR #32
+    arm_instruction i1 = 0b00010001000110010010000001001110;
+    arm.execute(i1);
+
+    REQUIRE(arm.get_condition_code_flag(C) == 1);
+    REQUIRE(arm.get_condition_code_flag(Z) == 0);
+    REQUIRE(arm.get_condition_code_flag(N) == 1);
+}
+
+TEST_CASE("TEQ", "[data_processing]") { }
+
+TEST_CASE("CMP", "[data_processing]") {
+    arm_7tdmi arm;
+
+    // source r5
+    arm.registers.r5 = 32;
+    arm.registers.r14 = 0b10000000000000000000000000000000;
+
+    // CMP with 32 - immediate val 32
+    //  0b0001 00 1 1010 1 0101 0010 0000 00100000;
+    arm_instruction i1 = 0b00010011010101010010000000100000;
+    arm.execute(i1);
+
+    REQUIRE(arm.get_condition_code_flag(C) == 0);
+    REQUIRE(arm.get_condition_code_flag(Z) == 1);
+    REQUIRE(arm.get_condition_code_flag(V) == 0);
+    REQUIRE(arm.get_condition_code_flag(N) == 0);
+}
+
+TEST_CASE("CMN", "[data_processing]") {
+    arm_7tdmi arm;
+
+    // source r5
+    arm.registers.r5 = 0xFFFFFFFF;
+    arm.registers.r14 = 0b11110000000000000000000000000000;
+    arm.registers.r12 = 28;
+
+    // CMP with 32 - immediate val 32
+    //  0b0001 00 1 1011 1 0101 0010 1100 0011 1110;
+    arm_instruction i1 = 0b00010011011101010010110000111110;
+    arm.execute(i1);
+
+    REQUIRE(arm.get_condition_code_flag(C) == 1);
+    REQUIRE(arm.get_condition_code_flag(Z) == 0);
+    REQUIRE(arm.get_condition_code_flag(V) == 0);
+    REQUIRE(arm.get_condition_code_flag(N) == 0);
+}
+
+TEST_CASE("ORR", "[data_processing]") {
+    arm_7tdmi arm;
+
+    // source r5, dest r14
+    arm.registers.r5 = 0xFFFFFFFF;
+    arm.registers.r14 = 0b11110000000000000000000000000000;
+    arm.registers.r12 = 1;
+    // CMP with 32 - immediate val 32
+    //  0b0001 00 0 1100 1 0101 1110 0000 1010 1100;
+    arm_instruction i1 = 0b00010001100101011110000010101100;
+    arm.execute(i1);
+
+    REQUIRE(arm.get_condition_code_flag(C) == 1);
+    REQUIRE(arm.get_condition_code_flag(Z) == 0);
+    REQUIRE(arm.get_condition_code_flag(N) == 1);
+    REQUIRE(arm.get_register(14) == 0xFFFFFFFF);
+}
+
+TEST_CASE("MOV", "[data_processing]") {
+    arm_7tdmi arm;
+
+    // dest r0
+    // MOV immediate val 32 into r0
+    // 0b0001 00 1 1101 0 0101 0000 0000 00010000;
+    arm_instruction i1 = 0b00010011101001010000000000100000;
+    arm.execute(i1);
+
+    REQUIRE(arm.get_condition_code_flag(C) == 0);
+    REQUIRE(arm.get_condition_code_flag(Z) == 0);
+    REQUIRE(arm.get_condition_code_flag(N) == 0);
+    REQUIRE(arm.get_register(0) == 32);
+}
+
+TEST_CASE("BIC", "[data_processing]") { }
+
+TEST_CASE("MVN", "[data_processing]") { }

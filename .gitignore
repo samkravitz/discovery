@@ -3,3 +3,4 @@ test
 discovery
 catch.hpp
 *.o
+*.gba

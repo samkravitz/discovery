@@ -1,23 +1,22 @@
 #include <iostream>
+#include <fstream>
 #include "cpu/arm_7tdmi.h"
+#include "memory/memory.h"
 
-int main() {
-    std::cout << "Gameboy emulator!" << "\n";
+void run_asm(char *name) {
     arm_7tdmi arm;
+    Memory mem;
+    mem.load_rom(name);
+    arm_instruction i;
+    while (true) {
+        i = mem.get_instruction(arm.registers.r15);
+        std::cout << i << "\n";
+        arm.execute(i);
+    }
+}
 
-    // will use condition code C set, 0010
-    arm.set_condition_code_flag(C, 1);
-    arm.set_condition_code_flag(V, 1);
-    arm.set_condition_code_flag(N, 1);
+int main(int argc, char **argv) {
+    std::cout << "Gameboy emulator!" << "\n";
+    run_asm(argv[1]);
 
-    // source r1, dest r13
-    arm.registers.r1 = 100;
-
-    // add carry with immediate value 2146304 and carry set
-    //                       0010|00|1|0001|0|0010|1000|000000001111
-    arm_instruction i1 = 0b00100010101000011101100110000011;
-    arm.execute(i1);
-
-    //REQUIRE(arm.registers.r13 == 100 + 2146304 + 1);
-    return 0;
 }

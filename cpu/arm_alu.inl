@@ -18,64 +18,40 @@
  */
 inline void arm_7tdmi::branch_exchange(arm_instruction instruction) {
     uint32_t Rn = util::get_instruction_subset(instruction, 3, 0);
-    switch (Rn) {
-        case 0x0:
-            registers.r15 = registers.r0;
-            break;
-        case 0x1:
-            registers.r15 = registers.r1;
-            break;
-        case 0x2:
-            registers.r15 = registers.r2;
-            break;
-        case 0x3:
-            registers.r15 = registers.r3;
-            break;
-        case 0x4:
-            registers.r15 = registers.r4;
-            break;
-        case 0x5:
-            registers.r15 = registers.r5;
-            break;
-        case 0x6:
-            registers.r15 = registers.r6;
-            break;
-        case 0x7:
-            registers.r15 = registers.r7;
-            break;
-        case 0x8:
-            registers.r15 = registers.r8;
-            break;
-        case 0x9:
-            registers.r15 = registers.r9;
-            break;
-        case 0xA:
-            registers.r15 = registers.r10;
-            break;
-        case 0xB:
-            registers.r15 = registers.r11;
-            break;
-        case 0xC:
-            registers.r15 = registers.r12;
-            break;
-        case 0xD:
-            registers.r15 = registers.r13;
-            break;
-        case 0xE:
-            registers.r15 = registers.r14;
-            break;
-        case 0xF:
-            std::cerr << "Undefined behavior: r15 as operand\n";
-            set_state(UND);
-            return;
-        default:
-            std::cerr << "Unknown register: " << Rn << "\n";
-            break;
-    }   
+    if (Rn == 15) {
+        std::cerr << "Undefined behavior: r15 as operand\n";
+        set_state(UND);
+        return;
+    }
+    
+    word branch_address = get_register(Rn);
+    set_register(15, branch_address); 
 
     // swith to THUMB mode if necessary
-    if (Rn % 2 == 1) set_mode(THUMB);
+    if ((branch_address & 1) == 1) set_mode(THUMB);
     else set_mode(ARM);
+}
+
+inline void arm_7tdmi::branch_link(arm_instruction instruction) {
+    bool link = util::get_instruction_subset(instruction, 24, 24) == 0x1;
+    word offset = util::get_instruction_subset(instruction, 23, 0);
+    bool is_neg = offset >> 23 == 0x1;
+
+    offset <<= 2;
+
+    // maintain sign by padding offset sign extension to 32 bits with 1s
+    if (is_neg) {
+        offset |= 0b11111100000000000000000000000000;
+    }
+
+    if (link) {
+        // write the old PC into the link register of the current bank
+        // The PC value written into r14 is adjusted to allow for the prefetch, and contains the
+        // address of the instruction following the branch and link instruction
+        set_register(14, get_register(15) + sizeof(arm_instruction));
+    }
+
+    set_register(15, get_register(15) + offset);
 }
 
 inline void arm_7tdmi::data_processing(arm_instruction instruction) {
@@ -89,6 +65,10 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
     word op1 = get_register(Rn);
     word op2;
     word result;
+    uint8_t carry_out = 2;
+
+    // # of bits in a word (should be 32)
+    size_t num_bits = sizeof(word) * 8;
     
     // determine op2 based on whether it's encoded as an immeidate value or register shift
     if (immediate) {
@@ -96,8 +76,6 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
         uint32_t rotate = util::get_instruction_subset(instruction, 11, 8);
         rotate *= 2; // rotate by twice the value in the rotate field
 
-        // # of bits in a word (should be 32)
-        size_t num_bits = sizeof(word) * 8;
         // perform right rotation
         for (int i = 0; i < rotate; ++i) {
             uint8_t dropped_lsb = op2 & 1;  
@@ -105,16 +83,18 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
             op2 = op2 | (dropped_lsb << num_bits - 1);
         }
     } else { // op2 is shifted register
-        op2 = op1;
         word shift = util::get_instruction_subset(instruction, 11, 4);
         word shifted_register = util::get_instruction_subset(instruction, 3, 0);
         word shift_type = util::get_instruction_subset(instruction, 6, 5);
         word shift_amount;
+        op2 = get_register(shifted_register);
 
         // get shift amount
         if ((shift & 1) == 1) { // shift amount contained in bottom byte of Rs
             word Rs = util::get_instruction_subset(instruction, 11, 8);
             shift_amount = get_register(Rs) & 0xFF;
+            // if this amount is 0, skip shifting
+            if (shift_amount == 0) goto decode_opcode;
         } else { // shift contained in immediate value in instruction
             shift_amount = util::get_instruction_subset(instruction, 11, 7);
         }
@@ -123,62 +103,143 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
         switch (shift_type) {
             // LSL
             case 0b00:
+                if (shift_amount == 0) carry_out = get_condition_code_flag(C); // preserve C flag
                 for (int i = 0; i < shift_amount; ++i) {
-                    
+                    carry_out = (op2 >> num_bits - 1) & 1;
+                    op2 <<= 1;
                 }
                 break;
             
             // LSR
             case 0b01:
-
+                if (shift_amount != 0) { // normal LSR
+                    for (int i = 0; i < shift_amount; ++i) {
+                        carry_out = op2 & 1;
+                        op2 >>= 1;
+                    }
+                } else { // special encoding for LSR #32
+                    carry_out = (op2 >> num_bits - 1) & 1;
+                    op2 = 0;
+                }
                 break;
             
             // ASR
             case 0b10:
-
+                if (shift_amount != 0) {
+                    for (int i = 0; i < shift_amount; ++i) {
+                        carry_out  = op2 & 1;
+                        uint8_t msb = (op2 >> num_bits - 1) & 1; // most significant bit
+                        op2 >>= 1;
+                        op2 = op2 | (msb << num_bits - 1);
+                    }
+                } else { // special encoding for ASR #32
+                    carry_out = (op2 >> num_bits - 1) & 1;
+                    op2 = carry_out == 0 ? 0 : (word) ~0;
+                }
                 break;
             
             // ROR
             case 0b11:
-
+                if (shift_amount != 0) { // normal rotate right
+                    for (int i = 0; i < shift_amount; ++i) {
+                        carry_out = op2 & 1;
+                        uint8_t dropped_lsb = op2 & 1;  
+                        op2 >>= 1;
+                        op2 = op2 | (dropped_lsb << num_bits - 1);
+                    }
+                } else { // rotate right extended
+                    carry_out = op2 & 1;
+                    op2 >>= 1;
+                    op2 = op2 | (get_condition_code_flag(C) << num_bits - 1);
+                }
                 break;
-
         }
     }
+
+    decode_opcode:
+    
+    // for arithmetic operations that use a carry bit, this will either equal
+    // - the carry out bit of the barrel shifter (if a register shift was applied), or
+    // - the existing condition code flag from the cpsr
+    uint8_t carry = carry_out == 2 ? get_condition_code_flag(C) : carry_out;
 
     // decode opcode (bits 24-21)
     switch((dp_opcodes_t) util::get_instruction_subset(instruction, 24, 21)) {
         case AND: 
             result = op1 & op2;
             set_register(Rd, result);
+            if (set_condition_code) update_flags_logical(result, carry);
             break;
         case EOR:
             result = op1 ^ op2;
             set_register(Rd, result);
+            if (set_condition_code) update_flags_logical(result, carry);
             break;
         case SUB:
             result = op1 - op2;
             set_register(Rd, result);
+            if (set_condition_code) update_flags_subtraction(op1, op2, result);
             break;
         case RSB:
             result = op2 - op1;
             set_register(Rd, result);
+            if (set_condition_code) update_flags_subtraction(op2, op1, result);
             break;
         case ADD:
             result = op1 + op2;
             set_register(Rd, result);
+            if (set_condition_code) update_flags_addition(op1, op2, result);
             break;
         case ADC:
-            result = op1 + op2 + get_condition_code_flag(C);
+            result = op1 + op2 + carry;
             set_register(Rd, result);
+            if (set_condition_code) update_flags_addition(op1, op2, result);
             break;
         case SBC:
-            result = op1 - op2 + get_condition_code_flag(C) - 1;
+            result = op1 - op2 + carry - 1;
             set_register(Rd, result);
+            if (set_condition_code) update_flags_subtraction(op1, op2, result);
             break;
         case RSC:
-            result = op2 - op1 + get_condition_code_flag(C) - 1;
+            result = op2 - op1 + carry - 1;
             set_register(Rd, result);
+            if (set_condition_code) update_flags_subtraction(op2, op1, result);
+            break;
+        case TST:
+            result = op1 & op2;
+            update_flags_logical(result, carry);
+            break;
+        case TEQ:
+            result = op1 ^ op2;
+            update_flags_logical(result, carry);
+            break;
+        case CMP:
+            result = op1 - op2;
+            update_flags_subtraction(op1, op2, result);
+            break;
+        case CMN:
+            result = op1 + op2;
+            update_flags_addition(op1, op2, result);
+            break;
+        case ORR:
+            result = op1 | op2;
+            set_register(Rd, result);
+            if (set_condition_code) update_flags_logical(result, carry);
+            break;
+        case MOV:
+            result = op2;
+            set_register(Rd, result);
+            if (set_condition_code) update_flags_logical(result, carry);
+            break;
+        case BIC:
+            result = op1 & ~op2;
+            set_register(Rd, result);
+            if (set_condition_code) update_flags_logical(result, carry);
+            break;
+        case MVN:
+            result = ~op2;
+            set_register(Rd, result);
+            if (set_condition_code) update_flags_logical(result, carry);
             break;
         default:
             std::cerr << "Unrecognized data processing opcode: " << util::get_instruction_subset(instruction, 24, 21) << "\n";
@@ -213,6 +274,84 @@ inline void arm_7tdmi::multiply(arm_instruction instruction) {
         word val = Rm * Rs;
         set_register(Rn, 0);
         set_register(Rd, val);
+    }
+}
+
+// allow access to CPSR and SPSR registers
+inline void arm_7tdmi::psr_transfer(arm_instruction instruction) {
+    bool spsr = util::get_instruction_subset(instruction, 22, 22) == 1 ? 1 : 0;
+
+    if (util::get_instruction_subset(instruction, 21, 16) == 0b001111) { // MRS (transfer PSR contents to register)
+        word Rd = util::get_instruction_subset(instruction, 15, 12);
+        if (Rd == 15) {
+            std::cerr << "Can't use r15 as a PSR destination register" << "\n";
+            return;
+        }
+
+        if (spsr) { // Rd <- spsr_<mode>
+            set_register(Rd, get_register(17));
+        } else { // Rd <- cpsr
+            set_register(Rd, get_register(16));
+        }
+    } else if (util::get_instruction_subset(instruction, 21, 12) == 0b1010011111) { // MSR (transfer register contents to PSR)
+        word Rm = util::get_instruction_subset(instruction, 3, 0);
+        if (Rm == 15) {
+            std::cerr << "Can't use r15 as a PSR source register" << "\n";
+            return;
+        }
+        
+        // TODO - is it okay to set entire SPR to contents of Rm?
+        // ARM instruction manual says set bits[31:0] but also says to leave reserved bits alone
+        if (spsr) { // spsr_<mode> <- Rm
+            set_register(17, get_register(Rm));
+        } else { // cpsr <- Rm
+            set_register(16, get_register(Rm));
+        }
+    } else if (util::get_instruction_subset(instruction, 21, 12) == 0b1010001111) { // MSR (transfer register contents or immediate value to PSR flag bits only)
+        bool immediate = util::get_instruction_subset(instruction, 25, 25) == 1;
+        word transfer_value;
+        // # of bits in a word (should be 32)
+        size_t num_bits = sizeof(word) * 8;
+
+        if (immediate) { // rotate on immediate value 
+            transfer_value = util::get_instruction_subset(instruction, 7, 0);
+            uint32_t rotate = util::get_instruction_subset(instruction, 11, 8);
+            rotate *= 2; // rotate by twice the value in the rotate field
+
+            // perform right rotation
+            for (int i = 0; i < rotate; ++i) {
+                uint8_t dropped_lsb = transfer_value & 1;  
+                transfer_value >>= 1;
+                transfer_value |= (dropped_lsb << num_bits - 1);
+            }
+        } else { // use value in register
+            transfer_value = util::get_instruction_subset(instruction, 3, 0);
+        }
+
+        // clear bits [27-0] of transfer_value
+        transfer_value >>= 28;
+        transfer_value <<= 28;
+
+        word old_spr_value;
+        if (spsr) {
+            old_spr_value = get_register(17);
+        } else {
+            old_spr_value = get_register(16);
+        }
+
+        // move transfer value into flag bits[31:28] of SPR
+        old_spr_value <<= 4;
+        old_spr_value >>= 4;
+        old_spr_value |= transfer_value;
+        if (spsr) {
+            set_register(17, transfer_value);
+        } else {
+            set_register(16, transfer_value);
+        }
+
+    } else { // should not execute
+        std::cerr << "Bad PSR transfer instruction!" << "\n";
+        return;
     }
 }
 

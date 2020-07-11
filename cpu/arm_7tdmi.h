@@ -22,13 +22,38 @@ struct registers_struct {
     word r14; // subroutine link registers
     word r15; // program counter
 
+    // fiq registers
+    word r8_fiq;
+    word r9_fiq;
+    word r10_fiq;
+    word r11_fiq;
+    word r12_fiq;
+    word r13_fiq;
+    word r14_fiq;
+
+    // svc registers
+    word r13_svc;
+    word r14_svc;
+
+    // abt registers
+    word r13_abt;
+    word r14_abt;
+
+    // irq registers
+    word r13_irq;
+    word r14_irq;
+
+    // und registers
+    word r13_und;
+    word r14_und;
+
     // special registers
     word cpsr;
-    word spsr0;
-    word spsr1;
-    word spsr2;
-    word spsr3;
-    word spsr4;
+    word spsr_fiq;
+    word spsr_svc;
+    word spsr_abt;
+    word spsr_irq;
+    word spsr_und;
 };
 
 class arm_7tdmi {
@@ -53,12 +78,19 @@ class arm_7tdmi {
         void set_mode(cpu_mode_t m) { mode = m; }
 
         word get_register(uint32_t);
-        void set_register(uint32_t reg, word val);
+        void set_register(int reg, word val);
 
         // instruction execution
         void branch_exchange(arm_instruction);
+        void branch_link(arm_instruction);
         void data_processing(arm_instruction);
         void multiply(arm_instruction);
+        void psr_transfer(arm_instruction);
+
+        // misc
+        void update_flags_logical(word, uint8_t);
+        void update_flags_addition(word, word, word);
+        void update_flags_subtraction(word, word, word);
 
     private:
         /* ARM state - 15 general purpose registers and 1 non-gp

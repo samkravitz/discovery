@@ -80,7 +80,7 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
         for (int i = 0; i < rotate; ++i) {
             uint8_t dropped_lsb = op2 & 1;  
             op2 >>= 1;
-            op2 = op2 | (dropped_lsb << num_bits - 1);
+            op2 |= (dropped_lsb << num_bits - 1);
         }
     } else { // op2 is shifted register
         word shift = util::get_instruction_subset(instruction, 11, 4);
@@ -250,31 +250,31 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
 
 inline void arm_7tdmi::multiply(arm_instruction instruction) {
     // assign registers
-    word Rm = util::get_instruction_subset(instruction, 3, 0); // first operand
-    word Rs = util::get_instruction_subset(instruction, 11, 8); // source register
+    word Rm = util::get_instruction_subset(instruction, 3, 0);   // first operand
+    word Rs = util::get_instruction_subset(instruction, 11, 8);  // source register
     word Rn = util::get_instruction_subset(instruction, 15, 12); // second operand
     word Rd = util::get_instruction_subset(instruction, 19, 16); // destination register
     bool accumulate = util::get_instruction_subset(instruction, 21, 21);    
 
-    if(Rd == Rm) {
+    if (Rd == Rm) {
         std::cout << "Rd must not be the same as Rm" << std::endl;
         return;
-    } else if (Rd == get_register(15) || Rm == get_register(15)) {
+    } else if (Rd == 15 || Rm == 15) {
         std::cout << "Register 15 may not be used as destination nor operand register" << std::endl;
         return;
     }
     
-    if(accumulate) {
+    word val;
+    if (accumulate) {
         // multiply-accumulate form gives Rd:=Rm*Rs+Rn
-        word val = Rm * Rs + Rn;
-        set_register(Rd, val);
+        val = Rm * Rs + Rn;
     } else {
         // multiply form of the instruction gives Rd:=Rm*Rs,
         // Rn is set to zero for compatibility with possible future instructionset upgrades
-        word val = Rm * Rs;
+        val = Rm * Rs;
         set_register(Rn, 0);
-        set_register(Rd, val);
     }
+    set_register(Rd, val);
 }
 
 // allow access to CPSR and SPSR registers

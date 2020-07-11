@@ -201,18 +201,18 @@ inline void arm_7tdmi::multiply(arm_instruction instruction) {
     } else if (Rd == get_register(15) || Rm == get_register(15)) {
         std::cout << "Register 15 may not be used as destination nor operand register" << std::endl;
         return;
+    }
+    
+    if(accumulate) {
+        // multiply-accumulate form gives Rd:=Rm*Rs+Rn
+        word val = Rm * Rs + Rn;
+        set_register(Rd, val);
     } else {
-        if(accumulate) {
-            // multiply-accumulate form gives Rd:=Rm*Rs+Rn
-            word val = Rm * Rs + Rn;
-            set_register(Rd, val);
-        } else {
-            // multiply form of the instruction gives Rd:=Rm*Rs,
-            // Rn is set to zero for compatibility with possible future instructionset upgrades
-            word val = Rm * Rs;
-            Rn = 0b0000;
-            set_register(Rd, val);
-        }
+        // multiply form of the instruction gives Rd:=Rm*Rs,
+        // Rn is set to zero for compatibility with possible future instructionset upgrades
+        word val = Rm * Rs;
+        set_register(Rn, 0);
+        set_register(Rd, val);
     }
 }
 

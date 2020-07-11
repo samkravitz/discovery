@@ -3,65 +3,63 @@
 
 #include "common.h"
 
-struct registers_struct {
-    // general purpose registers
-    word r0;
-    word r1;
-    word r2;
-    word r3;
-    word r4;
-    word r5;
-    word r6;
-    word r7;
-    word r8;
-    word r9;
-    word r10;
-    word r11;
-    word r12;
-    word r13;
-    word r14; // subroutine link registers
-    word r15; // program counter
-
-    // fiq registers
-    word r8_fiq;
-    word r9_fiq;
-    word r10_fiq;
-    word r11_fiq;
-    word r12_fiq;
-    word r13_fiq;
-    word r14_fiq;
-
-    // svc registers
-    word r13_svc;
-    word r14_svc;
-
-    // abt registers
-    word r13_abt;
-    word r14_abt;
-
-    // irq registers
-    word r13_irq;
-    word r14_irq;
-
-    // und registers
-    word r13_und;
-    word r14_und;
-
-    // special registers
-    word cpsr;
-    word spsr_fiq;
-    word spsr_svc;
-    word spsr_abt;
-    word spsr_irq;
-    word spsr_und;
-};
-
 class arm_7tdmi {
     public:
         arm_7tdmi();
         ~arm_7tdmi() {};
         
-        registers_struct registers;
+        struct registers_struct {
+            // general purpose registers
+            word r0;
+            word r1;
+            word r2;
+            word r3;
+            word r4;
+            word r5;
+            word r6;
+            word r7;
+            word r8;
+            word r9;
+            word r10;
+            word r11;
+            word r12;
+            word r13;
+            word r14; // subroutine link registers
+            word r15; // program counter
+
+            // fiq registers
+            word r8_fiq;
+            word r9_fiq;
+            word r10_fiq;
+            word r11_fiq;
+            word r12_fiq;
+            word r13_fiq;
+            word r14_fiq;
+
+            // svc registers
+            word r13_svc;
+            word r14_svc;
+
+            // abt registers
+            word r13_abt;
+            word r14_abt;
+
+            // irq registers
+            word r13_irq;
+            word r14_irq;
+
+            // und registers
+            word r13_und;
+            word r14_und;
+
+            // special registers
+            word cpsr;
+            word spsr_fiq;
+            word spsr_svc;
+            word spsr_abt;
+            word spsr_irq;
+            word spsr_und;
+        } registers;
         
         void fetch();
         void decode(arm_instruction);

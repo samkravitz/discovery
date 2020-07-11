@@ -66,15 +66,14 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
     word op2;
     word result;
     uint8_t carry_out = 2;
-
-    // # of bits in a word (should be 32)
-    size_t num_bits = sizeof(word) * 8;
     
     // determine op2 based on whether it's encoded as an immeidate value or register shift
     if (immediate) {
         op2 = util::get_instruction_subset(instruction, 7, 0);
         uint32_t rotate = util::get_instruction_subset(instruction, 11, 8);
         rotate *= 2; // rotate by twice the value in the rotate field
+        // # of bits in a word (should be 32)
+        size_t num_bits = sizeof(word) * 8;
 
         // perform right rotation
         for (int i = 0; i < rotate; ++i) {
@@ -83,80 +82,10 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
             op2 |= (dropped_lsb << num_bits - 1);
         }
     } else { // op2 is shifted register
-        word shift = util::get_instruction_subset(instruction, 11, 4);
         word shifted_register = util::get_instruction_subset(instruction, 3, 0);
-        word shift_type = util::get_instruction_subset(instruction, 6, 5);
-        word shift_amount;
         op2 = get_register(shifted_register);
-
-        // get shift amount
-        if ((shift & 1) == 1) { // shift amount contained in bottom byte of Rs
-            word Rs = util::get_instruction_subset(instruction, 11, 8);
-            shift_amount = get_register(Rs) & 0xFF;
-            // if this amount is 0, skip shifting
-            if (shift_amount == 0) goto decode_opcode;
-        } else { // shift contained in immediate value in instruction
-            shift_amount = util::get_instruction_subset(instruction, 11, 7);
-        }
-
-        // perform shift
-        switch (shift_type) {
-            // LSL
-            case 0b00:
-                if (shift_amount == 0) carry_out = get_condition_code_flag(C); // preserve C flag
-                for (int i = 0; i < shift_amount; ++i) {
-                    carry_out = (op2 >> num_bits - 1) & 1;
-                    op2 <<= 1;
-                }
-                break;
-            
-            // LSR
-            case 0b01:
-                if (shift_amount != 0) { // normal LSR
-                    for (int i = 0; i < shift_amount; ++i) {
-                        carry_out = op2 & 1;
-                        op2 >>= 1;
-                    }
-                } else { // special encoding for LSR #32
-                    carry_out = (op2 >> num_bits - 1) & 1;
-                    op2 = 0;
-                }
-                break;
-            
-            // ASR
-            case 0b10:
-                if (shift_amount != 0) {
-                    for (int i = 0; i < shift_amount; ++i) {
-                        carry_out  = op2 & 1;
-                        uint8_t msb = (op2 >> num_bits - 1) & 1; // most significant bit
-                        op2 >>= 1;
-                        op2 = op2 | (msb << num_bits - 1);
-                    }
-                } else { // special encoding for ASR #32
-                    carry_out = (op2 >> num_bits - 1) & 1;
-                    op2 = carry_out == 0 ? 0 : (word) ~0;
-                }
-                break;
-            
-            // ROR
-            case 0b11:
-                if (shift_amount != 0) { // normal rotate right
-                    for (int i = 0; i < shift_amount; ++i) {
-                        carry_out = op2 & 1;
-                        uint8_t dropped_lsb = op2 & 1;  
-                        op2 >>= 1;
-                        op2 = op2 | (dropped_lsb << num_bits - 1);
-                    }
-                } else { // rotate right extended
-                    carry_out = op2 & 1;
-                    op2 >>= 1;
-                    op2 = op2 | (get_condition_code_flag(C) << num_bits - 1);
-                }
-                break;
-        }
+        carry_out = shift_register(instruction, op2);
     }
-
-    decode_opcode:
     
     // for arithmetic operations that use a carry bit, this will either equal
     // - the carry out bit of the barrel shifter (if a register shift was applied), or

@@ -90,6 +90,7 @@ class arm_7tdmi {
         void update_flags_logical(word, uint8_t);
         void update_flags_addition(word, word, word);
         void update_flags_subtraction(word, word, word);
+        uint8_t shift_register(arm_instruction, word &);
 
     private:
         /* ARM state - 15 general purpose registers and 1 non-gp

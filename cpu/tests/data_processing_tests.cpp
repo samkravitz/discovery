@@ -136,7 +136,7 @@ TEST_CASE("RSC", "[data_processing]") {
     arm.execute(i1);
 
     word result = 0b11111111000000000000000000000000 - 100 + 1 - 1;
-    REQUIRE(arm.registers.r2 == result);
+    REQUIRE(arm.get_register(2) == result);
 }
 
 TEST_CASE("TST", "[data_processing]") {

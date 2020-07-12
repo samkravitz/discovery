@@ -330,11 +330,19 @@ inline void arm_7tdmi::single_data_transfer(arm_instruction instruction) {
         if (byte) { // store one byte to memory
             uint8_t value = get_register(Rd) & 0xFF; // lowest byte in register
             mem.write_u8(base, value);
-            
         } else { // store one word into memory
-
+            mem.write_u32(base, get_register(Rd));
         }
     }
+
+    if (!pre_index) { // offset modification after transfer
+        if (up) base += offset; // offset is added to base
+        else base -= offset; // offset is subtracted from base
+    }
+
+    if (write_back || !pre_index) {
+        if (Rn != 15) set_register(Rn, base);
+    } 
     
 }
 

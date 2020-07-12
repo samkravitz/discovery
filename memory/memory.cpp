@@ -22,6 +22,10 @@ word Memory::read_u32(word address) {
     return value;
 }
 
+byte memory::read_u8(word address) {
+    return memory[address];
+}
+
 void Memory::load_rom(char *name) {
     // struct stat results;
     

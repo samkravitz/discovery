@@ -293,9 +293,14 @@ inline void arm_7tdmi::single_data_transfer(arm_instruction instruction) {
     bool write_back = util::get_instruction_subset(instruction, 21, 21) == 1; // bit 21 set = write address into base, bit 21 0 = no write back
     bool load = util::get_instruction_subset(instruction, 20, 20) == 1;       // bit 20 set = load, bit 20 0 = store
     word Rn = util::get_instruction_subset(instruction, 19, 16);
-    bool Rd = util::get_instruction_subset(instruction, 15, 12);
+    word Rd = util::get_instruction_subset(instruction, 15, 12);
     word offset_encoding = util::get_instruction_subset(instruction, 11, 0);
     word offset; // the actual amount to offset
+
+    if (Rd == 15) {
+        std::cerr << "r15 may not be used as destination register of SDT." << "\n";
+        return;
+    }
 
     if (immediate) {
         offset = offset_encoding;
@@ -305,12 +310,22 @@ inline void arm_7tdmi::single_data_transfer(arm_instruction instruction) {
         shift_register(instruction, offset); // offset will be modified to contain result of shifted register
     }
 
-    
-    if (up) { // offset is added to base
+    word base = get_register(Rn);
 
-    } else { // offset is subtracted from base
+    if (pre_index) { // offset modification before transfer
+        if (up) base += offset; // offset is added to base
+        else base -= offset; // offset is subtracted from base
+    }
+
+    // transfer
+    if (load) { // load from memory to register
+        if (byte) {
+            set_register()
+        }
+    } else { // store from register to memory
 
     }
+    
 }
 
 inline void executeALUInstruction(arm_7tdmi &arm, arm_instruction instruction) {

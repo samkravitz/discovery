@@ -340,8 +340,8 @@ inline void arm_7tdmi::single_data_transfer(arm_instruction instruction) {
         else base -= offset; // offset is subtracted from base
     }
 
-    if (write_back || !pre_index) {
-        if (Rn != 15) set_register(Rn, base);
+    if ((write_back || !pre_index) && Rn != Rd) {
+        set_register(Rn, base);
     } 
     
 }

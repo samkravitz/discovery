@@ -2,12 +2,15 @@
 #define ARM_7TDMI_H
 
 #include "common.h"
+#include "../memory/memory.h"
 
 class arm_7tdmi {
     public:
         arm_7tdmi();
         ~arm_7tdmi() {};
         
+        Memory mem;
+
         struct registers_struct {
             // general purpose registers
             word r0;

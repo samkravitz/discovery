@@ -10,6 +10,18 @@ Memory::Memory() {
 
 Memory::~Memory() {}
 
+word Memory::read_u32(word address) {
+    word value = 0;
+    value |= memory[address];
+    value <<= 8;
+    value |= memory[address + 1];
+    value <<= 8;
+    value |= memory[address + 2];
+    value <<= 8;
+    value |= memory[address + 3];
+    return value;
+}
+
 void Memory::load_rom(char *name) {
     // struct stat results;
     

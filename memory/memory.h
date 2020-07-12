@@ -16,7 +16,10 @@ class Memory {
         void load_rom(char *);
         arm_instruction get_instruction(word);
         uint8_t *get_memory() { return memory; }
-    
+
+        word read_u32(word);
+        halfword read_u16(word);
+        byte read_u8(word);
     private:
         std::size_t size;
 };

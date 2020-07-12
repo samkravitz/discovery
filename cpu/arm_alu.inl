@@ -294,7 +294,23 @@ inline void arm_7tdmi::single_data_transfer(arm_instruction instruction) {
     bool load = util::get_instruction_subset(instruction, 20, 20) == 1;       // bit 20 set = load, bit 20 0 = store
     word Rn = util::get_instruction_subset(instruction, 19, 16);
     bool Rd = util::get_instruction_subset(instruction, 15, 12);
-    word offset = util::get_instruction_subset(instruction, 11, 0);
+    word offset_encoding = util::get_instruction_subset(instruction, 11, 0);
+    word offset; // the actual amount to offset
+
+    if (immediate) {
+        offset = offset_encoding;
+    } else { // op2 is a shifted register
+        word offset_register = util::get_instruction_subset(instruction, 3, 0);
+        offset = get_register(offset_register);
+        shift_register(instruction, offset); // offset will be modified to contain result of shifted register
+    }
+
+    
+    if (up) { // offset is added to base
+
+    } else { // offset is subtracted from base
+
+    }
 }
 
 inline void executeALUInstruction(arm_7tdmi &arm, arm_instruction instruction) {

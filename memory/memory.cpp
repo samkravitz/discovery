@@ -22,8 +22,19 @@ word Memory::read_u32(word address) {
     return value;
 }
 
-byte memory::read_u8(word address) {
+byte Memory::read_u8(word address) {
     return memory[address];
+}
+
+void Memory::write_u32(word address, word value) {
+    memory[address] = value & 0xFF;
+    memory[address + 1] = (value >> 8) & 0xFF;
+    memory[address + 2] = (value >> 16) & 0xFF;
+    memory[address + 3] = (value >> 24) & 0xFF;
+}
+
+void Memory::write_u8(word address, byte value) {
+    memory[address] = value;
 }
 
 void Memory::load_rom(char *name) {

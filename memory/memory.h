@@ -17,9 +17,14 @@ class Memory {
         arm_instruction get_instruction(word);
         uint8_t *get_memory() { return memory; }
 
+        // read / write from memory
         word read_u32(word);
         halfword read_u16(word);
         byte read_u8(word);
+        void write_u8(word, byte);
+        void write_u16(word, halfword);
+        void write_u32(word, word);
+
     private:
         std::size_t size;
 };

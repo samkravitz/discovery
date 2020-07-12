@@ -319,11 +319,21 @@ inline void arm_7tdmi::single_data_transfer(arm_instruction instruction) {
 
     // transfer
     if (load) { // load from memory to register
-        if (byte) {
-            set_register()
+        if (byte) { // load one byte from memory, sign extend 0s
+            word value = 0;
+            value |= mem.read_u8(base);
+            set_register(Rd, value);
+        } else { // load one word from memory
+            set_register(Rd, mem.read_u32(base));
         }
     } else { // store from register to memory
+        if (byte) { // store one byte to memory
+            uint8_t value = get_register(Rd) & 0xFF; // lowest byte in register
+            mem.write_u8(base, value);
+            
+        } else { // store one word into memory
 
+        }
     }
     
 }

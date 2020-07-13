@@ -8,7 +8,7 @@ void run_asm(char *name) {
     arm.mem.load_rom(name);
     arm_instruction i;
     while (true) {
-        i = arm.mem.get_instruction(arm.registers.r15);
+        i = arm.mem.read_u32(arm.registers.r15);
         std::cout << i << "\n";
         arm.execute(i);
         if (i == 0) arm.registers.r15 += 4;
@@ -17,7 +17,7 @@ void run_asm(char *name) {
 
 int main(int argc, char **argv) {
     std::cout << "Gameboy emulator!" << "\n";
-    //run_asm(argv[1]);
+    run_asm(argv[1]);
     Memory mem;
     word address = 0x1000;
     mem.write_u32(address, 0xABCDEFA0);

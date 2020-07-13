@@ -72,3 +72,26 @@ TEST_CASE("branch_link") {
     REQUIRE(arm2.registers.r15 == 60);
 }
 
+TEST_CASE("single_data_transfer") {
+    // 1110 01 I P U B W L Rn Rd 000000000000
+    arm_7tdmi arm;
+    // base r0 dest r1
+    arm.registers.r0 = 0x1000;
+    arm.mem.write_u32(0x1000, 0xABCDEFA0);
+    // LDR R1, 0x1000
+    // Load value of address 0x1000 with 0 immediate offset to register 1
+    arm_instruction i = 0b11100111100100000001000000000000;
+    arm.execute(i);
+
+    REQUIRE(arm.registers.r1 == 0xABCDEFA0);
+
+    arm_7tdmi arm2;
+    // base r3 source r4 Rm r7
+    arm2.registers.r3 = 0;
+    arm2.registers.r4 = 0xBEEFBEEF;
+    arm2.registers.r7 = 0b1111;
+    // STRB r4, r3 where offset comes from register 7 (1111), LSL 4 times to become 0xf0
+    arm_instruction i2 = 0b11100101110000110100001000000111;
+    arm2.execute(i2);
+    REQUIRE(arm2.mem.read_u8(0xf0) == 0xEF);
+}

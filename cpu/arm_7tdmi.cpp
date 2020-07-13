@@ -1,3 +1,12 @@
+/* discovery
+ * License: GPLv2
+ * See LICENSE.txt for full license text
+ * Author: Sam Kravitz
+ * 
+ * FILE: arm_7tdmi.cpp
+ * DATE: July 13, 2020
+ * DESCRIPTION: Implementation of arm7tdmi functions
+ */
 #include <iostream>
 #include <bitset>
 

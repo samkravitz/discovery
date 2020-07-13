@@ -1,12 +1,11 @@
 /* discovery
- * License: MIT
+ * License: GPLv2
  * See LICENSE.txt for full license text
  * 
  * FILE: util.h
  * DATE: June 19, 2020
  * DESCRIPTION: utility functions that don't belong in any class
  */
-
 #ifndef UTIL_H
 #define UTIL_H
 

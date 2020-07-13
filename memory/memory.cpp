@@ -1,3 +1,12 @@
+/* discovery
+ * License: GPLv2
+ * See LICENSE.txt for full license text
+ * Author: Sam Kravitz
+ * 
+ * FILE: memory.cpp
+ * DATE: July 13, 2020
+ * DESCRIPTION: Implementation of memory related functions
+ */
 #include "memory.h"
 
 #include <fstream>

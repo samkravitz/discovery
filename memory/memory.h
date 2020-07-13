@@ -1,3 +1,12 @@
+/* discovery
+ * License: GPLv2
+ * See LICENSE.txt for full license text
+ * Author: Sam Kravitz
+ * 
+ * FILE: memory.h
+ * DATE: July 13, 2020
+ * DESCRIPTION: GBA memory class defintion
+ */
 #ifndef MEMORY_H
 #define MEMORY_H
 

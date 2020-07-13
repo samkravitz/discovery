@@ -1,3 +1,12 @@
+/* discovery
+ * License: GPLv2
+ * See LICENSE.txt for full license text
+ * Author: Sam Kravitz
+ * 
+ * FILE: arm_7tdmi.h
+ * DATE: July 13, 2020
+ * DESCRIPTION: class definition for arm7tdmi
+ */
 #ifndef ARM_7TDMI_H
 #define ARM_7TDMI_H
 

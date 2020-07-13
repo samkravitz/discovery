@@ -7,6 +7,7 @@
 #include "../arm_7tdmi.h"
 #include "../common.h"
 #include "../util.h"
+#include "../../memory/memory.h"
 
 TEST_CASE("ConditionFlagTests", "[condition_flag]") {
     arm_7tdmi arm;
@@ -210,4 +211,12 @@ TEST_CASE("InstructionSubset", "[instruction_subset]") {
 
     // flipped order of operands
     REQUIRE(util::get_instruction_subset(b, 0, 4) == 0b0000);
+}
+
+TEST_CASE("MemoryTests", "[mem_tests]") {
+    Memory mem;
+    word address = 0x1000;
+    mem.write_u32(address, 0xABCDEFA0);
+    REQUIRE(mem.read_u8(address) == 0xA0);
+    REQUIRE(mem.read_u32(address) == 0xABCDEFA0);
 }

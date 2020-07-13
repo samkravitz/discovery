@@ -16,13 +16,13 @@ Memory::~Memory() {
 
 word Memory::read_u32(word address) {
     word value = 0;
-    value |= memory[address];
-    value <<= 8;
-    value |= memory[address + 1];
+    value |= memory[address + 3];
     value <<= 8;
     value |= memory[address + 2];
     value <<= 8;
-    value |= memory[address + 3];
+    value |= memory[address + 1];
+    value <<= 8;
+    value |= memory[address];
     return value;
 }
 
@@ -42,10 +42,8 @@ void Memory::write_u8(word address, byte value) {
 }
 
 void Memory::load_rom(char *name) {
-    std::cout << "hi1\n";
     std::ifstream rom(name, std::ios::in | std::ios::binary);
     if (!rom) return;
-    std::cout << "hi2\n";
     size_t size = fs::file_size(name);
 
     if (!rom.good()) {

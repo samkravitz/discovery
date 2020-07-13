@@ -17,19 +17,13 @@ void run_asm(char *name) {
 
 int main(int argc, char **argv) {
     std::cout << "Gameboy emulator!" << "\n";
-    run_asm(argv[1]);
-    //arm_7tdmi arm;
-    //Memory mem;
+    //run_asm(argv[1]);
+    Memory mem;
+    word address = 0x1000;
+    mem.write_u32(address, 0xABCDEFA0);
+    mem.read_u8(address);
+    mem.read_u32(address);
 
-    // // source r1, dest r2
-    // arm.registers.r1 = 100;
-    // arm.registers.r11 = 0b10000000000000000000000001010101; // 7 digits
 
-    // // reverse subtract carry with ASR with destination register 11 shifted 7 times (10)
-    // // 0001 00 0 0111 1 0001 0010 00111 10 0 1011;
-    // arm_instruction i1 = 0b00010000111100010010001111001011;
-    // arm.execute(i1);
-
-    // word result = 0b11111111000000000000000000000000 - 100 + 1 - 1;
-    return 1 + 2;
+    return 0;
 }

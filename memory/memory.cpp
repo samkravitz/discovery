@@ -26,6 +26,14 @@ word Memory::read_u32(word address) {
     return value;
 }
 
+halfword Memory::read_u16(word address) {
+    halfword value = 0;
+    value |= memory[address + 1];
+    value <<= 8;
+    value |= memory[address];
+    return value;
+}
+
 byte Memory::read_u8(word address) {
     return memory[address];
 }
@@ -35,6 +43,11 @@ void Memory::write_u32(word address, word value) {
     memory[address + 1] = (value >> 8) & 0xFF;
     memory[address + 2] = (value >> 16) & 0xFF;
     memory[address + 3] = (value >> 24) & 0xFF;
+}
+
+void Memory::write_u16(word address, halfword value) {
+    memory[address] = value & 0xFF;
+    memory[address + 1] = (value >> 8) & 0xFF;
 }
 
 void Memory::write_u8(word address, byte value) {

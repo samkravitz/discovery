@@ -95,3 +95,44 @@ TEST_CASE("single_data_transfer") {
     arm2.execute(i2);
     REQUIRE(arm2.mem.read_u8(0xf0) == 0xEF);
 }
+
+TEST_CASE("halfword_data_transfer") {
+    // TEST 1 - LOAD SIGNED HALFWORD
+    // 1110 000 P U I W L Rn Rd 0000 1SH1 Rm
+    arm_7tdmi arm1;
+    // base r10 dest r11 offset r12
+    arm1.registers.r10 = 0x1000;
+    arm1.registers.r12 = 0x1000;
+    arm1.mem.write_u16(0x1000, 0b1111000011110000); // memory address 0x1000 = 0b1111000011110000
+    // 1110 000 0 1 0 0 1 1010 1011 0000 1111 1100
+    // load signed halfword from address 0x1000 into r11
+    arm_instruction i1 = 0b11100000100110101011000011111100;
+    arm1.execute(i1);
+    REQUIRE(arm1.registers.r11 == 0b11111111111111111111000011110000); // r11 should be sign extended with 1s
+    REQUIRE(arm1.registers.r10 == 0x2000); // was a post index, so write back is guaranteed
+
+    // TEST 2 - STORE UNSIGNED HALFWORD
+    arm_7tdmi arm2;
+    // base r1 source r2
+    arm2.registers.r1 = 0xABCD;
+    arm2.registers.r2 = 0x1001;
+    // 1110 000 1 1 1 0 0 0001 0010 1111 1011 0000
+    // store unsigned halfword from r2 into Address ABCD + immediate offset 0b11110000 (pre-index)
+    arm_instruction i2 = 0b11100001110000010010111110110000;
+    arm2.execute(i2);
+    REQUIRE(arm2.mem.read_u16(0xABCD + 0b11110000) == 0x1001);
+    REQUIRE(arm2.registers.r1 == 0xABCD); // was a pre index with no writeback
+
+    // TEST 3 - LOAD SIGNED BYTE
+    arm_7tdmi arm3;
+    // base r6, dest r7, offset r8
+    arm3.registers.r6 = 0x1004;    
+    arm3.registers.r8 = 4;
+    arm3.mem.write_u16(0x1000, 124); // memory address 0x1000 = 155
+    // 1110 000 1 0 0 0 1 0110 0111 0000 1101 1000
+    // load signed byte (124) from address 0x1004 - offset address (r8)
+    arm_instruction i3 = 0b11100001000101100111000011011000;
+    arm3.execute(i3);
+    REQUIRE(arm3.registers.r7 == 124); // r7 should be sign extended with 0s
+    REQUIRE(arm3.registers.r6 == 0x1004); // was a pre index with no writeback
+}

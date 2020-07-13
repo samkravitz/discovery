@@ -11,7 +11,7 @@ class Memory {
         Memory();
         ~Memory();
 
-        uint8_t memory[GBA_MEM_SIZE];
+        uint8_t *memory;
         
         void load_rom(char *);
         arm_instruction get_instruction(word);

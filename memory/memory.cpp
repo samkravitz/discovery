@@ -2,13 +2,17 @@
 
 #include <fstream>
 #include <iostream>
-#include <sys/stat.h>
+#include <experimental/filesystem>
+
+namespace fs = std::experimental::filesystem;
 
 Memory::Memory() {
-    for (int i = 0; i < GBA_MEM_SIZE; ++i) memory[i] = 0;
+    memory = new uint8_t[GBA_MEM_SIZE]();
 }
 
-Memory::~Memory() {}
+Memory::~Memory() {
+    delete memory;
+}
 
 word Memory::read_u32(word address) {
     word value = 0;
@@ -38,20 +42,19 @@ void Memory::write_u8(word address, byte value) {
 }
 
 void Memory::load_rom(char *name) {
-    // struct stat results;
-    
-    // if (stat(name, &results) != 0) return;
-    // memory = new uint8_t[results.st_size];
-    // size = results.st_size;
+    std::cout << "hi1\n";
+    std::ifstream rom(name, std::ios::in | std::ios::binary);
+    if (!rom) return;
+    std::cout << "hi2\n";
+    size_t size = fs::file_size(name);
 
-    // std::ifstream rom(name, std::ios::in | std::ios::binary);
-    // if (!rom) return;
+    if (!rom.good()) {
+        std::cerr << "Bad rom!" << "\n";
+        return;
+    }
 
-    // for (int i = 0; i < size; ++i) {
-    //     rom.read((char *) &memory[i], sizeof(uint8_t));
-    //     std::cout << std::hex << (int) memory[i] << std::endl;
-    // }
-    
+    rom.read((char *) memory, size);
+    rom.close();
 }
 
 arm_instruction Memory::get_instruction(word address) {

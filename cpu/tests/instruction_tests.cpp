@@ -1,6 +1,5 @@
 #include "catch.hpp"
 
-#include "../cpu.h"
 #include "../common.h"
 #include "../util.h"
 #include "../arm_7tdmi.h"

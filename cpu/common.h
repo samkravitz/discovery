@@ -71,8 +71,7 @@ typedef enum Condition {
  * MUL - Multiply 
  * SDS - Single Data Swap
  * BEX - Branch and Exchange
- * HDT_RO - Halfword Data Transfer: register offset
- * HDT_IO - Halfword Data Transfer: immediate offset
+ * HDT - Halfword Data Transfer
  * SDT - Single Data Transfer
  * UNDEF - Undefined
  * BDT - Block Data Transfer
@@ -91,8 +90,7 @@ typedef enum InstructionSetFormat {
     MUL,
     SDS,
     BEX,
-    HDT_RO,
-    HDT_IO,
+    HDT,
     SDT,
     UNDEF,
     BDT,

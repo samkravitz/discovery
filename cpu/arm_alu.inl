@@ -296,7 +296,7 @@ inline void arm_7tdmi::single_data_transfer(arm_instruction instruction) {
     word Rd = util::get_instruction_subset(instruction, 15, 12);
     word offset_encoding = util::get_instruction_subset(instruction, 11, 0);
     word offset; // the actual amount to offset
-
+    
     if (Rd == 15) {
         std::cerr << "r15 may not be used as destination register of SDT." << "\n";
         return;
@@ -340,10 +340,87 @@ inline void arm_7tdmi::single_data_transfer(arm_instruction instruction) {
         else base -= offset; // offset is subtracted from base
     }
 
-    if ((write_back || !pre_index) && Rn != Rd) {
+    if ((write_back || !pre_index) && Rn != Rd && Rn != 15) {
         set_register(Rn, base);
     } 
     
+}
+
+// transfer halfword and signed data
+inline void arm_7tdmi::halfword_data_transfer(arm_instruction instruction) {
+    bool pre_index = util::get_instruction_subset(instruction, 24, 24) == 1;  // bit 24 set = pre index, bit 24 0 = post index
+    bool up = util::get_instruction_subset(instruction, 23, 23) == 1;         // bit 23 set = up, bit 23 0 = down
+    bool immediate = util::get_instruction_subset(instruction, 22, 22) == 1;
+    bool write_back = util::get_instruction_subset(instruction, 21, 21) == 1; // bit 21 set = write address into base, bit 21 0 = no write back
+    bool load = util::get_instruction_subset(instruction, 20, 20) == 1;       // bit 20 set = load, bit 20 0 = store
+    word Rn = util::get_instruction_subset(instruction, 19, 16);              // base register
+    word Rd = util::get_instruction_subset(instruction, 15, 12);              // src/dest register
+    word Rm = util::get_instruction_subset(instruction, 3, 0);                // offset register
+    word offset;
+    word base = get_register(Rn);
+
+    if (Rm == 15) {
+        std::cerr << "r15 cannot be used as offset register for HDT" << "\n";
+    }
+
+    if (immediate) {
+        word high_nibble = util::get_instruction_subset(instruction, 11, 8);
+        word low_nibble = util::get_instruction_subset(instruction, 3, 0);
+        offset = (high_nibble << 4) | low_nibble;
+    } else {
+        offset = get_register(Rm);
+    }
+
+    if (pre_index) { // offset modification before transfer
+        if (up) base += offset; // offset is added to base
+        else base -= offset; // offset is subtracted from base
+    }
+
+    // transfer
+    switch (util::get_instruction_subset(instruction, 6, 5)) { // SH bits
+        case 0b01: // unsigned halfwords
+                if (load) {
+                    set_register(Rd, mem.read_u16(base));
+                } else {
+                    mem.write_u16(base, get_register(Rd) & 0xFFFF);
+                }
+            break;
+        
+        case 0b10: // signed byte
+                if (load) {
+                    word value = (word) mem.read_u8(base);
+                    if (value & 0x80) value |= ~0b11111111; // bit 7 of byte is 1, so sign extend bits 31-8 of register
+                    set_register(Rd, value);
+                } else {
+                    std::cerr << "Cannot store a signed byte in HDT!" << "\n";
+                    return;
+                }
+            break;
+        
+        case 0b11: // signed halfwords
+                if (load) {
+                    word value = (word) mem.read_u16(base);
+                    if (value & 0x8000) value |= ~0b1111111111111111; // bit 15 of byte is 1, so sign extend bits 31-8 of register
+                    set_register(Rd, value);
+                } else {
+                    std::cerr << "Cannot store a signed byte in HDT!" << "\n";
+                    return;
+                }
+            break;
+        
+        default:
+            std::cerr << "SH bits are 00! SWP instruction was decoded as HDT!" << "\n";
+            return;
+    }
+
+    if (!pre_index) {
+        if (up) base += offset; // offset is added to base
+        else base -= offset; // offset is subtracted from base
+    }
+
+    if ((write_back || !pre_index) && Rn != 15) {
+        set_register(Rn, base);
+    }
 }
 
 inline void executeALUInstruction(arm_7tdmi &arm, arm_instruction instruction) {

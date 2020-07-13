@@ -76,6 +76,9 @@ void arm_7tdmi::execute(arm_instruction instruction) {
         case SDT:
             single_data_transfer(instruction);
             break;
+        case HDT:
+            halfword_data_transfer(instruction);
+            break;
         default:
             std::cerr << "Cannot execute instruction: " << instruction << "\n";
     }

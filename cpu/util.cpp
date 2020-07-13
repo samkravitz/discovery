@@ -70,7 +70,7 @@ instruction_set_format_t util::get_instruction_format(arm_instruction instructio
     else if ((instruction & 0xD900000) == 0x1000000) { // 24th bit is 1;
         if ((instruction & 0x80) && (instruction & 0x10) && ((instruction & 0x2000000) == 0)) { // 7th bit is 1, 4th bit is 1, 25th bit is 0
             if ((instruction >> 5 & 0x3) == 0) return SDS; // bits 5-6 are 00
-            else return HDT_IO;
+            else return HDT;
         } 
         else return PSR;
     }
@@ -90,7 +90,7 @@ instruction_set_format_t util::get_instruction_format(arm_instruction instructio
                 else return MUL;
             }
             else if (instruction & 0x2000000) return DP;
-            else return HDT_IO;
+            else return HDT;
         }
 
         else return DP;

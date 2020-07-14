@@ -136,3 +136,66 @@ TEST_CASE("halfword_data_transfer") {
     REQUIRE(arm3.registers.r7 == 124); // r7 should be sign extended with 0s
     REQUIRE(arm3.registers.r6 == 0x1004); // was a pre index with no writeback
 }
+
+TEST_CASE("block_data_transfer") {
+    // 1110 100 P U S W L Rn 0000000000000000
+    // TEST 1 - STM POST-INCREMENT
+    arm_7tdmi arm1;
+    // Rn = 10, registers list is r1, r5, r7
+    arm1.registers.r10 = 0x1000;
+    arm1.registers.r1 = 1;
+    arm1.registers.r5 = 5;
+    arm1.registers.r7 = 7;
+    // 1110 100 0 1 0 1 0 1010 0000000010100010
+    arm_instruction i1 = 0b11101000101010100000000010100010;
+    arm1.execute(i1);
+    REQUIRE(arm1.registers.r10 == 0x100c);
+    REQUIRE(arm1.mem.read_u32(0x1000) == 1);
+    REQUIRE(arm1.mem.read_u32(0x1004) == 5);
+    REQUIRE(arm1.mem.read_u32(0x1008) == 7);
+
+    // TEST 2 - STM PRE-INCREMENT
+    arm_7tdmi arm2;
+    // Rn = 10, registers list is r1, r5, r7
+    arm2.registers.r10 = 0x1000;
+    arm2.registers.r1 = 1;
+    arm2.registers.r5 = 5;
+    arm2.registers.r7 = 7;
+    // 1110 100 1 1 0 1 0 1010 0000000010100010
+    arm_instruction i2 = 0b11101001101010100000000010100010;
+    arm2.execute(i2);
+    REQUIRE(arm2.registers.r10 == 0x100c);
+    REQUIRE(arm2.mem.read_u32(0x1004) == 1);
+    REQUIRE(arm2.mem.read_u32(0x1008) == 5);
+    REQUIRE(arm2.mem.read_u32(0x100c) == 7);
+
+    // TEST 3 - STM POST-DECREMENT
+    arm_7tdmi arm3;
+    // Rn = 10, registers list is r1, r5, r7
+    arm3.registers.r10 = 0x1000;
+    arm3.registers.r1 = 1;
+    arm3.registers.r5 = 5;
+    arm3.registers.r7 = 7;
+    // 1110 100 0 0 0 1 0 1010 0000000010100010
+    arm_instruction i3 = 0b11101000001010100000000010100010;
+    arm3.execute(i3);
+    REQUIRE(arm3.registers.r10 == 0x0ff4);
+    REQUIRE(arm3.mem.read_u32(0x1000) == 7);
+    REQUIRE(arm3.mem.read_u32(0x0ffc) == 5);
+    REQUIRE(arm3.mem.read_u32(0x0ff8) == 1);
+
+    // TEST 4 - STM PRE-DECREMENT
+    arm_7tdmi arm4;
+    // Rn = 10, registers list is r1, r5, r7
+    arm4.registers.r10 = 0x1000;
+    arm4.registers.r1 = 1;
+    arm4.registers.r5 = 5;
+    arm4.registers.r7 = 7;
+    // 1110 100 1 0 0 1 0 1010 0000000010100010
+    arm_instruction i4 = 0b11101001001010100000000010100010;
+    arm4.execute(i4);
+    REQUIRE(arm4.registers.r10 == 0x0ff4);
+    REQUIRE(arm4.mem.read_u32(0x0ffc) == 7);
+    REQUIRE(arm4.mem.read_u32(0x0ff8) == 5);
+    REQUIRE(arm4.mem.read_u32(0x0ff4) == 1);
+}

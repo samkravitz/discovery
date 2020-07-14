@@ -450,6 +450,10 @@ inline void arm_7tdmi::block_data_transfer(arm_instruction instruction) {
         }
         if (i == Rn) register_list_contains_rn = true;
     }
+    
+    // skip transfer if register list is all 0s
+    // avoids indexing set_registers[-1] for decrement
+    if (num_registers == 0) goto after_transfer;
 
     /*
      * Transfer registers or memory
@@ -463,7 +467,7 @@ inline void arm_7tdmi::block_data_transfer(arm_instruction instruction) {
                 if (!pre_index) base += 4;
             }
         } else { // addresses decrement
-            for (int i = num_registers; i >= 0; --i) {
+            for (int i = num_registers - 1; i >= 0; --i) {
                 if (pre_index) base -= 4;
                 set_register(set_registers[i], mem.read_u32(base));
                 if (!pre_index) base -= 4;
@@ -477,7 +481,7 @@ inline void arm_7tdmi::block_data_transfer(arm_instruction instruction) {
                 if (!pre_index) base += 4;
             }
         } else { // addresses decrement
-            for (int i = num_registers; i >= 0; --i) {
+            for (int i = num_registers - 1; i >= 0; --i) {
                 if (pre_index) base -= 4;
                 mem.write_u32(base, get_register(set_registers[i]));
                 if (!pre_index) base -= 4;
@@ -485,6 +489,8 @@ inline void arm_7tdmi::block_data_transfer(arm_instruction instruction) {
         }
     }
 
+    after_transfer:
+    
     if (write_back || (load && register_list_contains_rn)) {
         set_register(Rn, base);
     }

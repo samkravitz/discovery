@@ -434,17 +434,21 @@ inline void arm_7tdmi::block_data_transfer(arm_instruction instruction) {
     word base = get_register(Rn);
     int num_registers = 0; // number of set bits in the register list, should be between 0-16
     int set_registers[16];
+    bool register_list_contains_rn = false;
 
     if (Rn == 15) {
         std::cerr << "r15 cannot be used as base register in BDT!" << "\n";
+        return;
     }
 
     // get set registers in list
+    // also determine if register list contains Rn
     for (int i = 0; i < 16; ++i) {
         if (register_list >> i & 1) {
             set_registers[num_registers] = i;
             num_registers++;
         }
+        if (i == Rn) register_list_contains_rn = true;
     }
 
     /*
@@ -479,6 +483,10 @@ inline void arm_7tdmi::block_data_transfer(arm_instruction instruction) {
                 if (!pre_index) base -= 4;
             }
         }
+    }
+
+    if (write_back || (load && register_list_contains_rn)) {
+        set_register(Rn, base);
     }
 }
 

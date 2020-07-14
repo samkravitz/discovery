@@ -423,6 +423,65 @@ inline void arm_7tdmi::halfword_data_transfer(arm_instruction instruction) {
     }
 }
 
+inline void arm_7tdmi::block_data_transfer(arm_instruction instruction) {
+    bool pre_index = util::get_instruction_subset(instruction, 24, 24) == 1;  // bit 24 set = pre index, bit 24 0 = post index
+    bool up = util::get_instruction_subset(instruction, 23, 23) == 1;         // bit 23 set = up, bit 23 0 = down
+    bool load_psr = util::get_instruction_subset(instruction, 22, 22) == 1;   // bit 22 set = load PSR or force user mode
+    bool write_back = util::get_instruction_subset(instruction, 21, 21) == 1; // bit 21 set = write address into base, bit 21 0 = no write back
+    bool load = util::get_instruction_subset(instruction, 20, 20) == 1;       // bit 20 set = load, bit 20 0 = store
+    word Rn = util::get_instruction_subset(instruction, 19, 16);              // base register
+    word register_list = util::get_instruction_subset(instruction, 15, 0);
+    word base = get_register(Rn);
+    int num_registers = 0; // number of set bits in the register list, should be between 0-16
+    int set_registers[16];
+
+    if (Rn == 15) {
+        std::cerr << "r15 cannot be used as base register in BDT!" << "\n";
+    }
+
+    // get set registers in list
+    for (int i = 0; i < 16; ++i) {
+        if (register_list >> i & 1) {
+            set_registers[num_registers] = i;
+            num_registers++;
+        }
+    }
+
+    /*
+     * Transfer registers or memory
+     * One of the ugliest blocks of code I've ever written... yikes
+     */
+    if (load) { // load from addresses into register list
+        if (up) { // addresses increment 
+            for (int i = 0; i < num_registers; ++i) {
+                if (pre_index) base += 4;
+                set_register(set_registers[i], mem.read_u32(base));
+                if (!pre_index) base += 4;
+            }
+        } else { // addresses decrement
+            for (int i = num_registers; i >= 0; --i) {
+                if (pre_index) base -= 4;
+                set_register(set_registers[i], mem.read_u32(base));
+                if (!pre_index) base -= 4;
+            }
+        }
+    } else { // store from address list into memory
+        if (up) { // addresses increment 
+            for (int i = 0; i < num_registers; ++i) {
+                if (pre_index) base += 4;
+                mem.write_u32(base, get_register(set_registers[i]));
+                if (!pre_index) base += 4;
+            }
+        } else { // addresses decrement
+            for (int i = num_registers; i >= 0; --i) {
+                if (pre_index) base -= 4;
+                mem.write_u32(base, get_register(set_registers[i]));
+                if (!pre_index) base -= 4;
+            }
+        }
+    }
+}
+
 inline void executeALUInstruction(arm_7tdmi &arm, arm_instruction instruction) {
     std::cout << "Got to the ALU!\n";
 }

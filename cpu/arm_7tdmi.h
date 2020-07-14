@@ -98,6 +98,7 @@ class arm_7tdmi {
         void psr_transfer(arm_instruction);
         void single_data_transfer(arm_instruction);
         void halfword_data_transfer(arm_instruction);
+        void block_data_transfer(arm_instruction);
 
         // misc
         void update_flags_logical(word, uint8_t);

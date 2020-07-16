@@ -198,4 +198,15 @@ TEST_CASE("block_data_transfer") {
     REQUIRE(arm4.mem.read_u32(0x0ffc) == 7);
     REQUIRE(arm4.mem.read_u32(0x0ff8) == 5);
     REQUIRE(arm4.mem.read_u32(0x0ff4) == 1);
+
+    // TEST 5 - LDM PRE-INCREMENT
+    // Rn = 9, registers list is r2, r3, r4
+    arm1.registers.r9 = 0x01000;
+
+    // 1110 100 1 1 0 1 1 1001 0000000000011100
+    arm_instruction i5 = 0b11101000101110010000000000011100;
+    arm1.execute(i5);
+    REQUIRE(arm1.registers.r2 == 1);
+    REQUIRE(arm1.registers.r3 == 5);
+    REQUIRE(arm1.registers.r4 == 7);
 }

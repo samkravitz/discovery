@@ -18,15 +18,21 @@ void run_asm(char *name) {
 int main(int argc, char **argv) {
     std::cout << "Gameboy emulator!" << "\n";
     //run_asm(argv[1]);
-    arm_7tdmi arm3;
+    arm_7tdmi arm1;
     // Rn = 10, registers list is r1, r5, r7
-    arm3.registers.r10 = 0x1000;
-    arm3.registers.r1 = 1;
-    arm3.registers.r5 = 5;
-    arm3.registers.r7 = 7;
-    // 1110 100 0 0 0 1 0 1010 0000000010100010
-    arm_instruction i3 = 0b11101000001010100000000010100010;
-    arm3.execute(i3);
+    arm1.registers.r10 = 0x1000;
+    arm1.registers.r1 = 1;
+    arm1.registers.r5 = 5;
+    arm1.registers.r7 = 7;
+    // 1110 100 0 1 0 1 0 1010 0000000010100010
+    arm_instruction i1 = 0b11101000101010100000000010100010;
+    arm1.execute(i1);
+
+    arm1.registers.r9 = 0x0ffc;
+
+    // 1110 100 1 1 0 1 1 1001 0000000000011100
+    arm_instruction i5 = 0b11101000101110010000000000011100;
+    arm1.execute(i5);
 
 
     return 0;

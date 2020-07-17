@@ -18,22 +18,24 @@ void run_asm(char *name) {
 int main(int argc, char **argv) {
     std::cout << "Gameboy emulator!" << "\n";
     //run_asm(argv[1]);
-    arm_7tdmi arm1;
-    // Rn = 10, registers list is r1, r5, r7
-    arm1.registers.r10 = 0x1000;
-    arm1.registers.r1 = 1;
-    arm1.registers.r5 = 5;
-    arm1.registers.r7 = 7;
-    // 1110 100 0 1 0 1 0 1010 0000000010100010
-    arm_instruction i1 = 0b11101000101010100000000010100010;
-    arm1.execute(i1);
-
-    arm1.registers.r9 = 0x0ffc;
-
-    // 1110 100 1 1 0 1 1 1001 0000000000011100
-    arm_instruction i5 = 0b11101000101110010000000000011100;
-    arm1.execute(i5);
-
+    arm_7tdmi arm6;
+    // Rn = 10, registers list is r8, r9, r11
+    // 1110 100 0 1 1 1 0 1010 0000101100000000
+    arm_instruction i6 = 0b11101000111010100000101100000000;
+    arm6.set_register(10, 0x1000);
+    arm6.set_register(8, 1);
+    arm6.set_register(9, 5);
+    arm6.set_register(11, 7);
+    arm6.set_state(FIQ);
+    arm6.set_register(10, 0x1000);
+    arm6.set_register(8, 2);
+    arm6.set_register(9, 4);
+    arm6.set_register(11, 6);
+    arm6.execute(i6);
+    // REQUIRE(arm6.registers.r10 == 0x1000);
+    // REQUIRE(arm6.mem.read_u32(0x1000) == 1);
+    // REQUIRE(arm6.mem.read_u32(0x1004) == 5);
+    // REQUIRE(arm6.mem.read_u32(0x1008) == 7);
 
     return 0;
 }

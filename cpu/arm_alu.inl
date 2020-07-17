@@ -453,8 +453,10 @@ inline void arm_7tdmi::block_data_transfer(arm_instruction instruction) {
         if (i == Rn) register_list_contains_rn = true;
     }
     
-    if (load_psr && !r15_in_transfer_list) set_state(USR);
-
+    if (load_psr && !r15_in_transfer_list) {
+        set_state(USR);
+        write_back = false;
+    }
     // skip transfer if register list is all 0s
     // avoids indexing set_registers[-1] for decrement
     if (num_registers == 0) goto after_transfer;
@@ -485,6 +487,7 @@ inline void arm_7tdmi::block_data_transfer(arm_instruction instruction) {
         if (up) { // addresses increment 
             for (int i = 0; i < num_registers; ++i) {
                 if (pre_index) base += 4;
+                std::cout << get_register(set_registers[i]) << "\n";
                 mem.write_u32(base, get_register(set_registers[i]));
                 if (!pre_index) base += 4;
             }

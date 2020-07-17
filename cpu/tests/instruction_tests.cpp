@@ -209,4 +209,24 @@ TEST_CASE("block_data_transfer") {
     REQUIRE(arm1.registers.r2 == 1);
     REQUIRE(arm1.registers.r3 == 5);
     REQUIRE(arm1.registers.r4 == 7);
+
+    // TEST 6 - STM POST-INCREMENT With S bit set
+    arm_7tdmi arm6;
+    // Rn = 10, registers list is r8, r9, r11
+    // 1110 100 0 1 1 1 0 1010 0000101100000000
+    arm_instruction i6 = 0b11101000111010100000101100000000;
+    arm6.set_register(10, 0x1000);
+    arm6.set_register(8, 1);
+    arm6.set_register(9, 5);
+    arm6.set_register(11, 7);
+    arm6.set_state(FIQ);
+    arm6.set_register(10, 0x1000);
+    arm6.set_register(8, 2);
+    arm6.set_register(9, 4);
+    arm6.set_register(11, 6);
+    arm6.execute(i6);
+    REQUIRE(arm6.registers.r10 == 0x1000);
+    REQUIRE(arm6.mem.read_u32(0x1000) == 1);
+    REQUIRE(arm6.mem.read_u32(0x1004) == 5);
+    REQUIRE(arm6.mem.read_u32(0x1008) == 7);
 }

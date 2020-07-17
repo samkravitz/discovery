@@ -91,6 +91,9 @@ void arm_7tdmi::execute(arm_instruction instruction) {
         case BDT:
             block_data_transfer(instruction);
             break;
+        case SWP:
+            single_data_swap(instruction);
+            break;
         default:
             std::cerr << "Cannot execute instruction: " << instruction << "\n";
     }

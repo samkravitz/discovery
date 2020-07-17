@@ -487,7 +487,6 @@ inline void arm_7tdmi::block_data_transfer(arm_instruction instruction) {
         if (up) { // addresses increment 
             for (int i = 0; i < num_registers; ++i) {
                 if (pre_index) base += 4;
-                std::cout << get_register(set_registers[i]) << "\n";
                 mem.write_u32(base, get_register(set_registers[i]));
                 if (!pre_index) base += 4;
             }
@@ -510,6 +509,30 @@ inline void arm_7tdmi::block_data_transfer(arm_instruction instruction) {
 
     if (write_back || (load && register_list_contains_rn)) {
         set_register(Rn, base);
+    }
+}
+
+inline void arm_7tdmi::single_data_swap(arm_instruction instruction) {
+    bool byte = util::get_instruction_subset(instruction, 22, 22);
+    word Rn = util::get_instruction_subset(instruction, 19, 16); // base register
+    word Rd = util::get_instruction_subset(instruction, 15, 12); // destination register
+    word Rm = util::get_instruction_subset(instruction, 3, 0);   // source register
+
+    if (Rn == 15 || Rd == 15 || Rm == 15) {
+        std::cerr << "r15 can't be used as an operand in SWP!" << "\n";
+        return;
+    }
+
+    word swap_address = get_register(Rn);
+    if (byte) { // swap a byte
+        u8 temp = mem.read_u8(swap_address);
+        u8 source = get_register(Rm) & 0xFF; // bottom byte of source register
+        mem.write_u8(swap_address, source);
+        set_register(Rd, temp);
+    } else { // swap a word
+        u32 temp = mem.read_u32(swap_address);
+        u32 source = get_register(Rm);
+        mem.write_u32(swap_address, source);
     }
 }
 

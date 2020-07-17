@@ -92,7 +92,7 @@ typedef enum InstructionSetFormat {
     DP,
     PSR,
     MUL,
-    SDS,
+    SWP,
     BEX,
     HDT,
     SDT,

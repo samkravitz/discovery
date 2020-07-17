@@ -17,6 +17,10 @@ typedef uint16_t halfword;
 typedef uint32_t word;
 typedef uint32_t arm_instruction;
 
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+
 // cpu state
 typedef enum State {
     USR, // The normal ARM program execution state

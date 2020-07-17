@@ -533,6 +533,7 @@ inline void arm_7tdmi::single_data_swap(arm_instruction instruction) {
         u32 temp = mem.read_u32(swap_address);
         u32 source = get_register(Rm);
         mem.write_u32(swap_address, source);
+        set_register(Rd, temp);
     }
 }
 

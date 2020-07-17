@@ -230,3 +230,31 @@ TEST_CASE("block_data_transfer") {
     REQUIRE(arm6.mem.read_u32(0x1004) == 5);
     REQUIRE(arm6.mem.read_u32(0x1008) == 7);
 }
+
+TEST_CASE("single_data_swap") {
+    // TEST 1 - SWP WORD
+    arm_7tdmi arm1;
+    // r0 base register r1 source, r2 dest
+    arm1.registers.r0 = 0x1000;
+    arm1.registers.r1 = 0xFF11FF11;
+    arm1.mem.write_u32(0x1000, 0xAA22AA22);
+
+    // 1110 00010 0 00 0000 0010 0000 1001 0001;
+    arm_instruction i1 = 0b11100001000000000010000010010001;
+    arm1.execute(i1);
+    REQUIRE(arm1.registers.r2 == 0xAA22AA22);
+    REQUIRE(arm1.mem.read_u32(0x1000) == 0xFF11FF11);
+
+    // TEST 2 - SWP BYTE
+    arm_7tdmi arm2;
+    // r0 base register r1 source, r2 dest
+    arm2.registers.r0 = 0x1000;
+    arm2.registers.r1 = 0xFF11FF11;
+    arm2.mem.write_u32(0x1000, 0xAA22AA22);
+
+    // 1110 00010 1 00 0000 0010 0000 1001 0001;
+    arm_instruction i2 = 0b11100001010000000010000010010001;
+    arm2.execute(i2);
+    REQUIRE(arm2.registers.r2 == 0x22);
+    REQUIRE(arm2.mem.read_u8(0x1000) == 0x11);
+}

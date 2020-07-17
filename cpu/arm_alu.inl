@@ -435,6 +435,8 @@ inline void arm_7tdmi::block_data_transfer(arm_instruction instruction) {
     int num_registers = 0; // number of set bits in the register list, should be between 0-16
     int set_registers[16];
     bool register_list_contains_rn = false;
+    bool r15_in_transfer_list = (instruction >> 15) & 1;
+    state_t temp_state = get_state();
 
     if (Rn == 15) {
         std::cerr << "r15 cannot be used as base register in BDT!" << "\n";
@@ -451,6 +453,8 @@ inline void arm_7tdmi::block_data_transfer(arm_instruction instruction) {
         if (i == Rn) register_list_contains_rn = true;
     }
     
+    if (load_psr && !r15_in_transfer_list) set_state(USR);
+
     // skip transfer if register list is all 0s
     // avoids indexing set_registers[-1] for decrement
     if (num_registers == 0) goto after_transfer;
@@ -463,6 +467,9 @@ inline void arm_7tdmi::block_data_transfer(arm_instruction instruction) {
         if (up) { // addresses increment 
             for (int i = 0; i < num_registers; ++i) {
                 if (pre_index) base += 4;
+                if (load_psr && r15_in_transfer_list && (set_registers[i] == 15)) {
+                    set_register(16, get_register(17)); // SPSR_<mode> is transferred to CPSR when r15 in loaded
+                }
                 set_register(set_registers[i], mem.read_u32(base));
                 if (!pre_index) base += 4;
             }
@@ -474,6 +481,7 @@ inline void arm_7tdmi::block_data_transfer(arm_instruction instruction) {
             }
         }
     } else { // store from address list into memory
+        if (load_psr && r15_in_transfer_list) set_state(USR);
         if (up) { // addresses increment 
             for (int i = 0; i < num_registers; ++i) {
                 if (pre_index) base += 4;
@@ -487,10 +495,16 @@ inline void arm_7tdmi::block_data_transfer(arm_instruction instruction) {
                 if (!pre_index) base -= 4;
             }
         }
+        if (load_psr && r15_in_transfer_list) {
+            set_state(temp_state);
+            write_back = false; // write back should not be enabled in this mechanism
+        }
     }
 
     after_transfer:
     
+    if (load_psr && !r15_in_transfer_list) set_state(temp_state);
+
     if (write_back || (load && register_list_contains_rn)) {
         set_register(Rn, base);
     }

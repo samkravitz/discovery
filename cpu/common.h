@@ -7,8 +7,8 @@
  * DESCRIPTION: common typedefs throughout arm7tdmi use
  */
 
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef CPU_COMMON_H
+#define CPU_COMMON_H
 
 #include <stdint.h>
 
@@ -124,4 +124,4 @@ typedef enum DataProcessingOpcodes {
     MVN = 0b1111 // NOT op2 (op1 is ignored)
 } dp_opcodes_t;
 
-#endif //  COMMON_H
+#endif // CPU_COMMON_H

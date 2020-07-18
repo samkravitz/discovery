@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
     //run_asm(argv[1]);
     discovery emulator;
     while (true) {
-        emulator.gpu.draw_pixel(400, 300);
+        emulator.gpu.draw_pixel(120, 80);
     }
     return 0;
 }

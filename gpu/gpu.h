@@ -12,18 +12,20 @@
 #define GPU_H
 
 #include <SDL2/SDL.h>
+#include <iostream>
 
 class GPU {
     public:
         GPU();
         ~GPU();
 
-        void init();
+        void reset();
         void draw_pixel(int, int);
 
     private:
         SDL_Window *window;
         SDL_Renderer *renderer;
+        SDL_Surface *surface;
 };
 
 #endif // GPU_H

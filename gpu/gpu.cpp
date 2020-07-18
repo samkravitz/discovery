@@ -14,6 +14,6 @@ void GPU::init() {
 }
 
 void GPU::draw_pixel(int x, int y) {
-    SDL_RenderDrawPoint(renderer, 400, 300); //Renders on middle of screen.
+    SDL_RenderDrawPoint(renderer, x, y); //Renders on middle of screen.
     SDL_RenderPresent(renderer);
 }

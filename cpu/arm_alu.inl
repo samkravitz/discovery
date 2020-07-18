@@ -537,6 +537,12 @@ inline void arm_7tdmi::single_data_swap(arm_instruction instruction) {
     }
 }
 
+inline void arm_7tdmi::software_interrupt(arm_instruction instruction) {
+    set_state(SVC);
+    set_register(15, 0x08);
+    set_register(17, get_register(16)); // put CPSR in SPSR_<svc>
+}
+
 inline void executeALUInstruction(arm_7tdmi &arm, arm_instruction instruction) {
     std::cout << "Got to the ALU!\n";
 }

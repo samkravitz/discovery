@@ -100,6 +100,7 @@ class arm_7tdmi {
         void halfword_data_transfer(arm_instruction);
         void block_data_transfer(arm_instruction);
         void single_data_swap(arm_instruction);
+        void software_interrupt(arm_instruction);
 
         // misc
         void update_flags_logical(word, uint8_t);

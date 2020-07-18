@@ -1,4 +1,4 @@
-LIBARIES = -lstdc++fs
+LIBARIES = -l stdc++fs SDL2
 # CFLAGS = 
 
 all: discovery test

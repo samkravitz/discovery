@@ -14,7 +14,16 @@
 #include <SDL2/SDL.h>
 
 class GPU {
+    public:
+        GPU();
+        ~GPU();
 
+        void init();
+        void draw_pixel(int, int);
+
+    private:
+        SDL_Window *window;
+        SDL_Renderer *renderer;
 };
 
 #endif // GPU_H

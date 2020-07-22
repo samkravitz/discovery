@@ -30,43 +30,48 @@ Memory::Memory() {
 Memory::~Memory() { }
 
 word Memory::read_u32(word address) {
+    u8 *normalized_address = get_internal_region(address);
     word value = 0;
-    value |= memory[address + 3];
+    value |= *(normalized_address + 3);
     value <<= 8;
-    value |= memory[address + 2];
+    value |= *(normalized_address + 2);
     value <<= 8;
-    value |= memory[address + 1];
+    value |= *(normalized_address + 1);
     value <<= 8;
-    value |= memory[address];
+    value |= *normalized_address;
     return value;
 }
 
 halfword Memory::read_u16(word address) {
+    u8 *normalized_address = get_internal_region(address);
     halfword value = 0;
-    value |= memory[address + 1];
+    value |= *(normalized_address + 1);
     value <<= 8;
-    value |= memory[address];
+    value |= *normalized_address;
     return value;
 }
 
 byte Memory::read_u8(word address) {
-    return memory[address];
+    return *get_internal_region(address);
 }
 
 void Memory::write_u32(word address, word value) {
-    memory[address] = value & 0xFF;
-    memory[address + 1] = (value >> 8) & 0xFF;
-    memory[address + 2] = (value >> 16) & 0xFF;
-    memory[address + 3] = (value >> 24) & 0xFF;
+    u8 *normalized_address = get_internal_region(address);
+    *normalized_address = value & 0xFF;
+    *(normalized_address + 1) = (value >> 8) & 0xFF;
+    *(normalized_address + 2) = (value >> 16) & 0xFF;
+    *(normalized_address + 3) = (value >> 24) & 0xFF;
 }
 
 void Memory::write_u16(word address, halfword value) {
-    memory[address] = value & 0xFF;
-    memory[address + 1] = (value >> 8) & 0xFF;
+    u8 *normalized_address = get_internal_region(address);
+    *normalized_address = value & 0xFF;
+    *(normalized_address + 1) = (value >> 8) & 0xFF;
 }
 
 void Memory::write_u8(word address, byte value) {
-    memory[address] = value;
+    u8 *normalized_address = get_internal_region(address);
+    *normalized_address = value;
 }
 
 void Memory::load_rom(char *name) {
@@ -79,15 +84,16 @@ void Memory::load_rom(char *name) {
         return;
     }
 
-    rom.read((char *) memory, size);
+    rom.read((char *) memory.board_wram, size);
     rom.close();
 }
 
 arm_instruction Memory::get_instruction(word address) {
-    arm_instruction a = (arm_instruction) memory[address];
-    arm_instruction b = (arm_instruction) memory[address + 1];
-    arm_instruction c = (arm_instruction) memory[address + 2];
-    arm_instruction d = (arm_instruction) memory[address + 3];
+    u8 *normalized_address = get_internal_region(address);
+    arm_instruction a = (arm_instruction) *normalized_address;
+    arm_instruction b = (arm_instruction) *(normalized_address + 1);
+    arm_instruction c = (arm_instruction) *(normalized_address + 2);
+    arm_instruction d = (arm_instruction) *(normalized_address + 3);
 
     arm_instruction i = 0;
     i |= a;
@@ -102,7 +108,7 @@ arm_instruction Memory::get_instruction(word address) {
  * given a 4 byte address, this function will return the address of the
  * internal region the address points to, which saves a boatload of memory.
  */
-void *Memory::get_internal_region(u32 address) {
+u8 *Memory::get_internal_region(u32 address) {
     if (address <= MEM_BIOS_END) return &memory.bios[address];
     else if (address >= MEM_BOARD_WRAM_START && address <= MEM_CHIP_WRAM_END) return &memory.board_wram[address - MEM_BOARD_WRAM_START];
     else if (address >= MEM_CHIP_WRAM_START && address <= MEM_CHIP_WRAM_END) return &memory.chip_wram[address - MEM_CHIP_WRAM_START];

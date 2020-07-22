@@ -42,7 +42,7 @@ class Memory {
         void write_u32(word, word);
 
     private:
-        void *get_internal_region(u32);
+        u8 *get_internal_region(u32);
         std::size_t size;
 };
 

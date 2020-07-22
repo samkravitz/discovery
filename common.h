@@ -4,17 +4,18 @@
  * 
  * FILE: common.h
  * DATE: July 17, 2020
- * DESCRIPTION: addresses of important mapped video and audio hardware
+ * DESCRIPTION: addresses of important mapped video and audio hardware and other common types in discovery
  */
 
-#ifndef GPU_COMMON_H
-#define GPU_COMMON_H
+#ifndef COMMON_H
+#define COMMON_H
 
-#include "cpu/common.h"
+#include <stdint.h>
 
-#define SCREEN_WIDTH  240
-#define SCREEN_HEIGHT 160
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
 
 const u32 REG_DISPCNT = 0x4000000;
 
-#endif // GPU_COMMON_H
+#endif // COMMON_H

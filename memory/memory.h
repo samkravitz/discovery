@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include "common.h"
 #include "../cpu/common.h"
+#include "../common.h"
 
 class Memory {
     public:

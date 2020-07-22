@@ -114,14 +114,14 @@ TEST_CASE("halfword_data_transfer") {
     // TEST 2 - STORE UNSIGNED HALFWORD
     arm_7tdmi arm2;
     // base r1 source r2
-    arm2.registers.r1 = 0xABCD;
+    arm2.registers.r1 = 0x2020202;
     arm2.registers.r2 = 0x1001;
     // 1110 000 1 1 1 0 0 0001 0010 1111 1011 0000
-    // store unsigned halfword from r2 into Address ABCD + immediate offset 0b11110000 (pre-index)
+    // store unsigned halfword from r2 into Address 2020202 + immediate offset 0b11110000 (pre-index)
     arm_instruction i2 = 0b11100001110000010010111110110000;
     arm2.execute(i2);
-    REQUIRE(arm2.mem.read_u16(0xABCD + 0b11110000) == 0x1001);
-    REQUIRE(arm2.registers.r1 == 0xABCD); // was a pre index with no writeback
+    REQUIRE(arm2.mem.read_u16(0x2020202 + 0b11110000) == 0x1001);
+    REQUIRE(arm2.registers.r1 == 0x2020202); // was a pre index with no writeback
 
     // TEST 3 - LOAD SIGNED BYTE
     arm_7tdmi arm3;

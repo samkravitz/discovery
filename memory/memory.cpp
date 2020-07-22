@@ -91,3 +91,12 @@ arm_instruction Memory::get_instruction(word address) {
     return i;
 }
 
+void *Memory::get_normalized_address(u32 address) {
+    if (address <= 0x3FFF) {
+        return &memory.bios[address];
+    } else if (address >= 0x2000000 && address <= 0x0203FFFF) {
+        return &memory.board_wram[address - 0x2000000];
+    } else if (address >= 0x3000000 && address <= 0x03007FFF) {
+        return &memory.chip_wram[address - 0x]
+    }
+}

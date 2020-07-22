@@ -25,9 +25,9 @@ class Memory {
             u8 board_wram[0x40000];
             u8 chip_wram[0x8000];
             u8 io_reg [0x400];
-            
+            u8 palette_ram[0x400];
+            u8 vram[0x18000];
         } memory;
-        uint8_t *memory;
         
         void load_rom(char *);
         arm_instruction get_instruction(word);
@@ -41,6 +41,7 @@ class Memory {
         void write_u32(word, word);
 
     private:
+        void *get_normalized_address(u32);
         std::size_t size;
 };
 

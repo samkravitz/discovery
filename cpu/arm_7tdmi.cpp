@@ -18,6 +18,7 @@ arm_7tdmi::arm_7tdmi() {
     state = USR;
     mode = ARM;
     registers = {0}; // zero out registers
+    registers.r15 = 0x8000000; // starting address of gamepak flash rom
 }
 
 uint8_t arm_7tdmi::get_condition_code_flag(condition_code_flag_t flag) {

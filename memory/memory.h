@@ -34,7 +34,6 @@ class Memory {
         u8 * game_rom;
         
         void load_rom(char *);
-        arm_instruction get_instruction(word);
 
         // read / write from memory
         word read_u32(word);

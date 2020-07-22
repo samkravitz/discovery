@@ -9,7 +9,6 @@
 #ifndef MEM_COMMON_H
 #define MEM_COMMON_H
 
-#define GBA_MEM_SIZE 0xFFFFFFF
 
 // start and end addresses of internal memory regions
 #define MEM_BIOS_END          0x3FFF
@@ -25,6 +24,9 @@
 #define MEM_VRAM_END          0x6017FFF
 #define MEM_OAM_START         0x7000000
 #define MEM_OAM_END           0x70003FF
+
+#define MEM_GAMEPAK_ROM_START 0x8000000
+#define MEM_GAMEPAK_ROM_END   0xE00FFFF 
 
 // sizes of internal regions
 #define MEM_BIOS_SIZE        0x4000

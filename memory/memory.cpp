@@ -88,21 +88,6 @@ void Memory::load_rom(char *name) {
     rom.close();
 }
 
-arm_instruction Memory::get_instruction(word address) {
-    u8 *normalized_address = get_internal_region(address);
-    arm_instruction a = (arm_instruction) *normalized_address;
-    arm_instruction b = (arm_instruction) *(normalized_address + 1);
-    arm_instruction c = (arm_instruction) *(normalized_address + 2);
-    arm_instruction d = (arm_instruction) *(normalized_address + 3);
-
-    arm_instruction i = 0;
-    i |= a;
-    i |= b << 8;
-    i |= c << 16;
-    i |= d << 24;
-    return i;
-}
-
 /*
  * GBA memory can be addressed anywhere from 0x00000000-0xFFFFFFFF, however most of those addresses are unused.
  * given a 4 byte address, this function will return the address of the
@@ -116,6 +101,7 @@ u8 *Memory::get_internal_region(u32 address) {
     else if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALLETTE_RAM_END) return &memory.palette_ram[address - MEM_PALETTE_RAM_START];
     else if (address >= MEM_VRAM_START && address <= MEM_VRAM_END) return &memory.vram[address - MEM_VRAM_START];
     else if (address >= MEM_OAM_START && address <= MEM_OAM_END) return &memory.oam[address - MEM_VRAM_START];
+    else if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END) return &game_rom[address - MEM_GAMEPAK_ROM_START];
     else {
         std::cerr << "Error: invalid internal address specified: " << address << "\n";
         exit(2);

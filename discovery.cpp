@@ -19,10 +19,10 @@ void run_asm(char *name) {
 int main(int argc, char **argv) {
     std::cout << "Gameboy emulator!" << "\n";
     //run_asm(argv[1]);
-    // discovery emulator;
-    // while (true) {
-    //     emulator.gpu.draw_pixel(120, 80);
-    // }
+    discovery emulator;
+    while (true) {
+        emulator.gpu.draw_pixel(120, 80);
+    }
     arm_7tdmi arm;
 
     // source r5, dest r14

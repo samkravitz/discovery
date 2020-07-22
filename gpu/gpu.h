@@ -13,6 +13,10 @@
 
 #include <SDL2/SDL.h>
 #include <iostream>
+#include "../memory/common.h"
+
+#define SCREEN_WIDTH  240
+#define SCREEN_HEIGHT 160
 
 class GPU {
     public:

@@ -6,7 +6,7 @@ GPU::GPU() {
         exit(2);
     }
 
-    window = SDL_CreateWindow("discovery", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 240, 160, 0);
+    window = SDL_CreateWindow("discovery", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
     if (window == NULL) {
         std::cerr << "Could not create window" << "\n";
         exit(2);
@@ -24,7 +24,7 @@ GPU::~GPU() {
 
 void GPU::reset() {
     // paint the screen black
-    SDL_Rect rect{8, 8, 240, 160};
+    SDL_Rect rect{8, 8, SCREEN_WIDTH, SCREEN_HEIGHT};
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderPresent(renderer);
 }

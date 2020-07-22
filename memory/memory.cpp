@@ -83,8 +83,8 @@ void Memory::load_rom(char *name) {
         std::cerr << "Bad rom!" << "\n";
         return;
     }
-
-    rom.read((char *) memory.board_wram, size);
+    game_rom = new u8[size]();
+    rom.read((char *) game_rom, size);
     rom.close();
 }
 

@@ -30,6 +30,8 @@ class Memory {
             u8 vram[0x18000];
             u8 oam[0x400];
         } memory;
+
+        u8 * game_rom;
         
         void load_rom(char *);
         arm_instruction get_instruction(word);

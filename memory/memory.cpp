@@ -91,12 +91,21 @@ arm_instruction Memory::get_instruction(word address) {
     return i;
 }
 
-void *Memory::get_normalized_address(u32 address) {
-    if (address <= 0x3FFF) {
-        return &memory.bios[address];
-    } else if (address >= 0x2000000 && address <= 0x0203FFFF) {
-        return &memory.board_wram[address - 0x2000000];
-    } else if (address >= 0x3000000 && address <= 0x03007FFF) {
-        return &memory.chip_wram[address - 0x]
+/*
+ * GBA memory can be addressed anywhere from 0x00000000-0xFFFFFFFF, however most of those addresses are unused.
+ * given a 4 byte address, this function will return the address of the
+ * internal region the address points to, which saves a boatload of memory.
+ */
+void *Memory::get_internal_region(u32 address) {
+    if (address <= MEM_BIOS_END) return &memory.bios[address];
+    else if (address >= MEM_BOARD_WRAM_START && address <= MEM_CHIP_WRAM_END) return &memory.board_wram[address - MEM_BOARD_WRAM_START];
+    else if (address >= MEM_CHIP_WRAM_START && address <= MEM_CHIP_WRAM_END) return &memory.chip_wram[address - MEM_CHIP_WRAM_START];
+    else if (address >= MEM_IO_REG_START && address <= MEM_IO_REG_END) return &memory.io_reg[address - MEM_IO_REG_START];
+    else if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALLETTE_RAM_END) return &memory.palette_ram[address - MEM_PALETTE_RAM_START];
+    else if (address >= MEM_VRAM_START && address <= MEM_VRAM_END) return &memory.vram[address - MEM_VRAM_START];
+    else if (address >= MEM_OAM_START && address <= MEM_OAM_END) return &memory.oam[address - MEM_VRAM_START];
+    else {
+        std::cerr << "Error: invalid internal address specified: " << address << "\n";
+        exit(2);
     }
 }

@@ -27,6 +27,7 @@ class Memory {
             u8 io_reg [0x400];
             u8 palette_ram[0x400];
             u8 vram[0x18000];
+            u8 oam[0x400];
         } memory;
         
         void load_rom(char *);
@@ -41,7 +42,7 @@ class Memory {
         void write_u32(word, word);
 
     private:
-        void *get_normalized_address(u32);
+        void *get_internal_region(u32);
         std::size_t size;
 };
 

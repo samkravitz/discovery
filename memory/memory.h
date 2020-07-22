@@ -20,11 +20,17 @@ class Memory {
         Memory();
         ~Memory();
 
+        struct memory_struct {
+            u8 bios[0x4000];
+            u8 board_wram[0x40000];
+            u8 chip_wram[0x8000];
+            u8 io_reg [0x400];
+            
+        } memory;
         uint8_t *memory;
         
         void load_rom(char *);
         arm_instruction get_instruction(word);
-        uint8_t *get_memory() { return memory; }
 
         // read / write from memory
         word read_u32(word);

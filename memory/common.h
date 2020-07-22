@@ -26,4 +26,13 @@
 #define MEM_OAM_START         0x7000000
 #define MEM_OAM_END           0x70003FF
 
+// sizes of internal regions
+#define MEM_BIOS_SIZE        0x4000
+#define MEM_BOARD_WRAM_SIZE  0x40000
+#define MEM_CHIP_WRAM_SIZE   0x8000
+#define MEM_IO_REG_SIZE      0x400
+#define MEM_PALETTE_RAM_SIZE 0x400
+#define MEM_VRAM_SIZE        0x18000
+#define MEM_OAM_SIZE         0x400
+
 #endif // MEM_COMMON_H

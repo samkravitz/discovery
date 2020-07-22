@@ -16,12 +16,18 @@
 namespace fs = std::experimental::filesystem;
 
 Memory::Memory() {
-    memory = new uint8_t[GBA_MEM_SIZE]();
+    for (int i = 0; i < MEM_BIOS_SIZE; ++i) memory.bios[i] = 0;
+    for (int i = 0; i < MEM_BOARD_WRAM_SIZE; ++i) memory.board_wram[i] = 0;
+    for (int i = 0; i < MEM_VRAM_SIZE; ++i) memory.vram[i] = 0;
+    // io_reg, palette, and oam regions all have the same size
+    for (int i = 0; i < MEM_IO_REG_SIZE; ++i) {
+        memory.io_reg[i] = 0;
+        memory.palette_ram[i] = 0;
+        memory.oam[i] = 0;
+    }
 }
 
-Memory::~Memory() {
-    delete memory;
-}
+Memory::~Memory() { }
 
 word Memory::read_u32(word address) {
     word value = 0;

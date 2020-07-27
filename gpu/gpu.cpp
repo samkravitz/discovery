@@ -29,6 +29,19 @@ void GPU::reset() {
     SDL_RenderPresent(renderer);
 }
 
+void GPU::draw(u32 dispcnt, u8 *vram) {
+    switch (dispcnt & 0x7) { // bits 0-2 represent video mode
+        case 3: draw_mode3(vram); break;
+        default: 
+            std::cerr << "Error: unknown video mode" << "\n";
+            break;
+    }
+}
+
+void GPU::draw_mode3(u8 *vram) {
+
+}
+
 void GPU::draw_pixel(int x, int y) {
     SDL_RenderDrawPoint(renderer, x, y); //Renders on middle of screen.
     SDL_RenderPresent(renderer);

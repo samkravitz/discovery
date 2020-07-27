@@ -48,10 +48,13 @@ inline void arm_7tdmi::branch_link(arm_instruction instruction) {
         // write the old PC into the link register of the current bank
         // The PC value written into r14 is adjusted to allow for the prefetch, and contains the
         // address of the instruction following the branch and link instruction
-        set_register(14, get_register(15) + sizeof(arm_instruction));
+        u32 new_address = get_register(15) - 4;
+        new_address &= ~3; // clear bits 0-1
+        set_register(14, new_address);
     }
 
-    set_register(15, get_register(15) + offset);
+    u32 new_addy = get_register(15) + offset + 8;
+    set_register(15, new_addy);
 }
 
 inline void arm_7tdmi::data_processing(arm_instruction instruction) {
@@ -286,7 +289,7 @@ inline void arm_7tdmi::psr_transfer(arm_instruction instruction) {
 
 // store or load single value to/from memory
 inline void arm_7tdmi::single_data_transfer(arm_instruction instruction) {
-    bool immediate = util::get_instruction_subset(instruction, 25, 25) == 1;
+    bool immediate = util::get_instruction_subset(instruction, 25, 25) == 0;
     bool pre_index = util::get_instruction_subset(instruction, 24, 24) == 1;  // bit 24 set = pre index, bit 24 0 = post index
     bool up = util::get_instruction_subset(instruction, 23, 23) == 1;         // bit 23 set = up, bit 23 0 = down
     bool byte = util::get_instruction_subset(instruction, 22, 22) == 1;       // bit 22 set = byte, bit 23 0 = word

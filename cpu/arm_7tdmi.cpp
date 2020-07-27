@@ -65,7 +65,12 @@ void arm_7tdmi::set_condition_code_flag(condition_code_flag_t flag, uint8_t bit)
 }
 
 void arm_7tdmi::execute(arm_instruction instruction) {
-    if (!util::condition_met(instruction, *this)) return;
+    u32 instruction_ptr = get_register(15);
+    if (!util::condition_met(instruction, *this)) {
+        instruction_ptr += get_mode() == ARM ? 4 : 2;
+        set_register(15, instruction_ptr);
+        return;
+    }
 
     switch(util::get_instruction_format(instruction)) {
         case BEX:
@@ -76,27 +81,43 @@ void arm_7tdmi::execute(arm_instruction instruction) {
             break;
         case DP:
             data_processing(instruction);
+            instruction_ptr += get_mode() == ARM ? 4 : 2;
+            set_register(15, instruction_ptr);
             break;
         case MUL:
             multiply(instruction);
+            instruction_ptr += get_mode() == ARM ? 4 : 2;
+            set_register(15, instruction_ptr);
             break;
         case PSR:
             psr_transfer(instruction);
+            instruction_ptr += get_mode() == ARM ? 4 : 2;
+            set_register(15, instruction_ptr);
             break;
         case SDT:
             single_data_transfer(instruction);
+            instruction_ptr += get_mode() == ARM ? 4 : 2;
+            set_register(15, instruction_ptr);
             break;
         case HDT:
             halfword_data_transfer(instruction);
+            instruction_ptr += get_mode() == ARM ? 4 : 2;
+            set_register(15, instruction_ptr);
             break;
         case BDT:
             block_data_transfer(instruction);
+            instruction_ptr += get_mode() == ARM ? 4 : 2;
+            set_register(15, instruction_ptr);
             break;
         case SWP:
             single_data_swap(instruction);
+            instruction_ptr += get_mode() == ARM ? 4 : 2;
+            set_register(15, instruction_ptr);
             break;
         case INT:
             software_interrupt(instruction);
+            instruction_ptr += get_mode() == ARM ? 4 : 2;
+            set_register(15, instruction_ptr);
             break;
         default:
             std::cerr << "Cannot execute instruction: " << instruction << "\n";

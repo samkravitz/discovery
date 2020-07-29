@@ -66,6 +66,12 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
     word Rd = util::get_instruction_subset(instruction, 15, 12); // destination register
     word Rn = util::get_instruction_subset(instruction, 19, 16); // source register
     word op1 = get_register(Rn);
+
+    if (Rn == 15) {
+        if (immediate) op1 += 8;
+        else op1 += 12;
+    }
+    
     word op2;
     word result;
     uint8_t carry_out = 2;
@@ -314,6 +320,9 @@ inline void arm_7tdmi::single_data_transfer(arm_instruction instruction) {
     }
 
     word base = get_register(Rn);
+
+    // r15 will be 2 instructions away
+    if (Rn == 15) base += 8;
 
     if (pre_index) { // offset modification before transfer
         if (up) base += offset; // offset is added to base

@@ -16,7 +16,7 @@
  * flushes the pipeline, and restarts execution from the address
  * contained in Rn. If bit 0 of Rn is 1, switch to THUMB mode
  */
-inline void arm_7tdmi::branch_exchange(arm_instruction instruction) {
+inline void arm_7tdmi::branch_exchange(u32 instruction) {
     uint32_t Rn = util::get_instruction_subset(instruction, 3, 0);
     if (Rn == 15) {
         std::cerr << "Undefined behavior: r15 as operand\n";
@@ -24,7 +24,7 @@ inline void arm_7tdmi::branch_exchange(arm_instruction instruction) {
         return;
     }
     
-    word branch_address = get_register(Rn);
+    u32 branch_address = get_register(Rn);
     set_register(15, branch_address); 
 
     // swith to THUMB mode if necessary
@@ -32,9 +32,9 @@ inline void arm_7tdmi::branch_exchange(arm_instruction instruction) {
     else set_mode(ARM);
 }
 
-inline void arm_7tdmi::branch_link(arm_instruction instruction) {
+inline void arm_7tdmi::branch_link(u32 instruction) {
     bool link = util::get_instruction_subset(instruction, 24, 24) == 0x1;
-    word offset = util::get_instruction_subset(instruction, 23, 0);
+    u32 offset = util::get_instruction_subset(instruction, 23, 0);
     bool is_neg = offset >> 23 == 0x1;
 
     offset <<= 2;
@@ -57,23 +57,23 @@ inline void arm_7tdmi::branch_link(arm_instruction instruction) {
     set_register(15, new_addy);
 }
 
-inline void arm_7tdmi::data_processing(arm_instruction instruction) {
+inline void arm_7tdmi::data_processing(u32 instruction) {
     // immediate operand bit
     bool immediate = util::get_instruction_subset(instruction, 25, 25) == 0x1;
     // set condition code
     bool set_condition_code = util::get_instruction_subset(instruction, 20, 20) == 0x1;
 
-    word Rd = util::get_instruction_subset(instruction, 15, 12); // destination register
-    word Rn = util::get_instruction_subset(instruction, 19, 16); // source register
-    word op1 = get_register(Rn);
+    u32 Rd = util::get_instruction_subset(instruction, 15, 12); // destination register
+    u32 Rn = util::get_instruction_subset(instruction, 19, 16); // source register
+    u32 op1 = get_register(Rn);
 
     if (Rn == 15) {
         if (immediate) op1 += 8;
         else op1 += 12;
     }
     
-    word op2;
-    word result;
+    u32 op2;
+    u32 result;
     uint8_t carry_out = 2;
     
     // determine op2 based on whether it's encoded as an immeidate value or register shift
@@ -82,7 +82,7 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
         uint32_t rotate = util::get_instruction_subset(instruction, 11, 8);
         rotate *= 2; // rotate by twice the value in the rotate field
         // # of bits in a word (should be 32)
-        size_t num_bits = sizeof(word) * 8;
+        size_t num_bits = sizeof(u32) * 8;
 
         // perform right rotation
         for (int i = 0; i < rotate; ++i) {
@@ -91,7 +91,7 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
             op2 |= (dropped_lsb << num_bits - 1);
         }
     } else { // op2 is shifted register
-        word shifted_register = util::get_instruction_subset(instruction, 3, 0);
+        u32 shifted_register = util::get_instruction_subset(instruction, 3, 0);
         op2 = get_register(shifted_register);
         carry_out = shift_register(instruction, op2);
     }
@@ -186,12 +186,12 @@ inline void arm_7tdmi::data_processing(arm_instruction instruction) {
 
 }
 
-inline void arm_7tdmi::multiply(arm_instruction instruction) {
+inline void arm_7tdmi::multiply(u32 instruction) {
     // assign registers
-    word Rm = util::get_instruction_subset(instruction, 3, 0);   // first operand
-    word Rs = util::get_instruction_subset(instruction, 11, 8);  // source register
-    word Rn = util::get_instruction_subset(instruction, 15, 12); // second operand
-    word Rd = util::get_instruction_subset(instruction, 19, 16); // destination register
+    u32 Rm = util::get_instruction_subset(instruction, 3, 0);   // first operand
+    u32 Rs = util::get_instruction_subset(instruction, 11, 8);  // source register
+    u32 Rn = util::get_instruction_subset(instruction, 15, 12); // second operand
+    u32 Rd = util::get_instruction_subset(instruction, 19, 16); // destination register
     bool accumulate = util::get_instruction_subset(instruction, 21, 21);    
 
     if (Rd == Rm) {
@@ -202,7 +202,7 @@ inline void arm_7tdmi::multiply(arm_instruction instruction) {
         return;
     }
     
-    word val;
+    u32 val;
     if (accumulate) {
         // multiply-accumulate form gives Rd:=Rm*Rs+Rn
         val = Rm * Rs + Rn;
@@ -216,11 +216,11 @@ inline void arm_7tdmi::multiply(arm_instruction instruction) {
 }
 
 // allow access to CPSR and SPSR registers
-inline void arm_7tdmi::psr_transfer(arm_instruction instruction) {
+inline void arm_7tdmi::psr_transfer(u32 instruction) {
     bool spsr = util::get_instruction_subset(instruction, 22, 22) == 1 ? 1 : 0;
 
     if (util::get_instruction_subset(instruction, 21, 16) == 0b001111) { // MRS (transfer PSR contents to register)
-        word Rd = util::get_instruction_subset(instruction, 15, 12);
+        u32 Rd = util::get_instruction_subset(instruction, 15, 12);
         if (Rd == 15) {
             std::cerr << "Can't use r15 as a PSR destination register" << "\n";
             return;
@@ -232,7 +232,7 @@ inline void arm_7tdmi::psr_transfer(arm_instruction instruction) {
             set_register(Rd, get_register(16));
         }
     } else if (util::get_instruction_subset(instruction, 21, 12) == 0b1010011111) { // MSR (transfer register contents to PSR)
-        word Rm = util::get_instruction_subset(instruction, 3, 0);
+        u32 Rm = util::get_instruction_subset(instruction, 3, 0);
         if (Rm == 15) {
             std::cerr << "Can't use r15 as a PSR source register" << "\n";
             return;
@@ -247,9 +247,9 @@ inline void arm_7tdmi::psr_transfer(arm_instruction instruction) {
         }
     } else if (util::get_instruction_subset(instruction, 21, 12) == 0b1010001111) { // MSR (transfer register contents or immediate value to PSR flag bits only)
         bool immediate = util::get_instruction_subset(instruction, 25, 25) == 1;
-        word transfer_value;
+        u32 transfer_value;
         // # of bits in a word (should be 32)
-        size_t num_bits = sizeof(word) * 8;
+        size_t num_bits = sizeof(u32) * 8;
 
         if (immediate) { // rotate on immediate value 
             transfer_value = util::get_instruction_subset(instruction, 7, 0);
@@ -270,7 +270,7 @@ inline void arm_7tdmi::psr_transfer(arm_instruction instruction) {
         transfer_value >>= 28;
         transfer_value <<= 28;
 
-        word old_spr_value;
+        u32 old_spr_value;
         if (spsr) {
             old_spr_value = get_register(17);
         } else {
@@ -294,17 +294,17 @@ inline void arm_7tdmi::psr_transfer(arm_instruction instruction) {
 }
 
 // store or load single value to/from memory
-inline void arm_7tdmi::single_data_transfer(arm_instruction instruction) {
+inline void arm_7tdmi::single_data_transfer(u32 instruction) {
     bool immediate = util::get_instruction_subset(instruction, 25, 25) == 0;
     bool pre_index = util::get_instruction_subset(instruction, 24, 24) == 1;  // bit 24 set = pre index, bit 24 0 = post index
     bool up = util::get_instruction_subset(instruction, 23, 23) == 1;         // bit 23 set = up, bit 23 0 = down
     bool byte = util::get_instruction_subset(instruction, 22, 22) == 1;       // bit 22 set = byte, bit 23 0 = word
     bool write_back = util::get_instruction_subset(instruction, 21, 21) == 1; // bit 21 set = write address into base, bit 21 0 = no write back
     bool load = util::get_instruction_subset(instruction, 20, 20) == 1;       // bit 20 set = load, bit 20 0 = store
-    word Rn = util::get_instruction_subset(instruction, 19, 16);
-    word Rd = util::get_instruction_subset(instruction, 15, 12);
-    word offset_encoding = util::get_instruction_subset(instruction, 11, 0);
-    word offset; // the actual amount to offset
+    u32 Rn = util::get_instruction_subset(instruction, 19, 16);
+    u32 Rd = util::get_instruction_subset(instruction, 15, 12);
+    u32 offset_encoding = util::get_instruction_subset(instruction, 11, 0);
+    u32 offset; // the actual amount to offset
     
     if (Rd == 15) {
         std::cerr << "r15 may not be used as destination register of SDT." << "\n";
@@ -314,12 +314,12 @@ inline void arm_7tdmi::single_data_transfer(arm_instruction instruction) {
     if (immediate) {
         offset = offset_encoding;
     } else { // op2 is a shifted register
-        word offset_register = util::get_instruction_subset(instruction, 3, 0);
+        u32 offset_register = util::get_instruction_subset(instruction, 3, 0);
         offset = get_register(offset_register);
         shift_register(instruction, offset); // offset will be modified to contain result of shifted register
     }
 
-    word base = get_register(Rn);
+    u32 base = get_register(Rn);
 
     // r15 will be 2 instructions away
     if (Rn == 15) base += 8;
@@ -332,7 +332,7 @@ inline void arm_7tdmi::single_data_transfer(arm_instruction instruction) {
     // transfer
     if (load) { // load from memory to register
         if (byte) { // load one byte from memory, sign extend 0s
-            word value = 0;
+            u32 value = 0;
             value |= mem.read_u8(base);
             set_register(Rd, value);
         } else { // load one word from memory
@@ -359,25 +359,25 @@ inline void arm_7tdmi::single_data_transfer(arm_instruction instruction) {
 }
 
 // transfer halfword and signed data
-inline void arm_7tdmi::halfword_data_transfer(arm_instruction instruction) {
+inline void arm_7tdmi::halfword_data_transfer(u32 instruction) {
     bool pre_index = util::get_instruction_subset(instruction, 24, 24) == 1;  // bit 24 set = pre index, bit 24 0 = post index
     bool up = util::get_instruction_subset(instruction, 23, 23) == 1;         // bit 23 set = up, bit 23 0 = down
     bool immediate = util::get_instruction_subset(instruction, 22, 22) == 1;
     bool write_back = util::get_instruction_subset(instruction, 21, 21) == 1; // bit 21 set = write address into base, bit 21 0 = no write back
     bool load = util::get_instruction_subset(instruction, 20, 20) == 1;       // bit 20 set = load, bit 20 0 = store
-    word Rn = util::get_instruction_subset(instruction, 19, 16);              // base register
-    word Rd = util::get_instruction_subset(instruction, 15, 12);              // src/dest register
-    word Rm = util::get_instruction_subset(instruction, 3, 0);                // offset register
-    word offset;
-    word base = get_register(Rn);
+    u32 Rn = util::get_instruction_subset(instruction, 19, 16);              // base register
+    u32 Rd = util::get_instruction_subset(instruction, 15, 12);              // src/dest register
+    u32 Rm = util::get_instruction_subset(instruction, 3, 0);                // offset register
+    u32 offset;
+    u32 base = get_register(Rn);
 
     if (Rm == 15) {
         std::cerr << "r15 cannot be used as offset register for HDT" << "\n";
     }
 
     if (immediate) {
-        word high_nibble = util::get_instruction_subset(instruction, 11, 8);
-        word low_nibble = util::get_instruction_subset(instruction, 3, 0);
+        u32 high_nibble = util::get_instruction_subset(instruction, 11, 8);
+        u32 low_nibble = util::get_instruction_subset(instruction, 3, 0);
         offset = (high_nibble << 4) | low_nibble;
     } else {
         offset = get_register(Rm);
@@ -400,7 +400,7 @@ inline void arm_7tdmi::halfword_data_transfer(arm_instruction instruction) {
         
         case 0b10: // signed byte
                 if (load) {
-                    word value = (word) mem.read_u8(base);
+                    u32 value = (u32) mem.read_u8(base);
                     if (value & 0x80) value |= ~0b11111111; // bit 7 of byte is 1, so sign extend bits 31-8 of register
                     set_register(Rd, value);
                 } else {
@@ -411,7 +411,7 @@ inline void arm_7tdmi::halfword_data_transfer(arm_instruction instruction) {
         
         case 0b11: // signed halfwords
                 if (load) {
-                    word value = (word) mem.read_u16(base);
+                    u32 value = (u32) mem.read_u16(base);
                     if (value & 0x8000) value |= ~0b1111111111111111; // bit 15 of byte is 1, so sign extend bits 31-8 of register
                     set_register(Rd, value);
                 } else {
@@ -435,15 +435,15 @@ inline void arm_7tdmi::halfword_data_transfer(arm_instruction instruction) {
     }
 }
 
-inline void arm_7tdmi::block_data_transfer(arm_instruction instruction) {
+inline void arm_7tdmi::block_data_transfer(u32 instruction) {
     bool pre_index = util::get_instruction_subset(instruction, 24, 24) == 1;  // bit 24 set = pre index, bit 24 0 = post index
     bool up = util::get_instruction_subset(instruction, 23, 23) == 1;         // bit 23 set = up, bit 23 0 = down
     bool load_psr = util::get_instruction_subset(instruction, 22, 22) == 1;   // bit 22 set = load PSR or force user mode
     bool write_back = util::get_instruction_subset(instruction, 21, 21) == 1; // bit 21 set = write address into base, bit 21 0 = no write back
     bool load = util::get_instruction_subset(instruction, 20, 20) == 1;       // bit 20 set = load, bit 20 0 = store
-    word Rn = util::get_instruction_subset(instruction, 19, 16);              // base register
-    word register_list = util::get_instruction_subset(instruction, 15, 0);
-    word base = get_register(Rn);
+    u32 Rn = util::get_instruction_subset(instruction, 19, 16);              // base register
+    u32 register_list = util::get_instruction_subset(instruction, 15, 0);
+    u32 base = get_register(Rn);
     int num_registers = 0; // number of set bits in the register list, should be between 0-16
     int set_registers[16];
     bool register_list_contains_rn = false;
@@ -524,18 +524,18 @@ inline void arm_7tdmi::block_data_transfer(arm_instruction instruction) {
     }
 }
 
-inline void arm_7tdmi::single_data_swap(arm_instruction instruction) {
+inline void arm_7tdmi::single_data_swap(u32 instruction) {
     bool byte = util::get_instruction_subset(instruction, 22, 22);
-    word Rn = util::get_instruction_subset(instruction, 19, 16); // base register
-    word Rd = util::get_instruction_subset(instruction, 15, 12); // destination register
-    word Rm = util::get_instruction_subset(instruction, 3, 0);   // source register
+    u32 Rn = util::get_instruction_subset(instruction, 19, 16); // base register
+    u32 Rd = util::get_instruction_subset(instruction, 15, 12); // destination register
+    u32 Rm = util::get_instruction_subset(instruction, 3, 0);   // source register
 
     if (Rn == 15 || Rd == 15 || Rm == 15) {
         std::cerr << "r15 can't be used as an operand in SWP!" << "\n";
         return;
     }
 
-    word swap_address = get_register(Rn);
+    u32 swap_address = get_register(Rn);
     if (byte) { // swap a byte
         u8 temp = mem.read_u8(swap_address);
         u8 source = get_register(Rm) & 0xFF; // bottom byte of source register
@@ -549,12 +549,12 @@ inline void arm_7tdmi::single_data_swap(arm_instruction instruction) {
     }
 }
 
-inline void arm_7tdmi::software_interrupt(arm_instruction instruction) {
+inline void arm_7tdmi::software_interrupt(u32 instruction) {
     set_state(SVC);
     set_register(15, 0x08);
     set_register(17, get_register(16)); // put CPSR in SPSR_<svc>
 }
 
-inline void executeALUInstruction(arm_7tdmi &arm, arm_instruction instruction) {
+inline void executeALUInstruction(arm_7tdmi &arm, u32 instruction) {
     std::cout << "Got to the ALU!\n";
 }

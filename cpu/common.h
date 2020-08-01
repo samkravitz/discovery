@@ -12,11 +12,6 @@
 
 #include <stdint.h>
 
-typedef uint8_t byte;
-typedef uint16_t halfword;
-typedef uint32_t word;
-typedef uint32_t arm_instruction;
-
 // cpu state
 typedef enum State {
     USR = 0b10000, // The normal ARM program execution state

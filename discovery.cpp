@@ -7,7 +7,7 @@
 void run_asm(char *name) {
     discovery emulator;
     emulator.cpu.mem.load_rom(name);
-    arm_instruction i;
+    u32 i;
     while (true) {
         i = emulator.cpu.mem.read_u32(emulator.cpu.registers.r15);
         std::cout << i << "\n";

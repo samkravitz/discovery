@@ -65,7 +65,7 @@ void arm_7tdmi::set_condition_code_flag(condition_code_flag_t flag, uint8_t bit)
 }
 
  // determine if the condition field of an instruction is true, given the state of the CPSR
-bool arm_7tdmi::condition_met(arm_instruction instruction) {
+bool arm_7tdmi::condition_met(u32 instruction) {
     // get condition field from instruction
     condition_t condition_field = (condition_t) util::get_instruction_subset(instruction, 31, 28);
     switch (condition_field) {
@@ -90,7 +90,7 @@ bool arm_7tdmi::condition_met(arm_instruction instruction) {
     }
 }
 
-void arm_7tdmi::execute(arm_instruction instruction) {
+void arm_7tdmi::execute(u32 instruction) {
     if (!condition_met(instruction)) {
         increment_pc();
         return;
@@ -140,7 +140,7 @@ void arm_7tdmi::execute(arm_instruction instruction) {
     }
 }
 
-word arm_7tdmi::get_register(uint32_t reg) {
+u32 arm_7tdmi::get_register(uint32_t reg) {
     switch (reg) {
         case 0x0: return registers.r0;
         case 0x1: return registers.r1;
@@ -217,7 +217,7 @@ word arm_7tdmi::get_register(uint32_t reg) {
     return 100; // should never happen
 }
 
-void arm_7tdmi::set_register(int reg, word val) {
+void arm_7tdmi::set_register(int reg, u32 val) {
     switch (reg) {
         // all banks share r0 - r7
         case 0x0: registers.r0 = val; break;
@@ -357,7 +357,7 @@ void arm_7tdmi::set_register(int reg, word val) {
 }
 
 // update cpsr flags after a logical operation
-void arm_7tdmi::update_flags_logical(word result, uint8_t carry_out) {
+void arm_7tdmi::update_flags_logical(u32 result, uint8_t carry_out) {
     // C flag will be set to the carry out from the barrel shifter
     set_condition_code_flag(C, carry_out);
 
@@ -371,7 +371,7 @@ void arm_7tdmi::update_flags_logical(word result, uint8_t carry_out) {
 }
 
 // update cpsr flags after an addition operation
-void arm_7tdmi::update_flags_addition(word op1, word op2, word result) {
+void arm_7tdmi::update_flags_addition(u32 op1, u32 op2, u32 result) {
     // C flag will be set to the carry out of bit 31 of the ALU
     if (op1 > result || op2 > result) {
         set_condition_code_flag(C, 1);
@@ -401,7 +401,7 @@ void arm_7tdmi::update_flags_addition(word op1, word op2, word result) {
 }
 
 // update cpsr flags after a subtraction operation
-void arm_7tdmi::update_flags_subtraction(word op1, word op2, word result) {
+void arm_7tdmi::update_flags_subtraction(u32 op1, u32 op2, u32 result) {
     // C flag will be set to the carry out of bit 31 of the ALU
     if (result > op1 || result > op2) {
         set_condition_code_flag(C, 1);
@@ -432,17 +432,17 @@ void arm_7tdmi::update_flags_subtraction(word op1, word op2, word result) {
 
 // performs a shifted register operation on op2.
 // returns the carry-out of the barrel shifter
-uint8_t arm_7tdmi::shift_register(arm_instruction instruction, word &op2) {
-    word shift = util::get_instruction_subset(instruction, 11, 4);
-    word shift_type = util::get_instruction_subset(instruction, 6, 5);
-    word shift_amount;
+uint8_t arm_7tdmi::shift_register(u32 instruction, u32 &op2) {
+    u32 shift = util::get_instruction_subset(instruction, 11, 4);
+    u32 shift_type = util::get_instruction_subset(instruction, 6, 5);
+    u32 shift_amount;
     uint8_t carry_out;
     // # of bits in a word (should be 32)
-    size_t num_bits = sizeof(word) * 8;
+    size_t num_bits = sizeof(u32) * 8;
 
     // get shift amount
     if ((shift & 1) == 1) { // shift amount contained in bottom byte of Rs
-        word Rs = util::get_instruction_subset(instruction, 11, 8);
+        u32 Rs = util::get_instruction_subset(instruction, 11, 8);
         shift_amount = get_register(Rs) & 0xFF;
         // if this amount is 0, skip shifting
         if (shift_amount == 0) return 2;
@@ -485,7 +485,7 @@ uint8_t arm_7tdmi::shift_register(arm_instruction instruction, word &op2) {
                 }
             } else { // special encoding for ASR #32
                 carry_out = (op2 >> num_bits - 1) & 1;
-                op2 = carry_out == 0 ? 0 : (word) ~0;
+                op2 = carry_out == 0 ? 0 : (u32) ~0;
             }
             break;
         

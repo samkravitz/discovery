@@ -44,22 +44,22 @@ TEST_CASE("ConditionFlagTests", "[condition_flag]") {
 }
 
 TEST_CASE("InstructionConditionField", "[instruction_condition_field]") {
-    arm_instruction z_set                       =      0b00000000000000000000000000000000; // 32 bits, Z Set
-    arm_instruction z_clear                     =      0b00010000000000000000000000000000;
-    arm_instruction c_set                       =      0b00100000000000000000000000000000;
-    arm_instruction c_clear                     =      0b00110000000000000000000000000000;
-    arm_instruction n_set                       =      0b01000000000000000000000000000000;
-    arm_instruction n_clear                     =      0b01010000000000000000000000000000;
-    arm_instruction v_set                       =      0b01100000000000000000000000000000;
-    arm_instruction v_clear                     =      0b01110000000000000000000000000000;
-    arm_instruction c_set_and_z_clear           =      0b10000000000000000000000000000000;
-    arm_instruction c_clear_or_z_set            =      0b10010000000000000000000000000000;
-    arm_instruction n_equal_v                   =      0b10100000000000000000000000000000;
-    arm_instruction n_not_equal_v               =      0b10110000000000000000000000000000;
-    arm_instruction z_clear_and_n_equal_v       =      0b11000000000000000000000000000000;
-    arm_instruction z_set_or_n_not_equal_v      =      0b11010000000000000000000000000000;
-    arm_instruction always                      =      0b11100000000000000000000000000000;
-    arm_instruction noop                        =      0b11110000000000000000000000000000;
+    u32 z_set                       =      0b00000000000000000000000000000000; // 32 bits, Z Set
+    u32 z_clear                     =      0b00010000000000000000000000000000;
+    u32 c_set                       =      0b00100000000000000000000000000000;
+    u32 c_clear                     =      0b00110000000000000000000000000000;
+    u32 n_set                       =      0b01000000000000000000000000000000;
+    u32 n_clear                     =      0b01010000000000000000000000000000;
+    u32 v_set                       =      0b01100000000000000000000000000000;
+    u32 v_clear                     =      0b01110000000000000000000000000000;
+    u32 c_set_and_z_clear           =      0b10000000000000000000000000000000;
+    u32 c_clear_or_z_set            =      0b10010000000000000000000000000000;
+    u32 n_equal_v                   =      0b10100000000000000000000000000000;
+    u32 n_not_equal_v               =      0b10110000000000000000000000000000;
+    u32 z_clear_and_n_equal_v       =      0b11000000000000000000000000000000;
+    u32 z_set_or_n_not_equal_v      =      0b11010000000000000000000000000000;
+    u32 always                      =      0b11100000000000000000000000000000;
+    u32 noop                        =      0b11110000000000000000000000000000;
 
     // a couple of fresh cpu instances to test with
     arm_7tdmi z;
@@ -148,28 +148,28 @@ TEST_CASE("InstructionConditionField", "[instruction_condition_field]") {
 
 // #TODO - test cases for Instruction Set Format
 // TEST_CASE("InstructionSetFormat", "[instruction_set_format]") {
-//     arm_instruction i = 0;
+//     u32 i = 0;
     
 //     // zero'd instruction is actually a valid data processing instruction
 //     REQUIRE(util::get_instruction_format(i) == DP);
 
-//     // see docs/arm_instruction_set_bitfield.png to see which bits should be set for which instruction formats
+//     // see docs/u32_set_bitfield.png to see which bits should be set for which instruction formats
 //     //  (one's digit of instruction) -                    10987654321098765432109876543210
-//     arm_instruction dataProcessing               =      0b00000000000000000000000000000000;
-//     arm_instruction multiply                     =      0b00000000000000000000000010010000;
-//     arm_instruction multiplyLong                 =      0b00000000100000000000000010010000;
-//     arm_instruction singleDataSwap               =      0b00000001000000000000000010010000;
-//     arm_instruction branchExchange               =      0b00000001001011111111111100010000;
-//     arm_instruction hdtRegisterOffset            =      0b00000000000000000000000010010000;
-//     arm_instruction hdtImmediateOffset           =      0b00000000010000000000000010010000;
-//     arm_instruction singleDataTransfer           =      0b00000100000000000000000000000000;
-//     arm_instruction undefined                    =      0b00000110000000000000000000010000;
-//     arm_instruction blockDataTransfer            =      0b00001000000000000000000000000000;
-//     arm_instruction branch                       =      0b00001010000000000000000000000000;
-//     arm_instruction coprocessorDataTransfer      =      0b00001100000000000000000000000000;
-//     arm_instruction coprocessorDataOperation     =      0b00001110000000000000000000000000;
-//     arm_instruction coprocessorRegisterTransfer  =      0b00001110000000000000000000010000;
-//     arm_instruction softwareInterrupt            =      0b00001111000000000000000000000000;
+//     u32 dataProcessing               =      0b00000000000000000000000000000000;
+//     u32 multiply                     =      0b00000000000000000000000010010000;
+//     u32 multiplyLong                 =      0b00000000100000000000000010010000;
+//     u32 singleDataSwap               =      0b00000001000000000000000010010000;
+//     u32 branchExchange               =      0b00000001001011111111111100010000;
+//     u32 hdtRegisterOffset            =      0b00000000000000000000000010010000;
+//     u32 hdtImmediateOffset           =      0b00000000010000000000000010010000;
+//     u32 singleDataTransfer           =      0b00000100000000000000000000000000;
+//     u32 undefined                    =      0b00000110000000000000000000010000;
+//     u32 blockDataTransfer            =      0b00001000000000000000000000000000;
+//     u32 branch                       =      0b00001010000000000000000000000000;
+//     u32 coprocessorDataTransfer      =      0b00001100000000000000000000000000;
+//     u32 coprocessorDataOperation     =      0b00001110000000000000000000000000;
+//     u32 coprocessorRegisterTransfer  =      0b00001110000000000000000000010000;
+//     u32 softwareInterrupt            =      0b00001111000000000000000000000000;
 
 //     // comparing these hypothetical instructions with their truth,
 //     // in somewhat random order to make sure order is irrelvant for this function
@@ -198,10 +198,10 @@ TEST_CASE("InstructionConditionField", "[instruction_condition_field]") {
 // }
 
 TEST_CASE("InstructionSubset", "[instruction_subset]") {
-    arm_instruction a = 0b00000000000000000000000000000000;
-    arm_instruction b = 0b00000000000000000000000000001011;
-    arm_instruction c = 0b11001000000000000000000000000000;
-    arm_instruction d = 0b11000000000000000000110010011011;
+    u32 a = 0b00000000000000000000000000000000;
+    u32 b = 0b00000000000000000000000000001011;
+    u32 c = 0b11001000000000000000000000000000;
+    u32 d = 0b11000000000000000000110010011011;
 
     REQUIRE(util::get_instruction_subset(a, 3, 0) == 0b0000);
     REQUIRE(util::get_instruction_subset(b, 3, 0) == 0b1011);
@@ -215,7 +215,7 @@ TEST_CASE("InstructionSubset", "[instruction_subset]") {
 
 TEST_CASE("MemoryTests", "[mem_tests]") {
     Memory mem;
-    word address = 0x1000;
+    u32 address = 0x1000;
     mem.write_u32(address, 0xABCDEFA0);
     REQUIRE(mem.read_u8(address) == 0xA0);
     REQUIRE(mem.read_u32(address) == 0xABCDEFA0);

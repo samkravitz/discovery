@@ -19,7 +19,7 @@
  * 
  * ex: getInstructionSubset(0b11110000, 7, 4) = 0b1111
  */
-uint32_t util::get_instruction_subset(arm_instruction instruction, int end, int start) {
+uint32_t util::get_instruction_subset(u32 instruction, int end, int start) {
     if (end < start) return 0;
 
     std::bitset<32> instr(instruction);
@@ -37,7 +37,7 @@ uint32_t util::get_instruction_subset(arm_instruction instruction, int end, int 
 // see docs/arm_instruction_set_bitfield.png to see a visual of the different types of instructions
 // basically each instruction has its own required bits that need to be set, this function just looks for those bits
 // a lot of this code is taken from shonumi's GBE+ (https://github.com/shonumi/gbe-plus/blob/master/src/gba/arm7.cpp)
-instruction_set_format_t util::get_instruction_format(arm_instruction instruction) {
+instruction_set_format_t util::get_instruction_format(u32 instruction) {
     if ((instruction >> 4 & 0b111111111111111111111111) == 0b000100101111111111110001) return BEX; // BEX
     else if ((instruction >> 25 & 0b111) == 0b101) return B; // Branch
 

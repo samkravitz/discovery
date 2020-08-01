@@ -22,47 +22,47 @@ class arm_7tdmi {
 
         struct registers_struct {
             // general purpose registers
-            word r0;
-            word r1;
-            word r2;
-            word r3;
-            word r4;
-            word r5;
-            word r6;
-            word r7;
-            word r8;
-            word r9;
-            word r10;
-            word r11;
-            word r12;
-            word r13;
-            word r14; // subroutine link registers
-            word r15; // program counter
+            u32 r0;
+            u32 r1;
+            u32 r2;
+            u32 r3;
+            u32 r4;
+            u32 r5;
+            u32 r6;
+            u32 r7;
+            u32 r8;
+            u32 r9;
+            u32 r10;
+            u32 r11;
+            u32 r12;
+            u32 r13;
+            u32 r14; // subroutine link registers
+            u32 r15; // program counter
 
             // fiq registers
-            word r8_fiq;
-            word r9_fiq;
-            word r10_fiq;
-            word r11_fiq;
-            word r12_fiq;
-            word r13_fiq;
-            word r14_fiq;
+            u32 r8_fiq;
+            u32 r9_fiq;
+            u32 r10_fiq;
+            u32 r11_fiq;
+            u32 r12_fiq;
+            u32 r13_fiq;
+            u32 r14_fiq;
 
             // svc registers
-            word r13_svc;
-            word r14_svc;
+            u32 r13_svc;
+            u32 r14_svc;
 
             // abt registers
-            word r13_abt;
-            word r14_abt;
+            u32 r13_abt;
+            u32 r14_abt;
 
             // irq registers
-            word r13_irq;
-            word r14_irq;
+            u32 r13_irq;
+            u32 r14_irq;
 
             // und registers
-            word r13_und;
-            word r14_und;
+            u32 r13_und;
+            u32 r14_und;
 
             // special registers
             union cpsr {
@@ -80,16 +80,16 @@ class arm_7tdmi {
                 u32 full;
             } cpsr;
 
-            word spsr_fiq;
-            word spsr_svc;
-            word spsr_abt;
-            word spsr_irq;
-            word spsr_und;
+            u32 spsr_fiq;
+            u32 spsr_svc;
+            u32 spsr_abt;
+            u32 spsr_irq;
+            u32 spsr_und;
         } registers;
         
         void fetch();
-        void decode(arm_instruction);
-        void execute(arm_instruction);
+        void decode(u32);
+        void execute(u32);
         
         // getters / setters
         uint8_t get_condition_code_flag(condition_code_flag_t);
@@ -101,28 +101,28 @@ class arm_7tdmi {
         cpu_mode_t get_mode() { return mode; }
         void set_mode(cpu_mode_t m) { mode = m; }
 
-        word get_register(uint32_t);
-        void set_register(int reg, word val);
+        u32 get_register(u32);
+        void set_register(int reg, u32 val);
 
         // instruction execution
-        void branch_exchange(arm_instruction);
-        void branch_link(arm_instruction);
-        void data_processing(arm_instruction);
-        void multiply(arm_instruction);
-        void psr_transfer(arm_instruction);
-        void single_data_transfer(arm_instruction);
-        void halfword_data_transfer(arm_instruction);
-        void block_data_transfer(arm_instruction);
-        void single_data_swap(arm_instruction);
-        void software_interrupt(arm_instruction);
+        void branch_exchange(u32);
+        void branch_link(u32);
+        void data_processing(u32);
+        void multiply(u32);
+        void psr_transfer(u32);
+        void single_data_transfer(u32);
+        void halfword_data_transfer(u32);
+        void block_data_transfer(u32);
+        void single_data_swap(u32);
+        void software_interrupt(u32);
 
         // misc
-        void update_flags_logical(word, uint8_t);
-        void update_flags_addition(word, word, word);
-        void update_flags_subtraction(word, word, word);
-        uint8_t shift_register(arm_instruction, word &);
+        void update_flags_logical(u32, u8);
+        void update_flags_addition(u32, u32, u32);
+        void update_flags_subtraction(u32, u32, u32);
+        u8 shift_register(u32, u32 &);
         void increment_pc();
-        bool condition_met(arm_instruction);
+        bool condition_met(u32);
 
     private:
         /* ARM state - 15 general purpose registers and 1 non-gp
@@ -140,7 +140,7 @@ class arm_7tdmi {
          * In THUMB state,bit [0] is zero and bits [31:1] contain the PC.
          * 
          */
-        word current_instruction;
+        u32 current_instruction;
         state_t state;
         cpu_mode_t mode;
 }; 

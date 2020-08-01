@@ -36,12 +36,12 @@ class Memory {
         void load_rom(char *);
 
         // read / write from memory
-        word read_u32(word);
-        halfword read_u16(word);
-        byte read_u8(word);
-        void write_u8(word, byte);
-        void write_u16(word, halfword);
-        void write_u32(word, word);
+        u32 read_u32(u32);
+        u16 read_u16(u32);
+        u8 read_u8(u32);
+        void write_u8(u32, u8);
+        void write_u16(u32, u16);
+        void write_u32(u32, u32);
 
     private:
         u8 *get_internal_region(u32);

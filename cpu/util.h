@@ -14,12 +14,11 @@
 #include "arm_7tdmi.h"
 
 namespace util {
-
     // determine which type of operation the instruction is
-    instruction_set_format_t get_instruction_format(arm_instruction instruction);
+    instruction_set_format_t get_instruction_format(u32 instruction);
 
     // get subset of instruction for purposes like destination register, opcode, shifts
-    uint32_t get_instruction_subset(arm_instruction, int, int);
+    uint32_t get_instruction_subset(u32, int, int);
 }
 
 #endif

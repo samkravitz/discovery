@@ -29,9 +29,9 @@ Memory::Memory() {
 
 Memory::~Memory() { }
 
-word Memory::read_u32(word address) {
+u32 Memory::read_u32(u32 address) {
     u8 *normalized_address = get_internal_region(address);
-    word value = 0;
+    u32 value = 0;
     value |= *(normalized_address + 3);
     value <<= 8;
     value |= *(normalized_address + 2);
@@ -42,20 +42,20 @@ word Memory::read_u32(word address) {
     return value;
 }
 
-halfword Memory::read_u16(word address) {
+u16 Memory::read_u16(u32 address) {
     u8 *normalized_address = get_internal_region(address);
-    halfword value = 0;
+    u16 value = 0;
     value |= *(normalized_address + 1);
     value <<= 8;
     value |= *normalized_address;
     return value;
 }
 
-byte Memory::read_u8(word address) {
+u8 Memory::read_u8(u32 address) {
     return *get_internal_region(address);
 }
 
-void Memory::write_u32(word address, word value) {
+void Memory::write_u32(u32 address, u32 value) {
     u8 *normalized_address = get_internal_region(address);
     *normalized_address = value & 0xFF;
     *(normalized_address + 1) = (value >> 8) & 0xFF;
@@ -63,13 +63,13 @@ void Memory::write_u32(word address, word value) {
     *(normalized_address + 3) = (value >> 24) & 0xFF;
 }
 
-void Memory::write_u16(word address, halfword value) {
+void Memory::write_u16(u32 address, u16 value) {
     u8 *normalized_address = get_internal_region(address);
     *normalized_address = value & 0xFF;
     *(normalized_address + 1) = (value >> 8) & 0xFF;
 }
 
-void Memory::write_u8(word address, byte value) {
+void Memory::write_u8(u32 address, u8 value) {
     u8 *normalized_address = get_internal_region(address);
     *normalized_address = value;
 }
@@ -90,7 +90,7 @@ void Memory::load_rom(char *name) {
 
 /*
  * GBA memory can be addressed anywhere from 0x00000000-0xFFFFFFFF, however most of those addresses are unused.
- * given a 4 byte address, this function will return the address of the
+ * given a 4 u8 address, this function will return the address of the
  * internal region the address points to, which saves a boatload of memory.
  */
 u8 *Memory::get_internal_region(u32 address) {

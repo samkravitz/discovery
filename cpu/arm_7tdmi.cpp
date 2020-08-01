@@ -65,10 +65,8 @@ void arm_7tdmi::set_condition_code_flag(condition_code_flag_t flag, uint8_t bit)
 }
 
 void arm_7tdmi::execute(arm_instruction instruction) {
-    u32 instruction_ptr = get_register(15);
     if (!util::condition_met(instruction, *this)) {
-        instruction_ptr += get_mode() == ARM ? 4 : 2;
-        set_register(15, instruction_ptr);
+        increment_pc();
         return;
     }
 
@@ -81,43 +79,35 @@ void arm_7tdmi::execute(arm_instruction instruction) {
             break;
         case DP:
             data_processing(instruction);
-            instruction_ptr += get_mode() == ARM ? 4 : 2;
-            set_register(15, instruction_ptr);
+            increment_pc();
             break;
         case MUL:
             multiply(instruction);
-            instruction_ptr += get_mode() == ARM ? 4 : 2;
-            set_register(15, instruction_ptr);
+            increment_pc();
             break;
         case PSR:
             psr_transfer(instruction);
-            instruction_ptr += get_mode() == ARM ? 4 : 2;
-            set_register(15, instruction_ptr);
+            increment_pc();
             break;
         case SDT:
             single_data_transfer(instruction);
-            instruction_ptr += get_mode() == ARM ? 4 : 2;
-            set_register(15, instruction_ptr);
+            increment_pc();
             break;
         case HDT:
             halfword_data_transfer(instruction);
-            instruction_ptr += get_mode() == ARM ? 4 : 2;
-            set_register(15, instruction_ptr);
+            increment_pc();
             break;
         case BDT:
             block_data_transfer(instruction);
-            instruction_ptr += get_mode() == ARM ? 4 : 2;
-            set_register(15, instruction_ptr);
+            increment_pc();
             break;
         case SWP:
             single_data_swap(instruction);
-            instruction_ptr += get_mode() == ARM ? 4 : 2;
-            set_register(15, instruction_ptr);
+            increment_pc();
             break;
         case INT:
             software_interrupt(instruction);
-            instruction_ptr += get_mode() == ARM ? 4 : 2;
-            set_register(15, instruction_ptr);
+            increment_pc();
             break;
         default:
             std::cerr << "Cannot execute instruction: " << instruction << "\n";
@@ -490,4 +480,10 @@ uint8_t arm_7tdmi::shift_register(arm_instruction instruction, word &op2) {
             break;
     }
     return carry_out;
+}
+
+inline void arm_7tdmi::increment_pc() {
+    u32 instruction_ptr = get_register(15);
+    instruction_ptr += get_mode() == ARM ? 4 : 2;
+    set_register(15, instruction_ptr);
 }

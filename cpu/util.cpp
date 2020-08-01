@@ -33,32 +33,6 @@ uint32_t util::get_instruction_subset(arm_instruction instruction, int end, int 
     return subset;
 }
 
-// determine if the condition field of an instruction is true, given the state of the CPSR
-bool util::condition_met(arm_instruction instruction, arm_7tdmi &cpu) {
-    // get condition field from instruction
-    condition_t condition_field = (condition_t) get_instruction_subset(instruction, 31, 28);
-    switch (condition_field) {
-        case EQ: return cpu.get_condition_code_flag(Z); // Z set
-        case NE: return !cpu.get_condition_code_flag(Z); // Z clear
-        case CS: return cpu.get_condition_code_flag(C); // C set
-        case CC: return !cpu.get_condition_code_flag(C); // C clear
-        case MI: return cpu.get_condition_code_flag(N); // N set
-        case PL: return !cpu.get_condition_code_flag(N); // N Clear
-        case VS: return cpu.get_condition_code_flag(V); // V set
-        case VC: return !cpu.get_condition_code_flag(V); // V clear
-        case HI: return cpu.get_condition_code_flag(C) && !cpu.get_condition_code_flag(Z); // C set and Z clear
-        case LS: return !cpu.get_condition_code_flag(C) || cpu.get_condition_code_flag(Z); // C clear or Z set
-        case GE: return cpu.get_condition_code_flag(N) == cpu.get_condition_code_flag(V); // N equals V
-        case LT: return cpu.get_condition_code_flag(N) != cpu.get_condition_code_flag(V); // N not equal V
-        case GT: return !cpu.get_condition_code_flag(Z) && (cpu.get_condition_code_flag(N) == cpu.get_condition_code_flag(V)); // Z clear AND (N equals V)
-        case LE: return cpu.get_condition_code_flag(Z) || (cpu.get_condition_code_flag(N) != cpu.get_condition_code_flag(V)); // Z set OR (N not equal to V)
-        case AL: return true; // always
-        default: // should never happen
-            std::cerr << "Unrecognized condition field: " << instruction << "\n";
-            return false;
-    }
-}
-
 // determine which type of operation the instruction is
 // see docs/arm_instruction_set_bitfield.png to see a visual of the different types of instructions
 // basically each instruction has its own required bits that need to be set, this function just looks for those bits

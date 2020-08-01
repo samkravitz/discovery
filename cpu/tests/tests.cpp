@@ -68,82 +68,82 @@ TEST_CASE("InstructionConditionField", "[instruction_condition_field]") {
     arm_7tdmi v;
 
     // z 
-    REQUIRE(util::condition_met(z_set, z) == false);
-    REQUIRE(util::condition_met(z_clear, z) == true);
+    REQUIRE(z.condition_met(z_set) == false);
+    REQUIRE(z.condition_met(z_clear) == true);
     z.set_condition_code_flag(Z, 1);
-    REQUIRE(util::condition_met(z_set, z) == true);
+    REQUIRE(z.condition_met(z_set) == true);
 
     // c 
-    REQUIRE(util::condition_met(c_set, c) == false);
-    REQUIRE(util::condition_met(c_clear, c) == true);
+    REQUIRE(c.condition_met(c_set) == false);
+    REQUIRE(c.condition_met(c_clear) == true);
     c.set_condition_code_flag(C, 1);
-    REQUIRE(util::condition_met(c_set, c) == true);
+    REQUIRE(c.condition_met(c_set) == true);
 
     // n 
-    REQUIRE(util::condition_met(n_set, n) == false);
-    REQUIRE(util::condition_met(n_clear, n) == true);
+    REQUIRE(n.condition_met(n_set) == false);
+    REQUIRE(n.condition_met(n_clear) == true);
     n.set_condition_code_flag(N, 1);
-    REQUIRE(util::condition_met(n_set, n) == true);
+    REQUIRE(n.condition_met(n_set) == true);
 
     // v 
-    REQUIRE(util::condition_met(v_set, v) == false);
-    REQUIRE(util::condition_met(v_clear, v) == true);
+    REQUIRE(v.condition_met(v_set) == false);
+    REQUIRE(v.condition_met(v_clear) == true);
     v.set_condition_code_flag(V, 1);
-    REQUIRE(util::condition_met(v_set, v) == true);
+    REQUIRE(v.condition_met(v_set) == true);
 
     // c set and z clear
-    REQUIRE(util::condition_met(c_set_and_z_clear, z) == false);
+    REQUIRE(z.condition_met(c_set_and_z_clear) == false);
     z.set_condition_code_flag(Z, 0);
     z.set_condition_code_flag(C, 1);
-    REQUIRE(util::condition_met(c_set_and_z_clear, z) == true);
+    REQUIRE(z.condition_met(c_set_and_z_clear) == true);
 
     // c clear or z set
-    REQUIRE(util::condition_met(c_clear_or_z_set, z) == false);
+    REQUIRE(z.condition_met(c_clear_or_z_set) == false);
     z.set_condition_code_flag(Z, 1);
-    REQUIRE(util::condition_met(c_clear_or_z_set, z) == true);
+    REQUIRE(z.condition_met(c_clear_or_z_set) == true);
     z.set_condition_code_flag(Z, 0);
     z.set_condition_code_flag(C, 0);
-    REQUIRE(util::condition_met(c_clear_or_z_set, z) == true);
+    REQUIRE(z.condition_met(c_clear_or_z_set) == true);
     z.set_condition_code_flag(Z, 1);
-    REQUIRE(util::condition_met(c_clear_or_z_set, z) == true);
+    REQUIRE(z.condition_met(c_clear_or_z_set) == true);
 
     // n equals v
-    REQUIRE(util::condition_met(n_equal_v, n) == false);
-    REQUIRE(util::condition_met(n_not_equal_v, n) == true);
+    REQUIRE(n.condition_met(n_equal_v) == false);
+    REQUIRE(n.condition_met(n_not_equal_v) == true);
     n.set_condition_code_flag(V, 1);
-    REQUIRE(util::condition_met(n_equal_v, n) == true);
-    REQUIRE(util::condition_met(n_not_equal_v, n) == false);
+    REQUIRE(n.condition_met(n_equal_v) == true);
+    REQUIRE(n.condition_met(n_not_equal_v) == false);
 
     // z clear and (n equal v)
-    REQUIRE(util::condition_met(z_clear_and_n_equal_v, n) == true);
+    REQUIRE(n.condition_met(z_clear_and_n_equal_v) == true);
     n.set_condition_code_flag(Z, 1);
-    REQUIRE(util::condition_met(z_clear_and_n_equal_v, n) == false);
+    REQUIRE(n.condition_met(z_clear_and_n_equal_v) == false);
 
     // make a new cpu because this is getting confusing
     arm_7tdmi arm;
 
     // z set or (n not equal v)
-    REQUIRE(util::condition_met(z_set_or_n_not_equal_v, arm) == false);
+    REQUIRE(arm.condition_met(z_set_or_n_not_equal_v) == false);
     arm.set_condition_code_flag(Z, 1);
-    REQUIRE(util::condition_met(z_set_or_n_not_equal_v, arm) == true);
+    REQUIRE(arm.condition_met(z_set_or_n_not_equal_v) == true);
     arm.set_condition_code_flag(N, 1);
-    REQUIRE(util::condition_met(z_set_or_n_not_equal_v, arm) == true);
+    REQUIRE(arm.condition_met(z_set_or_n_not_equal_v) == true);
     arm.set_condition_code_flag(Z, 0);
-    REQUIRE(util::condition_met(z_set_or_n_not_equal_v, arm) == true);
+    REQUIRE(arm.condition_met(z_set_or_n_not_equal_v) == true);
 
     // always
-    REQUIRE(util::condition_met(always, arm) == true);
-    REQUIRE(util::condition_met(always, z) == true);
-    REQUIRE(util::condition_met(always, c) == true);
-    REQUIRE(util::condition_met(always, v) == true);
-    REQUIRE(util::condition_met(always, n) == true);
+    REQUIRE(arm.condition_met(always) == true);
+    REQUIRE(z.condition_met(always) == true);
+    REQUIRE(c.condition_met(always) == true);
+    REQUIRE(v.condition_met(always) == true);
+    REQUIRE(n.condition_met(always) == true);
 
     // never
-    REQUIRE(util::condition_met(noop, arm) == false);
-    REQUIRE(util::condition_met(noop, z) == false);
-    REQUIRE(util::condition_met(noop, c) == false);
-    REQUIRE(util::condition_met(noop, v) == false);
-    REQUIRE(util::condition_met(noop, n) == false);
+    REQUIRE(arm.condition_met(noop) == false);
+    REQUIRE(z.condition_met(noop) == false);
+    REQUIRE(c.condition_met(noop) == false);
+    REQUIRE(v.condition_met(noop) == false);
+    REQUIRE(n.condition_met(noop) == false);
 }
 
 // #TODO - test cases for Instruction Set Format

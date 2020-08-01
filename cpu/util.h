@@ -14,8 +14,6 @@
 #include "arm_7tdmi.h"
 
 namespace util {
-    // determine if the condition field of an instruction is true, given the state of the CPSR
-    bool condition_met(arm_instruction, arm_7tdmi &);
 
     // determine which type of operation the instruction is
     instruction_set_format_t get_instruction_format(arm_instruction instruction);

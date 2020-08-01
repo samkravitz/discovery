@@ -64,8 +64,34 @@ void arm_7tdmi::set_condition_code_flag(condition_code_flag_t flag, uint8_t bit)
     }
 }
 
+ // determine if the condition field of an instruction is true, given the state of the CPSR
+bool arm_7tdmi::condition_met(arm_instruction instruction) {
+    // get condition field from instruction
+    condition_t condition_field = (condition_t) util::get_instruction_subset(instruction, 31, 28);
+    switch (condition_field) {
+        case EQ: return get_condition_code_flag(Z); // Z set
+        case NE: return !get_condition_code_flag(Z); // Z clear
+        case CS: return get_condition_code_flag(C); // C set
+        case CC: return !get_condition_code_flag(C); // C clear
+        case MI: return get_condition_code_flag(N); // N set
+        case PL: return !get_condition_code_flag(N); // N Clear
+        case VS: return get_condition_code_flag(V); // V set
+        case VC: return !get_condition_code_flag(V); // V clear
+        case HI: return get_condition_code_flag(C) && !get_condition_code_flag(Z); // C set and Z clear
+        case LS: return !get_condition_code_flag(C) || get_condition_code_flag(Z); // C clear or Z set
+        case GE: return get_condition_code_flag(N) == get_condition_code_flag(V); // N equals V
+        case LT: return get_condition_code_flag(N) != get_condition_code_flag(V); // N not equal V
+        case GT: return !get_condition_code_flag(Z) && (get_condition_code_flag(N) == get_condition_code_flag(V)); // Z clear AND (N equals V)
+        case LE: return get_condition_code_flag(Z) || (get_condition_code_flag(N) != get_condition_code_flag(V)); // Z set OR (N not equal to V)
+        case AL: return true; // always
+        default: // should never happen
+            std::cerr << "Unrecognized condition field: " << instruction << "\n";
+            return false;
+    }
+}
+
 void arm_7tdmi::execute(arm_instruction instruction) {
-    if (!util::condition_met(instruction, *this)) {
+    if (!condition_met(instruction)) {
         increment_pc();
         return;
     }

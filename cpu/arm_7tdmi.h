@@ -122,6 +122,7 @@ class arm_7tdmi {
         void update_flags_subtraction(word, word, word);
         uint8_t shift_register(arm_instruction, word &);
         void increment_pc();
+        bool condition_met(arm_instruction);
 
     private:
         /* ARM state - 15 general purpose registers and 1 non-gp

@@ -90,6 +90,17 @@ bool arm_7tdmi::condition_met(u32 instruction) {
     }
 }
 
+void arm_7tdmi::fetch() {
+    switch(state) {
+        case ARM:
+            current_instruction = mem.read_u32(registers.r15);
+            break;
+        case THUMB:
+            current_instruction = (u16) mem.read_u16(registers.r15);
+            break;
+    }
+}
+
 void arm_7tdmi::execute(u32 instruction) {
     if (!condition_met(instruction)) {
         increment_pc();

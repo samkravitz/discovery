@@ -115,4 +115,26 @@ typedef enum DataProcessingOpcodes {
     MVN = 0b1111 // NOT op2 (op1 is ignored)
 } dp_opcodes_t;
 
+typedef enum ThumbInstructionFormat {
+    MSR,    // move shifted register
+    ADDSUB, // add/subtract
+    IMM,    // move/compare/add/subtract immediate
+    ALU,    // ALU operations
+    HI,     // Hi register operations
+    PC,     // PC relative load
+    MOV,    // load/store with register offset
+    MOVS,   // load/store sign extended byte/halfword
+    MOVI,   // load/store with immediate offset
+    MOVH,   // load/store halfword
+    SP,     // SP relative load/store
+    LDA,    // load address
+    ADDSP,  // add offset to stack pointer
+    POP,    // push/pop registers
+    MOVM,   // multiple load/store
+    B,      // conditional branch
+    SWI,    // software interrupt
+    BAL,    // unconditional branch
+    BL,     // long branch with link
+} thumb_instruction_format_t;
+
 #endif // CPU_COMMON_H

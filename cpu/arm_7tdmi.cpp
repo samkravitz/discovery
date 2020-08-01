@@ -91,7 +91,7 @@ bool arm_7tdmi::condition_met(u32 instruction) {
 }
 
 void arm_7tdmi::fetch() {
-    switch(state) {
+    switch (state) {
         case ARM:
             current_instruction = mem.read_u32(registers.r15);
             break;
@@ -102,49 +102,55 @@ void arm_7tdmi::fetch() {
 }
 
 void arm_7tdmi::execute(u32 instruction) {
-    if (!condition_met(instruction)) {
-        increment_pc();
-        return;
-    }
+    switch (state) {
+        case ARM:
+            if (!condition_met(instruction)) {
+                increment_pc();
+                return;
+            }
+            
+            switch(util::get_instruction_format(instruction)) {
+                case BEX:
+                    branch_exchange(instruction);
+                    break;
+                case B:
+                    branch_link(instruction);
+                    break;
+                case DP:
+                    data_processing(instruction);
+                    increment_pc();
+                    break;
+                case MUL:
+                    multiply(instruction);
+                    increment_pc();
+                    break;
+                case PSR:
+                    psr_transfer(instruction);
+                    increment_pc();
+                    break;
+                case SDT:
+                    single_data_transfer(instruction);
+                    increment_pc();
+                    break;
+                case HDT:
+                    halfword_data_transfer(instruction);
+                    increment_pc();
+                    break;
+                case BDT:
+                    block_data_transfer(instruction);
+                    increment_pc();
+                    break;
+                case SWP:
+                    single_data_swap(instruction);
+                    increment_pc();
+                    break;
+                case INT:
+                    software_interrupt(instruction);
+                    increment_pc();
+                    break;
+            }
+        case THUMB:
 
-    switch(util::get_instruction_format(instruction)) {
-        case BEX:
-            branch_exchange(instruction);
-            break;
-        case B:
-            branch_link(instruction);
-            break;
-        case DP:
-            data_processing(instruction);
-            increment_pc();
-            break;
-        case MUL:
-            multiply(instruction);
-            increment_pc();
-            break;
-        case PSR:
-            psr_transfer(instruction);
-            increment_pc();
-            break;
-        case SDT:
-            single_data_transfer(instruction);
-            increment_pc();
-            break;
-        case HDT:
-            halfword_data_transfer(instruction);
-            increment_pc();
-            break;
-        case BDT:
-            block_data_transfer(instruction);
-            increment_pc();
-            break;
-        case SWP:
-            single_data_swap(instruction);
-            increment_pc();
-            break;
-        case INT:
-            software_interrupt(instruction);
-            increment_pc();
             break;
         default:
             std::cerr << "Cannot execute instruction: " << instruction << "\n";

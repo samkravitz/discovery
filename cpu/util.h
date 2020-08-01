@@ -17,6 +17,9 @@ namespace util {
     // determine which type of operation the instruction is
     instruction_set_format_t get_instruction_format(u32 instruction);
 
+    // determine which type of thumb operation an instruction is
+    thumb_instruction_format_t get_instruction_format(u16 instruction);
+
     // get subset of instruction for purposes like destination register, opcode, shifts
     uint32_t get_instruction_subset(u32, int, int);
 }

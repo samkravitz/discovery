@@ -19,13 +19,13 @@ typedef uint32_t arm_instruction;
 
 // cpu state
 typedef enum State {
-    USR, // The normal ARM program execution state
-    FIQ, // Designed to support a data transfer or channel process
-    IRQ, // Used for general-purpose interrupt handling
-    SVC, // Protected mode for the operating system
-    ABT, // Entered after a data or instruction prefetch abort
-    SYS, // A privileged user mode for the operating system
-    UND // Entered when an undefined instruction is executed
+    USR = 0b10000, // The normal ARM program execution state
+    FIQ = 0b10001, // Designed to support a data transfer or channel process
+    IRQ = 0b10010, // Used for general-purpose interrupt handling
+    SVC = 0b10011, // Protected mode for the operating system
+    ABT = 0b10111, // Entered after a data or instruction prefetch abort
+    SYS = 0b11111, // A privileged user mode for the operating system
+    UND = 0b11011 // Entered when an undefined instruction is executed
 } state_t;
 
 // cpu mode 

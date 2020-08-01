@@ -61,7 +61,7 @@ TEST_CASE("branch_link") {
 
     // branch offset 20
     arm1.execute(i1);
-    REQUIRE(arm1.registers.r15 == 20);
+    REQUIRE(arm1.registers.r15 == 28);
 
     arm_7tdmi arm2;
     arm2.registers.r15 = 100;
@@ -69,7 +69,7 @@ TEST_CASE("branch_link") {
 
     // branch offset -40
     arm2.execute(i2);
-    REQUIRE(arm2.registers.r15 == 60);
+    REQUIRE(arm2.registers.r15 == 68);
 }
 
 TEST_CASE("single_data_transfer") {
@@ -80,7 +80,7 @@ TEST_CASE("single_data_transfer") {
     arm.mem.write_u32(0x1000, 0xABCDEFA0);
     // LDR R1, 0x1000
     // Load value of address 0x1000 with 0 immediate offset to register 1
-    arm_instruction i = 0b11100111100100000001000000000000;
+    arm_instruction i = 0b11100101100100000001000000000000;
     arm.execute(i);
 
     REQUIRE(arm.registers.r1 == 0xABCDEFA0);
@@ -91,7 +91,7 @@ TEST_CASE("single_data_transfer") {
     arm2.registers.r4 = 0xBEEFBEEF;
     arm2.registers.r7 = 0b1111;
     // STRB r4, r3 where offset comes from register 7 (1111), LSL 4 times to become 0xf0
-    arm_instruction i2 = 0b11100101110000110100001000000111;
+    arm_instruction i2 = 0b11100111110000110100001000000111;
     arm2.execute(i2);
     REQUIRE(arm2.mem.read_u8(0xf0) == 0xEF);
 }

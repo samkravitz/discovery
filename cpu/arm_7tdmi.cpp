@@ -8,27 +8,38 @@
  * DESCRIPTION: Implementation of arm7tdmi functions
  */
 #include <iostream>
-#include <bitset>
 
 #include "arm_7tdmi.h"
 #include "arm_alu.inl"
 #include "util.h"
 
+#define TEST
+
 arm_7tdmi::arm_7tdmi() {
-    state = USR;
+    state = SYS;
     mode = ARM;
     registers = {0}; // zero out registers
+    registers.cpsr.bits.state = SYS;
+
+    // initialize cpsr
+    registers.cpsr.bits.i = 1;
+    registers.cpsr.bits.f = 1;
+
     registers.r15 = 0x8000000; // starting address of gamepak flash rom
+    
+    // different initialization for the testing environment
+    #ifdef TEST
+    registers.r15 = 0;
+    state = USR;
+    #endif
 }
 
 uint8_t arm_7tdmi::get_condition_code_flag(condition_code_flag_t flag) {
-    word shield = 0b10000000000000000000000000000000; // 32 bits
     switch (flag) {
-        case N:
-        case Z:
-        case C:
-        case V:
-            return ((shield >> flag) & registers.cpsr) == 0 ? 0 : 1;
+        case N: return registers.cpsr.bits.n; 
+        case Z: return registers.cpsr.bits.z;
+        case C: return registers.cpsr.bits.c;
+        case V: return registers.cpsr.bits.v;
         default:
             std::cerr << "Unrecognized condition code flag\n";
             return 0;
@@ -42,26 +53,15 @@ void arm_7tdmi::set_condition_code_flag(condition_code_flag_t flag, uint8_t bit)
         return;
     }
 
-    std::bitset<32> bs(registers.cpsr);
     switch (flag) {
-        case N:
-            bs.set(31, bit);
-            break;
-        case Z:
-            bs.set(30, bit);
-            break;
-        case C:
-            bs.set(29, bit);
-            break;
-        case V:
-            bs.set(28, bit);
-            break;
+        case N: registers.cpsr.bits.n = bit; break;
+        case Z: registers.cpsr.bits.z = bit; break;
+        case C: registers.cpsr.bits.c = bit; break;
+        case V: registers.cpsr.bits.v = bit; break;
         default:
             std::cerr << "Unrecognized condition code flag: " << flag <<"\n";
             return;
     }
-
-    registers.cpsr = (word) bs.to_ulong();
 }
 
 void arm_7tdmi::execute(arm_instruction instruction) {
@@ -184,7 +184,7 @@ word arm_7tdmi::get_register(uint32_t reg) {
             }
 
         case 0xf: return registers.r15; // all banks share r15
-        case 0x10: return registers.cpsr;// all banks share cpsr
+        case 0x10: return registers.cpsr.full;// all banks share cpsr
         case 0x11:
             switch(get_state()) {
                 case FIQ: return registers.spsr_fiq;
@@ -314,7 +314,7 @@ void arm_7tdmi::set_register(int reg, word val) {
 
 
         case 0xf: registers.r15 = val; break; // all banks share r15
-        case 0x10: registers.cpsr = val; break; // all banks share cpsr
+        case 0x10: registers.cpsr.full = val; break; // all banks share cpsr
         case 0x11:
             switch(get_state()) {
                 case FIQ:

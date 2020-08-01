@@ -65,7 +65,21 @@ class arm_7tdmi {
             word r14_und;
 
             // special registers
-            word cpsr;
+            union cpsr {
+                struct bits {
+                    state_t state : 5;
+                    u8 t : 1;
+                    u8 f : 1;
+                    u8 i : 1;
+                    u32 reserved : 19;
+                    u8 v : 1;
+                    u8 c : 1;
+                    u8 z : 1;
+                    u8 n : 1;
+                } bits;
+                u32 full;
+            } cpsr;
+
             word spsr_fiq;
             word spsr_svc;
             word spsr_abt;

@@ -9,7 +9,7 @@ void run_asm(char *name) {
     emulator.cpu.mem.load_rom(name);
     u32 i;
     while (true) {
-        fetch();
+        emulator.cpu.fetch();
         i = emulator.cpu.mem.read_u32(emulator.cpu.registers.r15);
         std::cout << i << "\n";
         emulator.cpu.execute(i);

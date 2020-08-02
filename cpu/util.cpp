@@ -75,3 +75,50 @@ instruction_set_format_t util::get_instruction_format(u32 instruction) {
     else if ((instruction >> 24 & 0xF) == 0xF) return INT; // bits
     else return UNDEF;
 }
+
+// determine which type of thumb operation an instruction is
+thumb_instruction_format_t util::get_instruction_format(u16 instruction) {
+    if ((instruction >> 13 & 0b111) == 0) {
+        if ((instruction >> 11 & 0b11) == 0b11) return MSR_T;
+        else return ADDSUB_T;
+    }
+
+    else if ((instruction >> 13 & 0b111) == 0b001) return IMM_T;
+
+    else if ((instruction >> 10 & 0b111111) == 0b010000) return ALU_T;
+
+    else if ((instruction >> 10 & 0b111111) == 0b010001) return HI_T;
+
+    else if ((instruction >> 11 & 0b11111) == 0b01001) return PC_T;
+
+    else if ((instruction >> 12 & 0b1111) == 0b0101) {
+        if ((instruction >> 9 & 1) == 0) return MOV_T;
+        else return MOVS_T;
+    }
+    
+    else if ((instruction >> 13 & 0b111) == 0b011) return MOVI_T;
+
+    else if ((instruction >> 12 & 0b1111) == 0b1000) return MOVH_T;
+
+    else if ((instruction >> 12 & 0b1111) == 0b1001) return SP_T;
+
+    else if ((instruction >> 12 & 0b1111) == 0b1010) return LDA_T;
+
+    else if ((instruction >> 12 & 0b1111) == 0b1011) {
+        if ((instruction >> 9 & 0b111) == 0b000) return ADDSP_T;
+        else return POP_T;
+    }
+
+    else if ((instruction >> 12 & 0b1111) == 0b1100) return MOVM_T;
+
+    else if ((instruction >> 12 & 0b1111) == 0b1101) {
+        if ((instruction >> 8 & 0b1111) == 0b1111) return SWI_T;
+        else return B_T;
+    }
+
+    else if ((instruction >> 11 & 0b11111) == 0b11100) return BAL_T;
+
+    else if ((instruction >> 12 & 0b1111) == 0b1111) return BL_T;
+
+    else return UND_T;
+}

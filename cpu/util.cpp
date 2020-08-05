@@ -19,7 +19,21 @@
  * 
  * ex: getInstructionSubset(0b11110000, 7, 4) = 0b1111
  */
-uint32_t util::get_instruction_subset(u32 instruction, int end, int start) {
+u32 util::get_instruction_subset(u32 instruction, int end, int start) {
+    if (end < start) return 0;
+
+    std::bitset<32> instr(instruction);
+    uint32_t subset = 0;
+
+    for (int i = end; i >= start; --i) {
+        subset <<= 1;
+        subset |= instr[i];
+    }
+
+    return subset;
+}
+
+u16 get_instruction_subset(u16 instruction, int end, int start) {
     if (end < start) return 0;
 
     std::bitset<32> instr(instruction);

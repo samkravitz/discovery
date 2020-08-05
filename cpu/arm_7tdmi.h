@@ -118,6 +118,9 @@ class arm_7tdmi {
         void single_data_swap(u32);
         void software_interrupt(u32);
 
+        // thumb instructions
+        void move_shifted_register_thumb(u16);
+
         // misc
         void update_flags_logical(u32, u8);
         void update_flags_addition(u32, u32, u32);

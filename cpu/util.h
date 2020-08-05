@@ -21,7 +21,10 @@ namespace util {
     thumb_instruction_format_t get_instruction_format(u16 instruction);
 
     // get subset of instruction for purposes like destination register, opcode, shifts
-    uint32_t get_instruction_subset(u32, int, int);
+    u32 get_instruction_subset(u32, int, int);
+
+    // get subset of thumb instruction
+    u16 get_instruction_subset(u16, int, int);
 }
 
 #endif

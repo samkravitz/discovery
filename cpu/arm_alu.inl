@@ -98,8 +98,22 @@ inline void arm_7tdmi::data_processing(u32 instruction) {
         }
     } else { // op2 is shifted register
         u32 shifted_register = util::get_instruction_subset(instruction, 3, 0);
+        u32 shift = util::get_instruction_subset(instruction, 11, 4);
+        u32 shift_amount;
+        u8 shift_type = util::get_instruction_subset(instruction, 6, 5);
+        
+        // get shift amount
+        if ((shift & 1) == 1) { // shift amount contained in bottom byte of Rs
+            u32 Rs = util::get_instruction_subset(instruction, 11, 8);
+            shift_amount = get_register(Rs) & 0xFF;
+            // if this amount is 0, skip shifting
+            //if (shift_amount == 0) return 2;
+        } else { // shift contained in immediate value in instruction
+            shift_amount = util::get_instruction_subset(instruction, 11, 7);
+        }
+
         op2 = get_register(shifted_register);
-        carry_out = shift_register(instruction, op2);
+        carry_out = shift_register(shift_amount, op2, shift_type);
     }
     
     // for arithmetic operations that use a carry bit, this will either equal
@@ -311,9 +325,11 @@ inline void arm_7tdmi::single_data_transfer(u32 instruction) {
     if (immediate) {
         offset = offset_encoding;
     } else { // op2 is a shifted register
+        u32 shift_amount = util::get_instruction_subset(instruction, 11, 7);
         u32 offset_register = util::get_instruction_subset(instruction, 3, 0);
         offset = get_register(offset_register);
-        shift_register(instruction, offset); // offset will be modified to contain result of shifted register
+        u8 shift_type = util::get_instruction_subset(instruction, 6, 5);
+        shift_register(shift_amount, offset, shift_type); // offset will be modified to contain result of shifted register
     }
 
     u32 base = get_register(Rn);
@@ -556,49 +572,10 @@ void arm_7tdmi::move_shifted_register_thumb(u16 instruction) {
     u16 Rs = util::get_instruction_subset(instruction, 5, 3);
     u16 Rd = util::get_instruction_subset(instruction, 2, 0); 
     u16 offset5 = util::get_instruction_subset(instruction, 10, 6); // 5 bit immediate offset
-
+    u16 shift_type = util::get_instruction_subset(instruction, 12, 11);
     u32 op1 = get_register(Rs);
     u8 carry_out = 2;
-    size_t num_bits = sizeof(u32) * 8;
-
-    // TODO - special forms of rotations?
-    if (offset5 == 0) {
-        std::cout << "Offset5 == 0!!" << "\n";
-    }
-
-    // perform shift
-    switch (util::get_instruction_subset(instruction, 12, 11)) { // opcode
-        // LSL
-        case 0b00:
-            for (int i = 0; i < offset5; ++i) {
-                carry_out = (op1 >> num_bits - 1) & 1;
-                op1 <<= 1;
-            }
-            break;
-        
-        // LSR
-        case 0b01:
-            for (int i = 0; i < offset5; ++i) {
-                carry_out = op1 & 1;
-                op1 >>= 1;
-            }
-            break;
-        
-        // ASR
-        case 0b10:
-            for (int i = 0; i < offset5; ++i) {
-                carry_out  = op1 & 1;
-                uint8_t msb = (op1 >> num_bits - 1) & 1; // most significant bit
-                op1 >>= 1;
-                op1 |= (msb << num_bits - 1);
-            }
-            break;
-        
-        default:
-            std::cout << "Invalid opcode in move_shifted_register_thumb!" << "\n";
-            return;
-    }
-
+    carry_out = shift_register(offset5, op1, shift_type);
     set_register(Rd, op1);
     u8 carry = carry_out == 2 ? get_condition_code_flag(C) : carry_out;
     update_flags_logical(op1, carry);

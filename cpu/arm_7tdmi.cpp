@@ -443,34 +443,27 @@ void arm_7tdmi::update_flags_subtraction(u32 op1, u32 op2, u32 result) {
     }
 }
 
-// performs a shifted register operation on op2.
-// returns the carry-out of the barrel shifter
-uint8_t arm_7tdmi::shift_register(u32 instruction, u32 &op2) {
-    u32 shift = util::get_instruction_subset(instruction, 11, 4);
-    u32 shift_type = util::get_instruction_subset(instruction, 6, 5);
-    u32 shift_amount;
+/* performs a shifted register operation on op2.
+ * returns the carry-out of the barrel shifter
+ *
+ *  @params:
+ *  shift_amount - the amount of times to shift
+ *  num - the number that will actually be shifted
+ *  opcode - an encoding of which type of shift to be performed
+ */
+uint8_t arm_7tdmi::shift_register(u32 shift_amount, u32 &num, u8 opcode) {
     uint8_t carry_out;
     // # of bits in a word (should be 32)
     size_t num_bits = sizeof(u32) * 8;
 
-    // get shift amount
-    if ((shift & 1) == 1) { // shift amount contained in bottom byte of Rs
-        u32 Rs = util::get_instruction_subset(instruction, 11, 8);
-        shift_amount = get_register(Rs) & 0xFF;
-        // if this amount is 0, skip shifting
-        if (shift_amount == 0) return 2;
-    } else { // shift contained in immediate value in instruction
-        shift_amount = util::get_instruction_subset(instruction, 11, 7);
-    }
-
     // perform shift
-    switch (shift_type) {
+    switch (opcode) {
         // LSL
         case 0b00:
             if (shift_amount == 0) carry_out = get_condition_code_flag(C); // preserve C flag
             for (int i = 0; i < shift_amount; ++i) {
-                carry_out = (op2 >> num_bits - 1) & 1;
-                op2 <<= 1;
+                carry_out = (num >> num_bits - 1) & 1;
+                num <<= 1;
             }
             break;
         
@@ -478,12 +471,12 @@ uint8_t arm_7tdmi::shift_register(u32 instruction, u32 &op2) {
         case 0b01:
             if (shift_amount != 0) { // normal LSR
                 for (int i = 0; i < shift_amount; ++i) {
-                    carry_out = op2 & 1;
-                    op2 >>= 1;
+                    carry_out = num & 1;
+                    num >>= 1;
                 }
             } else { // special encoding for LSR #32
-                carry_out = (op2 >> num_bits - 1) & 1;
-                op2 = 0;
+                carry_out = (num >> num_bits - 1) & 1;
+                num = 0;
             }
             break;
         
@@ -491,14 +484,14 @@ uint8_t arm_7tdmi::shift_register(u32 instruction, u32 &op2) {
         case 0b10:
             if (shift_amount != 0) {
                 for (int i = 0; i < shift_amount; ++i) {
-                    carry_out  = op2 & 1;
-                    uint8_t msb = (op2 >> num_bits - 1) & 1; // most significant bit
-                    op2 >>= 1;
-                    op2 = op2 | (msb << num_bits - 1);
+                    carry_out  = num & 1;
+                    uint8_t msb = (num >> num_bits - 1) & 1; // most significant bit
+                    num >>= 1;
+                    num |= (msb << num_bits - 1);
                 }
             } else { // special encoding for ASR #32
-                carry_out = (op2 >> num_bits - 1) & 1;
-                op2 = carry_out == 0 ? 0 : (u32) ~0;
+                carry_out = (num >> num_bits - 1) & 1;
+                num = carry_out == 0 ? 0 : (u32) ~0;
             }
             break;
         
@@ -506,18 +499,19 @@ uint8_t arm_7tdmi::shift_register(u32 instruction, u32 &op2) {
         case 0b11:
             if (shift_amount != 0) { // normal rotate right
                 for (int i = 0; i < shift_amount; ++i) {
-                    carry_out = op2 & 1;
-                    uint8_t dropped_lsb = op2 & 1;  
-                    op2 >>= 1;
-                    op2 |= (dropped_lsb << num_bits - 1);
+                    carry_out = num & 1;
+                    uint8_t dropped_lsb = num & 1;  
+                    num >>= 1;
+                    num |= (dropped_lsb << num_bits - 1);
                 }
             } else { // rotate right extended
-                carry_out = op2 & 1;
-                op2 >>= 1;
-                op2 |= (get_condition_code_flag(C) << num_bits - 1);
+                carry_out = num & 1;
+                num >>= 1;
+                num |= (get_condition_code_flag(C) << num_bits - 1);
             }
             break;
     }
+    
     return carry_out;
 }
 

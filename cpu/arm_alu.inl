@@ -823,7 +823,7 @@ void arm_7tdmi::load_store_reg(u16 instruction) {
     }
 }
 
-void arm_7tdmi::load_store_reg(u16 instruction) {
+void arm_7tdmi::load_store_signed_halfword(u16 instruction) {
     u16 Ro = util::get_instruction_subset(instruction, 8, 6); // offset register
     u16 Rb = util::get_instruction_subset(instruction, 5, 3); // base register
     u16 Rd = util::get_instruction_subset(instruction, 2, 0); // destination register
@@ -849,6 +849,34 @@ void arm_7tdmi::load_store_reg(u16 instruction) {
         if (value & 0x8000) value |= ~0b1111111111111111; // bit 15 of byte is 1, so sign extend bits 31-16 of register
         set_register(Rd, value);
     }
+}
+
+void arm_7tdmi::load_store_immediate(u16 instruction) {
+    u16 Rb = util::get_instruction_subset(instruction, 5, 3); // base register
+    u16 Rd = util::get_instruction_subset(instruction, 2, 0); // destination register
+    u16 offset5 = util::get_instruction_subset(instruction, 10, 6); // 5 bit immediate offset
+
+    bool byte = util::get_instruction_subset(instruction, 12, 12) == 1;
+    bool load = util::get_instruction_subset(instruction, 11, 11) == 1;
+    
+    if (!byte) offset5 <<= 2; // assembler places #imm >> 2 in word5 for word accesses
+
+    u32 base = get_register(Rb);
+    base += offset5; // add offset to base
+
+    if (!load && !byte) { // store word
+        mem->write_u32(base, get_register(Rd));
+    } else if (load && !byte) { // load word
+        set_register(Rd,  mem->read_u32(base));
+    } else if (!load && byte) { // store byte
+        mem->write_u8(base, get_register(Rd) & 0xFF);
+    } else { // load byte
+        set_register(Rd, mem->read_u8(base));
+    }
+}
+
+void arm_7tdmi::load_store_halfword(u16 instruction) {
+
 }
 
 

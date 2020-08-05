@@ -188,6 +188,14 @@ void arm_7tdmi::execute(u32 instruction) {
                     increment_pc();
                     break;
                 case MOVS_T:
+                    load_store_signed_halfword((u16) instruction);
+                    increment_pc();
+                    break;
+                case MOVI_T:
+                    load_store_immediate((u16) instruction);
+                    increment_pc();
+                    break;
+                case MOVH_T:
                     load_store_halfword((u16) instruction);
                     increment_pc();
                     break;

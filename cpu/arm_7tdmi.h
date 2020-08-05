@@ -126,6 +126,8 @@ class arm_7tdmi {
         void hi_reg_ops_thumb(u16);
         void pc_rel_load_thumb(u16);
         void load_store_reg(u16);
+        void load_store_signed_halfword(u16);
+        void load_store_immediate(u16);
         void load_store_halfword(u16);
 
         // misc

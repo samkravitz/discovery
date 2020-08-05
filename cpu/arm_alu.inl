@@ -929,4 +929,18 @@ void arm_7tdmi::load_address(u16 instruction) {
     set_register(Rd, mem->read_u32(base));
 }
 
+void arm_7tdmi::add_offset_to_sp(u16 instruction) {
+    u16 sword8 = util::get_instruction_subset(instruction, 6, 0); // 7 bit signed immediate value
+    bool positive = util::get_instruction_subset(instruction, 7, 7) == 0; // sign bit of sword8
+
+    sword8 <<= 2; // assembler places #imm >> 2 in word8 to ensure word alignment
+
+    u32 base = get_register(13); // base address at SP
+
+    if (positive) base += sword8;
+    else base -= sword8;
+
+    set_register(13, base);
+}
+
 

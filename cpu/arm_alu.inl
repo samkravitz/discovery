@@ -640,3 +640,97 @@ void arm_7tdmi::move_immediate_thumb(u16 instruction) {
             break;
     }
 }
+
+void arm_7tdmi::alu_thumb(u16 instruction) {
+    u16 Rs = util::get_instruction_subset(instruction, 5, 3);
+    u16 Rd = util::get_instruction_subset(instruction, 2, 0); 
+    u16 opcode = util::get_instruction_subset(instruction, 9, 6);
+    u32 op1 = get_register(Rs);
+    u32 op2 = get_register(Rd);
+    u8 carry = get_condition_code_flag(C);
+    u32 result;
+
+    switch (opcode) {
+        case 0b0000: // AND
+            result = op1 & op2;
+            set_register(Rd, result);
+            update_flags_logical(result, carry);
+            break;
+        case 0b0001: // EOR
+            result = op1 ^ op2;
+            set_register(Rd, result);
+            update_flags_logical(result, carry);
+            break;
+        case 0b0010: // LSL
+            shift_register(op1, op2, 0b00);
+            set_register(Rd, op2);
+            update_flags_logical(op2, carry);
+            break;
+        case 0b0011: // LSR
+            shift_register(op1, op2, 0b01);
+            set_register(Rd, op2);
+            update_flags_logical(op2, carry);
+            break;
+        case 0b0100: // ASR
+            shift_register(op1, op2, 0b10);
+            set_register(Rd, op2);
+            update_flags_logical(op2, carry);
+            break;
+        case 0b0101: // ADC
+            result = op1 + op2 + carry;
+            set_register(Rd, result);
+            update_flags_addition(op1, op2, result);
+            break;
+        case 0b0110: // SBC
+            result = op2 - op1 - (~carry & 0x1); // Rd - Rs - NOT C-bit
+            set_register(Rd, result);
+            update_flags_subtraction(op1, op2, result);
+            break;
+        case 0b0111: // ASR
+            shift_register(op1, op2, 0b11);
+            set_register(Rd, op2);
+            update_flags_logical(op2, carry);
+            break;
+        case 0b1000: // TST
+            result = op1 & op2;
+            update_flags_logical(result, carry);
+            break;
+        case 0b1001: // NEG
+            result = op1 * -1;
+            set_register(Rd, result);
+            update_flags_logical(result, carry);
+            break;
+        case 0b1010: // CMP
+            result = op2 - op1;
+            update_flags_subtraction(op1, op2, result);
+            break;
+        case 0b1011: // CMN
+            result = op2 + op1;
+            update_flags_addition(op1, op2, result);
+            break;
+        case 0b1100: // ORR
+            result = op2 | op1;
+            set_register(Rd, result);
+            update_flags_logical(result, carry);
+            break;
+        case 0b1101: // MUL
+            result = op2 * op1;
+            set_register(Rd, result);
+            update_flags_addition(op1, op2, result);
+            break;
+        case 0b1110: // BIC
+            result = op2 & ~op1;
+            set_register(Rd, result);
+            update_flags_logical(result, carry);
+            break;
+        case 0b1111: // MVN
+            result = ~op1;
+            set_register(Rd, result);
+            update_flags_logical(result, carry);
+            break;
+        default:
+            std::cerr << "Error: Invalid thumb ALU opcode" << "\n";
+            return;
+    }
+
+}

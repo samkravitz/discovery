@@ -32,9 +32,6 @@ inline void arm_7tdmi::branch_exchange(u32 instruction) {
         registers.r15 -= 1; // continue at Rn - 1 for thumb mode
         set_mode(THUMB);
         registers.cpsr.bits.t = 1; // TBIT
-    } else {
-        set_mode(ARM);
-        registers.cpsr.bits.t = 0; // TBIT
     }
 }
 
@@ -662,17 +659,17 @@ void arm_7tdmi::alu_thumb(u16 instruction) {
             update_flags_logical(result, carry);
             break;
         case 0b0010: // LSL
-            shift_register(op1, op2, 0b00);
+            carry = shift_register(op1, op2, 0b00);
             set_register(Rd, op2);
             update_flags_logical(op2, carry);
             break;
         case 0b0011: // LSR
-            shift_register(op1, op2, 0b01);
+            carry = shift_register(op1, op2, 0b01);
             set_register(Rd, op2);
             update_flags_logical(op2, carry);
             break;
         case 0b0100: // ASR
-            shift_register(op1, op2, 0b10);
+            carry = shift_register(op1, op2, 0b10);
             set_register(Rd, op2);
             update_flags_logical(op2, carry);
             break;
@@ -687,7 +684,7 @@ void arm_7tdmi::alu_thumb(u16 instruction) {
             update_flags_subtraction(op2, op1, result);
             break;
         case 0b0111: // ASR
-            shift_register(op1, op2, 0b11);
+            carry = shift_register(op1, op2, 0b11);
             set_register(Rd, op2);
             update_flags_logical(op2, carry);
             break;

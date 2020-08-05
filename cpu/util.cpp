@@ -33,7 +33,7 @@ u32 util::get_instruction_subset(u32 instruction, int end, int start) {
     return subset;
 }
 
-u16 get_instruction_subset(u16 instruction, int end, int start) {
+u16 util::get_instruction_subset(u16 instruction, int end, int start) {
     if (end < start) return 0;
 
     std::bitset<32> instr(instruction);

@@ -551,3 +551,55 @@ inline void arm_7tdmi::software_interrupt(u32 instruction) {
     set_register(15, 0x08);
     set_register(17, get_register(16)); // put CPSR in SPSR_<svc>
 }
+
+void arm_7tdmi::move_shifted_register_thumb(u16 instruction) {
+    u16 Rs = util::get_instruction_subset(instruction, 5, 3);
+    u16 Rd = util::get_instruction_subset(instruction, 2, 0); 
+    u16 offset5 = util::get_instruction_subset(instruction, 10, 6); // 5 bit immediate offset
+
+    u32 op1 = get_register(Rs);
+    u8 carry_out = 2;
+    size_t num_bits = sizeof(u32) * 8;
+
+    // TODO - special forms of rotations?
+    if (offset5 == 0) {
+        std::cout << "Offset5 == 0!!" << "\n";
+    }
+
+    // perform shift
+    switch (util::get_instruction_subset(instruction, 12, 11)) { // opcode
+        // LSL
+        case 0b00:
+            for (int i = 0; i < offset5; ++i) {
+                carry_out = (op1 >> num_bits - 1) & 1;
+                op1 <<= 1;
+            }
+            break;
+        
+        // LSR
+        case 0b01:
+            for (int i = 0; i < offset5; ++i) {
+                carry_out = op1 & 1;
+                op1 >>= 1;
+            }
+            break;
+        
+        // ASR
+        case 0b10:
+            for (int i = 0; i < offset5; ++i) {
+                carry_out  = op1 & 1;
+                uint8_t msb = (op1 >> num_bits - 1) & 1; // most significant bit
+                op1 >>= 1;
+                op1 |= (msb << num_bits - 1);
+            }
+            break;
+        
+        default:
+            std::cout << "Invalid opcode in move_shifted_register_thumb!" << "\n";
+            return;
+    }
+
+    set_register(Rd, op1);
+    u8 carry = carry_out == 2 ? get_condition_code_flag(C) : carry_out;
+    update_flags_logical(op1, carry);
+}

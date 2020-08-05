@@ -13,7 +13,7 @@
 #include "arm_alu.inl"
 #include "util.h"
 
-#define TEST
+//#define TEST
 
 arm_7tdmi::arm_7tdmi() {
     state = SYS;

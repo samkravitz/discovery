@@ -1,6 +1,8 @@
 #include "gpu.h"
 
 GPU::GPU() {
+    mem = NULL;
+
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         std::cerr << "Could not initialize GPU" << "\n";
         exit(2);
@@ -19,7 +21,7 @@ GPU::GPU() {
 }
 
 GPU::~GPU() {
-    
+    delete mem;
 }
 
 void GPU::reset() {
@@ -29,16 +31,16 @@ void GPU::reset() {
     SDL_RenderPresent(renderer);
 }
 
-void GPU::draw(u32 dispcnt, u8 *vram) {
-    switch (dispcnt & 0x7) { // bits 0-2 represent video mode
-        case 3: draw_mode3(vram); break;
+void GPU::draw() {
+    switch (mem->read_u32(REG_DISPCNT) & 0x7) { // bits 0-2 represent video mode
+        case 3: draw_mode3(); break;
         default: 
             std::cerr << "Error: unknown video mode" << "\n";
             break;
     }
 }
 
-void GPU::draw_mode3(u8 *vram) {
+void GPU::draw_mode3() {
 
 }
 

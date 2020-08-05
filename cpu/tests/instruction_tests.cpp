@@ -20,20 +20,21 @@ TEST_CASE("branch_exchange") {
     REQUIRE(arm.registers.r15 == 0xbeefbeef); // contents of r9 moved to r15
     REQUIRE(arm.get_mode() == THUMB); // because Rn[0] is odd
 
-    arm.registers.r6 = 0xabcde;
+    arm_7tdmi arm2;
+    arm2.registers.r6 = 0xabcde;
 
     // BXHI 6 (BEX cond=HI Rn=6)
-    u32 i2 = 0b10000001001011111111111100010110;
-    arm.execute(i2);
-    REQUIRE(arm.registers.r15 == 0xabcde); // contents of r6 moved to r15
-    REQUIRE(arm.get_mode() == ARM); // because Rn[0] is even
+    u32 i2 = 0b11100001001011111111111100010110;
+    arm2.execute(i2);
+    REQUIRE(arm2.registers.r15 == 0xabcde); // contents of r6 moved to r15
+    REQUIRE(arm2.get_mode() == ARM); // because Rn[0] is even
 
     // unrecognized condition (Rn = 15)
-    u32 i3 = 0b10000001001011111111111100011111;
-    arm.execute(i3);
-    REQUIRE(arm.registers.r15 == 0xabcde); // contents of r15 unchanged
-    REQUIRE(arm.get_state() == UND); // because Rn was 15
-    REQUIRE(arm.get_mode() == ARM); // mode unchanged
+    u32 i3 = 0b11100001001011111111111100011111;
+    arm2.execute(i3);
+    REQUIRE(arm2.registers.r15 == 0xabcde); // contents of r15 unchanged
+    REQUIRE(arm2.get_state() == UND); // because Rn was 15
+    REQUIRE(arm2.get_mode() == ARM); // mode unchanged
 }
 
 TEST_CASE("multiply") {
@@ -77,7 +78,7 @@ TEST_CASE("single_data_transfer") {
     arm_7tdmi arm;
     // base r0 dest r1
     arm.registers.r0 = 0x1000;
-    arm.mem.write_u32(0x1000, 0xABCDEFA0);
+    arm.mem->write_u32(0x1000, 0xABCDEFA0);
     // LDR R1, 0x1000
     // Load value of address 0x1000 with 0 immediate offset to register 1
     u32 i = 0b11100101100100000001000000000000;
@@ -93,7 +94,7 @@ TEST_CASE("single_data_transfer") {
     // STRB r4, r3 where offset comes from register 7 (1111), LSL 4 times to become 0xf0
     u32 i2 = 0b11100111110000110100001000000111;
     arm2.execute(i2);
-    REQUIRE(arm2.mem.read_u8(0xf0) == 0xEF);
+    REQUIRE(arm2.mem->read_u8(0xf0) == 0xEF);
 }
 
 TEST_CASE("halfword_data_transfer") {
@@ -103,7 +104,7 @@ TEST_CASE("halfword_data_transfer") {
     // base r10 dest r11 offset r12
     arm1.registers.r10 = 0x1000;
     arm1.registers.r12 = 0x1000;
-    arm1.mem.write_u16(0x1000, 0b1111000011110000); // memory address 0x1000 = 0b1111000011110000
+    arm1.mem->write_u16(0x1000, 0b1111000011110000); // memory address 0x1000 = 0b1111000011110000
     // 1110 000 0 1 0 0 1 1010 1011 0000 1111 1100
     // load signed halfword from address 0x1000 into r11
     u32 i1 = 0b11100000100110101011000011111100;
@@ -120,7 +121,7 @@ TEST_CASE("halfword_data_transfer") {
     // store unsigned halfword from r2 into Address 2020202 + immediate offset 0b11110000 (pre-index)
     u32 i2 = 0b11100001110000010010111110110000;
     arm2.execute(i2);
-    REQUIRE(arm2.mem.read_u16(0x2020202 + 0b11110000) == 0x1001);
+    REQUIRE(arm2.mem->read_u16(0x2020202 + 0b11110000) == 0x1001);
     REQUIRE(arm2.registers.r1 == 0x2020202); // was a pre index with no writeback
 
     // TEST 3 - LOAD SIGNED BYTE
@@ -128,7 +129,7 @@ TEST_CASE("halfword_data_transfer") {
     // base r6, dest r7, offset r8
     arm3.registers.r6 = 0x1004;    
     arm3.registers.r8 = 4;
-    arm3.mem.write_u16(0x1000, 124); // memory address 0x1000 = 155
+    arm3.mem->write_u16(0x1000, 124); // memory address 0x1000 = 155
     // 1110 000 1 0 0 0 1 0110 0111 0000 1101 1000
     // load signed byte (124) from address 0x1004 - offset address (r8)
     u32 i3 = 0b11100001000101100111000011011000;
@@ -150,9 +151,9 @@ TEST_CASE("block_data_transfer") {
     u32 i1 = 0b11101000101010100000000010100010;
     arm1.execute(i1);
     REQUIRE(arm1.registers.r10 == 0x100c);
-    REQUIRE(arm1.mem.read_u32(0x1000) == 1);
-    REQUIRE(arm1.mem.read_u32(0x1004) == 5);
-    REQUIRE(arm1.mem.read_u32(0x1008) == 7);
+    REQUIRE(arm1.mem->read_u32(0x1000) == 1);
+    REQUIRE(arm1.mem->read_u32(0x1004) == 5);
+    REQUIRE(arm1.mem->read_u32(0x1008) == 7);
 
     // TEST 2 - STM PRE-INCREMENT
     arm_7tdmi arm2;
@@ -165,9 +166,9 @@ TEST_CASE("block_data_transfer") {
     u32 i2 = 0b11101001101010100000000010100010;
     arm2.execute(i2);
     REQUIRE(arm2.registers.r10 == 0x100c);
-    REQUIRE(arm2.mem.read_u32(0x1004) == 1);
-    REQUIRE(arm2.mem.read_u32(0x1008) == 5);
-    REQUIRE(arm2.mem.read_u32(0x100c) == 7);
+    REQUIRE(arm2.mem->read_u32(0x1004) == 1);
+    REQUIRE(arm2.mem->read_u32(0x1008) == 5);
+    REQUIRE(arm2.mem->read_u32(0x100c) == 7);
 
     // TEST 3 - STM POST-DECREMENT
     arm_7tdmi arm3;
@@ -180,9 +181,9 @@ TEST_CASE("block_data_transfer") {
     u32 i3 = 0b11101000001010100000000010100010;
     arm3.execute(i3);
     REQUIRE(arm3.registers.r10 == 0x0ff4);
-    REQUIRE(arm3.mem.read_u32(0x1000) == 7);
-    REQUIRE(arm3.mem.read_u32(0x0ffc) == 5);
-    REQUIRE(arm3.mem.read_u32(0x0ff8) == 1);
+    REQUIRE(arm3.mem->read_u32(0x1000) == 7);
+    REQUIRE(arm3.mem->read_u32(0x0ffc) == 5);
+    REQUIRE(arm3.mem->read_u32(0x0ff8) == 1);
 
     // TEST 4 - STM PRE-DECREMENT
     arm_7tdmi arm4;
@@ -195,9 +196,9 @@ TEST_CASE("block_data_transfer") {
     u32 i4 = 0b11101001001010100000000010100010;
     arm4.execute(i4);
     REQUIRE(arm4.registers.r10 == 0x0ff4);
-    REQUIRE(arm4.mem.read_u32(0x0ffc) == 7);
-    REQUIRE(arm4.mem.read_u32(0x0ff8) == 5);
-    REQUIRE(arm4.mem.read_u32(0x0ff4) == 1);
+    REQUIRE(arm4.mem->read_u32(0x0ffc) == 7);
+    REQUIRE(arm4.mem->read_u32(0x0ff8) == 5);
+    REQUIRE(arm4.mem->read_u32(0x0ff4) == 1);
 
     // TEST 5 - LDM PRE-INCREMENT
     // Rn = 9, registers list is r2, r3, r4
@@ -226,9 +227,9 @@ TEST_CASE("block_data_transfer") {
     arm6.set_register(11, 6);
     arm6.execute(i6);
     REQUIRE(arm6.registers.r10 == 0x1000);
-    REQUIRE(arm6.mem.read_u32(0x1000) == 1);
-    REQUIRE(arm6.mem.read_u32(0x1004) == 5);
-    REQUIRE(arm6.mem.read_u32(0x1008) == 7);
+    REQUIRE(arm6.mem->read_u32(0x1000) == 1);
+    REQUIRE(arm6.mem->read_u32(0x1004) == 5);
+    REQUIRE(arm6.mem->read_u32(0x1008) == 7);
 }
 
 TEST_CASE("single_data_swap") {
@@ -237,24 +238,24 @@ TEST_CASE("single_data_swap") {
     // r0 base register r1 source, r2 dest
     arm1.registers.r0 = 0x1000;
     arm1.registers.r1 = 0xFF11FF11;
-    arm1.mem.write_u32(0x1000, 0xAA22AA22);
+    arm1.mem->write_u32(0x1000, 0xAA22AA22);
 
     // 1110 00010 0 00 0000 0010 0000 1001 0001;
     u32 i1 = 0b11100001000000000010000010010001;
     arm1.execute(i1);
     REQUIRE(arm1.registers.r2 == 0xAA22AA22);
-    REQUIRE(arm1.mem.read_u32(0x1000) == 0xFF11FF11);
+    REQUIRE(arm1.mem->read_u32(0x1000) == 0xFF11FF11);
 
     // TEST 2 - SWP BYTE
     arm_7tdmi arm2;
     // r0 base register r1 source, r2 dest
     arm2.registers.r0 = 0x1000;
     arm2.registers.r1 = 0xFF11FF11;
-    arm2.mem.write_u32(0x1000, 0xAA22AA22);
+    arm2.mem->write_u32(0x1000, 0xAA22AA22);
 
     // 1110 00010 1 00 0000 0010 0000 1001 0001;
     u32 i2 = 0b11100001010000000010000010010001;
     arm2.execute(i2);
     REQUIRE(arm2.registers.r2 == 0x22);
-    REQUIRE(arm2.mem.read_u8(0x1000) == 0x11);
+    REQUIRE(arm2.mem->read_u8(0x1000) == 0x11);
 }

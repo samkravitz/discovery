@@ -15,6 +15,7 @@
 #include <iostream>
 #include "../memory/common.h"
 #include "../common.h"
+#include "../memory/memory.h"
 
 #define SCREEN_WIDTH  240
 #define SCREEN_HEIGHT 160
@@ -24,8 +25,10 @@ class GPU {
         GPU();
         ~GPU();
 
+        Memory *mem;
+
         void reset();
-        void draw(u32, u8 *);
+        void draw();
         void draw_pixel(int, int);
 
     private:
@@ -34,7 +37,7 @@ class GPU {
         SDL_Surface *surface;
 
         // video mode draws
-        void draw_mode3(u8 *);
+        void draw_mode3();
 };
 
 #endif // GPU_H

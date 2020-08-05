@@ -17,6 +17,8 @@ class discovery {
     public:
         arm_7tdmi cpu;
         GPU gpu;
+
+        discovery();
     
 };
 

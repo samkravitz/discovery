@@ -26,11 +26,13 @@ arm_7tdmi::arm_7tdmi() {
     registers.cpsr.bits.f = 1;
 
     registers.r15 = 0x8000000; // starting address of gamepak flash rom
-    
+    mem = NULL;
+
     // different initialization for the testing environment
     #ifdef TEST
     registers.r15 = 0;
     state = USR;
+    mem = new Memory();
     #endif
 }
 
@@ -91,18 +93,18 @@ bool arm_7tdmi::condition_met(u32 instruction) {
 }
 
 void arm_7tdmi::fetch() {
-    switch (state) {
+    switch (mode) {
         case ARM:
-            current_instruction = mem.read_u32(registers.r15);
+            current_instruction = mem->read_u32(registers.r15);
             break;
         case THUMB:
-            current_instruction = (u16) mem.read_u16(registers.r15);
+            current_instruction = (u16) mem->read_u16(registers.r15);
             break;
     }
 }
 
 void arm_7tdmi::execute(u32 instruction) {
-    switch (state) {
+    switch (mode) {
         case ARM:
             if (!condition_met(instruction)) {
                 increment_pc();
@@ -149,6 +151,8 @@ void arm_7tdmi::execute(u32 instruction) {
                     increment_pc();
                     break;
             }
+            break;
+
         case THUMB:
 
             break;
@@ -529,4 +533,21 @@ inline void arm_7tdmi::increment_pc() {
     u32 instruction_ptr = get_register(15);
     instruction_ptr += get_mode() == ARM ? 4 : 2;
     set_register(15, instruction_ptr);
+}
+
+
+/*
+ * Updates the value in the psr
+ * Can also change the emulator's state or mode depending on the value
+ * parameter spsr is true if the psr in question is current bank's spsr
+ * else it is the cpsr
+ */ 
+void arm_7tdmi::update_psr(bool spsr, u32 value) {
+    if (spsr) {
+
+        return;
+    }
+
+    // cpsr
+
 }

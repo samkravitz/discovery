@@ -333,17 +333,17 @@ inline void arm_7tdmi::single_data_transfer(u32 instruction) {
     if (load) { // load from memory to register
         if (byte) { // load one byte from memory, sign extend 0s
             u32 value = 0;
-            value |= mem.read_u8(base);
+            value |= mem->read_u8(base);
             set_register(Rd, value);
         } else { // load one word from memory
-            set_register(Rd, mem.read_u32(base));
+            set_register(Rd, mem->read_u32(base));
         }
     } else { // store from register to memory
         if (byte) { // store one byte to memory
             uint8_t value = get_register(Rd) & 0xFF; // lowest byte in register
-            mem.write_u8(base, value);
+            mem->write_u8(base, value);
         } else { // store one word into memory
-            mem.write_u32(base, get_register(Rd));
+            mem->write_u32(base, get_register(Rd));
         }
     }
 
@@ -392,15 +392,15 @@ inline void arm_7tdmi::halfword_data_transfer(u32 instruction) {
     switch (util::get_instruction_subset(instruction, 6, 5)) { // SH bits
         case 0b01: // unsigned halfwords
                 if (load) {
-                    set_register(Rd, mem.read_u16(base));
+                    set_register(Rd, mem->read_u16(base));
                 } else {
-                    mem.write_u16(base, get_register(Rd) & 0xFFFF);
+                    mem->write_u16(base, get_register(Rd) & 0xFFFF);
                 }
             break;
         
         case 0b10: // signed byte
                 if (load) {
-                    u32 value = (u32) mem.read_u8(base);
+                    u32 value = (u32) mem->read_u8(base);
                     if (value & 0x80) value |= ~0b11111111; // bit 7 of byte is 1, so sign extend bits 31-8 of register
                     set_register(Rd, value);
                 } else {
@@ -411,7 +411,7 @@ inline void arm_7tdmi::halfword_data_transfer(u32 instruction) {
         
         case 0b11: // signed halfwords
                 if (load) {
-                    u32 value = (u32) mem.read_u16(base);
+                    u32 value = (u32) mem->read_u16(base);
                     if (value & 0x8000) value |= ~0b1111111111111111; // bit 15 of byte is 1, so sign extend bits 31-8 of register
                     set_register(Rd, value);
                 } else {
@@ -484,13 +484,13 @@ inline void arm_7tdmi::block_data_transfer(u32 instruction) {
                 if (load_psr && r15_in_transfer_list && (set_registers[i] == 15)) {
                     set_register(16, get_register(17)); // SPSR_<mode> is transferred to CPSR when r15 in loaded
                 }
-                set_register(set_registers[i], mem.read_u32(base));
+                set_register(set_registers[i], mem->read_u32(base));
                 if (!pre_index) base += 4;
             }
         } else { // addresses decrement
             for (int i = num_registers - 1; i >= 0; --i) {
                 if (pre_index) base -= 4;
-                set_register(set_registers[i], mem.read_u32(base));
+                set_register(set_registers[i], mem->read_u32(base));
                 if (!pre_index) base -= 4;
             }
         }
@@ -499,13 +499,13 @@ inline void arm_7tdmi::block_data_transfer(u32 instruction) {
         if (up) { // addresses increment 
             for (int i = 0; i < num_registers; ++i) {
                 if (pre_index) base += 4;
-                mem.write_u32(base, get_register(set_registers[i]));
+                mem->write_u32(base, get_register(set_registers[i]));
                 if (!pre_index) base += 4;
             }
         } else { // addresses decrement
             for (int i = num_registers - 1; i >= 0; --i) {
                 if (pre_index) base -= 4;
-                mem.write_u32(base, get_register(set_registers[i]));
+                mem->write_u32(base, get_register(set_registers[i]));
                 if (!pre_index) base -= 4;
             }
         }
@@ -537,14 +537,14 @@ inline void arm_7tdmi::single_data_swap(u32 instruction) {
 
     u32 swap_address = get_register(Rn);
     if (byte) { // swap a byte
-        u8 temp = mem.read_u8(swap_address);
+        u8 temp = mem->read_u8(swap_address);
         u8 source = get_register(Rm) & 0xFF; // bottom byte of source register
-        mem.write_u8(swap_address, source);
+        mem->write_u8(swap_address, source);
         set_register(Rd, temp);
     } else { // swap a word
-        u32 temp = mem.read_u32(swap_address);
+        u32 temp = mem->read_u32(swap_address);
         u32 source = get_register(Rm);
-        mem.write_u32(swap_address, source);
+        mem->write_u32(swap_address, source);
         set_register(Rd, temp);
     }
 }

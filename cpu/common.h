@@ -10,8 +10,6 @@
 #ifndef CPU_COMMON_H
 #define CPU_COMMON_H
 
-#include <stdint.h>
-
 // cpu state
 typedef enum State {
     USR = 0b10000, // The normal ARM program execution state

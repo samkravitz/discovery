@@ -18,7 +18,7 @@ class arm_7tdmi {
         arm_7tdmi();
         ~arm_7tdmi() {};
         
-        Memory mem;
+        Memory *mem;
 
         struct registers_struct {
             // general purpose registers
@@ -123,6 +123,7 @@ class arm_7tdmi {
         u8 shift_register(u32, u32 &);
         void increment_pc();
         bool condition_met(u32);
+        void update_psr(bool, u32);
 
     private:
         /* ARM state - 15 general purpose registers and 1 non-gp

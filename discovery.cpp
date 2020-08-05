@@ -4,17 +4,21 @@
 #include "cpu/arm_7tdmi.h"
 #include "memory/memory.h"
 
+discovery::discovery() {
+    cpu.mem = new Memory();
+    gpu.mem = cpu.mem;
+}
+
 void run_asm(char *name) {
     discovery emulator;
-    emulator.cpu.mem.load_rom(name);
+    emulator.cpu.mem->load_rom(name);
     u32 i;
     while (true) {
         emulator.cpu.fetch();
-        i = emulator.cpu.mem.read_u32(emulator.cpu.registers.r15);
+        i = emulator.cpu.mem->read_u32(emulator.cpu.registers.r15);
         std::cout << i << "\n";
         emulator.cpu.execute(i);
-        if (i == 0) emulator.cpu.registers.r15 += 4;
-        emulator.gpu.draw(emulator.cpu.mem.read_u32(REG_DISPCNT), emulator.cpu.mem.memory.vram);
+        emulator.gpu.draw();
     }
 }
 

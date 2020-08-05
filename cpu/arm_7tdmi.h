@@ -13,6 +13,22 @@
 #include "common.h"
 #include "../memory/memory.h"
 
+// data type for special registers
+union status_register {
+    struct bits {
+        state_t state : 5;
+        u8 t : 1;
+        u8 f : 1;
+        u8 i : 1;
+        u32 reserved : 19;
+        u8 v : 1;
+        u8 c : 1;
+        u8 z : 1;
+        u8 n : 1;
+    } bits;
+    u32 full;
+};
+
 class arm_7tdmi {
     public:
         arm_7tdmi();
@@ -64,27 +80,13 @@ class arm_7tdmi {
             u32 r13_und;
             u32 r14_und;
 
-            // special registers
-            union cpsr {
-                struct bits {
-                    state_t state : 5;
-                    u8 t : 1;
-                    u8 f : 1;
-                    u8 i : 1;
-                    u32 reserved : 19;
-                    u8 v : 1;
-                    u8 c : 1;
-                    u8 z : 1;
-                    u8 n : 1;
-                } bits;
-                u32 full;
-            } cpsr;
+            status_register cpsr;
 
-            u32 spsr_fiq;
-            u32 spsr_svc;
-            u32 spsr_abt;
-            u32 spsr_irq;
-            u32 spsr_und;
+            status_register spsr_fiq;
+            status_register spsr_svc;
+            status_register spsr_abt;
+            status_register spsr_irq;
+            status_register spsr_und;
         } registers;
         
         void fetch();
@@ -126,21 +128,6 @@ class arm_7tdmi {
         void update_psr(bool, u32);
 
     private:
-        /* ARM state - 15 general purpose registers and 1 non-gp
-
-         * R14 - is used as the subroutine link register. This receives a copy of
-         * R15 when a Branch and Link (BL) instruction is executed. A
-         * tall other times it may be treated as a general-purpose
-         * register. The corresponding banked registers R14_svc,R14_irq, R14_fiq,
-         * R14_abt and R14_und are similarly usedto hold the return values of R15 when interrupts and
-         * exceptions arise, or when Branch and Link instructions are
-         * executed within interrupt or exception routines
-         * 
-         * R15 holds the Program Counter (PC). In ARM state, bits [1:0] of
-         * R15 are zero and bits [31:2] contain the PC.
-         * In THUMB state,bit [0] is zero and bits [31:1] contain the PC.
-         * 
-         */
         u32 current_instruction;
         state_t state;
         cpu_mode_t mode;

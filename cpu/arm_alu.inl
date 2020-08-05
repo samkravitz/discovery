@@ -238,13 +238,7 @@ inline void arm_7tdmi::psr_transfer(u32 instruction) {
             return;
         }
         
-        // TODO - is it okay to set entire SPR to contents of Rm?
-        // ARM instruction manual says set bits[31:0] but also says to leave reserved bits alone
-        if (spsr) { // spsr_<mode> <- Rm
-            set_register(17, get_register(Rm));
-        } else { // cpsr <- Rm
-            set_register(16, get_register(Rm));
-        }
+        update_psr(spsr, get_register(Rm));
     } else if (util::get_instruction_subset(instruction, 21, 12) == 0b1010001111) { // MSR (transfer register contents or immediate value to PSR flag bits only)
         bool immediate = util::get_instruction_subset(instruction, 25, 25) == 1;
         u32 transfer_value;
@@ -263,7 +257,8 @@ inline void arm_7tdmi::psr_transfer(u32 instruction) {
                 transfer_value |= (dropped_lsb << num_bits - 1);
             }
         } else { // use value in register
-            transfer_value = util::get_instruction_subset(instruction, 3, 0);
+            u32 Rm = util::get_instruction_subset(instruction, 3, 0);
+            transfer_value = get_register(Rm);
         }
 
         // clear bits [27-0] of transfer_value
@@ -281,11 +276,7 @@ inline void arm_7tdmi::psr_transfer(u32 instruction) {
         old_spr_value <<= 4;
         old_spr_value >>= 4;
         old_spr_value |= transfer_value;
-        if (spsr) {
-            set_register(17, transfer_value);
-        } else {
-            set_register(16, transfer_value);
-        }
+        update_psr(spsr, transfer_value);
 
     } else { // should not execute
         std::cerr << "Bad PSR transfer instruction!" << "\n";
@@ -553,8 +544,4 @@ inline void arm_7tdmi::software_interrupt(u32 instruction) {
     set_state(SVC);
     set_register(15, 0x08);
     set_register(17, get_register(16)); // put CPSR in SPSR_<svc>
-}
-
-inline void executeALUInstruction(arm_7tdmi &arm, u32 instruction) {
-    std::cout << "Got to the ALU!\n";
 }

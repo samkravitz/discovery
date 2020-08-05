@@ -101,7 +101,7 @@ inline void arm_7tdmi::data_processing(u32 instruction) {
         u32 shift = util::get_instruction_subset(instruction, 11, 4);
         u32 shift_amount;
         u8 shift_type = util::get_instruction_subset(instruction, 6, 5);
-        
+
         // get shift amount
         if ((shift & 1) == 1) { // shift amount contained in bottom byte of Rs
             u32 Rs = util::get_instruction_subset(instruction, 11, 8);
@@ -579,4 +579,33 @@ void arm_7tdmi::move_shifted_register_thumb(u16 instruction) {
     set_register(Rd, op1);
     u8 carry = carry_out == 2 ? get_condition_code_flag(C) : carry_out;
     update_flags_logical(op1, carry);
+}
+
+void arm_7tdmi::add_sub_thumb(u16 instruction) {
+    u16 Rs = util::get_instruction_subset(instruction, 5, 3);
+    u16 Rd = util::get_instruction_subset(instruction, 2, 0);
+    u16 Rn_offset3 = util::get_instruction_subset(instruction, 8, 6);
+    bool immediate = util::get_instruction_subset(instruction, 10, 10) == 1;
+    bool add = util::get_instruction_subset(instruction, 9, 9) == 0;
+    u32 op1;
+    u32 op2;
+    u32 result;
+
+    op1 = get_register(Rs);
+
+    if (immediate) {
+        op2 = Rn_offset3;
+    } else {
+        op2 = get_register(Rn_offset3);
+    }
+
+    if (add) {
+        result = op1 + op2;
+        update_flags_addition(op1, op2, result);
+    } else {
+        result = op1 - op2;
+        update_flags_subtraction(op1, op2, result);
+    }
+
+    set_register(Rd, result);
 }

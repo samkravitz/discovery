@@ -162,7 +162,11 @@ void arm_7tdmi::execute(u32 instruction) {
                 case MSR_T:
                     move_shifted_register_thumb((u16) instruction);
                     increment_pc();
-                break;
+                    break;
+                case ADDSUB_T:
+                    add_sub_thumb((u16) instruction);
+                    increment_pc();
+                    break;
                 default:
                     std::cerr << "Cannot execute thumb instruction: " << (u16) instruction << "\n";
                     break;
@@ -511,7 +515,7 @@ uint8_t arm_7tdmi::shift_register(u32 shift_amount, u32 &num, u8 opcode) {
             }
             break;
     }
-    
+
     return carry_out;
 }
 

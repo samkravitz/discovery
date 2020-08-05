@@ -822,3 +822,33 @@ void arm_7tdmi::load_store_reg(u16 instruction) {
         else mem->write_u32(base, get_register(Rd));
     }
 }
+
+void arm_7tdmi::load_store_reg(u16 instruction) {
+    u16 Ro = util::get_instruction_subset(instruction, 8, 6); // offset register
+    u16 Rb = util::get_instruction_subset(instruction, 5, 3); // base register
+    u16 Rd = util::get_instruction_subset(instruction, 2, 0); // destination register
+
+    bool H = util::get_instruction_subset(instruction, 11, 11) == 1; // H flag
+    bool S = util::get_instruction_subset(instruction, 10, 10) == 1; // sign extended flag
+
+    u32 base = get_register(Rb);
+    base += get_register(Ro); // add offset to base
+
+    if (!S && !H) { // store halfword
+        mem->write_u16(base, get_register(Rd) & 0xFFFF);
+    } else if (!S && H) { // load halfword
+        u32 value = 0;
+        value |= mem->read_u16(base);
+        set_register(Rd, value);
+    } else if (S && !H) { // load sign-extended byte
+        u32 value = (u32) mem->read_u8(base);
+        if (value & 0x80) value |= ~0b11111111; // bit 7 of byte is 1, so sign extend bits 31-8 of register
+        set_register(Rd, value);
+    } else { // load sign-extended halfword
+        u32 value = (u32) mem->read_u16(base);
+        if (value & 0x8000) value |= ~0b1111111111111111; // bit 15 of byte is 1, so sign extend bits 31-16 of register
+        set_register(Rd, value);
+    }
+}
+
+

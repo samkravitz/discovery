@@ -130,6 +130,7 @@ class arm_7tdmi {
         void load_store_immediate(u16);
         void load_store_halfword(u16);
         void sp_load_store(u16);
+        void load_address(u16);
 
         // misc
         void update_flags_logical(u32, u8);

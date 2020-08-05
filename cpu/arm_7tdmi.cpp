@@ -203,6 +203,10 @@ void arm_7tdmi::execute(u32 instruction) {
                     sp_load_store((u16) instruction);
                     increment_pc();
                     break;
+                case LDA_T:
+                    load_address((u16) instruction);
+                    increment_pc();
+                    break;
                 default:
                     std::cerr << "Cannot execute thumb instruction: " << (u16) instruction << "\n";
                     break;

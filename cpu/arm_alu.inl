@@ -898,7 +898,6 @@ void arm_7tdmi::sp_load_store(u16 instruction) {
     u16 word8 = util::get_instruction_subset(instruction, 10, 6); // 8 bit immediate offset
     bool load = util::get_instruction_subset(instruction, 11, 11) == 1;
 
-
     word8 <<= 2; // assembler places #imm >> 2 in word8 to ensure word alignment
 
     u32 base = get_register(13); // current stack pointer is base address
@@ -909,6 +908,25 @@ void arm_7tdmi::sp_load_store(u16 instruction) {
     } else { // store
         mem->write_u32(base, get_register(Rd));
     }
+}
+
+void arm_7tdmi::load_address(u16 instruction) {
+    u16 Rd = util::get_instruction_subset(instruction, 10, 8); // destination register
+    u16 word8 = util::get_instruction_subset(instruction, 7, 0); // 8 bit immediate offset
+    bool sp = util::get_instruction_subset(instruction, 11, 11) == 1; // stack pointer if true, else PC
+    u32 base;
+
+    word8 <<= 2; // assembler places #imm >> 2 in word8 to ensure word alignment
+
+    if (sp) {
+        base = get_register(13);
+    } else { // pc
+        base = get_register(15);
+        base += 4; // pc will be 4 bytes greater than current address
+        base += word8;
+    }
+
+    set_register(Rd, mem->read_u32(base));
 }
 
 

@@ -183,6 +183,10 @@ void arm_7tdmi::execute(u32 instruction) {
                     pc_rel_load_thumb((u16) instruction);
                     increment_pc();
                     break;
+                case MOV_T:
+                    load_store_reg((u16) instruction);
+                    increment_pc();
+                    break;
                 default:
                     std::cerr << "Cannot execute thumb instruction: " << (u16) instruction << "\n";
                     break;

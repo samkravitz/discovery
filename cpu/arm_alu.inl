@@ -802,3 +802,23 @@ void arm_7tdmi::pc_rel_load_thumb(u16 instruction) {
 
     set_register(Rd, mem->read_u32(registers.r15 + word8));
 }
+
+void arm_7tdmi::load_store_reg(u16 instruction) {
+    u16 Ro = util::get_instruction_subset(instruction, 8, 6); // offset register
+    u16 Rb = util::get_instruction_subset(instruction, 5, 3); // base register
+    u16 Rd = util::get_instruction_subset(instruction, 2, 0); // destination register
+
+    bool load = util::get_instruction_subset(instruction, 11, 11) == 1;
+    bool byte = util::get_instruction_subset(instruction, 10, 10) == 1;
+
+    u32 base = get_register(Rb);
+    base += get_register(Ro); // add offset to base
+
+    if (load) {
+        if (byte) set_register(Rd, mem->read_u8(base));
+        else set_register(Rd, mem->read_u32(base));
+    } else { // store
+        if (byte) mem->write_u8(base, get_register(Rd) & 0xFF);
+        else mem->write_u32(base, get_register(Rd));
+    }
+}

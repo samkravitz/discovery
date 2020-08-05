@@ -28,8 +28,14 @@ inline void arm_7tdmi::branch_exchange(u32 instruction) {
     set_register(15, branch_address); 
 
     // swith to THUMB mode if necessary
-    if ((branch_address & 1) == 1) set_mode(THUMB);
-    else set_mode(ARM);
+    if ((branch_address & 1) == 1) {
+        registers.r15 -= 1; // continue at Rn - 1 for thumb mode
+        set_mode(THUMB);
+        registers.cpsr.bits.t = 1; // TBIT
+    } else {
+        set_mode(ARM);
+        registers.cpsr.bits.t = 0; // TBIT
+    }
 }
 
 inline void arm_7tdmi::branch_link(u32 instruction) {

@@ -17,7 +17,7 @@ TEST_CASE("branch_exchange") {
 
     arm.execute(i1);
 
-    REQUIRE(arm.registers.r15 == 0xbeefbeef); // contents of r9 moved to r15
+    REQUIRE(arm.registers.r15 == 0xbeefbeef - 1); // contents of r9 moved to r15
     REQUIRE(arm.get_mode() == THUMB); // because Rn[0] is odd
 
     arm_7tdmi arm2;

@@ -893,4 +893,22 @@ void arm_7tdmi::load_store_halfword(u16 instruction) {
     }
 }
 
+void arm_7tdmi::sp_load_store(u16 instruction) {
+    u16 Rd = util::get_instruction_subset(instruction, 10, 8); // destination register
+    u16 word8 = util::get_instruction_subset(instruction, 10, 6); // 8 bit immediate offset
+    bool load = util::get_instruction_subset(instruction, 11, 11) == 1;
+
+
+    word8 <<= 2; // assembler places #imm >> 2 in word8 to ensure word alignment
+
+    u32 base = get_register(13); // current stack pointer is base address
+    base += word8; // add offset to base
+
+    if (load) {
+        set_register(Rd, mem->read_u32(base));
+    } else { // store
+        mem->write_u32(base, get_register(Rd));
+    }
+}
+
 

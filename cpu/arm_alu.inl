@@ -876,7 +876,21 @@ void arm_7tdmi::load_store_immediate(u16 instruction) {
 }
 
 void arm_7tdmi::load_store_halfword(u16 instruction) {
+    u16 Rb = util::get_instruction_subset(instruction, 5, 3); // base register
+    u16 Rd = util::get_instruction_subset(instruction, 2, 0); // destination register
+    u16 offset5 = util::get_instruction_subset(instruction, 10, 6); // 5 bit immediate offset
 
+    offset5 <<= 1; // assembler places #imm >> 1 in word5 to ensure halfword alignment
+    bool load = util::get_instruction_subset(instruction, 11, 11) == 1;
+
+    u32 base = get_register(Rb);
+    base += offset5; // add offset to base
+
+    if (load) {
+        set_register(Rd, mem->read_u16(base));
+    } else { // store
+        mem->write_u16(base, get_register(Rd) & 0xFFFF);
+    }
 }
 
 

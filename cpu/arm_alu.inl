@@ -943,4 +943,42 @@ void arm_7tdmi::add_offset_to_sp(u16 instruction) {
     set_register(13, base);
 }
 
+void arm_7tdmi::push_pop(u16 instruction) {
+    bool load = util::get_instruction_subset(instruction, 11, 11) == 1;
+    bool R = util::get_instruction_subset(instruction, 8, 8) == 1; // PC/LR bit
+    u32 base = get_register(13); // base address at SP
+
+    int num_registers = 0; // number of set bits in the register list, should be between 0-16
+    int set_registers[8];
+
+    // determine which registers are set
+    for (int i = 0; i < 8; ++i) {
+        if (instruction >> i) { // bit i is set in Rlist
+            set_registers[num_registers] = i;
+            num_registers++;
+        }
+    }
+
+    if (!load) { // PUSH Rlist
+        for (int i = 0; i < num_registers; ++i) {
+            mem->write_u32(base, get_register(set_registers[i]));
+            base += 4; // increment stack pointer (4 bytes for word alignment)
+        }
+
+        if (R) { // push LR
+            mem->write_u32(base, get_register(14));
+            base += 4; // increment stack pointer (4 bytes for word alignment)
+        }
+    } else { // POP Rlist
+        for (int i = 0; i < num_registers; ++i) {
+            set_register(set_registers[i], mem->read_u32(base));
+            base -= 4; // decrement stack pointer (4 bytes for word alignment)
+        }
+
+        if (R) { // pop pc
+            set_register(15, mem->read_u32(base));
+            base -= 4; // decrement stack pointer (4 bytes for word alignment)
+        }
+    }
+}
 

@@ -211,6 +211,10 @@ void arm_7tdmi::execute(u32 instruction) {
                     add_offset_to_sp((u16) instruction);
                     increment_pc();
                     break;
+                case POP_T:
+                    push_pop((u16) instruction);
+                    increment_pc();
+                    break;
                 default:
                     std::cerr << "Cannot execute thumb instruction: " << (u16) instruction << "\n";
                     break;

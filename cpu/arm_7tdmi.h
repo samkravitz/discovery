@@ -124,6 +124,7 @@ class arm_7tdmi {
         void move_immediate_thumb(u16);
         void alu_thumb(u16);
         void hi_reg_ops_thumb(u16);
+        void pc_rel_load_thumb(u16);
 
         // misc
         void update_flags_logical(u32, u8);

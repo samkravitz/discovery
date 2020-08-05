@@ -684,7 +684,7 @@ void arm_7tdmi::alu_thumb(u16 instruction) {
         case 0b0110: // SBC
             result = op2 - op1 - (~carry & 0x1); // Rd - Rs - NOT C-bit
             set_register(Rd, result);
-            update_flags_subtraction(op1, op2, result);
+            update_flags_subtraction(op2, op1, result);
             break;
         case 0b0111: // ASR
             shift_register(op1, op2, 0b11);
@@ -702,7 +702,7 @@ void arm_7tdmi::alu_thumb(u16 instruction) {
             break;
         case 0b1010: // CMP
             result = op2 - op1;
-            update_flags_subtraction(op1, op2, result);
+            update_flags_subtraction(op2, op1, result);
             break;
         case 0b1011: // CMN
             result = op2 + op1;
@@ -732,5 +732,66 @@ void arm_7tdmi::alu_thumb(u16 instruction) {
             std::cerr << "Error: Invalid thumb ALU opcode" << "\n";
             return;
     }
+}
 
+void arm_7tdmi::hi_reg_ops_thumb(u16 instruction) {
+    u16 Rs = util::get_instruction_subset(instruction, 5, 3);
+    u16 Rd = util::get_instruction_subset(instruction, 2, 0); 
+    u16 opcode = util::get_instruction_subset(instruction, 9, 8);
+
+    bool H1 = util::get_instruction_subset(instruction, 7, 7) == 0x1; // Hi operand flag 1
+    bool H2 = util::get_instruction_subset(instruction, 6, 6) == 0x1; // Hi operand flag 2
+    // access hi registers (need a 4th bit)
+    if (H1) Rs |= 0b1000;
+    if (H2) Rd |= 0b1000;
+
+    u32 op1 = get_register(Rs);
+    u32 op2 = get_register(Rd);
+    u32 result;
+
+    switch (opcode) {
+        case 0b00: // ADD
+            if (!H1 && !H2) {
+                std::cerr << "Error: H1 = 0 and H2 = 0 for thumb ADD is not defined" << "\n";
+                return;
+            }
+
+            result = op1 + op2;
+            set_register(Rd, result);
+            break;
+        case 0b01: // CMP
+            if (!H1 && !H2) {
+                std::cerr << "Error: H1 = 0 and H2 = 0 for thumb CMP is not defined" << "\n";
+                return;
+            }
+
+            result = op2 - op1;
+            update_flags_subtraction(op2, op1, result);
+            set_register(Rd, result);
+            break;
+        case 0b10: // MOV
+            if (!H1 && !H2) {
+                std::cerr << "Error: H1 = 0 and H2 = 0 for thumb MOV is not defined" << "\n";
+                return;
+            }
+
+            set_register(Rd, op1);
+            break;
+        case 0b11: // BX
+            if (H1) {
+                std::cerr << "Error: H1 = 1 for thumb BX is not defined" << "\n";
+                return;
+            }
+
+            if (Rs == 15) op1 += 4;
+            set_register(15, op1);
+
+            // swith to ARM mode if necessary
+            if ((op1 & 1) == 0) {
+                registers.r15 += 4; // continue at Rn + 4 in arm mode (skip following halfword)
+                set_mode(ARM);
+                registers.cpsr.bits.t = 0; // TBIT
+            }
+        break;
+    }
 }

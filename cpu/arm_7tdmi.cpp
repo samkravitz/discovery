@@ -14,7 +14,7 @@
 #include "util.h"
 
 // uncomment this if running tests
-#define TEST
+// #define TEST
 
 arm_7tdmi::arm_7tdmi() {
     state = SYS;
@@ -173,6 +173,10 @@ void arm_7tdmi::execute(u32 instruction) {
                     break;
                 case ALU_T:
                     alu_thumb((u16) instruction);
+                    increment_pc();
+                    break;
+                case HI_T:
+                    hi_reg_ops_thumb((u16) instruction);
                     increment_pc();
                     break;
                 default:

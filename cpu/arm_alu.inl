@@ -609,3 +609,34 @@ void arm_7tdmi::add_sub_thumb(u16 instruction) {
 
     set_register(Rd, result);
 }
+
+void arm_7tdmi::move_immediate_thumb(u16 instruction) {
+    u16 offset8 = util::get_instruction_subset(instruction, 7, 0);
+    u16 Rd = util::get_instruction_subset(instruction, 10, 8);
+    u16 opcode = util::get_instruction_subset(instruction, 12, 11);
+    u32 result;
+    u8 carry = get_condition_code_flag(C);
+    u32 operand = get_register(Rd);
+
+    switch (opcode) {
+        case 0: // MOV
+            result = offset8;
+            set_register(Rd, result);
+            update_flags_logical(result, carry);
+            break;
+        case 1: // CMP
+            result = operand - offset8;
+            update_flags_subtraction(operand, offset8, result);
+            break;
+        case 2: // ADD
+            result = operand + offset8;
+            set_register(Rd, result);
+            update_flags_addition(operand, offset8, result);
+            break;
+        case 3: // SUB
+            result = operand - offset8;
+            set_register(Rd, result);
+            update_flags_subtraction(operand, offset8, result);
+            break;
+    }
+}

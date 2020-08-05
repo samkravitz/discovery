@@ -121,6 +121,7 @@ class arm_7tdmi {
         // thumb instructions
         void move_shifted_register_thumb(u16);
         void add_sub_thumb(u16);
+        void move_immediate_thumb(u16);
 
         // misc
         void update_flags_logical(u32, u8);

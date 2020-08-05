@@ -167,6 +167,10 @@ void arm_7tdmi::execute(u32 instruction) {
                     add_sub_thumb((u16) instruction);
                     increment_pc();
                     break;
+                case IMM_T:
+                    move_immediate_thumb((u16) instruction);
+                    increment_pc();
+                    break;
                 default:
                     std::cerr << "Cannot execute thumb instruction: " << (u16) instruction << "\n";
                     break;

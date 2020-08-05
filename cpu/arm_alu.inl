@@ -948,7 +948,7 @@ void arm_7tdmi::push_pop(u16 instruction) {
     bool R = util::get_instruction_subset(instruction, 8, 8) == 1; // PC/LR bit
     u32 base = get_register(13); // base address at SP
 
-    int num_registers = 0; // number of set bits in the register list, should be between 0-16
+    int num_registers = 0; // number of set bits in the register list, should be between 0-8
     int set_registers[8];
 
     // determine which registers are set
@@ -980,5 +980,37 @@ void arm_7tdmi::push_pop(u16 instruction) {
             base -= 4; // decrement stack pointer (4 bytes for word alignment)
         }
     }
+}
+
+void arm_7tdmi::multiple_load_store(u16 instruction) {
+    u16 Rb = util::get_instruction_subset(instruction, 10, 8); // base register
+    bool load = util::get_instruction_subset(instruction, 11, 11) == 1;
+    u32 base = get_register(Rb);
+
+    int num_registers = 0; // number of set bits in the register list, should be between 0-16
+    int set_registers[8];
+
+    // determine which registers are set
+    for (int i = 0; i < 8; ++i) {
+        if (instruction >> i) { // bit i is set in Rlist
+            set_registers[num_registers] = i;
+            num_registers++;
+        }
+    }
+
+    if (load) { 
+        for (int i = 0; i < num_registers; ++i) {
+            set_register(set_registers[i], mem->read_u32(base));
+            base += 4; // decrement stack pointer (4 bytes for word alignment)
+        }
+    } else { // store
+        for (int i = 0; i < num_registers; ++i) {
+            mem->write_u32(base, get_register(set_registers[i]));
+            base += 4; // increment stack pointer (4 bytes for word alignment)
+        }
+    }
+
+    // write back address into Rb
+    set_register(Rb, base);
 }
 

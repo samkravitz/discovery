@@ -133,6 +133,7 @@ class arm_7tdmi {
         void load_address(u16);
         void add_offset_to_sp(u16);
         void push_pop(u16);
+        void multiple_load_store(u16);
 
         // misc
         void update_flags_logical(u32, u8);

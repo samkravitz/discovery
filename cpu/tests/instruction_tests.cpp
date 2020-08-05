@@ -259,3 +259,38 @@ TEST_CASE("single_data_swap") {
     REQUIRE(arm2.registers.r2 == 0x22);
     REQUIRE(arm2.mem->read_u8(0x1000) == 0x11);
 }
+
+TEST_CASE("move_shifted_register_thumb") {
+    // TEST 1 - LSL
+    arm_7tdmi arm1;
+    arm1.set_mode(THUMB);
+
+    // Rs = 0 Rd = 2
+    arm1.registers.r0 = 2;
+    u16 i1 = 0b0000000100000010; // LSL by 4
+    arm1.execute(i1);
+    REQUIRE(arm1.registers.r2 == 32);
+
+    // TEST 2 - LSR
+    arm_7tdmi arm2;
+    arm2.set_mode(THUMB);
+
+    // Rs = 0 Rd = 2
+    arm2.registers.r0 = 0b11111;
+    u16 i2 = 0b0000100010000010; // LSR by 2
+    arm2.execute(i2);
+    REQUIRE(arm2.registers.r2 == 0b111);
+    REQUIRE(arm2.get_condition_code_flag(C) == 1); // carry out from shifter
+
+    // TEST 3 - ASR
+    arm_7tdmi arm3;
+    arm3.set_mode(THUMB);
+
+    // Rs = 0 Rd = 2
+    arm3.registers.r0 = 0b10000000000000000000000000001111;
+    u16 i3 = 0b0001000010000010; // ASR by 2
+    arm3.execute(i3);
+    REQUIRE(arm3.registers.r2 == 0b11100000000000000000000000000011);
+    REQUIRE(arm3.get_condition_code_flag(C) == 1); // carry out from shifter
+    REQUIRE(arm3.get_condition_code_flag(N) == 1); // bit 31 is 1
+}

@@ -93,8 +93,8 @@ instruction_set_format_t util::get_instruction_format(u32 instruction) {
 // determine which type of thumb operation an instruction is
 thumb_instruction_format_t util::get_instruction_format(u16 instruction) {
     if ((instruction >> 13 & 0b111) == 0) {
-        if ((instruction >> 11 & 0b11) == 0b11) return MSR_T;
-        else return ADDSUB_T;
+        if ((instruction >> 11 & 0b11) == 0b11) return ADDSUB_T;
+        else return MSR_T;
     }
 
     else if ((instruction >> 13 & 0b111) == 0b001) return IMM_T;

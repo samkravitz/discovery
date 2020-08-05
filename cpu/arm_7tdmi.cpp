@@ -13,7 +13,8 @@
 #include "arm_alu.inl"
 #include "util.h"
 
-//#define TEST
+// uncomment this if running tests
+#define TEST
 
 arm_7tdmi::arm_7tdmi() {
     state = SYS;
@@ -150,14 +151,23 @@ void arm_7tdmi::execute(u32 instruction) {
                     software_interrupt(instruction);
                     increment_pc();
                     break;
+                default:
+                    std::cerr << "Cannot execute instruction: " << instruction << "\n";
             }
             break;
 
         case THUMB:
-
-            break;
-        default:
-            std::cerr << "Cannot execute instruction: " << instruction << "\n";
+            std::cout << "Instruction thumb type is: " << util::get_instruction_format((u16) instruction) << "\n";
+            switch(util::get_instruction_format((u16) instruction)) {
+                case MSR_T:
+                    move_shifted_register_thumb((u16) instruction);
+                    increment_pc();
+                break;
+                default:
+                    std::cerr << "Cannot execute thumb instruction: " << (u16) instruction << "\n";
+                    break;
+            }
+        break;
     }
 }
 

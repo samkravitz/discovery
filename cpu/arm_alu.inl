@@ -1030,3 +1030,15 @@ void arm_7tdmi::conditional_branch(u16 instruction) {
     set_register(15, base + soffset8);
 }
 
+void arm_7tdmi::software_interrupt_thumb(u16 instruction) {
+    set_register(14, instruction + 2); // move the address of the next instruction into LR
+    set_register(16, get_register(15)); // move CPSR to SPSR
+    set_register(15, 0x8); // load the SWI vector address (0x8) into the PC
+
+    // switch to ARM state and enter SVC mode
+    set_mode(ARM);
+    set_state(SVC);
+    registers.cpsr.bits.state = SVC;
+    registers.cpsr.bits.t = 0;
+}
+

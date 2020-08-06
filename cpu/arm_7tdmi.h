@@ -135,6 +135,7 @@ class arm_7tdmi {
         void push_pop(u16);
         void multiple_load_store(u16);
         void conditional_branch(u16);
+        void software_interrupt_thumb(u16);
 
         // misc
         void update_flags_logical(u32, u8);

@@ -1049,6 +1049,25 @@ void arm_7tdmi::unconditional_branch(u16 instruction) {
     offset11 <<= 1; // assembler places #imm >> 1 in offset11 to ensure halfword alignment
     offset11 += 4; // pc is 4 bytes ahead of current address
 
-    set_register(15, base + soffset8);
+    set_register(15, base + offset11);
+}
+
+void arm_7tdmi::long_branch_link(u16 instruction) {
+    u32 offset = util::get_instruction_subset(instruction, 10, 0); // long branch offset
+    bool H = util::get_instruction_subset(instruction, 11, 11) == 1; // high/low offset bit
+    u32 base;
+
+    if (H) { // instruction 2
+        base = get_register(14); // LR
+        offset <<= 1;
+        base += offset;
+        set_register(15, base);
+        set_register(14, instruction + 2); // next instruction in link register
+    } else { // instruction 1
+        base = get_register(15); // PC
+        offset <<= 12;
+        base += offset;
+        set_register(14, base); // resulting address stored in LR
+    }
 }
 

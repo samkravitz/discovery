@@ -67,7 +67,7 @@ void arm_7tdmi::set_condition_code_flag(condition_code_flag_t flag, uint8_t bit)
     }
 }
 
- // determine if the condition field of an instruction is true, given the state of the CPSR
+// determine if the condition field of an instruction is true, given the state of the CPSR
 bool arm_7tdmi::condition_met(condition_t condition_field) {
     switch (condition_field) {
         case EQ: return get_condition_code_flag(Z); // Z set

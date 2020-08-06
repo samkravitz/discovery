@@ -1015,7 +1015,18 @@ void arm_7tdmi::multiple_load_store(u16 instruction) {
 }
 
 void arm_7tdmi::conditional_branch(u16 instruction) {
+    u16 soffset8 = util::get_instruction_subset(instruction, 7, 0); // signed 8 bit offset
+    condition_t condition = (condition_t) util::get_instruction_subset(instruction, 11, 8);
+    u32 base = get_register(15);
 
-    if (!condition_met())
+    if (!condition_met(condition)) {
+        increment_pc();
+        return;
+    }
+
+    soffset8 <<= 1; // assembler places #imm >> 1 in word8 to ensure halfword alignment
+    soffset8 += 4; // pc is 4 bytes ahead of current address
+
+    set_register(15, base + soffset8);
 }
 

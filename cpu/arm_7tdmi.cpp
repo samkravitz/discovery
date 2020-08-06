@@ -14,7 +14,7 @@
 #include "util.h"
 
 // uncomment this if running tests
-// #define TEST
+#define TEST
 
 arm_7tdmi::arm_7tdmi() {
     state = SYS;
@@ -68,9 +68,7 @@ void arm_7tdmi::set_condition_code_flag(condition_code_flag_t flag, uint8_t bit)
 }
 
  // determine if the condition field of an instruction is true, given the state of the CPSR
-bool arm_7tdmi::condition_met(u32 instruction) {
-    // get condition field from instruction
-    condition_t condition_field = (condition_t) util::get_instruction_subset(instruction, 31, 28);
+bool arm_7tdmi::condition_met(condition_t condition_field) {
     switch (condition_field) {
         case EQ: return get_condition_code_flag(Z); // Z set
         case NE: return !get_condition_code_flag(Z); // Z clear
@@ -88,7 +86,7 @@ bool arm_7tdmi::condition_met(u32 instruction) {
         case LE: return get_condition_code_flag(Z) || (get_condition_code_flag(N) != get_condition_code_flag(V)); // Z set OR (N not equal to V)
         case AL: return true; // always
         default: // should never happen
-            std::cerr << "Unrecognized condition field: " << instruction << "\n";
+            std::cerr << "Unrecognized condition field: " << condition_field << "\n";
             return false;
     }
 }
@@ -107,7 +105,7 @@ void arm_7tdmi::fetch() {
 void arm_7tdmi::execute(u32 instruction) {
     switch (mode) {
         case ARM:
-            if (!condition_met(instruction)) {
+            if (!condition_met((condition_t) util::get_instruction_subset(instruction, 31, 28))) {
                 increment_pc();
                 return;
             }

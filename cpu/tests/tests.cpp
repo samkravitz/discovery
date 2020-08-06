@@ -44,22 +44,22 @@ TEST_CASE("ConditionFlagTests", "[condition_flag]") {
 }
 
 TEST_CASE("InstructionConditionField", "[instruction_condition_field]") {
-    u32 z_set                       =      0b00000000000000000000000000000000; // 32 bits, Z Set
-    u32 z_clear                     =      0b00010000000000000000000000000000;
-    u32 c_set                       =      0b00100000000000000000000000000000;
-    u32 c_clear                     =      0b00110000000000000000000000000000;
-    u32 n_set                       =      0b01000000000000000000000000000000;
-    u32 n_clear                     =      0b01010000000000000000000000000000;
-    u32 v_set                       =      0b01100000000000000000000000000000;
-    u32 v_clear                     =      0b01110000000000000000000000000000;
-    u32 c_set_and_z_clear           =      0b10000000000000000000000000000000;
-    u32 c_clear_or_z_set            =      0b10010000000000000000000000000000;
-    u32 n_equal_v                   =      0b10100000000000000000000000000000;
-    u32 n_not_equal_v               =      0b10110000000000000000000000000000;
-    u32 z_clear_and_n_equal_v       =      0b11000000000000000000000000000000;
-    u32 z_set_or_n_not_equal_v      =      0b11010000000000000000000000000000;
-    u32 always                      =      0b11100000000000000000000000000000;
-    u32 noop                        =      0b11110000000000000000000000000000;
+    condition_t z_set                       =      (condition_t) 0b0000; // 32 bits, Z Set
+    condition_t z_clear                     =      (condition_t) 0b0001;
+    condition_t c_set                       =      (condition_t) 0b0010;
+    condition_t c_clear                     =      (condition_t) 0b0011;
+    condition_t n_set                       =      (condition_t) 0b0100;
+    condition_t n_clear                     =      (condition_t) 0b0101;
+    condition_t v_set                       =      (condition_t) 0b0110;
+    condition_t v_clear                     =      (condition_t) 0b0111;
+    condition_t c_set_and_z_clear           =      (condition_t) 0b1000;
+    condition_t c_clear_or_z_set            =      (condition_t) 0b1001;
+    condition_t n_equal_v                   =      (condition_t) 0b1010;
+    condition_t n_not_equal_v               =      (condition_t) 0b1011;
+    condition_t z_clear_and_n_equal_v       =      (condition_t) 0b1100;
+    condition_t z_set_or_n_not_equal_v      =      (condition_t) 0b1101;
+    condition_t always                      =      (condition_t) 0b1110;
+    condition_t noop                        =      (condition_t) 0b1111;
 
     // a couple of fresh cpu instances to test with
     arm_7tdmi z;

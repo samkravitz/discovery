@@ -141,7 +141,7 @@ class arm_7tdmi {
         void update_flags_subtraction(u32, u32, u32);
         u8 shift_register(u32, u32 &, u8);
         void increment_pc();
-        bool condition_met(u32);
+        bool condition_met(condition_t);
         void update_psr(bool, u32);
 
     private:

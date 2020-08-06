@@ -1014,3 +1014,8 @@ void arm_7tdmi::multiple_load_store(u16 instruction) {
     set_register(Rb, base);
 }
 
+void arm_7tdmi::conditional_branch(u16 instruction) {
+
+    if (!condition_met())
+}
+

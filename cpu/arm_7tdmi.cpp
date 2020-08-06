@@ -217,6 +217,9 @@ void arm_7tdmi::execute(u32 instruction) {
                     multiple_load_store((u16) instruction);
                     increment_pc();
                     break;
+                case B_T:
+                    conditional_branch((u16) instruction);
+                    break;
                 default:
                     std::cerr << "Cannot execute thumb instruction: " << (u16) instruction << "\n";
                     break;

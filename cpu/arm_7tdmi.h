@@ -36,6 +36,8 @@ class arm_7tdmi {
         
         Memory *mem;
 
+        u32 current_instruction;
+        
         struct registers_struct {
             // general purpose registers
             u32 r0;
@@ -149,7 +151,6 @@ class arm_7tdmi {
         void update_psr(bool, u32);
 
     private:
-        u32 current_instruction;
         state_t state;
         cpu_mode_t mode;
 }; 

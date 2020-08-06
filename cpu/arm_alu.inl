@@ -1068,6 +1068,7 @@ void arm_7tdmi::long_branch_link(u16 instruction) {
         offset <<= 12;
         base += offset;
         set_register(14, base); // resulting address stored in LR
+        increment_pc();
     }
 }
 

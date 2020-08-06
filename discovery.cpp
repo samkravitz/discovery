@@ -15,7 +15,7 @@ void run_asm(char *name) {
     u32 i;
     while (true) {
         emulator.cpu.fetch();
-        i = emulator.cpu.mem->read_u32(emulator.cpu.registers.r15);
+        i = emulator.cpu.current_instruction;
         std::cout << i << "\n";
         emulator.cpu.execute(i);
         emulator.gpu.draw();

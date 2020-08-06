@@ -223,6 +223,9 @@ void arm_7tdmi::execute(u32 instruction) {
                 case SWI_T:
                     software_interrupt_thumb((u16) instruction);
                     break;
+                case BAL_T:
+                    unconditional_branch((u16) instruction);
+                    break;
                 default:
                     std::cerr << "Cannot execute thumb instruction: " << (u16) instruction << "\n";
                     break;

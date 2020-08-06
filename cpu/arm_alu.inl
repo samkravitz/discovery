@@ -1042,3 +1042,13 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction) {
     registers.cpsr.bits.t = 0;
 }
 
+void arm_7tdmi::unconditional_branch(u16 instruction) {
+    u16 offset11 = util::get_instruction_subset(instruction, 10, 0); // signed 11 bit offset
+    u32 base = get_register(15);
+
+    offset11 <<= 1; // assembler places #imm >> 1 in offset11 to ensure halfword alignment
+    offset11 += 4; // pc is 4 bytes ahead of current address
+
+    set_register(15, base + soffset8);
+}
+

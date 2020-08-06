@@ -565,7 +565,7 @@ inline void arm_7tdmi::software_interrupt(u32 instruction) {
     set_register(17, get_register(16)); // put CPSR in SPSR_<svc>
 }
 
-void arm_7tdmi::move_shifted_register_thumb(u16 instruction) {
+void arm_7tdmi::move_shifted_register(u16 instruction) {
     u16 Rs = util::get_instruction_subset(instruction, 5, 3);
     u16 Rd = util::get_instruction_subset(instruction, 2, 0); 
     u16 offset5 = util::get_instruction_subset(instruction, 10, 6); // 5 bit immediate offset
@@ -578,7 +578,7 @@ void arm_7tdmi::move_shifted_register_thumb(u16 instruction) {
     update_flags_logical(op1, carry);
 }
 
-void arm_7tdmi::add_sub_thumb(u16 instruction) {
+void arm_7tdmi::add_sub(u16 instruction) {
     u16 Rs = util::get_instruction_subset(instruction, 5, 3);
     u16 Rd = util::get_instruction_subset(instruction, 2, 0);
     u16 Rn_offset3 = util::get_instruction_subset(instruction, 8, 6);
@@ -607,7 +607,7 @@ void arm_7tdmi::add_sub_thumb(u16 instruction) {
     set_register(Rd, result);
 }
 
-void arm_7tdmi::move_immediate_thumb(u16 instruction) {
+void arm_7tdmi::move_immediate(u16 instruction) {
     u16 offset8 = util::get_instruction_subset(instruction, 7, 0);
     u16 Rd = util::get_instruction_subset(instruction, 10, 8);
     u16 opcode = util::get_instruction_subset(instruction, 12, 11);
@@ -731,7 +731,7 @@ void arm_7tdmi::alu_thumb(u16 instruction) {
     }
 }
 
-void arm_7tdmi::hi_reg_ops_thumb(u16 instruction) {
+void arm_7tdmi::hi_reg_ops(u16 instruction) {
     u16 Rs = util::get_instruction_subset(instruction, 5, 3);
     u16 Rd = util::get_instruction_subset(instruction, 2, 0); 
     u16 opcode = util::get_instruction_subset(instruction, 9, 8);
@@ -793,7 +793,7 @@ void arm_7tdmi::hi_reg_ops_thumb(u16 instruction) {
     }
 }
 
-void arm_7tdmi::pc_rel_load_thumb(u16 instruction) {
+void arm_7tdmi::pc_rel_load(u16 instruction) {
     u16 Rd = util::get_instruction_subset(instruction, 10, 8); 
     u16 word8 = util::get_instruction_subset(instruction, 7, 0);
 

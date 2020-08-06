@@ -119,12 +119,12 @@ class arm_7tdmi {
         void software_interrupt(u32);
 
         // thumb instructions
-        void move_shifted_register_thumb(u16);
-        void add_sub_thumb(u16);
-        void move_immediate_thumb(u16);
+        void move_shifted_register(u16);
+        void add_sub(u16);
+        void move_immediate(u16);
         void alu_thumb(u16);
-        void hi_reg_ops_thumb(u16);
-        void pc_rel_load_thumb(u16);
+        void hi_reg_ops(u16);
+        void pc_rel_load(u16);
         void load_store_reg(u16);
         void load_store_signed_halfword(u16);
         void load_store_immediate(u16);

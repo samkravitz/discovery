@@ -158,15 +158,15 @@ void arm_7tdmi::execute(u32 instruction) {
             std::cout << "Instruction thumb type is: " << util::get_instruction_format((u16) instruction) << "\n";
             switch(util::get_instruction_format((u16) instruction)) {
                 case MSR_T:
-                    move_shifted_register_thumb((u16) instruction);
+                    move_shifted_register((u16) instruction);
                     increment_pc();
                     break;
                 case ADDSUB_T:
-                    add_sub_thumb((u16) instruction);
+                    add_sub((u16) instruction);
                     increment_pc();
                     break;
                 case IMM_T:
-                    move_immediate_thumb((u16) instruction);
+                    move_immediate((u16) instruction);
                     increment_pc();
                     break;
                 case ALU_T:
@@ -174,11 +174,11 @@ void arm_7tdmi::execute(u32 instruction) {
                     increment_pc();
                     break;
                 case HI_T:
-                    hi_reg_ops_thumb((u16) instruction);
+                    hi_reg_ops((u16) instruction);
                     increment_pc();
                     break;
                 case PC_T:
-                    pc_rel_load_thumb((u16) instruction);
+                    pc_rel_load((u16) instruction);
                     increment_pc();
                     break;
                 case MOV_T:

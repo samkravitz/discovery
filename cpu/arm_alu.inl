@@ -338,9 +338,6 @@ inline void arm_7tdmi::single_data_transfer(u32 instruction) {
 
     u32 base = get_register(Rn);
 
-    // r15 will be 2 instructions away
-    if (Rn == 15) base += 8;
-
     if (pre_index) { // offset modification before transfer
         if (up) base += offset; // offset is added to base
         else base -= offset; // offset is subtracted from base

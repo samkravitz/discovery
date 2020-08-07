@@ -36,7 +36,8 @@ class arm_7tdmi {
         
         Memory *mem;
 
-        u32 current_instruction;
+        u32 pipeline[3];
+        bool pipeline_full;
         
         struct registers_struct {
             // general purpose registers

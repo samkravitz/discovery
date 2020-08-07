@@ -14,24 +14,25 @@
 #include "util.h"
 
 // uncomment this if running tests
-// #define TEST
+#define TEST
 
 arm_7tdmi::arm_7tdmi() {
     state = SYS;
-    mode = THUMB;
+    mode = ARM;
     registers = {0}; // zero out registers
-    registers.cpsr.bits.state = SYS;
+    registers.r15 = 0x8000000; // starting address of gamepak flash rom
 
     // initialize cpsr
     registers.cpsr.bits.i = 1;
     registers.cpsr.bits.f = 1;
+    registers.cpsr.bits.state = SYS;
 
-    registers.r15 = 0x80002d4; // starting address of gamepak flash rom
+    pipeline_full = false;
+
     mem = NULL;
 
     // different initialization for the testing environment
     #ifdef TEST
-    mode = ARM;
     registers.r15 = 0;
     state = USR;
     mem = new Memory();
@@ -93,14 +94,41 @@ bool arm_7tdmi::condition_met(condition_t condition_field) {
 }
 
 void arm_7tdmi::fetch() {
+    if (!pipeline_full) {
+        // fill pipeline
+        switch (mode) {
+            case ARM:
+                pipeline[0] = mem->read_u32(registers.r15);
+                registers.r15 += 4;
+                pipeline[1] = mem->read_u32(registers.r15);
+                registers.r15 += 4;
+                pipeline[2] = mem->read_u32(registers.r15);
+                break;
+            case THUMB:
+                pipeline[0] = mem->read_u16(registers.r15);
+                registers.r15 += 2;
+                pipeline[1] = mem->read_u16(registers.r15);
+                registers.r15 += 2;
+                pipeline[2] = mem->read_u16(registers.r15);
+                break;
+        }
+
+        pipeline_full = true;
+        return;
+    }
+
     switch (mode) {
         case ARM:
-            current_instruction = mem->read_u32(registers.r15);
+            pipeline[2] = mem->read_u32(registers.r15);
             break;
         case THUMB:
-            current_instruction = (u16) mem->read_u16(registers.r15);
+            pipeline[2] = (u16) mem->read_u16(registers.r15);
             break;
     }
+}
+
+void arm_7tdmi::decode(u32 instruction) {
+
 }
 
 void arm_7tdmi::execute(u32 instruction) {

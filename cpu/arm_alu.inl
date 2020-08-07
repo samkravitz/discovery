@@ -33,12 +33,16 @@ inline void arm_7tdmi::branch_exchange(u32 instruction) {
         set_mode(THUMB);
         registers.cpsr.bits.t = 1; // TBIT
     }
+
+    // flush pipeline for refill
+    pipeline_full = false;
 }
 
 inline void arm_7tdmi::branch_link(u32 instruction) {
     bool link = util::get_instruction_subset(instruction, 24, 24) == 0x1;
     u32 offset = util::get_instruction_subset(instruction, 23, 0);
     bool is_neg = offset >> 23 == 0x1;
+    u32 new_address;
 
     offset <<= 2;
 
@@ -51,13 +55,16 @@ inline void arm_7tdmi::branch_link(u32 instruction) {
         // write the old PC into the link register of the current bank
         // The PC value written into r14 is adjusted to allow for the prefetch, and contains the
         // address of the instruction following the branch and link instruction
-        u32 new_address = get_register(15) - 4;
+        new_address = pipeline[1];
         new_address &= ~3; // clear bits 0-1
         set_register(14, new_address);
     }
 
-    u32 new_addy = get_register(15) + offset + 8;
-    set_register(15, new_addy);
+    new_address = get_register(15) + offset;
+    set_register(15, new_address);
+
+    // flush pipeline for refill
+    pipeline_full = false;
 }
 
 inline void arm_7tdmi::data_processing(u32 instruction) {
@@ -1025,9 +1032,11 @@ void arm_7tdmi::conditional_branch(u16 instruction) {
     }
 
     soffset8 <<= 1; // assembler places #imm >> 1 in word8 to ensure halfword alignment
-    soffset8 += 4; // pc is 4 bytes ahead of current address
 
     set_register(15, base + soffset8);
+
+    // flush pipeline for refill
+    pipeline_full = false;
 }
 
 void arm_7tdmi::software_interrupt_thumb(u16 instruction) {
@@ -1047,9 +1056,11 @@ void arm_7tdmi::unconditional_branch(u16 instruction) {
     u32 base = get_register(15);
 
     offset11 <<= 1; // assembler places #imm >> 1 in offset11 to ensure halfword alignment
-    offset11 += 4; // pc is 4 bytes ahead of current address
 
     set_register(15, base + offset11);
+
+    // flush pipeline for refill
+    pipeline_full = false;
 }
 
 void arm_7tdmi::long_branch_link(u16 instruction) {
@@ -1062,7 +1073,10 @@ void arm_7tdmi::long_branch_link(u16 instruction) {
         offset <<= 1;
         base += offset;
         set_register(15, base);
-        set_register(14, instruction + 2); // next instruction in link register
+        set_register(14, pipeline[1]); // next instruction in link register
+
+        // flush pipeline for refill
+        pipeline_full = false;
     } else { // instruction 1
         base = get_register(15); // PC
         offset <<= 12;

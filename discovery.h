@@ -19,7 +19,9 @@ class discovery {
         GPU gpu;
 
         discovery();
-    
+
+        void game_loop();
+        void run_asm(char *);
 };
 
 #endif // DISCOVERY_H

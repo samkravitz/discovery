@@ -14,7 +14,7 @@
 #include "util.h"
 
 // uncomment this if running tests
-#define TEST
+// #define TEST
 
 arm_7tdmi::arm_7tdmi() {
     state = SYS;
@@ -23,7 +23,6 @@ arm_7tdmi::arm_7tdmi() {
     registers.r15 = 0x8000000; // starting address of gamepak flash rom
 
     // initialize cpsr
-    registers.cpsr.bits.i = 1;
     registers.cpsr.bits.f = 1;
     registers.cpsr.bits.state = SYS;
 
@@ -659,6 +658,7 @@ void arm_7tdmi::update_psr(bool spsr, u32 value) {
             registers.cpsr.bits.c = sr.bits.c;
             registers.cpsr.bits.v = sr.bits.v;
             return;
+        case SYS:
         case FIQ:
         case SVC:
         case ABT:
@@ -696,13 +696,13 @@ void arm_7tdmi::update_psr(bool spsr, u32 value) {
     }
 
     // update N, Z, C, V, I, F, and T bits of cpsr
-    registers.cpsr.bits.n = sr.bits.n;
-    registers.cpsr.bits.z = sr.bits.z;
-    registers.cpsr.bits.c = sr.bits.c;
-    registers.cpsr.bits.v = sr.bits.v;
+    // registers.cpsr.bits.n = sr.bits.n;
+    // registers.cpsr.bits.z = sr.bits.z;
+    // registers.cpsr.bits.c = sr.bits.c;
+    // registers.cpsr.bits.v = sr.bits.v;
 
-    registers.cpsr.bits.i = sr.bits.i; // irq disable flag
-    registers.cpsr.bits.f = sr.bits.f; // fiq disable flag
+    // registers.cpsr.bits.i = sr.bits.i; // irq disable flag
+    // registers.cpsr.bits.f = sr.bits.f; // fiq disable flag
 
     if (registers.cpsr.bits.t != sr.bits.n) {
         std::cout << "Software is changing TBIT in CPSR!" << "\n"; // is this allowed??
@@ -711,4 +711,6 @@ void arm_7tdmi::update_psr(bool spsr, u32 value) {
     registers.cpsr.bits.t = sr.bits.t;
     if (sr.bits.t == 1) set_mode(THUMB);
     else set_mode(ARM);
+
+    registers.cpsr.full = value;
 }

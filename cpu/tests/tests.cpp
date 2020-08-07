@@ -223,4 +223,12 @@ TEST_CASE("MemoryTests", "[mem_tests]") {
     // memory region test
     mem.write_u32(0x4000000, 0xAABBCCDD); // byte 0 of io_reg memory region
     REQUIRE(mem.memory.io_reg[0] == 0xDD);
+
+    // game_rom memory test
+    Memory mem2;
+    mem2.game_rom = new u8[8]();
+    mem2.write_u32(0x8000004, 0xAABBCCDD);
+    REQUIRE(mem2.game_rom[4] == 0xDD);
+    REQUIRE(mem2.read_u8(0x8000007) == 0xAA);
+    std::cout << std::hex << mem2.game_rom[4];
 }

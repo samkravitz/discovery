@@ -25,6 +25,8 @@ Memory::Memory() {
         memory.palette_ram[i] = 0;
         memory.oam[i] = 0;
     }
+
+    game_rom = NULL;
 }
 
 Memory::~Memory() { }

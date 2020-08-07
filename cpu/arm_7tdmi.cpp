@@ -651,49 +651,59 @@ void arm_7tdmi::update_psr(bool spsr, u32 value) {
     // cpsr
     status_register sr;
     sr.full = value;
-    switch (state) {
-        case USR: // in user mode, only condition bits can be changed
-            registers.cpsr.bits.n = sr.bits.n;
-            registers.cpsr.bits.z = sr.bits.z;
-            registers.cpsr.bits.c = sr.bits.c;
-            registers.cpsr.bits.v = sr.bits.v;
-            return;
-        case SYS:
-        case FIQ:
-        case SVC:
-        case ABT:
-        case IRQ:
-        case UND:
-            switch (sr.bits.state) {
-                case USR:
-                    registers.cpsr.bits.state = sr.bits.state;
-                    set_state(USR);
-                    break;
-                case FIQ:
-                    if (registers.cpsr.bits.f == 1) break; // fiq disabled bit set
-                    registers.cpsr.bits.state = sr.bits.state;
-                    set_state(FIQ);
-                    break;
-                case SVC:
-                    registers.cpsr.bits.state = sr.bits.state;
-                    set_state(SVC);
-                    break;
-                case ABT:
-                    registers.cpsr.bits.state = sr.bits.state;
-                    set_state(ABT);
-                    break;
-                case IRQ:
-                    if (registers.cpsr.bits.i == 1) break; // irq disabled bit set
-                    registers.cpsr.bits.state = sr.bits.state;
-                    set_state(IRQ);
-                    break;
-                case UND:
-                    registers.cpsr.bits.state = sr.bits.state;
-                    set_state(UND);
-                    break;
-            }
-        break;
+
+    // in user mode, only condition bits can be changed
+    if (state == USR) {
+        registers.cpsr.bits.n = sr.bits.n;
+        registers.cpsr.bits.z = sr.bits.z;
+        registers.cpsr.bits.c = sr.bits.c;
+        registers.cpsr.bits.v = sr.bits.v;
+        return;
     }
+
+    // switch (state) {
+    //     case USR: // in user mode, only condition bits can be changed
+    //         registers.cpsr.bits.n = sr.bits.n;
+    //         registers.cpsr.bits.z = sr.bits.z;
+    //         registers.cpsr.bits.c = sr.bits.c;
+    //         registers.cpsr.bits.v = sr.bits.v;
+    //         return;
+    //     case SYS:
+    //     case FIQ:
+    //     case SVC:
+    //     case ABT:
+    //     case IRQ:
+    //     case UND:
+    //         switch (sr.bits.state) {
+    //             case USR:
+    //                 registers.cpsr.bits.state = sr.bits.state;
+    //                 set_state(USR);
+    //                 break;
+    //             case FIQ:
+    //                 if (registers.cpsr.bits.f == 1) break; // fiq disabled bit set
+    //                 registers.cpsr.bits.state = sr.bits.state;
+    //                 set_state(FIQ);
+    //                 break;
+    //             case SVC:
+    //                 registers.cpsr.bits.state = sr.bits.state;
+    //                 set_state(SVC);
+    //                 break;
+    //             case ABT:
+    //                 registers.cpsr.bits.state = sr.bits.state;
+    //                 set_state(ABT);
+    //                 break;
+    //             case IRQ:
+    //                 if (registers.cpsr.bits.i == 1) break; // irq disabled bit set
+    //                 registers.cpsr.bits.state = sr.bits.state;
+    //                 set_state(IRQ);
+    //                 break;
+    //             case UND:
+    //                 registers.cpsr.bits.state = sr.bits.state;
+    //                 set_state(UND);
+    //                 break;
+    //         }
+    //     break;
+    // }
 
     // update N, Z, C, V, I, F, and T bits of cpsr
     // registers.cpsr.bits.n = sr.bits.n;
@@ -708,9 +718,12 @@ void arm_7tdmi::update_psr(bool spsr, u32 value) {
         std::cout << "Software is changing TBIT in CPSR!" << "\n"; // is this allowed??
     }
 
-    registers.cpsr.bits.t = sr.bits.t;
+    if (sr.bits.state == IRQ && registers.cpsr.bits.i == 1) return; // irq disabled bit set
+    if (sr.bits.state == FIQ && registers.cpsr.bits.f == 1) return; // fiq disabled bit set
+
     if (sr.bits.t == 1) set_mode(THUMB);
     else set_mode(ARM);
 
     registers.cpsr.full = value;
+    set_state(sr.bits.state);
 }

@@ -77,10 +77,10 @@ inline void arm_7tdmi::data_processing(u32 instruction) {
     u32 Rn = util::get_instruction_subset(instruction, 19, 16); // source register
     u32 op1 = get_register(Rn);
 
-    if (Rn == 15) {
-        if (immediate) op1 += 8;
-        else op1 += 12;
-    }
+    // if (Rn == 15) {
+    //     if (immediate) op1 += 8;
+    //     else op1 += 12;
+    // }
     
     u32 op2;
     u32 result;

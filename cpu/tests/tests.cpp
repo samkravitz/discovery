@@ -219,4 +219,8 @@ TEST_CASE("MemoryTests", "[mem_tests]") {
     mem.write_u32(address, 0xABCDEFA0);
     REQUIRE(mem.read_u8(address) == 0xA0);
     REQUIRE(mem.read_u32(address) == 0xABCDEFA0);
+
+    // memory region test
+    mem.write_u32(0x4000000, 0xAABBCCDD); // byte 0 of io_reg memory region
+    REQUIRE(mem.memory.io_reg[0] == 0xDD);
 }

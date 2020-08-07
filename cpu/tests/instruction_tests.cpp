@@ -62,7 +62,7 @@ TEST_CASE("branch_link") {
 
     // branch offset 20
     arm1.execute(i1);
-    REQUIRE(arm1.registers.r15 == 28);
+    REQUIRE(arm1.registers.r15 == 20);
 
     arm_7tdmi arm2;
     arm2.registers.r15 = 100;
@@ -70,7 +70,7 @@ TEST_CASE("branch_link") {
 
     // branch offset -40
     arm2.execute(i2);
-    REQUIRE(arm2.registers.r15 == 68);
+    REQUIRE(arm2.registers.r15 == 60);
 }
 
 TEST_CASE("single_data_transfer") {

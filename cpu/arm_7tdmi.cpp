@@ -18,7 +18,7 @@
 
 arm_7tdmi::arm_7tdmi() {
     state = SYS;
-    mode = ARM;
+    mode = THUMB;
     registers = {0}; // zero out registers
     registers.cpsr.bits.state = SYS;
 
@@ -26,11 +26,12 @@ arm_7tdmi::arm_7tdmi() {
     registers.cpsr.bits.i = 1;
     registers.cpsr.bits.f = 1;
 
-    registers.r15 = 0x8000000; // starting address of gamepak flash rom
+    registers.r15 = 0x80002d4; // starting address of gamepak flash rom
     mem = NULL;
 
     // different initialization for the testing environment
     #ifdef TEST
+    mode = ARM;
     registers.r15 = 0;
     state = USR;
     mem = new Memory();

@@ -97,12 +97,12 @@ void Memory::load_rom(char *name) {
  */
 u8 *Memory::get_internal_region(u32 address) {
     if (address <= MEM_BIOS_END) return &memory.bios[address];
-    else if (address >= MEM_BOARD_WRAM_START && address <= MEM_CHIP_WRAM_END) return &memory.board_wram[address - MEM_BOARD_WRAM_START];
+    else if (address >= MEM_BOARD_WRAM_START && address <= MEM_BOARD_WRAM_END) return &memory.board_wram[address - MEM_BOARD_WRAM_START];
     else if (address >= MEM_CHIP_WRAM_START && address <= MEM_CHIP_WRAM_END) return &memory.chip_wram[address - MEM_CHIP_WRAM_START];
     else if (address >= MEM_IO_REG_START && address <= MEM_IO_REG_END) return &memory.io_reg[address - MEM_IO_REG_START];
     else if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALLETTE_RAM_END) return &memory.palette_ram[address - MEM_PALETTE_RAM_START];
     else if (address >= MEM_VRAM_START && address <= MEM_VRAM_END) return &memory.vram[address - MEM_VRAM_START];
-    else if (address >= MEM_OAM_START && address <= MEM_OAM_END) return &memory.oam[address - MEM_VRAM_START];
+    else if (address >= MEM_OAM_START && address <= MEM_OAM_END) return &memory.oam[address - MEM_OAM_START];
     else if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END) return &game_rom[address - MEM_GAMEPAK_ROM_START];
     else {
         std::cerr << "Error: invalid internal address specified: " << address << "\n";

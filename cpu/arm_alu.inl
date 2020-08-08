@@ -813,10 +813,13 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
 void arm_7tdmi::pc_rel_load(u16 instruction) {
     u16 Rd = util::get_instruction_subset(instruction, 10, 8); 
     u16 word8 = util::get_instruction_subset(instruction, 7, 0);
+    u32 base = get_register(15);
+    base &= ~2; // clear bit 1 for word alignment
 
     word8 <<= 2; // assembler places #imm >> 2 in word8
+    base += word8;
 
-    set_register(Rd, mem->read_u32(registers.r15 + word8));
+    set_register(Rd, mem->read_u32(base));
 }
 
 void arm_7tdmi::load_store_reg(u16 instruction) {

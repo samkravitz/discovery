@@ -508,10 +508,11 @@ void arm_7tdmi::update_flags_addition(u32 op1, u32 op2, u32 result) {
 // update cpsr flags after a subtraction operation
 void arm_7tdmi::update_flags_subtraction(u32 op1, u32 op2, u32 result) {
     // C flag will be set to the carry out of bit 31 of the ALU
+    // ARM uses an inverted carry flag for borrow
     if (result > op1 || result > op2) {
-        set_condition_code_flag(C, 1);
-    } else {
         set_condition_code_flag(C, 0);
+    } else {
+        set_condition_code_flag(C, 1);
     }
 
     // Z flag will be set if and only if the result was zero

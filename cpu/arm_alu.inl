@@ -994,7 +994,7 @@ void arm_7tdmi::multiple_load_store(u16 instruction) {
 
     // determine which registers are set
     for (int i = 0; i < 8; ++i) {
-        if (instruction >> i) { // bit i is set in Rlist
+        if (instruction >> i & 0x1) { // bit i is set in Rlist
             set_registers[num_registers] = i;
             num_registers++;
         }

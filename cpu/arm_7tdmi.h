@@ -20,7 +20,7 @@ union status_register {
         u8 t : 1;
         u8 f : 1;
         u8 i : 1;
-        u32 reserved : 19;
+        u32 reserved : 20;
         u8 v : 1;
         u8 c : 1;
         u8 z : 1;

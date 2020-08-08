@@ -575,8 +575,7 @@ void arm_7tdmi::move_shifted_register(u16 instruction) {
     u16 offset5 = util::get_instruction_subset(instruction, 10, 6); // 5 bit immediate offset
     u16 shift_type = util::get_instruction_subset(instruction, 12, 11);
     u32 op1 = get_register(Rs);
-    u8 carry_out = 2;
-    carry_out = shift_register(offset5, op1, shift_type);
+    u8 carry_out = shift_register(offset5, op1, shift_type);
     set_register(Rd, op1);
     u8 carry = carry_out == 2 ? get_condition_code_flag(C) : carry_out;
     update_flags_logical(op1, carry);
@@ -1068,8 +1067,13 @@ void arm_7tdmi::long_branch_link(u16 instruction) {
         base = get_register(14); // LR
         offset <<= 1;
         base += offset;
+
+        // get address of next instruction and set bit 0
+        u32 next_instruction_address = get_register(15) - 2;
+        next_instruction_address |= 0x1;
+
         set_register(15, base);
-        set_register(14, pipeline[1]); // next instruction in link register
+        set_register(14, next_instruction_address); // next instruction in link register
 
         // flush pipeline for refill
         pipeline_full = false;

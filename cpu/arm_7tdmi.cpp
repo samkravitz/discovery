@@ -183,7 +183,6 @@ void arm_7tdmi::execute(u32 instruction) {
             break;
 
         case THUMB:
-            std::cout << "Instruction thumb type is: " << util::get_instruction_format((u16) instruction) << "\n";
             switch(util::get_instruction_format((u16) instruction)) {
                 case MSR_T:
                     move_shifted_register((u16) instruction);

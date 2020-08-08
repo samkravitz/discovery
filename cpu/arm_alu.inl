@@ -802,7 +802,6 @@ void arm_7tdmi::pc_rel_load(u16 instruction) {
     u16 word8 = util::get_instruction_subset(instruction, 7, 0);
 
     word8 <<= 2; // assembler places #imm >> 2 in word8
-    word8 += 4;  // the value of the PC will be 4 bytes greater than the address of this instruction
 
     set_register(Rd, mem->read_u32(registers.r15 + word8));
 }

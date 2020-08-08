@@ -14,7 +14,7 @@ void discovery::game_loop() {
         cpu.fetch();
         cpu.decode(cpu.pipeline[0]);
 
-        std::cout << "Executing: " << std::hex << cpu.pipeline[0] << "\n";
+        // std::cout << "Executing: " << std::hex << cpu.registers.r0 << "\n";
         cpu.execute(cpu.pipeline[0]);
 
         // update pipeline

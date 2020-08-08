@@ -742,8 +742,8 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
     bool H1 = util::get_instruction_subset(instruction, 7, 7) == 0x1; // Hi operand flag 1
     bool H2 = util::get_instruction_subset(instruction, 6, 6) == 0x1; // Hi operand flag 2
     // access hi registers (need a 4th bit)
-    if (H1) Rs |= 0b1000;
-    if (H2) Rd |= 0b1000;
+    if (H2) Rs |= 0b1000;
+    if (H1) Rd |= 0b1000;
 
     u32 op1 = get_register(Rs);
     u32 op2 = get_register(Rd);
@@ -758,6 +758,7 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
 
             result = op1 + op2;
             set_register(Rd, result);
+            increment_pc();
             break;
         case 0b01: // CMP
             if (!H1 && !H2) {
@@ -768,6 +769,7 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
             result = op2 - op1;
             update_flags_subtraction(op2, op1, result);
             set_register(Rd, result);
+            increment_pc();
             break;
         case 0b10: // MOV
             if (!H1 && !H2) {
@@ -776,6 +778,7 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
             }
 
             set_register(Rd, op1);
+            increment_pc();
             break;
         case 0b11: // BX
             if (H1) {
@@ -783,15 +786,26 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
                 return;
             }
 
-            if (Rs == 15) op1 += 4;
+            // clear bit 0 if Rs is 15
+            if (Rs == 15) {
+                op1 &= ~1;
+                op1 += 4;
+            }
+            
             set_register(15, op1);
 
             // swith to ARM mode if necessary
             if ((op1 & 1) == 0) {
-                registers.r15 += 4; // continue at Rn + 4 in arm mode (skip following halfword)
+                // registers.r15 += 4; // continue at Rn + 4 in arm mode (skip following halfword)
                 set_mode(ARM);
                 registers.cpsr.bits.t = 0; // TBIT
+            } else {
+                // clear bit 0
+                registers.r15 &= ~1;
             }
+
+            // flush pipeline for refill
+            pipeline_full = false;
         break;
     }
 }
@@ -1020,7 +1034,7 @@ void arm_7tdmi::conditional_branch(u16 instruction) {
     u16 soffset8 = util::get_instruction_subset(instruction, 7, 0); // signed 8 bit offset
     condition_t condition = (condition_t) util::get_instruction_subset(instruction, 11, 8);
     u32 base = get_register(15);
-
+    u32 jump_address;
     if (!condition_met(condition)) {
         increment_pc();
         return;
@@ -1028,7 +1042,17 @@ void arm_7tdmi::conditional_branch(u16 instruction) {
 
     soffset8 <<= 1; // assembler places #imm >> 1 in word8 to ensure halfword alignment
 
-    set_register(15, base + soffset8);
+    // if soffset8 is negative signed, convert two's complement and subtract
+    if (soffset8 >> 8) {
+        // flip bits and add 1
+        u8 twos_comp = ~soffset8;
+        twos_comp += 1;
+        jump_address = base - twos_comp;
+    } else {
+        jump_address = base + soffset8;
+    }
+
+    set_register(15, jump_address);
 
     // flush pipeline for refill
     pipeline_full = false;

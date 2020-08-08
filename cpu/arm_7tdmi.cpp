@@ -202,7 +202,6 @@ void arm_7tdmi::execute(u32 instruction) {
                     break;
                 case HI_T:
                     hi_reg_ops((u16) instruction);
-                    increment_pc();
                     break;
                 case PC_T:
                     pc_rel_load((u16) instruction);

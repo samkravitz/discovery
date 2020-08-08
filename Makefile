@@ -13,7 +13,7 @@ arm_7tdmi.o: cpu/arm_7tdmi.h cpu/arm_7tdmi.cpp
 	g++ -g -c cpu/arm_7tdmi.cpp cpu/arm_alu.inl
 
 util.o: cpu/util.h cpu/util.cpp
-	g++ -c cpu/util.cpp
+	g++ -g -c cpu/util.cpp
 
 memory.o: memory/memory.h memory/memory.cpp
 	g++ -g -c memory/memory.cpp

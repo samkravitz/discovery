@@ -972,7 +972,7 @@ void arm_7tdmi::push_pop(u16 instruction) {
 
     // determine which registers are set
     for (int i = 0; i < 8; ++i) {
-        if (instruction >> i) { // bit i is set in Rlist
+        if (instruction >> i & 0x1) { // bit i is set in Rlist
             set_registers[num_registers] = i;
             num_registers++;
         }
@@ -981,24 +981,27 @@ void arm_7tdmi::push_pop(u16 instruction) {
     if (!load) { // PUSH Rlist
         for (int i = 0; i < num_registers; ++i) {
             mem->write_u32(base, get_register(set_registers[i]));
-            base += 4; // increment stack pointer (4 bytes for word alignment)
+            base -= 4; // increment stack pointer (4 bytes for word alignment)
         }
 
         if (R) { // push LR
             mem->write_u32(base, get_register(14));
-            base += 4; // increment stack pointer (4 bytes for word alignment)
+            base -= 4; // increment stack pointer (4 bytes for word alignment)
         }
     } else { // POP Rlist
         for (int i = 0; i < num_registers; ++i) {
             set_register(set_registers[i], mem->read_u32(base));
-            base -= 4; // decrement stack pointer (4 bytes for word alignment)
+            base += 4; // decrement stack pointer (4 bytes for word alignment)
         }
 
         if (R) { // pop pc
             set_register(15, mem->read_u32(base));
-            base -= 4; // decrement stack pointer (4 bytes for word alignment)
+            base += 4; // decrement stack pointer (4 bytes for word alignment)
         }
     }
+
+    // write base back into sp
+    set_register(13, base);
 }
 
 void arm_7tdmi::multiple_load_store(u16 instruction) {

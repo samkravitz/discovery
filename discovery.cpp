@@ -13,9 +13,8 @@ void discovery::game_loop() {
     while (true) {
         cpu.fetch();
         cpu.decode(cpu.pipeline[0]);
-
-        std::cout << "Executing: " << std::hex << cpu.pipeline[0] << "\n";
         cpu.execute(cpu.pipeline[0]);
+        std::cout << "Executed: " << std::hex << cpu.pipeline[0] << "\n";
 
         // update pipeline
         cpu.pipeline[0] = cpu.pipeline[1];

@@ -21,9 +21,9 @@ void discovery::game_loop() {
         cpu.pipeline[1] = cpu.pipeline[2];
 
         // TODO - need a much better timing system
-        if (cpu.registers.r15 == 134218482) {
-            gpu.draw();
-        }
+        //if (cpu.registers.r15 == 134218482) {
+        gpu.draw();
+        //dd}
 
     }
 }

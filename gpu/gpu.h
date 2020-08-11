@@ -38,6 +38,7 @@ class GPU {
 
         // video mode draws
         void draw_mode3();
+        void draw_mode4();
 };
 
 #endif // GPU_H

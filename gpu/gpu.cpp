@@ -38,6 +38,7 @@ void GPU::reset() {
 void GPU::draw() {
     switch (mem->read_u32(REG_DISPCNT) & 0x7) { // bits 0-2 represent video mode
         case 3: draw_mode3(); break;
+        case 4: draw_mode4(); break;
         default: 
             std::cerr << "Error: unknown video mode" << "\n";
             break;
@@ -75,6 +76,40 @@ void GPU::draw_mode3() {
     SDL_RenderPresent(renderer);
 
     delete[] pixels;
+}
+
+// video mode 4 - bitmap mode
+void GPU::draw_mode4() {
+    // u8 current_pixel; // in mode 3 each pixel uses 2 bytes
+    // u8 r;
+    // u8 g;
+    // u8 b;
+    // u8 alpha = 0;
+    // u32 *pixels = new u32[SCREEN_WIDTH * SCREEN_HEIGHT]; // array representing each pixel on the screen
+
+    // for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; ++i) {
+    //     current_pixel = mem->read_u16(MEM_VRAM_START + (2 * i)); // multiply i * 2 b/c each pixel is 2 bytes
+    //     r = five_bits_to_eight(current_pixel & 0b11111);
+    //     g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
+    //     b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
+
+    //     // add current pixel in argb format to pixel array
+    //     pixels[i] = alpha;
+    //     pixels[i] <<= 8;
+    //     pixels[i] |= b;
+    //     pixels[i] <<= 8;
+    //     pixels[i] |= g;
+    //     pixels[i] <<= 8;
+    //     pixels[i] |= r;
+    // }   
+
+    // SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(u32));
+    // SDL_RenderClear(renderer);
+    // SDL_RenderCopy(renderer, texture, NULL, NULL);
+    // SDL_RenderPresent(renderer);
+
+    // delete[] pixels;
+    std::cout << "Video mode 4!\n";
 }
 
 void GPU::draw_pixel(int x, int y) {

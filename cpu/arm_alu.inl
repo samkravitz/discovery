@@ -1088,10 +1088,26 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction) {
 void arm_7tdmi::unconditional_branch(u16 instruction) {
     u16 offset11 = util::get_instruction_subset(instruction, 10, 0); // signed 11 bit offset
     u32 base = get_register(15);
+    u32 jump_address;
 
     offset11 <<= 1; // assembler places #imm >> 1 in offset11 to ensure halfword alignment
 
-    set_register(15, base + offset11);
+    // if offset11 is negative signed, convert two's complement and subtract
+    if (offset11 >> 11) {
+        // flip bits and add 1
+        u16 twos_comp = ~offset11;
+        
+        // clear top 5 bits of twos complement
+        twos_comp <<= 5;
+        twos_comp >>= 5;
+        
+        twos_comp += 1;
+        jump_address = base - twos_comp;
+    } else {
+        jump_address = base + offset11;
+    }
+
+    set_register(15, jump_address);
 
     // flush pipeline for refill
     pipeline_full = false;

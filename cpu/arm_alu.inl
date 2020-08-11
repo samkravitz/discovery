@@ -979,15 +979,24 @@ void arm_7tdmi::push_pop(u16 instruction) {
     }
 
     if (!load) { // PUSH Rlist
+        // get final sp value
+        base -= 4 * num_registers;
+        if (R) base -= 4;
+
+        // write base back into sp
+        set_register(13, base);
+        
+        // push registers
         for (int i = 0; i < num_registers; ++i) {
             mem->write_u32(base, get_register(set_registers[i]));
-            base -= 4; // increment stack pointer (4 bytes for word alignment)
+            base += 4; // increment stack pointer (4 bytes for word alignment)
         }
 
         if (R) { // push LR
             mem->write_u32(base, get_register(14));
-            base -= 4; // increment stack pointer (4 bytes for word alignment)
+            // base -= 4; // increment stack pointer (4 bytes for word alignment)
         }
+
     } else { // POP Rlist
         for (int i = 0; i < num_registers; ++i) {
             set_register(set_registers[i], mem->read_u32(base));
@@ -998,10 +1007,10 @@ void arm_7tdmi::push_pop(u16 instruction) {
             set_register(15, mem->read_u32(base));
             base += 4; // decrement stack pointer (4 bytes for word alignment)
         }
-    }
 
-    // write base back into sp
-    set_register(13, base);
+        // write base back into sp
+        set_register(13, base);
+    }
 }
 
 void arm_7tdmi::multiple_load_store(u16 instruction) {
@@ -1110,7 +1119,21 @@ void arm_7tdmi::long_branch_link(u16 instruction) {
     } else { // instruction 1
         base = get_register(15); // PC
         offset <<= 12;
-        base += offset;
+
+        if (offset >> 22) {
+            // flip bits and add 1
+            u32 twos_comp = ~offset;
+
+            // clear leading 1s that are guarunteed to be there from the u32 type
+            twos_comp <<= 10;
+            twos_comp >>= 10;
+
+            twos_comp += 1;
+            base -= twos_comp;
+        } else {
+            base += offset;
+        }
+
         set_register(14, base); // resulting address stored in LR
         increment_pc();
     }

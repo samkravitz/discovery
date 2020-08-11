@@ -19,7 +19,7 @@ memory.o: memory/memory.h memory/memory.cpp
 	g++ -g -c memory/memory.cpp
 
 gpu.o: gpu/gpu.h gpu/gpu.cpp
-	g++ -c gpu/gpu.cpp
+	g++ -g -c gpu/gpu.cpp
 
 clean:
 	rm -f discovery test *.o

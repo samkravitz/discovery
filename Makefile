@@ -1,7 +1,7 @@
 LIBARIES = -lstdc++fs -l SDL2
 # CFLAGS = 
 
-all: discovery test
+all: discovery
 
 discovery: arm_7tdmi.o util.o memory.o gpu.o discovery.cpp
 	g++ -g -o discovery arm_7tdmi.o util.o memory.o gpu.o discovery.cpp $(LIBARIES)

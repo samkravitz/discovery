@@ -21,6 +21,7 @@ arm_7tdmi::arm_7tdmi() {
     mode = ARM;
     registers = {0}; // zero out registers
     registers.r15 = 0x8000000; // starting address of gamepak flash rom
+    registers.r13 = 0x3007f00;
 
     // initialize cpsr
     registers.cpsr.bits.f = 1;

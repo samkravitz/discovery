@@ -455,7 +455,7 @@ inline void arm_7tdmi::block_data_transfer(u32 instruction) {
     bool load_psr = util::get_instruction_subset(instruction, 22, 22) == 1;   // bit 22 set = load PSR or force user mode
     bool write_back = util::get_instruction_subset(instruction, 21, 21) == 1; // bit 21 set = write address into base, bit 21 0 = no write back
     bool load = util::get_instruction_subset(instruction, 20, 20) == 1;       // bit 20 set = load, bit 20 0 = store
-    u32 Rn = util::get_instruction_subset(instruction, 19, 16);              // base register
+    u32 Rn = util::get_instruction_subset(instruction, 19, 16);               // base register
     u32 register_list = util::get_instruction_subset(instruction, 15, 0);
     u32 base = get_register(Rn);
     int num_registers = 0; // number of set bits in the register list, should be between 0-16
@@ -478,60 +478,75 @@ inline void arm_7tdmi::block_data_transfer(u32 instruction) {
         }
         if (i == Rn) register_list_contains_rn = true;
     }
+
+    // special case - rlist = 0
+    if (num_registers == 0) {
+        if (load) { // load r15
+
+        }
+    }
     
     if (load_psr && !r15_in_transfer_list) {
         set_state(USR);
         write_back = false;
     }
-    // skip transfer if register list is all 0s
-    // avoids indexing set_registers[-1] for decrement
-    if (num_registers == 0) goto after_transfer;
 
     /*
      * Transfer registers or memory
      * One of the ugliest blocks of code I've ever written... yikes
      */
     if (load) { // load from addresses into register list
-        if (up) { // addresses increment 
+
+        if (up) { // addresses increment
+
             for (int i = 0; i < num_registers; ++i) {
                 if (pre_index) base += 4;
-                if (load_psr && r15_in_transfer_list && (set_registers[i] == 15)) {
-                    set_register(16, get_register(17)); // SPSR_<mode> is transferred to CPSR when r15 in loaded
+                if (set_registers[i] == 15 && load_psr) {
+                    set_register(16, get_register(17)); // SPSR_<mode> is transferred to CPSR when r15 is loaded
                 }
                 set_register(set_registers[i], mem->read_u32(base));
                 if (!pre_index) base += 4;
             }
+
         } else { // addresses decrement
+
             for (int i = num_registers - 1; i >= 0; --i) {
                 if (pre_index) base -= 4;
                 set_register(set_registers[i], mem->read_u32(base));
                 if (!pre_index) base -= 4;
             }
+
         }
+
     } else { // store from address list into memory
+
         if (load_psr && r15_in_transfer_list) set_state(USR);
+
         if (up) { // addresses increment 
+
             for (int i = 0; i < num_registers; ++i) {
                 if (pre_index) base += 4;
                 mem->write_u32(base, get_register(set_registers[i]));
                 if (!pre_index) base += 4;
             }
+
         } else { // addresses decrement
+
             for (int i = num_registers - 1; i >= 0; --i) {
                 if (pre_index) base -= 4;
                 mem->write_u32(base, get_register(set_registers[i]));
                 if (!pre_index) base -= 4;
             }
+
         }
+
         if (load_psr && r15_in_transfer_list) {
             set_state(temp_state);
             write_back = false; // write back should not be enabled in this mechanism
         }
     }
-
-    after_transfer:
     
-    if (load_psr && !r15_in_transfer_list) set_state(temp_state);
+    if (load_psr) set_state(temp_state);
 
     if (write_back || (load && register_list_contains_rn)) {
         set_register(Rn, base);

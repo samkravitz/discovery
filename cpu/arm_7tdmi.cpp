@@ -168,7 +168,6 @@ void arm_7tdmi::execute(u32 instruction) {
                     break;
                 case BDT:
                     block_data_transfer(instruction);
-                    increment_pc();
                     break;
                 case SWP:
                     single_data_swap(instruction);

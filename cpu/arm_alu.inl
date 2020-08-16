@@ -55,7 +55,7 @@ inline void arm_7tdmi::branch_link(u32 instruction) {
         // write the old PC into the link register of the current bank
         // The PC value written into r14 is adjusted to allow for the prefetch, and contains the
         // address of the instruction following the branch and link instruction
-        new_address = pipeline[1];
+        new_address = get_register(15) - 4; // instruction following this BL
         new_address &= ~3; // clear bits 0-1
         set_register(14, new_address);
     }
@@ -460,9 +460,11 @@ inline void arm_7tdmi::block_data_transfer(u32 instruction) {
     u32 base = get_register(Rn);
     int num_registers = 0; // number of set bits in the register list, should be between 0-16
     int set_registers[16];
-    bool register_list_contains_rn = false;
-    bool r15_in_transfer_list = (instruction >> 15) & 1;
     state_t temp_state = get_state();
+    u8 transfer_reg = 0xFF;
+    u32 old_base = base;
+
+    bool r15_in_register_list = (register_list >> 15) & 0x1;
 
     if (Rn == 15) {
         std::cerr << "r15 cannot be used as base register in BDT!" << "\n";
@@ -474,11 +476,12 @@ inline void arm_7tdmi::block_data_transfer(u32 instruction) {
     for (int i = 0; i < 16; ++i) {
         if (register_list >> i & 1) {
             set_registers[num_registers] = i;
+            if (num_registers == 0) transfer_reg = i; // get first register in list
             num_registers++;
         }
-        if (i == Rn) register_list_contains_rn = true;
     }
 
+    // TODO - this
     // special case - rlist = 0
     if (num_registers == 0) {
         if (load) { // load r15
@@ -486,71 +489,49 @@ inline void arm_7tdmi::block_data_transfer(u32 instruction) {
         }
     }
     
-    if (load_psr && !r15_in_transfer_list) {
-        set_state(USR);
-        write_back = false;
-    }
-
     /*
      * Transfer registers or memory
      * One of the ugliest blocks of code I've ever written... yikes
      */
-    if (load) { // load from addresses into register list
+    if (up) { // addresses increment
 
-        if (up) { // addresses increment
+        for (int i = 0; i < num_registers; ++i) {
 
-            for (int i = 0; i < num_registers; ++i) {
-                if (pre_index) base += 4;
-                if (set_registers[i] == 15 && load_psr) {
-                    set_register(16, get_register(17)); // SPSR_<mode> is transferred to CPSR when r15 is loaded
-                }
+            if (pre_index) base += 4;
+            if (load) {
+                if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_back = false;
                 set_register(set_registers[i], mem->read_u32(base));
-                if (!pre_index) base += 4;
+                if (set_registers[i] == 15) pipeline_full = false;
+            } else { // store
+                if (set_registers[i] == transfer_reg && Rn == transfer_reg) mem->write_u32(base, old_base);
+                else mem->write_u32(base, get_register(set_registers[i]));
             }
+            if (!pre_index) base += 4;
 
-        } else { // addresses decrement
+        }
 
-            for (int i = num_registers - 1; i >= 0; --i) {
-                if (pre_index) base -= 4;
+    } else { // addresses decrement
+
+        for (int i = num_registers - 1; i >= 0; --i) {
+
+            if (pre_index) base -= 4;
+            if (load) {
+                if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_back = false;
                 set_register(set_registers[i], mem->read_u32(base));
-                if (!pre_index) base -= 4;
+                if (set_registers[i] == 15) pipeline_full = false;
+            } else { // store
+                if (set_registers[i] == transfer_reg && Rn == transfer_reg) mem->write_u32(base, old_base);
+                else mem->write_u32(base, get_register(set_registers[i]));
             }
+            if (!pre_index) base -= 4;
 
         }
 
-    } else { // store from address list into memory
-
-        if (load_psr && r15_in_transfer_list) set_state(USR);
-
-        if (up) { // addresses increment 
-
-            for (int i = 0; i < num_registers; ++i) {
-                if (pre_index) base += 4;
-                mem->write_u32(base, get_register(set_registers[i]));
-                if (!pre_index) base += 4;
-            }
-
-        } else { // addresses decrement
-
-            for (int i = num_registers - 1; i >= 0; --i) {
-                if (pre_index) base -= 4;
-                mem->write_u32(base, get_register(set_registers[i]));
-                if (!pre_index) base -= 4;
-            }
-
-        }
-
-        if (load_psr && r15_in_transfer_list) {
-            set_state(temp_state);
-            write_back = false; // write back should not be enabled in this mechanism
-        }
     }
-    
-    if (load_psr) set_state(temp_state);
 
-    if (write_back || (load && register_list_contains_rn)) {
-        set_register(Rn, base);
-    }
+    if (!r15_in_register_list && !load) increment_pc(); // increment pc if flush is not necessary
+    if (load_psr) set_state(temp_state); // restore cpu state
+    if (write_back) set_register(Rn, base); // write back final address if necessary
 }
 
 inline void arm_7tdmi::single_data_swap(u32 instruction) {

@@ -13,6 +13,8 @@
 #include "common.h"
 #include "../memory/memory.h"
 
+const u32 CYCLES_PER_MILLISEC = (1 << 24) / 1000; // 16.78 mHz or 2 ^ 24 cycles/sec
+
 // data type for special registers
 union status_register {
     struct bits {
@@ -95,6 +97,8 @@ class arm_7tdmi {
         void fetch();
         void decode(u32);
         void execute(u32);
+
+        void clock(int);
         
         // getters / setters
         uint8_t get_condition_code_flag(condition_code_flag_t);

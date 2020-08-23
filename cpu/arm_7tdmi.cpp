@@ -8,6 +8,8 @@
  * DESCRIPTION: Implementation of arm7tdmi functions
  */
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 #include "arm_7tdmi.h"
 #include "arm_alu.inl"
@@ -725,4 +727,9 @@ void arm_7tdmi::update_psr(bool spsr, u32 value) {
 
     registers.cpsr.full = value;
     set_state(sr.bits.state);
+}
+
+// halts execution for a given amount of cycles
+void arm_7tdmi::clock(int cycles) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(cycles * CYCLES_PER_MILLISEC));
 }

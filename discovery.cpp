@@ -1,8 +1,5 @@
 #include <iostream>
-#include <fstream>
 #include "discovery.h"
-#include "cpu/arm_7tdmi.h"
-#include "memory/memory.h"
 
 discovery::discovery() {
     cpu.mem = new Memory();
@@ -22,7 +19,7 @@ void discovery::game_loop() {
 
         // TODO - need a much better timing system
         //if (cpu.registers.r15 == 134218482) {
-        // gpu.draw();
+        gpu.draw();
         //dd}
 
     }

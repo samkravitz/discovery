@@ -909,7 +909,7 @@ void arm_7tdmi::load_store_halfword(u16 instruction) {
 
 void arm_7tdmi::sp_load_store(u16 instruction) {
     u16 Rd = util::get_instruction_subset(instruction, 10, 8); // destination register
-    u16 word8 = util::get_instruction_subset(instruction, 10, 6); // 8 bit immediate offset
+    u16 word8 = util::get_instruction_subset(instruction, 7, 0); // 8 bit immediate offset
     bool load = util::get_instruction_subset(instruction, 11, 11) == 1;
 
     word8 <<= 2; // assembler places #imm >> 2 in word8 to ensure word alignment

@@ -19,9 +19,9 @@ void discovery::game_loop() {
         cpu.pipeline[1] = cpu.pipeline[2];
 
         // TODO - need a much better timing system
-        // if (clock() % 60000 < 3) { // 60000 milliseconds per draw
-        //     gpu.draw();
-        // }
+        if (clock() % 60000 < 3) { // 60000 milliseconds per draw
+            gpu.draw();
+        }
     }
 }
 

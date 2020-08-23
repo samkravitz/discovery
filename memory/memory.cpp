@@ -32,25 +32,14 @@ Memory::Memory() {
 Memory::~Memory() { }
 
 u32 Memory::read_u32(u32 address) {
-    u8 *normalized_address = get_internal_region(address);
-    u32 value = 0;
-    value |= *(normalized_address + 3);
-    value <<= 8;
-    value |= *(normalized_address + 2);
-    value <<= 8;
-    value |= *(normalized_address + 1);
-    value <<= 8;
-    value |= *normalized_address;
-    return value;
+    return (read_u8(address + 3) << 24)
+    | (read_u8(address + 2) << 16)
+    | (read_u8(address + 1) << 8)
+    | read_u8(address);
 }
 
 u16 Memory::read_u16(u32 address) {
-    u8 *normalized_address = get_internal_region(address);
-    u16 value = 0;
-    value |= *(normalized_address + 1);
-    value <<= 8;
-    value |= *normalized_address;
-    return value;
+    return (read_u8(address + 1) << 8) | read_u8(address);
 }
 
 u8 Memory::read_u8(u32 address) {
@@ -58,17 +47,15 @@ u8 Memory::read_u8(u32 address) {
 }
 
 void Memory::write_u32(u32 address, u32 value) {
-    u8 *normalized_address = get_internal_region(address);
-    *normalized_address = value & 0xFF;
-    *(normalized_address + 1) = (value >> 8) & 0xFF;
-    *(normalized_address + 2) = (value >> 16) & 0xFF;
-    *(normalized_address + 3) = (value >> 24) & 0xFF;
+    write_u8(address, value & 0xFF);
+    write_u8(address + 1, (value >> 8) & 0xFF);
+    write_u8(address + 2, (value >> 16) & 0xFF);
+    write_u8(address + 3, (value >> 24) & 0xFF);
 }
 
 void Memory::write_u16(u32 address, u16 value) {
-    u8 *normalized_address = get_internal_region(address);
-    *normalized_address = value & 0xFF;
-    *(normalized_address + 1) = (value >> 8) & 0xFF;
+    write_u8(address, value & 0xFF);
+    write_u8(address + 1, (value >> 8) & 0xFF);
 }
 
 void Memory::write_u8(u32 address, u8 value) {

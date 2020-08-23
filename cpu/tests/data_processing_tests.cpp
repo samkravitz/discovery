@@ -169,7 +169,7 @@ TEST_CASE("CMP", "[data_processing]") {
     u32 i1 = 0b00010011010101010010000000100000;
     arm.execute(i1);
 
-    REQUIRE(arm.get_condition_code_flag(C) == 0);
+    REQUIRE(arm.get_condition_code_flag(C) == 1);
     REQUIRE(arm.get_condition_code_flag(Z) == 1);
     REQUIRE(arm.get_condition_code_flag(V) == 0);
     REQUIRE(arm.get_condition_code_flag(N) == 0);

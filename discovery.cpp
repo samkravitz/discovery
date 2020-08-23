@@ -21,6 +21,7 @@ void discovery::game_loop() {
         // TODO - need a much better timing system
         if (clock() % 60000 < 3) { // 60000 milliseconds per draw
             gpu.draw();
+            poll_event();
         }
     }
 }
@@ -35,4 +36,13 @@ int main(int argc, char **argv) {
     discovery emulator;
     emulator.run_asm(argv[1]);
     return 0;
+}
+
+// handle events such as key presses or X-ing out of discovery
+void discovery::poll_event() {
+    SDL_Event e;
+    SDL_PollEvent(&e);
+
+    // check if close button has been clicked
+    if (e.type == SDL_QUIT) exit(0);
 }

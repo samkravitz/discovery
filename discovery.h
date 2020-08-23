@@ -22,6 +22,7 @@ class discovery {
 
         void game_loop();
         void run_asm(char *);
+        void poll_event();
 };
 
 #endif // DISCOVERY_H

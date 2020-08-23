@@ -52,7 +52,7 @@ void GPU::draw_mode3() {
     u8 r;
     u8 g;
     u8 b;
-    u8 alpha = 0;
+    u8 alpha = 255;
     u32 *pixels = new u32[SCREEN_WIDTH * SCREEN_HEIGHT]; // array representing each pixel on the screen
 
     for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; ++i) {
@@ -64,11 +64,11 @@ void GPU::draw_mode3() {
         // add current pixel in argb format to pixel array
         pixels[i] = alpha;
         pixels[i] <<= 8;
-        pixels[i] |= b;
+        pixels[i] |= r;
         pixels[i] <<= 8;
         pixels[i] |= g;
         pixels[i] <<= 8;
-        pixels[i] |= r;
+        pixels[i] |= b;
     }   
 
     SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(u32));

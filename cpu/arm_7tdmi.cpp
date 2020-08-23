@@ -16,7 +16,7 @@
 #include "util.h"
 
 // uncomment this if running tests
-#define TEST
+// #define TEST
 
 arm_7tdmi::arm_7tdmi() {
     state = SYS;

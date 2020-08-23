@@ -12,7 +12,7 @@ void discovery::game_loop() {
         cpu.fetch();
         cpu.decode(cpu.pipeline[0]);
         cpu.execute(cpu.pipeline[0]);
-        std::cout << "Executed: " << std::hex << cpu.pipeline[0] << "\n";
+        // std::cout << "Executed: " << std::hex << cpu.pipeline[0] << "\n";
 
         // update pipeline
         cpu.pipeline[0] = cpu.pipeline[1];
@@ -34,8 +34,5 @@ int main(int argc, char **argv) {
     std::cout << "Gameboy emulator!" << "\n";
     discovery emulator;
     emulator.run_asm(argv[1]);
-    // while (true) {
-    //     emulator.gpu.draw_pixel(120, 80);
-    // }
     return 0;
 }

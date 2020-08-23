@@ -58,6 +58,7 @@ void Memory::write_u16(u32 address, u16 value) {
     write_u8(address + 1, (value >> 8) & 0xFF);
 }
 
+// TODO - add protection against VRAM byte writes
 void Memory::write_u8(u32 address, u8 value) {
     u8 *normalized_address = get_internal_region(address);
     *normalized_address = value;

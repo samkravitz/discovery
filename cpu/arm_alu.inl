@@ -573,8 +573,7 @@ void arm_7tdmi::move_shifted_register(u16 instruction) {
     u32 op1 = get_register(Rs);
     u8 carry_out = shift_register(offset5, op1, shift_type);
     set_register(Rd, op1);
-    u8 carry = carry_out == 2 ? get_condition_code_flag(C) : carry_out;
-    update_flags_logical(op1, carry);
+    update_flags_logical(op1, carry_out);
 }
 
 void arm_7tdmi::add_sub(u16 instruction) {

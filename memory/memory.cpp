@@ -105,7 +105,7 @@ u8 *Memory::get_internal_region(u32 address) {
     else if (address >= MEM_OAM_START && address <= MEM_OAM_END) return &memory.oam[address - MEM_OAM_START];
     else if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END) return &game_rom[address - MEM_GAMEPAK_ROM_START];
     else {
-        std::cerr << "Error: invalid internal address specified: " << address << "\n";
+        std::cerr << "Error: invalid internal address specified: " << std::hex << "0x" << address << "\n";
         exit(2);
     }
 }

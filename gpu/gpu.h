@@ -29,7 +29,6 @@ class GPU {
 
         void reset();
         void draw();
-        void draw_pixel(int, int);
 
     private:
         SDL_Window *window;

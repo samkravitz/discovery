@@ -56,7 +56,8 @@ int main(int argc, char **argv) {
 // handle events such as key presses or X-ing out of discovery
 void discovery::poll_event() {
     SDL_Event e;
-    SDL_PollEvent(&e);
+
+    if (!SDL_PollEvent(&e)) return; // no event
 
     // check if close button has been clicked
     if (e.type == SDL_QUIT) exit(0);

@@ -560,6 +560,8 @@ inline void arm_7tdmi::single_data_swap(u32 instruction) {
 }
 
 inline void arm_7tdmi::software_interrupt(u32 instruction) {
+    std::cout << "software interrupt arm";
+    exit(0);
     set_state(SVC);
     set_register(15, 0x08);
     set_register(17, get_register(16)); // put CPSR in SPSR_<svc>
@@ -1073,6 +1075,8 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction) {
     set_register(16, get_register(15)); // move CPSR to SPSR
     set_register(15, 0x8); // load the SWI vector address (0x8) into the PC
 
+    std::cout << "software interrupt thumb";
+    exit(0);
     // switch to ARM state and enter SVC mode
     set_mode(ARM);
     set_state(SVC);

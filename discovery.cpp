@@ -108,7 +108,7 @@ void discovery::poll_event() {
     gamepad_result |= gamepad.b << 1;
     gamepad_result |= gamepad.a;
 
-    // print_keys(gamepad_result);
+    //print_keys(gamepad_result);
 
     // store gamepad result back into the KEYINPUT address
     mem->write_u32(REG_KEYINPUT, gamepad_result);

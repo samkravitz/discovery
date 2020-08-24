@@ -81,6 +81,8 @@ void GPU::draw_mode3() {
 
 // video mode 4 - bitmap mode
 void GPU::draw_mode4() {
+    // u32 keys = mem->read_u32(REG_KEYINPUT);
+    // std::cout << keys << "\n";
     u8 pallette_index; // in mode 4 each pixel uses 1 byte 
     u32 current_pixel; // the color located at pallette_ram[pallette_index]
     u8 r;

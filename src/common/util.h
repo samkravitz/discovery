@@ -11,7 +11,7 @@
 
 #include <stdint.h>
 #include "common.h"
-#include "arm_7tdmi.h"
+#include "cpu.h"
 
 namespace util {
     // determine which type of operation the instruction is

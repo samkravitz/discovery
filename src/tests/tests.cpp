@@ -5,9 +5,9 @@
 #include <bitset>
 
 #include "../arm_7tdmi.h"
-#include "../common.h"
-#include "../util.h"
-#include "../../memory/memory.h"
+#include "../memory.h"
+#include "../common/cpu.h"
+#include "../common/util.h"
 
 TEST_CASE("ConditionFlagTests", "[condition_flag]") {
     arm_7tdmi arm;

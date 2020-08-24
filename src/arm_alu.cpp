@@ -2,7 +2,7 @@
  * License: GPLv2
  * See LICENSE.txt for full license text
  * 
- * FILE: arm_alu.inl
+ * FILE: arm_alu.cpp
  * DATE: June 27, 2020
  * DESCRIPTION: execution of arm instructions
  */
@@ -16,7 +16,7 @@
  * flushes the pipeline, and restarts execution from the address
  * contained in Rn. If bit 0 of Rn is 1, switch to THUMB mode
  */
-inline void arm_7tdmi::branch_exchange(u32 instruction) {
+ void arm_7tdmi::branch_exchange(u32 instruction) {
     uint32_t Rn = util::get_instruction_subset(instruction, 3, 0);
     if (Rn == 15) {
         std::cerr << "Undefined behavior: r15 as operand\n";
@@ -38,7 +38,7 @@ inline void arm_7tdmi::branch_exchange(u32 instruction) {
     pipeline_full = false;
 }
 
-inline void arm_7tdmi::branch_link(u32 instruction) {
+ void arm_7tdmi::branch_link(u32 instruction) {
     bool link = util::get_instruction_subset(instruction, 24, 24) == 0x1;
     u32 offset = util::get_instruction_subset(instruction, 23, 0);
     bool is_neg = offset >> 23 == 0x1;
@@ -67,7 +67,7 @@ inline void arm_7tdmi::branch_link(u32 instruction) {
     pipeline_full = false;
 }
 
-inline void arm_7tdmi::data_processing(u32 instruction) {
+ void arm_7tdmi::data_processing(u32 instruction) {
     // immediate operand bit
     bool immediate = util::get_instruction_subset(instruction, 25, 25) == 0x1;
     // set condition code
@@ -210,7 +210,7 @@ inline void arm_7tdmi::data_processing(u32 instruction) {
 
 }
 
-inline void arm_7tdmi::multiply(u32 instruction) {
+ void arm_7tdmi::multiply(u32 instruction) {
     // assign registers
     u32 Rm = util::get_instruction_subset(instruction, 3, 0);   // first operand
     u32 Rs = util::get_instruction_subset(instruction, 11, 8);  // source register
@@ -240,7 +240,7 @@ inline void arm_7tdmi::multiply(u32 instruction) {
 }
 
 // allow access to CPSR and SPSR registers
-inline void arm_7tdmi::psr_transfer(u32 instruction) {
+ void arm_7tdmi::psr_transfer(u32 instruction) {
     bool spsr = util::get_instruction_subset(instruction, 22, 22) == 1 ? 1 : 0;
 
     if (util::get_instruction_subset(instruction, 21, 16) == 0b001111) { // MRS (transfer PSR contents to register)
@@ -309,7 +309,7 @@ inline void arm_7tdmi::psr_transfer(u32 instruction) {
 }
 
 // store or load single value to/from memory
-inline void arm_7tdmi::single_data_transfer(u32 instruction) {
+ void arm_7tdmi::single_data_transfer(u32 instruction) {
     bool immediate = util::get_instruction_subset(instruction, 25, 25) == 0;
     bool pre_index = util::get_instruction_subset(instruction, 24, 24) == 1;  // bit 24 set = pre index, bit 24 0 = post index
     bool up = util::get_instruction_subset(instruction, 23, 23) == 1;         // bit 23 set = up, bit 23 0 = down
@@ -373,7 +373,7 @@ inline void arm_7tdmi::single_data_transfer(u32 instruction) {
 }
 
 // transfer halfword and signed data
-inline void arm_7tdmi::halfword_data_transfer(u32 instruction) {
+ void arm_7tdmi::halfword_data_transfer(u32 instruction) {
     bool pre_index = util::get_instruction_subset(instruction, 24, 24) == 1;  // bit 24 set = pre index, bit 24 0 = post index
     bool up = util::get_instruction_subset(instruction, 23, 23) == 1;         // bit 23 set = up, bit 23 0 = down
     bool immediate = util::get_instruction_subset(instruction, 22, 22) == 1;
@@ -449,7 +449,7 @@ inline void arm_7tdmi::halfword_data_transfer(u32 instruction) {
     }
 }
 
-inline void arm_7tdmi::block_data_transfer(u32 instruction) {
+ void arm_7tdmi::block_data_transfer(u32 instruction) {
     bool pre_index = util::get_instruction_subset(instruction, 24, 24) == 1;  // bit 24 set = pre index, bit 24 0 = post index
     bool up = util::get_instruction_subset(instruction, 23, 23) == 1;         // bit 23 set = up, bit 23 0 = down
     bool load_psr = util::get_instruction_subset(instruction, 22, 22) == 1;   // bit 22 set = load PSR or force user mode
@@ -534,7 +534,7 @@ inline void arm_7tdmi::block_data_transfer(u32 instruction) {
     if (write_back) set_register(Rn, base); // write back final address if necessary
 }
 
-inline void arm_7tdmi::single_data_swap(u32 instruction) {
+ void arm_7tdmi::single_data_swap(u32 instruction) {
     bool byte = util::get_instruction_subset(instruction, 22, 22);
     u32 Rn = util::get_instruction_subset(instruction, 19, 16); // base register
     u32 Rd = util::get_instruction_subset(instruction, 15, 12); // destination register
@@ -559,7 +559,7 @@ inline void arm_7tdmi::single_data_swap(u32 instruction) {
     }
 }
 
-inline void arm_7tdmi::software_interrupt(u32 instruction) {
+ void arm_7tdmi::software_interrupt(u32 instruction) {
     std::cout << "software interrupt arm";
     exit(0);
     set_state(SVC);

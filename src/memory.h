@@ -12,9 +12,9 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "common.h"
-#include "../cpu/common.h"
-#include "../common.h"
+#include "common/common.h"
+//#include "common/cpu.h"
+#include "common/memory.h"
 
 class Memory {
     public:

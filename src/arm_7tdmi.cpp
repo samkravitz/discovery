@@ -12,8 +12,7 @@
 #include <thread>
 
 #include "arm_7tdmi.h"
-#include "arm_alu.inl"
-#include "util.h"
+#include "common/util.h"
 
 // uncomment this if running tests
 // #define TEST

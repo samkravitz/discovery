@@ -10,9 +10,9 @@
 #ifndef DISCOVERY_H
 #define DISCOVERY_H
 
-#include "cpu/arm_7tdmi.h"
-#include "gpu/gpu.h"
-#include "memory/memory.h"
+#include "arm_7tdmi.h"
+#include "gpu.h"
+#include "memory.h"
 
 class discovery {
     public:

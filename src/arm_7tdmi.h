@@ -10,8 +10,8 @@
 #ifndef ARM_7TDMI_H
 #define ARM_7TDMI_H
 
-#include "common.h"
-#include "../memory/memory.h"
+#include "common/cpu.h"
+#include "memory.h"
 
 const u32 CYCLES_PER_MILLISEC = (1 << 24) / 1000; // 16.78 mHz or 2 ^ 24 cycles/sec
 

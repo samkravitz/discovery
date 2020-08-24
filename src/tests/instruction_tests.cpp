@@ -1,7 +1,7 @@
 #include "catch.hpp"
 
-#include "../common.h"
-#include "../util.h"
+#include "../common/cpu.h"
+#include "../common/util.h"
 #include "../arm_7tdmi.h"
 
 TEST_CASE("branch_exchange") {

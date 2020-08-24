@@ -13,9 +13,9 @@
 
 #include <SDL2/SDL.h>
 #include <iostream>
-#include "../memory/common.h"
-#include "../common.h"
-#include "../memory/memory.h"
+#include "common/memory.h"
+#include "common/common.h"
+#include "memory.h"
 
 #define SCREEN_WIDTH  240
 #define SCREEN_HEIGHT 160

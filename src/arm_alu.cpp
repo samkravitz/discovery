@@ -8,7 +8,7 @@
  */
 
 #include <iostream>
-#include "util.h"
+#include "common/util.h"
 #include "arm_7tdmi.h"
 
 /*

@@ -36,7 +36,7 @@ void GPU::reset() {
 }
 
 void GPU::draw() {
-    //std::cout << "Executing graphics mode: " << (mem->read_u32(REG_DISPCNT) & 0x7) << "\n";
+    std::cout << "Executing graphics mode: " << (mem->read_u32(REG_DISPCNT) & 0x7) << "\n";
     switch (mem->read_u32(REG_DISPCNT) & 0x7) { // bits 0-2 represent video mode
         case 3: draw_mode3(); break;
         case 4: draw_mode4(); break;
@@ -81,8 +81,6 @@ void GPU::draw_mode3() {
 
 // video mode 4 - bitmap mode
 void GPU::draw_mode4() {
-    // u32 keys = mem->read_u32(REG_KEYINPUT);
-    // std::cout << keys << "\n";
     u8 pallette_index; // in mode 4 each pixel uses 1 byte 
     u32 current_pixel; // the color located at pallette_ram[pallette_index]
     u8 r;

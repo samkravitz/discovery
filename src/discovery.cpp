@@ -49,6 +49,7 @@ void discovery::run_asm(char *name) {
 int main(int argc, char **argv) {
     std::cout << "Gameboy emulator!" << "\n";
     discovery emulator;
+    emulator.mem->load_bios();
     emulator.run_asm(argv[1]);
     return 0;
 }

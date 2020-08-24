@@ -78,6 +78,20 @@ void Memory::load_rom(char *name) {
     rom.close();
 }
 
+void Memory::load_bios() {
+    // bios must be called gba_bios.bin
+    std::ifstream bios("gba_bios.bin", std::ios::in | std::ios::binary);
+    if (!bios) return;
+
+    if (!bios.good()) {
+        std::cerr << "Bad bios!" << "\n";
+        return;
+    }
+
+    bios.read((char *) memory.bios, MEM_BIOS_SIZE);
+    bios.close();
+}
+
 /*
  * GBA memory can be addressed anywhere from 0x00000000-0xFFFFFFFF, however most of those addresses are unused.
  * given a 4 u8 address, this function will return the address of the

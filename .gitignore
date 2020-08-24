@@ -1,7 +1,6 @@
 .vscode/
 bin/
-test
-discovery
 catch.hpp
 *.o
 *.gba
+gba_bios.bin

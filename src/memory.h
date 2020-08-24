@@ -34,6 +34,7 @@ class Memory {
         u8 * game_rom;
         
         void load_rom(char *);
+        void load_bios();
 
         // read / write from memory
         u32 read_u32(u32);

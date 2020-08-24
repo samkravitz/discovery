@@ -11,9 +11,7 @@
 #define MEMORY_H
 
 #include <stdlib.h>
-#include <stdint.h>
 #include "common/common.h"
-//#include "common/cpu.h"
 #include "common/memory.h"
 
 class Memory {
@@ -22,13 +20,13 @@ class Memory {
         ~Memory();
 
         struct memory_struct {
-            u8 bios[0x4000];
-            u8 board_wram[0x40000];
-            u8 chip_wram[0x8000];
-            u8 io_reg [0x400];
-            u8 palette_ram[0x400];
-            u8 vram[0x18000];
-            u8 oam[0x400];
+            u8 bios[MEM_BIOS_SIZE];
+            u8 board_wram[MEM_BOARD_WRAM_SIZE];
+            u8 chip_wram[MEM_CHIP_WRAM_SIZE];
+            u8 io_reg [MEM_IO_REG_SIZE];
+            u8 palette_ram[MEM_PALETTE_RAM_SIZE];
+            u8 vram[MEM_VRAM_SIZE];
+            u8 oam[MEM_OAM_SIZE];
         } memory;
 
         u8 * game_rom;

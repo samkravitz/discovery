@@ -7,7 +7,7 @@ OBJECTS = arm_7tdmi.o util.o memory.o gpu.o arm_alu.o
 VPATH = $(SOURCEDIR)
 TESTS = $(SOURCEDIR)tests/tests.cpp $(SOURCEDIR)tests/instruction_tests.cpp $(SOURCEDIR)tests/data_processing_tests.cpp
 
-all: discovery
+all: discovery mov
 
 discovery: $(OBJECTS) $(SOURCEDIR)discovery.cpp
 	$(CC) $(CFLAGS) -o discovery $(OBJECTS) $(SOURCEDIR)discovery.cpp $(LIBARIES)
@@ -27,6 +27,9 @@ memory.o: $(SOURCEDIR)memory.h $(SOURCEDIR)memory.cpp
 gpu.o: $(SOURCEDIR)gpu.h $(SOURCEDIR)gpu.cpp
 	$(CC) $(CFLAGS) -c $(SOURCEDIR)gpu.cpp
 
+mov:
+	mv *.o discovery test bin/
+
 .PHONY: clean
 clean:
-	rm -f discovery test *.o
+	rm -f bin/*

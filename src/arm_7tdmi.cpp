@@ -735,3 +735,30 @@ void arm_7tdmi::update_psr(bool spsr, u32 value) {
 void arm_7tdmi::clock(int cycles) {
     std::this_thread::sleep_for(std::chrono::milliseconds(cycles * CYCLES_PER_MILLISEC));
 }
+
+void arm_7tdmi::handle_interrupt() {
+    // check if master interrupts are enabled
+    if ((mem->read_u32(REG_IME) & 1) && registers.cpsr.bits.i == 0) {
+
+        // get enabled interrupts and requested interrupts
+        u16 interrupts_enabled = mem->read_u16(REG_IF);
+        u16 interrupts_requested = mem->read_u16(REG_IE);
+
+        // get first identical set bit in enabled/requested interrupts
+        for (int i = 0; i < 14; ++i) { // 14 interrupts available
+            if (interrupts_enabled & (1 << i) && interrupts_requested & (1 << i)) {
+                // handle interrupt at position i
+
+                registers.cpsr.bits.state = IRQ;
+                set_state(IRQ);
+
+                registers.cpsr.bits.t = 1;
+                set_mode(ARM);
+
+                set_register(15, 0x18);
+
+                std::cout << "interrupt handling!\n";
+            }
+        }
+    }
+}

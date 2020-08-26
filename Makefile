@@ -28,8 +28,8 @@ gpu.o: $(SOURCEDIR)gpu.h $(SOURCEDIR)gpu.cpp
 	$(CC) $(CFLAGS) -c $(SOURCEDIR)gpu.cpp
 
 mov:
-	mv *.o discovery test bin/
+	mv *.o bin/
 
 .PHONY: clean
 clean:
-	rm -f bin/*
+	rm -f discovery *.o bin/*

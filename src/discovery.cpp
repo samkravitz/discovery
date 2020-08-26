@@ -1,6 +1,7 @@
 #include <iostream>
 #include <ctime>
 #include "discovery.h"
+#include "common/common.h"
 
 void print_keys(u32);
 
@@ -27,7 +28,7 @@ void discovery::game_loop() {
         cpu.fetch();
         cpu.decode(cpu.pipeline[0]);
         cpu.execute(cpu.pipeline[0]);
-        std::cout << "Executed: " << std::hex << cpu.pipeline[0] << "\n";
+        //std::cout << "Executed: " << std::hex << cpu.pipeline[0] << "\n";
 
         // update pipeline
         cpu.pipeline[0] = cpu.pipeline[1];
@@ -38,6 +39,9 @@ void discovery::game_loop() {
             gpu.draw();
             poll_event();
         }
+
+        cpu.handle_interrupt();
+        //if (mem->read_u32(REG_KEYINPUT) != 0x3FF) std::cout << "A key has been pushed!\n";
     }
 }
 
@@ -109,10 +113,14 @@ void discovery::poll_event() {
     gamepad_result |= gamepad.b << 1;
     gamepad_result |= gamepad.a;
 
-    //print_keys(gamepad_result);
+    // print_keys(gamepad_result);
 
     // store gamepad result back into the KEYINPUT address
-    mem->write_u32(REG_KEYINPUT, gamepad_result);
+    // mem->write_u32(REG_KEYINPUT, gamepad_result);
+    // request keyboard interrupt
+    u32 reg_if = mem->read_u32(REG_IF);
+    reg_if |= 1 << 13;
+    mem->write_u32(REG_IF, reg_if);
 }
 
 void print_keys(u32 keys) {

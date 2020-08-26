@@ -36,7 +36,7 @@ void GPU::reset() {
 }
 
 void GPU::draw() {
-    std::cout << "Executing graphics mode: " << (mem->read_u32(REG_DISPCNT) & 0x7) << "\n";
+    //std::cout << "Executing graphics mode: " << (mem->read_u32(REG_DISPCNT) & 0x7) << "\n";
     switch (mem->read_u32(REG_DISPCNT) & 0x7) { // bits 0-2 represent video mode
         case 3: draw_mode3(); break;
         case 4: draw_mode4(); break;

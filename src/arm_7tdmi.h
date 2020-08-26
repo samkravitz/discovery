@@ -146,6 +146,9 @@ class arm_7tdmi {
         void unconditional_branch(u16);
         void long_branch_link(u16);
 
+        // handle interrupts
+        void handle_interrupt();
+
         // misc
         void update_flags_logical(u32, u8);
         void update_flags_addition(u32, u32, u32);

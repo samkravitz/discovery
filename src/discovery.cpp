@@ -40,10 +40,12 @@ void discovery::game_loop() {
         if (cpu.cycles % CYCLES_PER_REFRESH == 0) { // once per frame
             gpu.draw();
             
-            if (SDL_PollEvent(&e)) {
-                if (e.type == SDL_QUIT) break;
-                if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) poll_keys(e);
-            }
+            
+        }
+
+        if (SDL_PollEvent(&e)) {
+            if (e.type == SDL_QUIT) break;
+            if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) poll_keys(e);
         }
 
         cpu.handle_interrupt();

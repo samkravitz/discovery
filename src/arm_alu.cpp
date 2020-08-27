@@ -25,6 +25,10 @@
     }
     
     u32 branch_address = get_register(Rn);
+
+    // during the first cyle, calculate branch address
+    clock(); // 1N
+
     set_register(15, branch_address); 
 
     // swith to THUMB mode if necessary
@@ -36,6 +40,10 @@
 
     // flush pipeline for refill
     pipeline_full = false;
+
+    // cycles: 2S + 1N
+    clock(); // 2S
+    clock();
 }
 
  void arm_7tdmi::branch_link(u32 instruction) {
@@ -51,6 +59,9 @@
         offset |= 0b11111100000000000000000000000000;
     }
 
+    // during the first cyle, calculate branch address
+    clock(); // 1N
+
     if (link) {
         // write the old PC into the link register of the current bank
         // The PC value written into r14 is adjusted to allow for the prefetch, and contains the
@@ -65,6 +76,10 @@
 
     // flush pipeline for refill
     pipeline_full = false;
+
+    // cycles: 2S + 1N
+    clock(); // 2S
+    clock();
 }
 
  void arm_7tdmi::data_processing(u32 instruction) {
@@ -77,10 +92,10 @@
     u32 Rn = util::get_instruction_subset(instruction, 19, 16); // source register
     u32 op1 = get_register(Rn);
 
-    // if (Rn == 15) {
-    //     if (immediate) op1 += 8;
-    //     else op1 += 12;
-    // }
+    if (Rn == 15) {
+        clock(); // + 2S cycles if PC written
+        clock();
+    }
     
     u32 op2;
     u32 result;
@@ -118,6 +133,8 @@
 
         op2 = get_register(shifted_register);
         carry_out = shift_register(shift_amount, op2, shift_type);
+
+        clock(); // + 1I cycles with register specified shift
     }
     
     // for arithmetic operations that use a carry bit, this will either equal
@@ -208,6 +225,7 @@
             break;
     }
 
+    clock(); // 1S cycles for normal data processing
 }
 
  void arm_7tdmi::multiply(u32 instruction) {
@@ -306,6 +324,8 @@
         std::cerr << "Bad PSR transfer instruction!" << "\n";
         return;
     }
+
+    clock(); // 1S cycles
 }
 
 // store or load single value to/from memory
@@ -352,6 +372,18 @@
         } else { // load one word from memory
             set_register(Rd, mem->read_u32(base));
         }
+
+        // normal loads instructions take 1S + 1N + 1I
+        clock();
+        clock();
+        clock();
+
+        // LDR PC takes an additional 1S + 1N cycles
+        if (Rn == 15) {
+            clock();
+            clock();
+        }
+
     } else { // store from register to memory
         if (byte) { // store one byte to memory
             uint8_t value = get_register(Rd) & 0xFF; // lowest byte in register
@@ -359,6 +391,10 @@
         } else { // store one word into memory
             mem->write_u32(base, get_register(Rd));
         }
+
+        // stores take 2N cycles to execute
+        clock();
+        clock();
     }
 
     if (!pre_index) { // offset modification after transfer

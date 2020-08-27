@@ -16,6 +16,8 @@
 
 class discovery {
     public:
+        discovery();
+
         arm_7tdmi cpu;
         GPU gpu;
         Memory *mem;
@@ -33,11 +35,12 @@ class discovery {
             u8 l;
         } gamepad;
 
-        discovery();
-
-        void game_loop();
         void run_asm(char *);
-        void poll_event();
+
+    private:
+        void game_loop();
+        void poll_keys();
+        void shutdown();
 };
 
 #endif // DISCOVERY_H

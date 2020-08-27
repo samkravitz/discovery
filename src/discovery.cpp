@@ -3,7 +3,7 @@
 #include "discovery.h"
 #include "common/common.h"
 
-void print_keys(u32);
+void print_keys(u16);
 
 discovery::discovery() {
     mem = new Memory();
@@ -38,15 +38,16 @@ void discovery::game_loop() {
 
         // TODO - need a much better timing system
         if (cpu.cycles % CYCLES_PER_REFRESH == 0) { // once per frame
-            gpu.draw();
-
-            if (SDL_PollEvent(e)) {
+            //gpu.draw();
+            poll_keys();
+            
+            if (SDL_PollEvent(&e)) {
                 if (e.type == SDL_QUIT) break;
-                if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) poll_keys(e);
+                if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) poll_keys();
             }
         }
 
-        cpu.handle_interrupt();
+        //cpu.handle_interrupt();
         //if (mem->read_u32(REG_KEYINPUT) != 0x3FF) std::cout << "A key has been pushed!\n";
     }
 }
@@ -64,72 +65,107 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-// handle events such as key presses or X-ing out of discovery
+// write current key state to KEYINPUT register
 void discovery::poll_keys() {
-    SDL_Event e;
 
-    if (!SDL_PollEvent(&e)) return; // no event
+    const u8 *keystate = SDL_GetKeyboardState(NULL);
+    /*
+     * Order of keys in KEYINPUT is as follows:
+     * a: 0
+     * b: 1
+     * select: 2
+     * start: 3
+     * right: 4
+     * left: 5
+     * up: 6
+     * down: 7
+     * r: 8
+     * l: 9
+     */
 
-    // check if close button has been clicked
-    if (e.type == SDL_QUIT) exit(0);
+    // GBA gamepad state is opposite of SDL keyboard state
+    // an SDL keystate of 1 means GBA gamepad state is 0
+    gamepad.a     == keystate[SDLK_x]         ? 0 : 1;
+    gamepad.b     == keystate[SDLK_z]         ? 0 : 1;
+    gamepad.sel   == keystate[SDLK_BACKSPACE] ? 0 : 1;
+    gamepad.start == keystate[SDLK_RETURN]    ? 0 : 1;
+    gamepad.right == keystate[SDLK_RIGHT]     ? 0 : 1;
+    gamepad.left  == keystate[SDLK_LEFT]      ? 0 : 1;
+    gamepad.up    == keystate[SDLK_UP]        ? 0 : 1;
+    gamepad.down  == keystate[SDLK_DOWN]      ? 0 : 1;
+    gamepad.l     == keystate[SDLK_s]         ? 0 : 1;
+    gamepad.r     == keystate[SDLK_a]         ? 0 : 1;
 
-    // poll button presses
-    if (e.type == SDL_KEYDOWN) {
-        switch(e.key.keysym.sym) {
-            case SDLK_x: gamepad.a = 0; break;
-            case SDLK_z: gamepad.b = 0; break;
-            case SDLK_BACKSPACE: gamepad.sel = 0; break;
-            case SDLK_RETURN: gamepad.start = 0; break;
-            case SDLK_RIGHT: gamepad.right = 0; break;
-            case SDLK_LEFT: gamepad.left = 0; break;
-            case SDLK_UP: gamepad.up = 0; break;
-            case SDLK_DOWN: gamepad.down = 0; break;
-            case SDLK_s: gamepad.r = 0; break;
-            case SDLK_a: gamepad.l = 0; break;
-            default: break;
-        }
-    }
-
-    // poll button releases
-    if (e.type == SDL_KEYUP) {
-        switch(e.key.keysym.sym) {
-            case SDLK_x: gamepad.a = 1; break;
-            case SDLK_z: gamepad.b = 1; break;
-            case SDLK_BACKSPACE: gamepad.sel = 1; break;
-            case SDLK_RETURN: gamepad.start = 1; break;
-            case SDLK_RIGHT: gamepad.right = 1; break;
-            case SDLK_LEFT: gamepad.left = 1; break;
-            case SDLK_UP: gamepad.up = 1; break;
-            case SDLK_DOWN: gamepad.down = 1; break;
-            case SDLK_s: gamepad.r = 1; break;
-            case SDLK_a: gamepad.l = 1; break;
-            default: break;
-        }
-    }
-
-    u32 gamepad_result = 0;
-    gamepad_result |= gamepad.l << 9;
-    gamepad_result |= gamepad.r << 8;
-    gamepad_result |= gamepad.down << 7;
-    gamepad_result |= gamepad.up << 6;
-    gamepad_result |= gamepad.left << 5;
+    u16 gamepad_result = 0;
+    gamepad_result |= gamepad.l     << 9;
+    gamepad_result |= gamepad.r     << 8;
+    gamepad_result |= gamepad.down  << 7;
+    gamepad_result |= gamepad.up    << 6;
+    gamepad_result |= gamepad.left  << 5;
     gamepad_result |= gamepad.right << 4;
     gamepad_result |= gamepad.start << 3;
-    gamepad_result |= gamepad.sel << 2;
-    gamepad_result |= gamepad.b << 1;
-    gamepad_result |= gamepad.a;
+    gamepad_result |= gamepad.sel   << 2;
+    gamepad_result |= gamepad.b     << 1;
+    gamepad_result |= gamepad.a     << 0;
 
-    // print_keys(gamepad_result);
+    std::cout << std::hex << gamepad_result << "\n";
+    // poll button presses
+    // if (e.type == SDL_KEYDOWN) {
+    //     switch(e.key.keysym.sym) {
+    //         case SDLK_x: gamepad.a = 0; break;
+    //         case SDLK_z: gamepad.b = 0; break;
+    //         case SDLK_BACKSPACE: gamepad.sel = 0; break;
+    //         case SDLK_RETURN: gamepad.start = 0; break;
+    //         case SDLK_RIGHT: gamepad.right = 0; break;
+    //         case SDLK_LEFT: gamepad.left = 0; break;
+    //         case SDLK_UP: gamepad.up = 0; break;
+    //         case SDLK_DOWN: gamepad.down = 0; break;
+    //         case SDLK_s: gamepad.r = 0; break;
+    //         case SDLK_a: gamepad.l = 0; break;
+    //         default: break;
+    //     }
+    // }
 
-    // store gamepad result back into the KEYINPUT address
-    // mem->write_u32(REG_KEYINPUT, gamepad_result);
-    // request keyboard interrupt
-    u32 reg_if = mem->read_u32(REG_IF);
-    reg_if |= 1 << 13;
-    mem->write_u32(REG_IF, reg_if);
+    // // poll button releases
+    // if (e.type == SDL_KEYUP) {
+    //     switch(e.key.keysym.sym) {
+    //         case SDLK_x: gamepad.a = 1; break;
+    //         case SDLK_z: gamepad.b = 1; break;
+    //         case SDLK_BACKSPACE: gamepad.sel = 1; break;
+    //         case SDLK_RETURN: gamepad.start = 1; break;
+    //         case SDLK_RIGHT: gamepad.right = 1; break;
+    //         case SDLK_LEFT: gamepad.left = 1; break;
+    //         case SDLK_UP: gamepad.up = 1; break;
+    //         case SDLK_DOWN: gamepad.down = 1; break;
+    //         case SDLK_s: gamepad.r = 1; break;
+    //         case SDLK_a: gamepad.l = 1; break;
+    //         default: break;
+    //     }
+    // }
+
+    // u32 gamepad_result = 0;
+    // gamepad_result |= gamepad.l << 9;
+    // gamepad_result |= gamepad.r << 8;
+    // gamepad_result |= gamepad.down << 7;
+    // gamepad_result |= gamepad.up << 6;
+    // gamepad_result |= gamepad.left << 5;
+    // gamepad_result |= gamepad.right << 4;
+    // gamepad_result |= gamepad.start << 3;
+    // gamepad_result |= gamepad.sel << 2;
+    // gamepad_result |= gamepad.b << 1;
+    // gamepad_result |= gamepad.a;
+
+    print_keys(gamepad_result);
+
+    // // store gamepad result back into the KEYINPUT address
+    // // mem->write_u32(REG_KEYINPUT, gamepad_result);
+    // // request keyboard interrupt
+    // u32 reg_if = mem->read_u32(REG_IF);
+    // reg_if |= 1 << 13;
+    // mem->write_u32(REG_IF, reg_if);
 }
 
-void print_keys(u32 keys) {
+void print_keys(u16 keys) {
     std::cout << "\n\n";
     if (((keys >> 9) & 1) == 0) std::cout << "L is pressed\n";
     if (((keys >> 8) & 1) == 0) std::cout << "R is pressed\n";

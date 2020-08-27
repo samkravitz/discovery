@@ -1,5 +1,6 @@
 .vscode/
 bin/
+discovery
 catch.hpp
 *.o
 *.gba

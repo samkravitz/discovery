@@ -32,6 +32,8 @@ arm_7tdmi::arm_7tdmi() {
 
     mem = NULL;
 
+    cycles = 0;
+
     // different initialization for the testing environment
     #ifdef TEST
     registers.r15 = 0;
@@ -133,6 +135,7 @@ void arm_7tdmi::decode(u32 instruction) {
 }
 
 void arm_7tdmi::execute(u32 instruction) {
+    clock();
     int i = 0;
     int j = 1;
     int k = 2;
@@ -731,9 +734,9 @@ void arm_7tdmi::update_psr(bool spsr, u32 value) {
     set_state(sr.bits.state);
 }
 
-// halts execution for a given amount of cycles
-void arm_7tdmi::clock(int cycles) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(cycles * CYCLES_PER_MILLISEC));
+// advances the cpu by one cycle
+void arm_7tdmi::clock() {
+    cycles += 1;
 }
 
 void arm_7tdmi::handle_interrupt() {

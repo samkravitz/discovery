@@ -24,20 +24,26 @@ discovery::discovery() {
 }
 
 void discovery::game_loop() {
+    SDL_Event e;
+
     while (true) {
         cpu.fetch();
         cpu.decode(cpu.pipeline[0]);
         cpu.execute(cpu.pipeline[0]);
-        std::cout << "Executed: " << std::hex << cpu.pipeline[0] << "\n";
+        //std::cout << "Executed: " << std::hex << cpu.pipeline[0] << "\n";
 
         // update pipeline
         cpu.pipeline[0] = cpu.pipeline[1];
         cpu.pipeline[1] = cpu.pipeline[2];
 
         // TODO - need a much better timing system
-        if (clock() % 60000 < 3) { // 60000 milliseconds per draw
+        if (cpu.cycles % CYCLES_PER_REFRESH == 0) { // once per frame
             gpu.draw();
-            poll_event();
+
+            if (SDL_PollEvent(e)) {
+                if (e.type == SDL_QUIT) break;
+                if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) poll_keys(e);
+            }
         }
 
         cpu.handle_interrupt();
@@ -59,7 +65,7 @@ int main(int argc, char **argv) {
 }
 
 // handle events such as key presses or X-ing out of discovery
-void discovery::poll_event() {
+void discovery::poll_keys() {
     SDL_Event e;
 
     if (!SDL_PollEvent(&e)) return; // no event

@@ -7,7 +7,7 @@ OBJECTS = arm_7tdmi.o util.o memory.o gpu.o arm_alu.o
 VPATH = $(SOURCEDIR)
 TESTS = $(SOURCEDIR)tests/tests.cpp $(SOURCEDIR)tests/instruction_tests.cpp $(SOURCEDIR)tests/data_processing_tests.cpp
 
-all: discovery mov
+all: discovery #mov
 
 discovery: $(OBJECTS) $(SOURCEDIR)discovery.cpp
 	$(CC) $(CFLAGS) -o discovery $(OBJECTS) $(SOURCEDIR)discovery.cpp $(LIBARIES)

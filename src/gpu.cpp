@@ -23,6 +23,7 @@ GPU::GPU() {
 }
 
 GPU::~GPU() {
+    std::cout << "GPU:: Shutdown\n";
     delete mem;
     SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);

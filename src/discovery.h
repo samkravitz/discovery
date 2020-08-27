@@ -39,7 +39,7 @@ class discovery {
 
     private:
         void game_loop();
-        void poll_keys();
+        void poll_keys(SDL_Event);
         void shutdown();
 };
 

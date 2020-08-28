@@ -16,8 +16,6 @@ typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
 
-const int CYCLES_PER_REFRESH = 280896;
-
 const u32 REG_DISPCNT  = 0x4000000;
 const u32 REG_KEYINPUT = 0x4000130;
 const u32 REG_IE       = 0x4000200; // interrupt enable register

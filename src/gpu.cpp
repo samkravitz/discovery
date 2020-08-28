@@ -19,12 +19,14 @@ GPU::GPU() {
     renderer = SDL_CreateRenderer(window, -1, 0);
     texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, SCREEN_WIDTH, SCREEN_HEIGHT);
 
+    lcd_clock = 0;
+    current_scanline = 0;
+
     reset();
 }
 
 GPU::~GPU() {
     std::cout << "GPU:: Shutdown\n";
-    delete mem;
     SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);
 }
@@ -34,6 +36,15 @@ void GPU::reset() {
     SDL_Rect rect{8, 8, SCREEN_WIDTH, SCREEN_HEIGHT};
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderPresent(renderer);
+}
+
+// 1 clock cycle of the gpu
+void GPU::clock() {
+    lcd_clock++;
+
+    if (lcd_clock % (240 + 68) == 0) current_scanline++;
+    if (current_scanline == 160 + 68) current_scanline = 0;
+    if (lcd_clock % 280896 == 0) draw();
 }
 
 void GPU::draw() {

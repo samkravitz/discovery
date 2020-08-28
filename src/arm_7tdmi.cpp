@@ -740,7 +740,8 @@ void arm_7tdmi::update_psr(bool spsr, u32 value) {
 
 // advances the cpu by one cycle
 void arm_7tdmi::clock() {
-    cycles += 1;
+    cycles++;
+    gpu.clock();
 }
 
 void arm_7tdmi::handle_interrupt() {

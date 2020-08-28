@@ -20,6 +20,8 @@
 #define SCREEN_WIDTH  240
 #define SCREEN_HEIGHT 160
 
+#define NUM_SCANLINES 160
+
 class GPU {
     public:
         GPU();
@@ -27,6 +29,11 @@ class GPU {
 
         Memory *mem;
 
+        u32 lcd_clock;
+        u8 current_scanline;
+
+        void clock();
+        
         void reset();
         void draw();
 

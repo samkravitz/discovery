@@ -12,6 +12,7 @@
 
 #include "common/cpu.h"
 #include "memory.h"
+#include "gpu.h"
 
 const u32 CYCLES_PER_MILLISEC = (1 << 24) / 1000; // 16.78 mHz or 2 ^ 24 cycles/sec
 
@@ -34,9 +35,10 @@ union status_register {
 class arm_7tdmi {
     public:
         arm_7tdmi();
-        ~arm_7tdmi() {};
+        ~arm_7tdmi();
         
         Memory *mem;
+        GPU gpu;
 
         u32 pipeline[3];
         bool pipeline_full;

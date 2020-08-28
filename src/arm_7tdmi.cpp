@@ -42,6 +42,10 @@ arm_7tdmi::arm_7tdmi() {
     #endif
 }
 
+arm_7tdmi::~arm_7tdmi() {
+    gpu.~GPU();
+}
+
 uint8_t arm_7tdmi::get_condition_code_flag(condition_code_flag_t flag) {
     switch (flag) {
         case N: return registers.cpsr.bits.n; 

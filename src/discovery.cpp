@@ -8,7 +8,7 @@ void print_keys(u16);
 discovery::discovery() {
     mem = new Memory();
     cpu.mem = mem;
-    gpu.mem = mem;
+    cpu.gpu.mem = mem;
 
     // initialize gamepad buttons to 1 (released)
     gamepad.a = 1;
@@ -43,14 +43,9 @@ void discovery::game_loop() {
                 if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) poll_keys(e);
             }
 
-            gpu.draw();
+            cpu.gpu.draw();
             //std::cout << "Cycles: " << cpu.cycles << "\n";
         }
-
-        // if (SDL_PollEvent(&e)) {
-        //     if (e.type == SDL_QUIT) break;
-        //     if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) poll_keys(e);
-        // }
 
         cpu.handle_interrupt();
     }
@@ -160,5 +155,4 @@ void discovery::shutdown() {
     // free resources and shutdown
     delete mem;
     cpu.~arm_7tdmi();
-    gpu.~GPU();
 }

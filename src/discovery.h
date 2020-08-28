@@ -19,7 +19,7 @@ class discovery {
         discovery();
 
         arm_7tdmi cpu;
-        GPU gpu;
+        //GPU gpu;
         Memory *mem;
 
         struct gamepad {

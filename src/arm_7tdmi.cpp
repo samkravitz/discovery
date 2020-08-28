@@ -135,7 +135,6 @@ void arm_7tdmi::decode(u32 instruction) {
 }
 
 void arm_7tdmi::execute(u32 instruction) {
-    clock();
     int i = 0;
     int j = 1;
     int k = 2;
@@ -143,6 +142,7 @@ void arm_7tdmi::execute(u32 instruction) {
         case ARM:
             if (!condition_met((condition_t) util::get_instruction_subset(instruction, 31, 28))) {
                 increment_pc();
+                clock();
                 return;
             }
             

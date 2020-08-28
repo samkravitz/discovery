@@ -37,16 +37,20 @@ void discovery::game_loop() {
         cpu.pipeline[1] = cpu.pipeline[2];
 
         // TODO - need a much better timing system
-        if (cpu.cycles % CYCLES_PER_REFRESH == 0) { // once per frame
+        if ((cpu.cycles % CYCLES_PER_REFRESH) < 3) { // once per frame
+            if (SDL_PollEvent(&e)) {
+                if (e.type == SDL_QUIT) break;
+                if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) poll_keys(e);
+            }
+
             gpu.draw();
-            
-            
+            //std::cout << "Cycles: " << cpu.cycles << "\n";
         }
 
-        if (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) break;
-            if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) poll_keys(e);
-        }
+        // if (SDL_PollEvent(&e)) {
+        //     if (e.type == SDL_QUIT) break;
+        //     if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) poll_keys(e);
+        // }
 
         cpu.handle_interrupt();
     }

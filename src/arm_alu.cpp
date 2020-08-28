@@ -612,6 +612,8 @@ void arm_7tdmi::move_shifted_register(u16 instruction) {
     u8 carry_out = shift_register(offset5, op1, shift_type);
     set_register(Rd, op1);
     update_flags_logical(op1, carry_out);
+
+    clock(); // 1S
 }
 
 void arm_7tdmi::add_sub(u16 instruction) {
@@ -641,6 +643,8 @@ void arm_7tdmi::add_sub(u16 instruction) {
     }
 
     set_register(Rd, result);
+
+    clock(); // 1S
 }
 
 void arm_7tdmi::move_immediate(u16 instruction) {
@@ -672,6 +676,8 @@ void arm_7tdmi::move_immediate(u16 instruction) {
             update_flags_subtraction(operand, offset8, result);
             break;
     }
+
+    clock(); // 1S
 }
 
 void arm_7tdmi::alu_thumb(u16 instruction) {
@@ -688,79 +694,147 @@ void arm_7tdmi::alu_thumb(u16 instruction) {
             result = op1 & op2;
             set_register(Rd, result);
             update_flags_logical(result, carry);
+
+            clock(); // 1S
+
             break;
+
         case 0b0001: // EOR
             result = op1 ^ op2;
             set_register(Rd, result);
             update_flags_logical(result, carry);
+
+            clock(); // 1S
+
             break;
+
         case 0b0010: // LSL
             carry = shift_register(op1, op2, 0b00);
             set_register(Rd, op2);
             update_flags_logical(op2, carry);
+
+            clock(); // 1I
+            clock(); // 1S
+
             break;
+
         case 0b0011: // LSR
             carry = shift_register(op1, op2, 0b01);
             set_register(Rd, op2);
             update_flags_logical(op2, carry);
+
+            clock(); // 1I
+            clock(); // 1S
+
             break;
+
         case 0b0100: // ASR
             carry = shift_register(op1, op2, 0b10);
             set_register(Rd, op2);
             update_flags_logical(op2, carry);
+
+            clock(); // 1I
+            clock(); // 1S
+
             break;
+
         case 0b0101: // ADC
             result = op1 + op2 + carry;
             set_register(Rd, result);
             update_flags_addition(op1, op2, result);
+
+            clock(); // 1I
+
             break;
+
         case 0b0110: // SBC
             result = op2 - op1 - (~carry & 0x1); // Rd - Rs - NOT C-bit
             set_register(Rd, result);
             update_flags_subtraction(op2, op1, result);
+
+            clock(); // 1S
+
             break;
-        case 0b0111: // ASR
+
+        case 0b0111: // ROR
             carry = shift_register(op1, op2, 0b11);
             set_register(Rd, op2);
             update_flags_logical(op2, carry);
+
+            clock(); // 1I
+            clock(); // 1S
+
             break;
+
         case 0b1000: // TST
             result = op1 & op2;
             update_flags_logical(result, carry);
+
+            clock(); // 1S
+
             break;
+
         case 0b1001: // NEG
             result = op1 * -1;
             set_register(Rd, result);
             update_flags_logical(result, carry);
+
+            clock(); // 1S
+
             break;
+
         case 0b1010: // CMP
             result = op2 - op1;
             update_flags_subtraction(op2, op1, result);
+
+            clock(); // 1S
+
             break;
+
         case 0b1011: // CMN
             result = op2 + op1;
             update_flags_addition(op1, op2, result);
+
+            clock(); // 1S
+
             break;
+
         case 0b1100: // ORR
             result = op2 | op1;
             set_register(Rd, result);
             update_flags_logical(result, carry);
+
+            clock(); // 1S
+
             break;
+
         case 0b1101: // MUL
             result = op2 * op1;
             set_register(Rd, result);
             update_flags_addition(op1, op2, result);
+
+            clock(); // 1S
+
             break;
+
         case 0b1110: // BIC
             result = op2 & ~op1;
             set_register(Rd, result);
             update_flags_logical(result, carry);
+
+            clock(); // 1S
+
             break;
+
         case 0b1111: // MVN
             result = ~op1;
             set_register(Rd, result);
             update_flags_logical(result, carry);
+
+            clock(); // 1S
+
             break;
+
         default:
             std::cerr << "Error: Invalid thumb ALU opcode" << "\n";
             return;
@@ -789,10 +863,27 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
                 return;
             }
 
+            // clear bit 0 when destination is r15
+            if (Rd == 15) op1 &= ~0x1;
+
             result = op1 + op2;
             set_register(Rd, result);
-            increment_pc();
+
+            if (Rd == 15) {
+                clock(); // + 1N cycles for r15
+
+                pipeline_full = false;
+
+                // + 2S cycles if r15 is destination
+                clock(); // 2S
+                clock();
+            } else {
+                increment_pc();
+                clock(); // 1S
+            }
+        
             break;
+
         case 0b01: // CMP
             if (!H1 && !H2) {
                 std::cerr << "Error: H1 = 0 and H2 = 0 for thumb CMP is not defined" << "\n";
@@ -803,6 +894,9 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
             update_flags_subtraction(op2, op1, result);
             set_register(Rd, result);
             increment_pc();
+
+            clock(); // 1S
+
             break;
         case 0b10: // MOV
             if (!H1 && !H2) {
@@ -810,8 +904,25 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
                 return;
             }
 
-            set_register(Rd, op1);
-            increment_pc();
+            // clear bit 0 when destination is r15
+            if (Rd == 15) op1 &= ~0x1;
+
+            result = op1;
+            set_register(Rd, result);
+
+            if (Rd == 15) {
+                clock(); // + 1N cycles for r15
+
+                pipeline_full = false;
+
+                // + 2S cycles if r15 is destination
+                clock(); // 2S
+                clock();
+            } else {
+                increment_pc();
+                clock(); // 1S
+            }
+
             break;
         case 0b11: // BX
             if (H1) {
@@ -825,6 +936,8 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
                 op1 += 4;
             }
             
+            clock(); // 1N
+
             set_register(15, op1);
 
             // swith to ARM mode if necessary
@@ -839,6 +952,9 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
 
             // flush pipeline for refill
             pipeline_full = false;
+
+            clock(); // 2S
+            clock();
         break;
     }
 }
@@ -852,6 +968,9 @@ void arm_7tdmi::pc_rel_load(u16 instruction) {
     word8 <<= 2; // assembler places #imm >> 2 in word8
     base += word8;
 
+    clock(); // 1N
+    clock(); // 1S
+    clock(); // 1I
     set_register(Rd, mem->read_u32(base));
 }
 
@@ -868,11 +987,17 @@ void arm_7tdmi::load_store_reg(u16 instruction) {
 
     if (load) {
         if (byte) set_register(Rd, mem->read_u8(base));
-        else set_register(Rd, mem->read_u32(base));
+        else {
+            set_register(Rd, mem->read_u32(base));
+            clock(); // + 1S cycles for non byte load
+        }
     } else { // store
         if (byte) mem->write_u8(base, get_register(Rd) & 0xFF);
         else mem->write_u32(base, get_register(Rd));
     }
+
+    clock(); // 1N
+    clock(); // 1N
 }
 
 void arm_7tdmi::load_store_signed_halfword(u16 instruction) {
@@ -892,15 +1017,21 @@ void arm_7tdmi::load_store_signed_halfword(u16 instruction) {
         u32 value = 0;
         value |= mem->read_u16(base);
         set_register(Rd, value);
+        clock(); // + 1S cycles for non byte load
     } else if (S && !H) { // load sign-extended byte
         u32 value = (u32) mem->read_u8(base);
         if (value & 0x80) value |= ~0b11111111; // bit 7 of byte is 1, so sign extend bits 31-8 of register
         set_register(Rd, value);
+        clock(); // + 1S cycles for non byte load
     } else { // load sign-extended halfword
         u32 value = (u32) mem->read_u16(base);
         if (value & 0x8000) value |= ~0b1111111111111111; // bit 15 of byte is 1, so sign extend bits 31-16 of register
         set_register(Rd, value);
+        clock(); // + 1S cycles for non byte load
     }
+
+    clock(); // 2N
+    clock();
 }
 
 void arm_7tdmi::load_store_immediate(u16 instruction) {
@@ -919,12 +1050,17 @@ void arm_7tdmi::load_store_immediate(u16 instruction) {
     if (!load && !byte) { // store word
         mem->write_u32(base, get_register(Rd));
     } else if (load && !byte) { // load word
+        clock(); // + 1S cycles for load
         set_register(Rd,  mem->read_u32(base));
     } else if (!load && byte) { // store byte
         mem->write_u8(base, get_register(Rd) & 0xFF);
     } else { // load byte
+        clock(); // + 1S cycles for load
         set_register(Rd, mem->read_u8(base));
     }
+
+    clock(); // 2N
+    clock();
 }
 
 void arm_7tdmi::load_store_halfword(u16 instruction) {
@@ -939,10 +1075,14 @@ void arm_7tdmi::load_store_halfword(u16 instruction) {
     base += offset5; // add offset to base
 
     if (load) {
+        clock(); // + 1S cycles for load
         set_register(Rd, mem->read_u16(base));
     } else { // store
         mem->write_u16(base, get_register(Rd) & 0xFFFF);
     }
+
+    clock(); // 2N
+    clock();
 }
 
 void arm_7tdmi::sp_load_store(u16 instruction) {
@@ -956,10 +1096,14 @@ void arm_7tdmi::sp_load_store(u16 instruction) {
     base += word8; // add offset to base
 
     if (load) {
+        clock(); // + 1S cycles for load
         set_register(Rd, mem->read_u32(base));
     } else { // store
         mem->write_u32(base, get_register(Rd));
     }
+
+    clock(); // 2N
+    clock();
 }
 
 void arm_7tdmi::load_address(u16 instruction) {
@@ -979,6 +1123,8 @@ void arm_7tdmi::load_address(u16 instruction) {
     }
 
     set_register(Rd, mem->read_u32(base));
+
+    clock(); // 1S
 }
 
 void arm_7tdmi::add_offset_to_sp(u16 instruction) {
@@ -993,6 +1139,7 @@ void arm_7tdmi::add_offset_to_sp(u16 instruction) {
     else base -= sword8;
 
     set_register(13, base);
+    clock(); // 1S
 }
 
 void arm_7tdmi::push_pop(u16 instruction) {
@@ -1011,6 +1158,8 @@ void arm_7tdmi::push_pop(u16 instruction) {
         }
     }
 
+    clock(); // 1N
+
     if (!load) { // PUSH Rlist
         // get final sp value
         base -= 4 * num_registers;
@@ -1023,22 +1172,26 @@ void arm_7tdmi::push_pop(u16 instruction) {
         for (int i = 0; i < num_registers; ++i) {
             mem->write_u32(base, get_register(set_registers[i]));
             base += 4; // increment stack pointer (4 bytes for word alignment)
+            clock(); // 1S
         }
 
         if (R) { // push LR
             mem->write_u32(base, get_register(14));
             // base -= 4; // increment stack pointer (4 bytes for word alignment)
+            clock(); // 1S
         }
 
     } else { // POP Rlist
         for (int i = 0; i < num_registers; ++i) {
             set_register(set_registers[i], mem->read_u32(base));
             base += 4; // decrement stack pointer (4 bytes for word alignment)
+            clock();
         }
 
         if (R) { // pop pc
             set_register(15, mem->read_u32(base));
             base += 4; // decrement stack pointer (4 bytes for word alignment)
+            clock();
         }
 
         // write base back into sp
@@ -1062,15 +1215,21 @@ void arm_7tdmi::multiple_load_store(u16 instruction) {
         }
     }
 
+    clock();
+
     if (load) { 
         for (int i = 0; i < num_registers; ++i) {
             set_register(set_registers[i], mem->read_u32(base));
             base += 4; // decrement stack pointer (4 bytes for word alignment)
+            clock();
         }
+        clock();
+        clock();
     } else { // store
         for (int i = 0; i < num_registers; ++i) {
             mem->write_u32(base, get_register(set_registers[i]));
             base += 4; // increment stack pointer (4 bytes for word alignment)
+            clock();
         }
     }
 
@@ -1084,6 +1243,7 @@ void arm_7tdmi::conditional_branch(u16 instruction) {
     u32 base = get_register(15);
     u32 jump_address;
     if (!condition_met(condition)) {
+        clock();
         increment_pc();
         return;
     }
@@ -1100,7 +1260,11 @@ void arm_7tdmi::conditional_branch(u16 instruction) {
         jump_address = base + soffset8;
     }
 
+    clock();
     set_register(15, jump_address);
+
+    clock();
+    clock();
 
     // flush pipeline for refill
     pipeline_full = false;
@@ -1142,7 +1306,11 @@ void arm_7tdmi::unconditional_branch(u16 instruction) {
         jump_address = base + offset11;
     }
 
+    clock();
     set_register(15, jump_address);
+
+    clock();
+    clock();
 
     // flush pipeline for refill
     pipeline_full = false;
@@ -1162,11 +1330,16 @@ void arm_7tdmi::long_branch_link(u16 instruction) {
         u32 next_instruction_address = get_register(15) - 2;
         next_instruction_address |= 0x1;
 
+        clock();
+
         set_register(15, base);
         set_register(14, next_instruction_address); // next instruction in link register
 
         // flush pipeline for refill
         pipeline_full = false;
+        
+        clock();
+        clock();
     } else { // instruction 1
         base = get_register(15); // PC
         offset <<= 12;
@@ -1187,6 +1360,8 @@ void arm_7tdmi::long_branch_link(u16 instruction) {
 
         set_register(14, base); // resulting address stored in LR
         increment_pc();
+
+        clock();
     }
 }
 

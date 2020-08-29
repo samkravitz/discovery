@@ -22,7 +22,8 @@
 #define SCREEN_WIDTH  240
 #define SCREEN_HEIGHT 160
 
-#define NUM_SCANLINES 160
+#define SCANLINE_CYCLES  1232
+#define NUM_SCANLINES    228
 
 class GPU {
     public:

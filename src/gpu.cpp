@@ -43,8 +43,14 @@ void GPU::reset() {
 void GPU::clock() {
     lcd_clock++;
 
-    if (lcd_clock % (240 + 68) == 0) current_scanline++;
-    if (current_scanline == 160 + 68) current_scanline = 0;
+    if (lcd_clock % SCANLINE_CYCLES == 0) {
+        stat->current_scanline++;
+        if (stat->current_scanline == NUM_SCANLINES)
+            stat->current_scanline = 0;
+        // write current scanline to VCOUNT
+        mem->write_u8(REG_VCOUNT, stat->current_scanline);
+    }
+
     if (lcd_clock % 280896 == 0) draw();
 }
 

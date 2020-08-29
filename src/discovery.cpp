@@ -38,7 +38,7 @@ void discovery::game_loop() {
         cpu.fetch();
         cpu.decode(cpu.pipeline[0]);
         cpu.execute(cpu.pipeline[0]);
-        std::cout << "Executed: " << std::hex << cpu.pipeline[0] << "\n";
+        // std::cout << "Executed: " << std::hex << cpu.pipeline[0] << "\n";
 
         // update pipeline
         cpu.pipeline[0] = cpu.pipeline[1];
@@ -52,7 +52,7 @@ void discovery::game_loop() {
     
         // TODO - need a much better timing system
         // poll for key presses during vblank
-        if (gpu.current_scanline == 160 && SDL_PollEvent(&e)) {
+        if (gpu.stat->current_scanline == 160 && SDL_PollEvent(&e)) { // poll key press at the start of vblank
             if (e.type == SDL_QUIT) break;
             if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) poll_keys(e);
         }

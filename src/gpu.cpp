@@ -51,7 +51,10 @@ void GPU::clock() {
         mem->write_u8(REG_VCOUNT, stat->current_scanline);
     }
 
-    if (lcd_clock % 280896 == 0) draw();
+    if (lcd_clock == REFRESH_CYCLES) {
+        lcd_clock = 0; // restart lcd_clock
+        draw();
+    }
 }
 
 void GPU::draw() {

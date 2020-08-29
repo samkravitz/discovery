@@ -24,6 +24,7 @@
 
 #define SCANLINE_CYCLES  1232
 #define NUM_SCANLINES    228
+#define REFRESH_CYCLES   280896
 
 class GPU {
     public:

@@ -11,8 +11,7 @@
 #include "lcd_stat.h"
 
 lcd_stat::lcd_stat() {
-    lcd_clock = 0;
     current_scanline = 0;
-
-    
 }
+
+lcd_stat::~lcd_stat() { }

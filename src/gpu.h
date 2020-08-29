@@ -13,9 +13,11 @@
 
 #include <SDL2/SDL.h>
 #include <iostream>
+
 #include "common/memory.h"
 #include "common/common.h"
 #include "memory.h"
+#include "lcd_stat.h"
 
 #define SCREEN_WIDTH  240
 #define SCREEN_HEIGHT 160
@@ -28,6 +30,7 @@ class GPU {
         ~GPU();
 
         Memory *mem;
+        lcd_stat *stat;
 
         u32 lcd_clock;
         u8 current_scanline;

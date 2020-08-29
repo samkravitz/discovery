@@ -4,6 +4,7 @@ u8 five_bits_to_eight(u8);
 
 GPU::GPU() {
     mem = NULL;
+    stat = NULL;
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         std::cerr << "Could not initialize GPU" << "\n";

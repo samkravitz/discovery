@@ -1,6 +1,8 @@
 #include <iostream>
 #include <ctime>
+
 #include "discovery.h"
+#include "lcd_stat.h"
 #include "common/common.h"
 
 void print_keys(u16);
@@ -23,6 +25,9 @@ discovery::discovery() {
     gamepad.l = 1;
 
     system_cycles = 0;
+
+    lcd_stat *stat = new lcd_stat();
+    gpu.stat = stat;
 }
 
 void discovery::game_loop() {
@@ -33,7 +38,7 @@ void discovery::game_loop() {
         cpu.fetch();
         cpu.decode(cpu.pipeline[0]);
         cpu.execute(cpu.pipeline[0]);
-        //std::cout << "Executed: " << std::hex << cpu.pipeline[0] << "\n";
+        std::cout << "Executed: " << std::hex << cpu.pipeline[0] << "\n";
 
         // update pipeline
         cpu.pipeline[0] = cpu.pipeline[1];

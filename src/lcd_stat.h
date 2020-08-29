@@ -11,18 +11,13 @@
 #ifndef LCD_STAT_H
 #define LCD_STAT_H
 
-#include "gpu.h"
+#include "common/common.h"
 
 struct lcd_stat {
-
     lcd_stat();
     ~lcd_stat();
 
-    u32 lcd_clock;
     u32 current_scanline;
-
-    GPU *gpu;
-
 };
 
 #endif // LCD_STAT_H

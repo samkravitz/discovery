@@ -44,7 +44,12 @@ u16 Memory::read_u16(u32 address) {
 }
 
 u8 Memory::read_u8(u32 address) {
-    return *get_internal_region(address);
+    switch (address) {
+        case REG_VCOUNT:
+            return stat->current_scanline;
+        default:
+            return *get_internal_region(address);
+    }
 }
 
 void Memory::write_u32(u32 address, u32 value) {

@@ -12,6 +12,9 @@
 
 lcd_stat::lcd_stat() {
     current_scanline = 0;
+    current_scanline_pixel = 0;
+    in_vBlank = false;
+    in_hBlank = false;
 }
 
 lcd_stat::~lcd_stat() { }

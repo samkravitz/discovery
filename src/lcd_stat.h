@@ -18,6 +18,10 @@ struct lcd_stat {
     ~lcd_stat();
 
     u32 current_scanline;
+    u16 current_scanline_pixel;
+
+    bool in_vBlank;
+    bool in_hBlank;
 };
 
 #endif // LCD_STAT_H

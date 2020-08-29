@@ -43,16 +43,40 @@ void GPU::reset() {
 void GPU::clock() {
     lcd_clock++;
 
+    // 4 cycles per pixel
+    if (lcd_clock % 4 == 0)
+        stat->current_scanline_pixel++;
+
+    // finished hDraw
+    if (stat->current_scanline_pixel == SCREEN_WIDTH) {
+        stat->in_hBlank = true;
+    }
+
+    // completed a scanline
     if (lcd_clock % SCANLINE_CYCLES == 0) {
         stat->current_scanline++;
         if (stat->current_scanline == NUM_SCANLINES)
             stat->current_scanline = 0;
-        // write current scanline to VCOUNT
-        mem->write_u8_unprotected(REG_VCOUNT, stat->current_scanline);
+
+        // go back into hDraw
+        stat->in_hBlank = false;
+
+        // reset current scanline pixels
+        stat->current_scanline_pixel = 0;
     }
 
+    // finished vDraw
+    if (stat->current_scanline == SCREEN_HEIGHT) {
+        stat->in_vBlank = true;
+    }
+
+    // completed a refresh
     if (lcd_clock == REFRESH_CYCLES) {
         lcd_clock = 0; // restart lcd_clock
+        stat->current_scanline = 0;
+        stat->current_scanline_pixel = 0;
+        stat->in_hBlank = false;
+        stat->in_vBlank = false;
         draw();
     }
 }

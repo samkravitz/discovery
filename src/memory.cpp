@@ -55,6 +55,8 @@ u8 Memory::read_u8(u32 address) {
             return result;
         case REG_VCOUNT:
             return stat->current_scanline;
+        // case REG_KEYINPUT:
+        //     return 
         default:
             return *get_internal_region(address);
     }

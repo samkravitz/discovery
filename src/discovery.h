@@ -33,6 +33,7 @@ class discovery {
             u8 down;
             u8 r;
             u8 l;
+            u16 keys;
         } gamepad;
 
         u32 system_cycles;

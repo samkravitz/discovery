@@ -93,9 +93,11 @@ void GPU::draw() {
             std::cerr << "Error: unknown video mode" << "\n";
             break;
     }
-    clock_t new_time = clock();
-    std::cout << "Refresh took: " << (new_time - old_clock) << "\n";
-    old_clock = new_time;
+    // double duration;
+    // clock_t new_time = std::clock();
+    // duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
+    // std::cout << "Refresh took: " << duration << "\n";
+    // old_clock = new_time;
 }
 
 // video mode 3 - bitmap mode

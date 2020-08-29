@@ -1,5 +1,4 @@
 #include <iostream>
-#include <ctime>
 
 #include "discovery.h"
 #include "lcd_stat.h"
@@ -49,7 +48,7 @@ void discovery::game_loop() {
         // run gpu for as many clock cycles as cpu used
         system_cycles = cpu.cycles;
         for (int i = system_cycles - old_cycles; i > 0; --i)
-            gpu.clock();
+            gpu.clock_gpu();
         old_cycles = system_cycles;
     
         // TODO - need a much better timing system

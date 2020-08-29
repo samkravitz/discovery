@@ -1,4 +1,5 @@
 #include "gpu.h"
+#include <ctime>
 
 u8 five_bits_to_eight(u8);
 
@@ -24,6 +25,8 @@ GPU::GPU() {
     current_scanline = 0;
 
     reset();
+
+    old_clock = clock();
 }
 
 GPU::~GPU() {
@@ -40,7 +43,7 @@ void GPU::reset() {
 }
 
 // 1 clock cycle of the gpu
-void GPU::clock() {
+void GPU::clock_gpu() {
     lcd_clock++;
 
     // 4 cycles per pixel
@@ -90,6 +93,9 @@ void GPU::draw() {
             std::cerr << "Error: unknown video mode" << "\n";
             break;
     }
+    clock_t new_time = clock();
+    std::cout << "Refresh took: " << (new_time - old_clock) << "\n";
+    old_clock = new_time;
 }
 
 // video mode 3 - bitmap mode

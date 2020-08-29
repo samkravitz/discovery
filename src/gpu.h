@@ -14,6 +14,7 @@
 #include <SDL2/SDL.h>
 #include <iostream>
 
+#include <ctime>
 #include "common/memory.h"
 #include "common/common.h"
 #include "memory.h"
@@ -38,10 +39,12 @@ class GPU {
         u32 lcd_clock;
         u8 current_scanline;
 
-        void clock();
+        void clock_gpu();
         
         void reset();
         void draw();
+
+        clock_t old_clock;
 
     private:
         SDL_Window *window;

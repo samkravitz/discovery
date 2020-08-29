@@ -11,6 +11,8 @@
 #define MEMORY_H
 
 #include <stdlib.h>
+
+#include "lcd_stat.h"
 #include "common/common.h"
 #include "common/memory.h"
 
@@ -28,6 +30,8 @@ class Memory {
             u8 vram[MEM_VRAM_SIZE];
             u8 oam[MEM_OAM_SIZE];
         } memory;
+
+        lcd_stat *stat;
 
         u8 * game_rom;
         

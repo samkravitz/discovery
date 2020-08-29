@@ -27,6 +27,7 @@ Memory::Memory() {
     }
 
     game_rom = NULL;
+    stat = NULL;
 }
 
 Memory::~Memory() { }

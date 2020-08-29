@@ -27,6 +27,7 @@ discovery::discovery() {
     system_cycles = 0;
 
     lcd_stat *stat = new lcd_stat();
+    mem->stat = stat;
     gpu.stat = stat;
 }
 

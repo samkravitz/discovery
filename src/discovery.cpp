@@ -126,7 +126,7 @@ void discovery::poll_keys(SDL_Event e) {
     print_keys(gamepad_result);
 
     // // store gamepad result back into the KEYINPUT address
-    // // mem->write_u32(REG_KEYINPUT, gamepad_result);
+    mem->write_u32(REG_KEYINPUT, gamepad_result);
     // // request keyboard interrupt
     // u32 reg_if = mem->read_u32(REG_IF);
     // reg_if |= 1 << 13;

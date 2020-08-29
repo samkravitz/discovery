@@ -19,7 +19,7 @@ class discovery {
         discovery();
 
         arm_7tdmi cpu;
-        //GPU gpu;
+        GPU gpu;
         Memory *mem;
 
         struct gamepad {
@@ -34,6 +34,8 @@ class discovery {
             u8 r;
             u8 l;
         } gamepad;
+
+        u32 system_cycles;
 
         void run_asm(char *);
 

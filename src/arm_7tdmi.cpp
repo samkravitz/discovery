@@ -42,9 +42,7 @@ arm_7tdmi::arm_7tdmi() {
     #endif
 }
 
-arm_7tdmi::~arm_7tdmi() {
-    gpu.~GPU();
-}
+arm_7tdmi::~arm_7tdmi() { }
 
 uint8_t arm_7tdmi::get_condition_code_flag(condition_code_flag_t flag) {
     switch (flag) {
@@ -741,12 +739,12 @@ void arm_7tdmi::update_psr(bool spsr, u32 value) {
 // advances the cpu by one cycle
 void arm_7tdmi::clock() {
     cycles++;
-    gpu.clock();
 }
 
 void arm_7tdmi::handle_interrupt() {
     // check if master interrupts are enabled
     if ((mem->read_u32(REG_IME) & 1) && registers.cpsr.bits.i == 0) {
+        std::cout << "Interupts enabled\n";
         // get enabled interrupts and requested interrupts
         u16 interrupts_enabled = mem->read_u16(REG_IF);
         u16 interrupts_requested = mem->read_u16(REG_IE);

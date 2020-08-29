@@ -8,7 +8,7 @@ void print_keys(u16);
 discovery::discovery() {
     mem = new Memory();
     cpu.mem = mem;
-    cpu.gpu.mem = mem;
+    gpu.mem = mem;
 
     // initialize gamepad buttons to 1 (released)
     gamepad.a = 1;
@@ -21,10 +21,13 @@ discovery::discovery() {
     gamepad.down = 1;
     gamepad.r = 1;
     gamepad.l = 1;
+
+    system_cycles = 0;
 }
 
 void discovery::game_loop() {
     SDL_Event e;
+    u32 old_cycles = 0;
 
     while (true) {
         cpu.fetch();
@@ -36,9 +39,15 @@ void discovery::game_loop() {
         cpu.pipeline[0] = cpu.pipeline[1];
         cpu.pipeline[1] = cpu.pipeline[2];
 
+        // run gpu for as many clock cycles as cpu used
+        system_cycles = cpu.cycles;
+        for (int i = system_cycles - old_cycles; i > 0; --i)
+            gpu.clock();
+        old_cycles = system_cycles;
+    
         // TODO - need a much better timing system
         // poll for key presses during vblank
-        if (cpu.gpu.current_scanline == 160 && SDL_PollEvent(&e)) {
+        if (gpu.current_scanline == 160 && SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) break;
             if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) poll_keys(e);
         }
@@ -151,4 +160,5 @@ void discovery::shutdown() {
     // free resources and shutdown
     delete mem;
     cpu.~arm_7tdmi();
+    gpu.~GPU();
 }

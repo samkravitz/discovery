@@ -38,7 +38,6 @@ class arm_7tdmi {
         ~arm_7tdmi();
         
         Memory *mem;
-        GPU gpu;
 
         u32 pipeline[3];
         bool pipeline_full;

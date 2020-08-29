@@ -65,6 +65,39 @@ void Memory::write_u8(u32 address, u8 value) {
     *normalized_address = value;
 }
 
+u32 Memory::read_u32_unprotected(u32 address) {
+    return (read_u8_unprotected(address + 3) << 24)
+    | (read_u8_unprotected(address + 2) << 16)
+    | (read_u8_unprotected(address + 1) << 8)
+    | read_u8_unprotected(address);
+}
+
+u16 Memory::read_u16_unprotected(u32 address) {
+    return (read_u8_unprotected(address + 1) << 8) | read_u8_unprotected(address);
+}
+
+u8 Memory::read_u8_unprotected(u32 address) {
+    return *get_internal_region(address);
+}
+
+void Memory::write_u32_unprotected(u32 address, u32 value) {
+    write_u8_unprotected(address, value & 0xFF);
+    write_u8_unprotected(address + 1, (value >> 8) & 0xFF);
+    write_u8_unprotected(address + 2, (value >> 16) & 0xFF);
+    write_u8_unprotected(address + 3, (value >> 24) & 0xFF);
+}
+
+void Memory::write_u16_unprotected(u32 address, u16 value) {
+    write_u8_unprotected(address, value & 0xFF);
+    write_u8_unprotected(address + 1, (value >> 8) & 0xFF);
+}
+
+// TODO - add protection against VRAM byte writes
+void Memory::write_u8_unprotected(u32 address, u8 value) {
+    u8 *normalized_address = get_internal_region(address);
+    *normalized_address = value;
+}
+
 void Memory::load_rom(char *name) {
     std::ifstream rom(name, std::ios::in | std::ios::binary);
     if (!rom) return;

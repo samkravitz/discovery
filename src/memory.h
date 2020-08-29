@@ -46,6 +46,15 @@ class Memory {
         void write_u16(u32, u16);
         void write_u32(u32, u32);
 
+        // unprotected read/write from memory
+        // dangerous, but fast
+        u32 read_u32_unprotected(u32);
+        u16 read_u16_unprotected(u32);
+        u8 read_u8_unprotected(u32);
+        void write_u8_unprotected(u32, u8);
+        void write_u16_unprotected(u32, u16);
+        void write_u32_unprotected(u32, u32);
+
     private:
         u8 *get_internal_region(u32);
         std::size_t size;

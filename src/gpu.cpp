@@ -48,7 +48,7 @@ void GPU::clock() {
         if (stat->current_scanline == NUM_SCANLINES)
             stat->current_scanline = 0;
         // write current scanline to VCOUNT
-        mem->write_u8(REG_VCOUNT, stat->current_scanline);
+        mem->write_u8_unprotected(REG_VCOUNT, stat->current_scanline);
     }
 
     if (lcd_clock == REFRESH_CYCLES) {
@@ -59,7 +59,7 @@ void GPU::clock() {
 
 void GPU::draw() {
     //std::cout << "Executing graphics mode: " << (mem->read_u32(REG_DISPCNT) & 0x7) << "\n";
-    switch (mem->read_u32(REG_DISPCNT) & 0x7) { // bits 0-2 represent video mode
+    switch (mem->read_u32_unprotected(REG_DISPCNT) & 0x7) { // bits 0-2 represent video mode
         case 3: draw_mode3(); break;
         case 4: draw_mode4(); break;
         default: 
@@ -78,7 +78,7 @@ void GPU::draw_mode3() {
     u32 *pixels = new u32[SCREEN_WIDTH * SCREEN_HEIGHT]; // array representing each pixel on the screen
 
     for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; ++i) {
-        current_pixel = mem->read_u16(MEM_VRAM_START + (2 * i)); // multiply i * 2 b/c each pixel is 2 bytes
+        current_pixel = mem->read_u16_unprotected(MEM_VRAM_START + (2 * i)); // multiply i * 2 b/c each pixel is 2 bytes
         r = five_bits_to_eight(current_pixel & 0b11111);
         g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
         b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
@@ -112,8 +112,8 @@ void GPU::draw_mode4() {
     u32 *pixels = new u32[SCREEN_WIDTH * SCREEN_HEIGHT]; // array representing each pixel on the screen
 
     for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; ++i) {
-        pallette_index = mem->read_u8(MEM_VRAM_START + i);
-        current_pixel = mem->read_u32(MEM_PALETTE_RAM_START + (pallette_index * sizeof(u16)));
+        pallette_index = mem->read_u8_unprotected(MEM_VRAM_START + i);
+        current_pixel = mem->read_u32_unprotected(MEM_PALETTE_RAM_START + (pallette_index * sizeof(u16)));
         r = five_bits_to_eight(current_pixel & 0b11111);
         g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
         b = five_bits_to_eight((current_pixel >> 10) & 0b11111);

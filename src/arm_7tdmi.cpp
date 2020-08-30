@@ -742,6 +742,7 @@ void arm_7tdmi::clock() {
 }
 
 void arm_7tdmi::handle_interrupt() {
+    // new comment
     // check if master interrupts are enabled
     if ((mem->read_u32(REG_IME) & 1) && registers.cpsr.bits.i == 0) {
         std::cout << "Interupts enabled\n";

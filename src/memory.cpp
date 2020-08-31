@@ -78,7 +78,7 @@ void Memory::write_u16(u32 address, u16 value) {
 void Memory::write_u8(u32 address, u8 value) {
     if (address >= MEM_VRAM_START && address <= MEM_VRAM_END)
         stat->needs_refresh = true;
-    if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALLETTE_RAM_END)
+    if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALETTE_RAM_END)
         stat->needs_refresh = true;
 
     u8 *normalized_address = get_internal_region(address);
@@ -156,7 +156,7 @@ u8 *Memory::get_internal_region(u32 address) {
     else if (address >= MEM_BOARD_WRAM_START && address <= MEM_BOARD_WRAM_END) return &memory.board_wram[address - MEM_BOARD_WRAM_START];
     else if (address >= MEM_CHIP_WRAM_START && address <= MEM_CHIP_WRAM_END) return &memory.chip_wram[address - MEM_CHIP_WRAM_START];
     else if (address >= MEM_IO_REG_START && address <= MEM_IO_REG_END) return &memory.io_reg[address - MEM_IO_REG_START];
-    else if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALLETTE_RAM_END) return &memory.palette_ram[address - MEM_PALETTE_RAM_START];
+    else if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALETTE_RAM_END) return &memory.palette_ram[address - MEM_PALETTE_RAM_START];
     else if (address >= MEM_VRAM_START && address <= MEM_VRAM_END) return &memory.vram[address - MEM_VRAM_START];
     else if (address >= MEM_OAM_START && address <= MEM_OAM_END) return &memory.oam[address - MEM_OAM_START];
     else if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END) return &game_rom[address - MEM_GAMEPAK_ROM_START];

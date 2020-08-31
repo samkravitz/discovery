@@ -85,6 +85,8 @@ void GPU::clock_gpu() {
 }
 
 void GPU::draw() {
+    if (!stat->needs_refresh) return;
+
     //std::cout << "Executing graphics mode: " << (mem->read_u32(REG_DISPCNT) & 0x7) << "\n";
     switch (mem->read_u32_unprotected(REG_DISPCNT) & 0x7) { // bits 0-2 represent video mode
         case 3: draw_mode3(); break;
@@ -93,11 +95,12 @@ void GPU::draw() {
             std::cerr << "Error: unknown video mode" << "\n";
             break;
     }
-    // double duration;
-    // clock_t new_time = std::clock();
-    // duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
-    // std::cout << "Refresh took: " << duration << "\n";
-    // old_clock = new_time;
+    double duration;
+    clock_t new_time = std::clock();
+    duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
+    std::cout << "Refresh took: " << duration << "\n";
+    old_clock = new_time;
+    stat->needs_refresh = false;
 }
 
 // video mode 3 - bitmap mode

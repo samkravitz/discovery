@@ -22,6 +22,8 @@ struct lcd_stat {
 
     bool in_vBlank;
     bool in_hBlank;
+
+    bool needs_refresh;
 };
 
 #endif // LCD_STAT_H

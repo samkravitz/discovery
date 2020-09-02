@@ -117,53 +117,57 @@ void GPU::draw_mode0() {
     u8 b;
     u8 alpha = 255;
 
-    for (int i = 0; i < 128; i++) {
-        obj_attr attr = get_attr(i);
-        //std::cout << (attr0 >> 0xD) << "\n";
-        std::cout << attr.size() << "\n";
-    }
-
-    // starting_address = LOWER_SPRITE_BLOCK + (64 * 28);
-    // for (int i = 0; i < 64; i++) {
-    //     palette_index = mem->read_u8_unprotected(starting_address + i);
-    //     current_pixel = mem->read_u32_unprotected(TILE_PALETTE + (palette_index * sizeof(u16)));
-    //     r = five_bits_to_eight(current_pixel & 0b11111);
-    //     g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
-    //     b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
-
-    //     // add current pixel in argb format to pixel array
-    //     pixels[(i/8 * SCREEN_WIDTH) + (i % 8)] = alpha;
-    //     pixels[(i/8 * SCREEN_WIDTH) + (i % 8)] <<= 8;
-    //     pixels[(i/8 * SCREEN_WIDTH) + (i % 8)] |= r;
-    //     pixels[(i/8 * SCREEN_WIDTH) + (i % 8)] <<= 8;
-    //     pixels[(i/8 * SCREEN_WIDTH) + (i % 8)] |= g;
-    //     pixels[(i/8 * SCREEN_WIDTH) + (i % 8)] <<= 8;
-    //     pixels[(i/8 * SCREEN_WIDTH) + (i % 8)] |= b;
-    // }
-    // for (int x = 0; x < 8; x++) {
-    //     for (int i = 0; i < 8; ++i) {
-    //         starting_address = LOWER_SPRITE_BLOCK + (x * i);
-    //         for (int y = 0; y < 64; y++) {
-    //             palette_index = mem->read_u8_unprotected(starting_address + y);
-    //             current_pixel = mem->read_u32_unprotected(TILE_PALETTE + (palette_index * sizeof(u16)));
-    //             r = five_bits_to_eight(current_pixel & 0b11111);
-    //             g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
-    //             b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
-
-    //             // add current pixel in argb format to pixel array
-    //             pixels[x*SCREEN_WIDTH + y*SCREEN_HEIGHT + i] = alpha;
-    //             pixels[x*SCREEN_WIDTH + y*SCREEN_HEIGHT + i] <<= 8;
-    //             pixels[x*SCREEN_WIDTH + y*SCREEN_HEIGHT + i] |= r;
-    //             pixels[x*SCREEN_WIDTH + y*SCREEN_HEIGHT + i] <<= 8;
-    //             pixels[x*SCREEN_WIDTH + y*SCREEN_HEIGHT + i] |= g;
-    //             pixels[x*SCREEN_WIDTH + y*SCREEN_HEIGHT + i] <<= 8;
-    //             pixels[x*SCREEN_WIDTH + y*SCREEN_HEIGHT + i] |= b;
-    //         }
-    //     }
-    // }
+    obj_attr attr = get_attr(0);
+    if (attr.attr_0._zero == 0) return;
+    if (attr.attr_1._one == 0) return;
+    if (attr.attr_2._two == 0) return;
     
+    u32 base_tile_addr = LOWER_SPRITE_BLOCK + (attr.attr_2.attr.tileno * 32);
+    int cur_pixel_index;
+    u16 cur_y_line;
+    for (int tile = 0; tile < 64; tile++) {
+        cur_y_line = (tile / 8) * SCREEN_WIDTH * 8;
+            for (int i = 0; i < 32; i++) {
+                
+                cur_pixel_index = cur_y_line + ((tile % 8) * 8) + ((i / 4) * SCREEN_WIDTH) + ((i % 4) * 2);
+                palette_index = mem->read_u8_unprotected(base_tile_addr + i);
+                
+                u8 left_pixel = palette_index & 0xF;
+                u8 right_pixel = (palette_index >> 4) & 0xF;
+                
+                current_pixel = mem->read_u32_unprotected(TILE_PALETTE + left_pixel);
+                
+                r = five_bits_to_eight(current_pixel & 0b11111);
+                g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
+                b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
 
-    //for (int i = 64; i < SCREEN_HEIGHT * SCREEN_HEIGHT; ++i) pixels[i] = 0;
+                // add left pixel in argb format to pixel array
+                pixels[cur_pixel_index] = alpha;
+                pixels[cur_pixel_index] <<= 8;
+                pixels[cur_pixel_index] |= r;
+                pixels[cur_pixel_index] <<= 8;
+                pixels[cur_pixel_index] |= g;
+                pixels[cur_pixel_index] <<= 8;
+                pixels[cur_pixel_index] |= b;
+                
+                current_pixel = mem->read_u32_unprotected(TILE_PALETTE + right_pixel);
+                
+                r = five_bits_to_eight(current_pixel & 0b11111);
+                g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
+                b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
+
+                // add right pixel in argb format to pixel array
+                pixels[cur_pixel_index + 1] = alpha;
+                pixels[cur_pixel_index + 1] <<= 8;
+                pixels[cur_pixel_index + 1] |= r;
+                pixels[cur_pixel_index + 1] <<= 8;
+                pixels[cur_pixel_index + 1] |= g;
+                pixels[cur_pixel_index + 1] <<= 8;
+                pixels[cur_pixel_index + 1] |= b;
+            }
+        std::cout << "\n";
+        base_tile_addr += 32;
+    }
 
     SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(u32));
     SDL_RenderClear(renderer);

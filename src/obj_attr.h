@@ -10,6 +10,9 @@
 #ifndef OBJ_ATTR_H
 #define OBJ_ATTR_H
 
+#include <iostream>
+#include "common/common.h"
+
 struct obj_attr {
 
     union attr_0 {
@@ -71,6 +74,11 @@ struct obj_attr {
     } attr_2;
 
     s16 fill;
+
+    // sprite size
+    u8 size();
+
+    void print();
 };
 
 

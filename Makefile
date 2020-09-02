@@ -3,7 +3,7 @@ LIBARIES = -lstdc++fs -l SDL2
 CFLAGS = -g 
 BIN = bin/
 SOURCEDIR = src/
-OBJECTS = arm_7tdmi.o util.o memory.o gpu.o arm_alu.o lcd_stat.o
+OBJECTS = arm_7tdmi.o util.o memory.o gpu.o arm_alu.o lcd_stat.o obj_attr.o
 VPATH = $(SOURCEDIR)
 TESTS = $(SOURCEDIR)tests/tests.cpp $(SOURCEDIR)tests/instruction_tests.cpp $(SOURCEDIR)tests/data_processing_tests.cpp
 
@@ -29,6 +29,9 @@ gpu.o: $(SOURCEDIR)gpu.h $(SOURCEDIR)gpu.cpp
 
 lcd_stat.o: $(SOURCEDIR)lcd_stat.h $(SOURCEDIR)lcd_stat.cpp
 	$(CC) $(CFLAGS) -c $(SOURCEDIR)lcd_stat.cpp
+
+obj_attr.o: $(SOURCEDIR)obj_attr.h $(SOURCEDIR)obj_attr.cpp
+	$(CC) $(CFLAGS) -c $(SOURCEDIR)obj_attr.cpp
 
 mov:
 	mv *.o bin/

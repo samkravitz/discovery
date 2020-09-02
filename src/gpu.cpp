@@ -120,7 +120,6 @@ void GPU::draw_mode0() {
     for (int i = 0; i < 128; i++) {
         obj_attr attr = get_attr(i);
         //std::cout << (attr0 >> 0xD) << "\n";
-        std::cout << (attr.attr_2.attr.) << "\n";
     }
 
     // starting_address = LOWER_SPRITE_BLOCK + (64 * 28);
@@ -244,9 +243,9 @@ void GPU::draw_mode4() {
 // fills an obj_attr struct from OAM from the given index (0-127)
 obj_attr GPU::get_attr(int index) {
     obj_attr attr;
-    obj_attr._zero = mem->read_u16(MEM_OAM_START + index + 0);
-    obj_attr._one = mem->read_u16(MEM_OAM_START + index + 2);
-    obj_attr._two = mem->read_u16(MEM_OAM_START + index + 4);
+    attr.attr_0._zero = mem->read_u16(MEM_OAM_START + index + 0);
+    attr.attr_1._one = mem->read_u16(MEM_OAM_START + index + 2);
+    attr.attr_2._two = mem->read_u16(MEM_OAM_START + index + 4);
     return attr;
 }
 

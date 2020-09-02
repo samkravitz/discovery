@@ -57,6 +57,9 @@ class GPU {
         void draw_mode0();
         void draw_mode3();
         void draw_mode4();
+
+        // misc
+        obj_attr get_attr(int);
 };
 
 #endif // GPU_H

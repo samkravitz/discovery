@@ -118,11 +118,9 @@ void GPU::draw_mode0() {
     u8 alpha = 255;
 
     for (int i = 0; i < 128; i++) {
-        u16 attr0 = mem->read_u16_unprotected(MEM_OAM_START + i);
-        u16 attr1 = mem->read_u16_unprotected(MEM_OAM_START + i + 2);
-        u16 attr2 = mem->read_u16_unprotected(MEM_OAM_START + i + 4);
+        obj_attr attr = get_attr(i);
         //std::cout << (attr0 >> 0xD) << "\n";
-        std::cout << (attr2 >> 0xc) << "\n";
+        std::cout << (attr.attr_2.attr.) << "\n";
     }
 
     // starting_address = LOWER_SPRITE_BLOCK + (64 * 28);
@@ -241,6 +239,15 @@ void GPU::draw_mode4() {
     SDL_RenderPresent(renderer);
 
     delete[] pixels;
+}
+
+// fills an obj_attr struct from OAM from the given index (0-127)
+obj_attr GPU::get_attr(int index) {
+    obj_attr attr;
+    obj_attr._zero = mem->read_u16(MEM_OAM_START + index + 0);
+    obj_attr._one = mem->read_u16(MEM_OAM_START + index + 2);
+    obj_attr._two = mem->read_u16(MEM_OAM_START + index + 4);
+    return attr;
 }
 
 // given a range of 0-31 return a range of 0-255

@@ -24,6 +24,10 @@ struct lcd_stat {
     bool in_hBlank;
 
     bool needs_refresh;
+
+    // REG_DISPCNT control
+    u8 mode = 0;
+    bool obj;
 };
 
 #endif // LCD_STAT_H

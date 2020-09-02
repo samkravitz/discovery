@@ -16,6 +16,8 @@ lcd_stat::lcd_stat() {
     in_vBlank = false;
     in_hBlank = false;
     needs_refresh = true;
+    mode = 0;
+    obj = false;
 }
 
 lcd_stat::~lcd_stat() { }

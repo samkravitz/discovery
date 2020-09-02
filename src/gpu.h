@@ -52,6 +52,7 @@ class GPU {
         SDL_Texture *texture;
 
         // video mode draws
+        void draw_mode0();
         void draw_mode3();
         void draw_mode4();
 };

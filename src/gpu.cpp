@@ -97,18 +97,16 @@ void GPU::draw() {
             std::cerr << "Error: unknown video mode" << "\n";
             break;
     }
-    // double duration;
-    // clock_t new_time = std::clock();
-    // duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
-    // std::cout << "Refresh took: " << duration << "\n";
-    // old_clock = new_time;
-    // stat->needs_refresh = false;
+    double duration;
+    clock_t new_time = std::clock();
+    duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
+    std::cout << "Refresh took: " << duration << "\n";
+    old_clock = new_time;
+    stat->needs_refresh = false;
 }
 
 // video mode 0 - sprite mode
 void GPU::draw_mode0() {
-    //std::cout << "REG: " << mem->read_u16_unprotected(REG_DISPCNT) << "\n";
-    u32 starting_address;
     u32 *pixels = new u32[SCREEN_WIDTH * SCREEN_HEIGHT];
     u32 current_pixel; // in mode 3 each pixel uses 2 bytes
     u8 palette_index;
@@ -142,14 +140,19 @@ void GPU::draw_mode0() {
             b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
 
             // add left pixel in argb format to pixel array
-            pixels[cur_pixel_index] = alpha;
-            pixels[cur_pixel_index] <<= 8;
-            pixels[cur_pixel_index] |= r;
-            pixels[cur_pixel_index] <<= 8;
-            pixels[cur_pixel_index] |= g;
-            pixels[cur_pixel_index] <<= 8;
-            pixels[cur_pixel_index] |= b;
-            
+            if (left_pixel == 0) {
+                // sprites use palette index 0 as a transparent pixel
+                pixels[cur_pixel_index] = 0;
+            } else {
+                pixels[cur_pixel_index] = alpha;
+                pixels[cur_pixel_index] <<= 8;
+                pixels[cur_pixel_index] |= r;
+                pixels[cur_pixel_index] <<= 8;
+                pixels[cur_pixel_index] |= g;
+                pixels[cur_pixel_index] <<= 8;
+                pixels[cur_pixel_index] |= b;
+            }
+
             current_pixel = mem->read_u32_unprotected(TILE_PALETTE + right_pixel * sizeof(u16));
             
             r = five_bits_to_eight(current_pixel & 0b11111);
@@ -157,15 +160,19 @@ void GPU::draw_mode0() {
             b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
 
             // add right pixel in argb format to pixel array
-            pixels[cur_pixel_index + 1] = alpha;
-            pixels[cur_pixel_index + 1] <<= 8;
-            pixels[cur_pixel_index + 1] |= r;
-            pixels[cur_pixel_index + 1] <<= 8;
-            pixels[cur_pixel_index + 1] |= g;
-            pixels[cur_pixel_index + 1] <<= 8;
-            pixels[cur_pixel_index + 1] |= b;
+            if (right_pixel == 0) {
+                // sprites use palette index 0 as a transparent pixel
+                pixels[cur_pixel_index + 1] = 0;
+            } else {
+                pixels[cur_pixel_index + 1] = alpha;
+                pixels[cur_pixel_index + 1] <<= 8;
+                pixels[cur_pixel_index + 1] |= r;
+                pixels[cur_pixel_index + 1] <<= 8;
+                pixels[cur_pixel_index + 1] |= g;
+                pixels[cur_pixel_index + 1] <<= 8;
+                pixels[cur_pixel_index + 1] |= b;
+            }
         }
-        std::cout << "\n";
         base_tile_addr += 32;
     }
 

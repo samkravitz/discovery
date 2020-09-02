@@ -1,4 +1,5 @@
 #include "gpu.h"
+#include "obj_attr.h"
 #include <ctime>
 
 u8 five_bits_to_eight(u8);
@@ -96,17 +97,82 @@ void GPU::draw() {
             std::cerr << "Error: unknown video mode" << "\n";
             break;
     }
-    double duration;
-    clock_t new_time = std::clock();
-    duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
-    std::cout << "Refresh took: " << duration << "\n";
-    old_clock = new_time;
-    stat->needs_refresh = false;
+    // double duration;
+    // clock_t new_time = std::clock();
+    // duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
+    // std::cout << "Refresh took: " << duration << "\n";
+    // old_clock = new_time;
+    // stat->needs_refresh = false;
 }
 
 // video mode 0 - sprite mode
 void GPU::draw_mode0() {
+    //std::cout << "REG: " << mem->read_u16_unprotected(REG_DISPCNT) << "\n";
+    u32 starting_address;
+    u32 *pixels = new u32[SCREEN_WIDTH * SCREEN_HEIGHT];
+    u32 current_pixel; // in mode 3 each pixel uses 2 bytes
+    u8 palette_index;
+    u8 r;
+    u8 g;
+    u8 b;
+    u8 alpha = 255;
 
+    for (int i = 0; i < 128; i++) {
+        u16 attr0 = mem->read_u16_unprotected(MEM_OAM_START + i);
+        u16 attr1 = mem->read_u16_unprotected(MEM_OAM_START + i + 2);
+        u16 attr2 = mem->read_u16_unprotected(MEM_OAM_START + i + 4);
+        //std::cout << (attr0 >> 0xD) << "\n";
+        std::cout << (attr2 >> 0xc) << "\n";
+    }
+
+    // starting_address = LOWER_SPRITE_BLOCK + (64 * 28);
+    // for (int i = 0; i < 64; i++) {
+    //     palette_index = mem->read_u8_unprotected(starting_address + i);
+    //     current_pixel = mem->read_u32_unprotected(TILE_PALETTE + (palette_index * sizeof(u16)));
+    //     r = five_bits_to_eight(current_pixel & 0b11111);
+    //     g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
+    //     b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
+
+    //     // add current pixel in argb format to pixel array
+    //     pixels[(i/8 * SCREEN_WIDTH) + (i % 8)] = alpha;
+    //     pixels[(i/8 * SCREEN_WIDTH) + (i % 8)] <<= 8;
+    //     pixels[(i/8 * SCREEN_WIDTH) + (i % 8)] |= r;
+    //     pixels[(i/8 * SCREEN_WIDTH) + (i % 8)] <<= 8;
+    //     pixels[(i/8 * SCREEN_WIDTH) + (i % 8)] |= g;
+    //     pixels[(i/8 * SCREEN_WIDTH) + (i % 8)] <<= 8;
+    //     pixels[(i/8 * SCREEN_WIDTH) + (i % 8)] |= b;
+    // }
+    // for (int x = 0; x < 8; x++) {
+    //     for (int i = 0; i < 8; ++i) {
+    //         starting_address = LOWER_SPRITE_BLOCK + (x * i);
+    //         for (int y = 0; y < 64; y++) {
+    //             palette_index = mem->read_u8_unprotected(starting_address + y);
+    //             current_pixel = mem->read_u32_unprotected(TILE_PALETTE + (palette_index * sizeof(u16)));
+    //             r = five_bits_to_eight(current_pixel & 0b11111);
+    //             g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
+    //             b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
+
+    //             // add current pixel in argb format to pixel array
+    //             pixels[x*SCREEN_WIDTH + y*SCREEN_HEIGHT + i] = alpha;
+    //             pixels[x*SCREEN_WIDTH + y*SCREEN_HEIGHT + i] <<= 8;
+    //             pixels[x*SCREEN_WIDTH + y*SCREEN_HEIGHT + i] |= r;
+    //             pixels[x*SCREEN_WIDTH + y*SCREEN_HEIGHT + i] <<= 8;
+    //             pixels[x*SCREEN_WIDTH + y*SCREEN_HEIGHT + i] |= g;
+    //             pixels[x*SCREEN_WIDTH + y*SCREEN_HEIGHT + i] <<= 8;
+    //             pixels[x*SCREEN_WIDTH + y*SCREEN_HEIGHT + i] |= b;
+    //         }
+    //     }
+    // }
+    
+
+    //for (int i = 64; i < SCREEN_HEIGHT * SCREEN_HEIGHT; ++i) pixels[i] = 0;
+
+    SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(u32));
+    SDL_RenderClear(renderer);
+    SDL_RenderCopy(renderer, texture, NULL, NULL);
+    SDL_RenderPresent(renderer);
+
+    delete[] pixels;
 }
 
 // video mode 3 - bitmap mode

@@ -17,8 +17,10 @@
 #include <ctime>
 #include "common/memory.h"
 #include "common/common.h"
+#include "common/gpu.h"
 #include "memory.h"
 #include "lcd_stat.h"
+#include "obj_attr.h"
 
 #define SCREEN_WIDTH  240
 #define SCREEN_HEIGHT 160

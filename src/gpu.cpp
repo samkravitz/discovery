@@ -120,6 +120,7 @@ void GPU::draw_mode0() {
     for (int i = 0; i < 128; i++) {
         obj_attr attr = get_attr(i);
         //std::cout << (attr0 >> 0xD) << "\n";
+        std::cout << attr.size() << "\n";
     }
 
     // starting_address = LOWER_SPRITE_BLOCK + (64 * 28);

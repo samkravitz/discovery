@@ -127,44 +127,44 @@ void GPU::draw_mode0() {
     u16 cur_y_line;
     for (int tile = 0; tile < 64; tile++) {
         cur_y_line = (tile / 8) * SCREEN_WIDTH * 8;
-            for (int i = 0; i < 32; i++) {
-                
-                cur_pixel_index = cur_y_line + ((tile % 8) * 8) + ((i / 4) * SCREEN_WIDTH) + ((i % 4) * 2);
-                palette_index = mem->read_u8_unprotected(base_tile_addr + i);
-                
-                u8 left_pixel = palette_index & 0xF;
-                u8 right_pixel = (palette_index >> 4) & 0xF;
-                
-                current_pixel = mem->read_u32_unprotected(TILE_PALETTE + left_pixel);
-                
-                r = five_bits_to_eight(current_pixel & 0b11111);
-                g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
-                b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
+        for (int i = 0; i < 32; i++) {
+            
+            cur_pixel_index = cur_y_line + ((tile % 8) * 8) + ((i / 4) * SCREEN_WIDTH) + ((i % 4) * 2);
+            palette_index = mem->read_u8_unprotected(base_tile_addr + i);
+            
+            u8 left_pixel = palette_index & 0xF;
+            u8 right_pixel = (palette_index >> 4) & 0xF;
+            
+            current_pixel = mem->read_u32_unprotected(TILE_PALETTE + left_pixel * sizeof(u16));
+            
+            r = five_bits_to_eight(current_pixel & 0b11111);
+            g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
+            b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
 
-                // add left pixel in argb format to pixel array
-                pixels[cur_pixel_index] = alpha;
-                pixels[cur_pixel_index] <<= 8;
-                pixels[cur_pixel_index] |= r;
-                pixels[cur_pixel_index] <<= 8;
-                pixels[cur_pixel_index] |= g;
-                pixels[cur_pixel_index] <<= 8;
-                pixels[cur_pixel_index] |= b;
-                
-                current_pixel = mem->read_u32_unprotected(TILE_PALETTE + right_pixel);
-                
-                r = five_bits_to_eight(current_pixel & 0b11111);
-                g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
-                b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
+            // add left pixel in argb format to pixel array
+            pixels[cur_pixel_index] = alpha;
+            pixels[cur_pixel_index] <<= 8;
+            pixels[cur_pixel_index] |= r;
+            pixels[cur_pixel_index] <<= 8;
+            pixels[cur_pixel_index] |= g;
+            pixels[cur_pixel_index] <<= 8;
+            pixels[cur_pixel_index] |= b;
+            
+            current_pixel = mem->read_u32_unprotected(TILE_PALETTE + right_pixel * sizeof(u16));
+            
+            r = five_bits_to_eight(current_pixel & 0b11111);
+            g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
+            b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
 
-                // add right pixel in argb format to pixel array
-                pixels[cur_pixel_index + 1] = alpha;
-                pixels[cur_pixel_index + 1] <<= 8;
-                pixels[cur_pixel_index + 1] |= r;
-                pixels[cur_pixel_index + 1] <<= 8;
-                pixels[cur_pixel_index + 1] |= g;
-                pixels[cur_pixel_index + 1] <<= 8;
-                pixels[cur_pixel_index + 1] |= b;
-            }
+            // add right pixel in argb format to pixel array
+            pixels[cur_pixel_index + 1] = alpha;
+            pixels[cur_pixel_index + 1] <<= 8;
+            pixels[cur_pixel_index + 1] |= r;
+            pixels[cur_pixel_index + 1] <<= 8;
+            pixels[cur_pixel_index + 1] |= g;
+            pixels[cur_pixel_index + 1] <<= 8;
+            pixels[cur_pixel_index + 1] |= b;
+        }
         std::cout << "\n";
         base_tile_addr += 32;
     }
@@ -256,5 +256,5 @@ obj_attr GPU::get_attr(int index) {
 
 // given a range of 0-31 return a range of 0-255
 inline u8 five_bits_to_eight (u8 u5) {
-    return u5 * 255 / 32;
+    return u5 << 3;
 }

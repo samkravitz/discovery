@@ -43,6 +43,7 @@ class arm_7tdmi {
         bool pipeline_full;
         
         u32 cycles;
+        u32 last_accessed_addr;
 
         struct registers_struct {
             // general purpose registers
@@ -102,6 +103,7 @@ class arm_7tdmi {
         void execute(u32);
 
         void clock();
+        void clock(u32);
         
         // getters / setters
         uint8_t get_condition_code_flag(condition_code_flag_t);

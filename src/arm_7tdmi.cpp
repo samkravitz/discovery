@@ -24,6 +24,7 @@ arm_7tdmi::arm_7tdmi() {
     registers = {0}; // zero out registers
     registers.r15 = 0x8000000; // starting address of gamepak flash rom
     registers.r13 = 0x3007f00;
+    last_accessed_addr = 0x8000000;
 
     // initialize cpsr
     registers.cpsr.bits.f = 1;
@@ -737,7 +738,12 @@ void arm_7tdmi::update_psr(bool spsr, u32 value) {
     set_state(sr.bits.state);
 }
 
-// advances the cpu by one cycle
+// advances the clock by some N or S cycles
+void arm_7tdmi::clock(u32 addr) {
+    cycles++;
+}
+
+// advances the cpu by one I cycle
 void arm_7tdmi::clock() {
     cycles++;
 }
@@ -771,7 +777,7 @@ void arm_7tdmi::handle_interrupt() {
 }
 
 u8 arm_7tdmi::read_u8(u32 address) {
-    //if (!mem_check(address)) return 0;
+    if (!mem_check(address)) return 0;
     return mem->read_u8(address);
 }
 
@@ -779,7 +785,7 @@ u16 arm_7tdmi::read_u16(u32 address) {
     // align address to halfword
     address &= ~0x1;
 
-    //if (!mem_check(address)) return 0;
+    if (!mem_check(address)) return 0;
     return mem->read_u16(address);    
 }
 
@@ -787,13 +793,13 @@ u32 arm_7tdmi::read_u32(u32 address) {
     // align address to word
     address &= ~0x3;
 
-    //if (!mem_check(address)) return 0;
+    if (!mem_check(address)) return 0;
     return mem->read_u32(address);
 }
 
 
 void arm_7tdmi::write_u8(u32 address, u8 value) {
-    //if (!mem_check(address)) return;
+    if (!mem_check(address)) return;
     mem->write_u8(address, value);
 }
 
@@ -801,7 +807,7 @@ void arm_7tdmi::write_u16(u32 address, u16 value) {
     // align address to halfword
     address &= ~0x1;
 
-    //if (!mem_check(address)) return;
+    if (!mem_check(address)) return;
     mem->write_u16(address, value);
 }
 
@@ -809,23 +815,24 @@ void arm_7tdmi::write_u32(u32 address, u32 value) {
     // align address to word
     address &= ~0x3;
 
-    //if (!mem_check(address)) return;
+    if (!mem_check(address)) return;
     mem->write_u32(address, value);
 }
 
 // determine if an access at the specified address is allowed
 inline bool arm_7tdmi::mem_check(u32 address) {
-    if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALETTE_RAM_END) {
-        if (!mem->stat->in_vBlank && !mem->stat->in_hBlank) return false;
-    }
+    // if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALETTE_RAM_END) {
+    //     if (!mem->stat->in_vBlank && !mem->stat->in_hBlank) return false;
+    // }
 
-    else if (address >= MEM_VRAM_START && address <= MEM_VRAM_END) {
-        if (!mem->stat->in_vBlank && !mem->stat->in_hBlank) return false;
-    }
+    // else if (address >= MEM_VRAM_START && address <= MEM_VRAM_END) {
+    //     if (!mem->stat->in_vBlank && !mem->stat->in_hBlank) return false;
+    // }
 
-    else if (address >= MEM_OAM_START && address <= MEM_OAM_END) {
-        if (!mem->stat->in_vBlank && !mem->stat->in_hBlank) return false;
-    }
+    // else if (address >= MEM_OAM_START && address <= MEM_OAM_END) {
+    //     if (!mem->stat->in_vBlank && !mem->stat->in_hBlank) return false;
+    // }
 
+    last_accessed_addr = addr;
     return true;
 }

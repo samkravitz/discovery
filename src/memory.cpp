@@ -26,6 +26,10 @@ Memory::Memory() {
         memory.oam[i] = 0;
     }
 
+    // default cycle accesses for wait statae
+    n_cycles = 4;
+    s_cycles = 2;
+
     game_rom = NULL;
     stat = NULL;
 }
@@ -80,6 +84,23 @@ void Memory::write_u8(u32 address, u8 value) {
         stat->needs_refresh = true;
     if (address >= MEM_VRAM_START && address <= MEM_VRAM_END)
         stat->needs_refresh = true;
+    
+    switch (address) {
+        // write into waitstate ctl
+        case WAITCNT:
+            switch(value >> 2 & 0b11) { // bits 2-3
+                case 0: n_cycles = 4; break;
+                case 1: n_cycles = 3; break;
+                case 2: n_cycles = 2; break;
+                case 3: n_cycles = 8; break;
+            }
+
+            switch (value >> 4) { // bit 4
+                case 0: s_cycles = 2; break;
+                case 1: s_cycles = 1; break;
+            }
+        break;
+    }
     // if (address >= MEM_OAM_START && address <= MEM_OAM_END)
     //     std::cout << "Oam update\n";
     

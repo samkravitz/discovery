@@ -168,6 +168,7 @@ class arm_7tdmi {
         void increment_pc();
         bool condition_met(condition_t);
         void update_psr(bool, u32);
+        bool mem_check(u32);
 
     private:
         state_t state;

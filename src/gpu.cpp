@@ -97,6 +97,8 @@ void GPU::draw() {
             std::cerr << "Error: unknown video mode" << "\n";
             break;
     }
+
+    draw_sprites();
     double duration;
     clock_t new_time = std::clock();
     duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
@@ -106,83 +108,7 @@ void GPU::draw() {
 }
 
 // video mode 0 - sprite mode
-void GPU::draw_mode0() {
-    u32 *pixels = new u32[SCREEN_WIDTH * SCREEN_HEIGHT];
-    u32 current_pixel; // in mode 3 each pixel uses 2 bytes
-    u8 palette_index;
-    u8 r;
-    u8 g;
-    u8 b;
-    u8 alpha = 255;
-
-    obj_attr attr = get_attr(0);
-    if (attr.attr_0._zero == 0) return;
-    if (attr.attr_1._one == 0) return;
-    if (attr.attr_2._two == 0) return;
-    
-    u32 base_tile_addr = LOWER_SPRITE_BLOCK + (attr.attr_2.attr.tileno * 32);
-    int cur_pixel_index;
-    u16 cur_y_line;
-    for (int tile = 0; tile < 64; tile++) {
-        cur_y_line = (tile / 8) * SCREEN_WIDTH * 8;
-        for (int i = 0; i < 32; i++) {
-            
-            cur_pixel_index = cur_y_line + ((tile % 8) * 8) + ((i / 4) * SCREEN_WIDTH) + ((i % 4) * 2);
-            palette_index = mem->read_u8_unprotected(base_tile_addr + i);
-            
-            u8 left_pixel = palette_index & 0xF;
-            u8 right_pixel = (palette_index >> 4) & 0xF;
-            
-            current_pixel = mem->read_u32_unprotected(TILE_PALETTE + left_pixel * sizeof(u16));
-            
-            r = five_bits_to_eight(current_pixel & 0b11111);
-            g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
-            b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
-
-            // add left pixel in argb format to pixel array
-            if (left_pixel == 0) {
-                // sprites use palette index 0 as a transparent pixel
-                pixels[cur_pixel_index] = 0;
-            } else {
-                pixels[cur_pixel_index] = alpha;
-                pixels[cur_pixel_index] <<= 8;
-                pixels[cur_pixel_index] |= r;
-                pixels[cur_pixel_index] <<= 8;
-                pixels[cur_pixel_index] |= g;
-                pixels[cur_pixel_index] <<= 8;
-                pixels[cur_pixel_index] |= b;
-            }
-
-            current_pixel = mem->read_u32_unprotected(TILE_PALETTE + right_pixel * sizeof(u16));
-            
-            r = five_bits_to_eight(current_pixel & 0b11111);
-            g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
-            b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
-
-            // add right pixel in argb format to pixel array
-            if (right_pixel == 0) {
-                // sprites use palette index 0 as a transparent pixel
-                pixels[cur_pixel_index + 1] = 0;
-            } else {
-                pixels[cur_pixel_index + 1] = alpha;
-                pixels[cur_pixel_index + 1] <<= 8;
-                pixels[cur_pixel_index + 1] |= r;
-                pixels[cur_pixel_index + 1] <<= 8;
-                pixels[cur_pixel_index + 1] |= g;
-                pixels[cur_pixel_index + 1] <<= 8;
-                pixels[cur_pixel_index + 1] |= b;
-            }
-        }
-        base_tile_addr += 32;
-    }
-
-    SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(u32));
-    SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer, texture, NULL, NULL);
-    SDL_RenderPresent(renderer);
-
-    delete[] pixels;
-}
+void GPU::draw_mode0() { }
 
 // video mode 3 - bitmap mode
 void GPU::draw_mode3() {
@@ -252,12 +178,100 @@ void GPU::draw_mode4() {
     delete[] pixels;
 }
 
+void GPU::draw_sprites() {
+    u32 *pixels = new u32[SCREEN_WIDTH * SCREEN_HEIGHT];
+
+    for (int i = 0; i < NUM_OBJS; ++i) {
+        draw_sprite(get_attr(i), pixels);
+    }
+
+    SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(u32));
+    SDL_RenderClear(renderer);
+    SDL_RenderCopy(renderer, texture, NULL, NULL);
+    SDL_RenderPresent(renderer);
+
+    delete[] pixels;
+}
+
+void GPU::draw_sprite(obj_attr attr, u32 *pixels) {
+    if (attr.attr_0._zero == 0) return;
+    if (attr.attr_1._one == 0) return;
+    if (attr.attr_2._two == 0) return;
+
+    u32 current_pixel;
+    u8 palette_index;
+    u8 r;
+    u8 g;
+    u8 b;
+    u8 alpha = 255;
+    
+    int starting_pixel = attr.attr_0.attr.y * SCREEN_WIDTH + attr.attr_1.attr.x;
+    u32 base_tile_addr = LOWER_SPRITE_BLOCK + (attr.attr_2.attr.tileno * 32);
+    int cur_pixel_index;
+    u16 cur_y_line;
+
+    for (int tile = 0; tile < 64; tile++) {
+        cur_y_line = (tile / 8) * SCREEN_WIDTH * 8;
+        for (int i = 0; i < 32; i++) {
+            
+            cur_pixel_index = starting_pixel + cur_y_line + ((tile % 8) * 8) + ((i / 4) * SCREEN_WIDTH) + ((i % 4) * 2);
+            palette_index = mem->read_u8_unprotected(base_tile_addr + i);
+            
+            u8 left_pixel = palette_index & 0xF;
+            u8 right_pixel = (palette_index >> 4) & 0xF;
+            
+            current_pixel = mem->read_u32_unprotected(TILE_PALETTE + left_pixel * sizeof(u16));
+            
+            r = five_bits_to_eight(current_pixel & 0b11111);
+            g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
+            b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
+
+            // add left pixel in argb format to pixel array
+            if (left_pixel == 0) {
+                // sprites use palette index 0 as a transparent pixel
+                pixels[cur_pixel_index] = 0;
+            } else {
+                pixels[cur_pixel_index] = alpha;
+                pixels[cur_pixel_index] <<= 8;
+                pixels[cur_pixel_index] |= r;
+                pixels[cur_pixel_index] <<= 8;
+                pixels[cur_pixel_index] |= g;
+                pixels[cur_pixel_index] <<= 8;
+                pixels[cur_pixel_index] |= b;
+            }
+
+            current_pixel = mem->read_u32_unprotected(TILE_PALETTE + right_pixel * sizeof(u16));
+            
+            r = five_bits_to_eight(current_pixel & 0b11111);
+            g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
+            b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
+
+            // add right pixel in argb format to pixel array
+            if (right_pixel == 0) {
+                // sprites use palette index 0 as a transparent pixel
+                pixels[cur_pixel_index + 1] = 0;
+            } else {
+                pixels[cur_pixel_index + 1] = alpha;
+                pixels[cur_pixel_index + 1] <<= 8;
+                pixels[cur_pixel_index + 1] |= r;
+                pixels[cur_pixel_index + 1] <<= 8;
+                pixels[cur_pixel_index + 1] |= g;
+                pixels[cur_pixel_index + 1] <<= 8;
+                pixels[cur_pixel_index + 1] |= b;
+            }
+        }
+        base_tile_addr += 32;
+    }
+}
+
 // fills an obj_attr struct from OAM from the given index (0-127)
 obj_attr GPU::get_attr(int index) {
+    // each oam entry is 4 u16s,
+    u32 base_addr = MEM_OAM_START + index * (4 * sizeof(u16));
     obj_attr attr;
-    attr.attr_0._zero = mem->read_u16(MEM_OAM_START + index + 0);
-    attr.attr_1._one = mem->read_u16(MEM_OAM_START + index + 2);
-    attr.attr_2._two = mem->read_u16(MEM_OAM_START + index + 4);
+    attr.attr_0._zero = mem->read_u16(base_addr + 0);
+    attr.attr_1._one = mem->read_u16(base_addr + 2);
+    attr.attr_2._two = mem->read_u16(base_addr + 4);
     return attr;
 }
 

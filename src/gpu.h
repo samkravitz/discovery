@@ -30,6 +30,8 @@
 #define NUM_SCANLINES    228
 #define REFRESH_CYCLES   280896
 
+#define NUM_OBJS 128 // number of sprites that can be rendered
+
 class GPU {
     public:
         GPU();
@@ -60,6 +62,8 @@ class GPU {
 
         // misc
         obj_attr get_attr(int);
+        void draw_sprites();
+        void draw_sprite(obj_attr, u32 *);
 };
 
 #endif // GPU_H

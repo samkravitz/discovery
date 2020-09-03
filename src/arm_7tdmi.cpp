@@ -768,3 +768,36 @@ void arm_7tdmi::handle_interrupt() {
         }
     }
 }
+
+u8 arm_7tdmi::read_u8(u32 address) {
+    return mem->read_u8(address);
+}
+
+u16 arm_7tdmi::read_u16(u32 address) {
+    // align address to halfword
+    address &= ~0x1;
+    return mem->read_u16(address);    
+}
+
+u32 arm_7tdmi::read_u32(u32 address) {
+    // align address to word
+    address &= ~0x3;
+    return mem->read_u32(address);
+}
+
+
+void arm_7tdmi::write_u8(u32 address, u8 value) {
+    mem->write_u8(address, value);
+}
+
+void arm_7tdmi::write_u16(u32 address, u16 value) {
+    // align address to halfword
+    address &= ~0x1;
+    mem->write_u16(address, value);
+}
+
+void arm_7tdmi::write_u32(u32 address, u32 value) {
+    // align address to word
+    address &= ~0x3;
+    mem->write_u32(address, value);
+}

@@ -367,10 +367,10 @@
     if (load) { // load from memory to register
         if (byte) { // load one byte from memory, sign extend 0s
             u32 value = 0;
-            value |= mem->read_u8(base);
+            value |= read_u8(base);
             set_register(Rd, value);
         } else { // load one word from memory
-            set_register(Rd, mem->read_u32(base));
+            set_register(Rd, read_u32(base));
         }
 
         // normal loads instructions take 1S + 1N + 1I
@@ -387,9 +387,9 @@
     } else { // store from register to memory
         if (byte) { // store one byte to memory
             uint8_t value = get_register(Rd) & 0xFF; // lowest byte in register
-            mem->write_u8(base, value);
+            write_u8(base, value);
         } else { // store one word into memory
-            mem->write_u32(base, get_register(Rd));
+            write_u32(base, get_register(Rd));
         }
 
         // stores take 2N cycles to execute
@@ -442,15 +442,15 @@
     switch (util::get_instruction_subset(instruction, 6, 5)) { // SH bits
         case 0b01: // unsigned halfwords
                 if (load) {
-                    set_register(Rd, mem->read_u16(base));
+                    set_register(Rd, read_u16(base));
                 } else {
-                    mem->write_u16(base, get_register(Rd) & 0xFFFF);
+                    write_u16(base, get_register(Rd) & 0xFFFF);
                 }
             break;
         
         case 0b10: // signed byte
                 if (load) {
-                    u32 value = (u32) mem->read_u8(base);
+                    u32 value = (u32) read_u8(base);
                     if (value & 0x80) value |= ~0b11111111; // bit 7 of byte is 1, so sign extend bits 31-8 of register
                     set_register(Rd, value);
                 } else {
@@ -461,7 +461,7 @@
         
         case 0b11: // signed halfwords
                 if (load) {
-                    u32 value = (u32) mem->read_u16(base);
+                    u32 value = (u32) read_u16(base);
                     if (value & 0x8000) value |= ~0b1111111111111111; // bit 15 of byte is 1, so sign extend bits 31-8 of register
                     set_register(Rd, value);
                 } else {
@@ -536,11 +536,11 @@
             if (pre_index) base += 4;
             if (load) {
                 if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_back = false;
-                set_register(set_registers[i], mem->read_u32(base));
+                set_register(set_registers[i], read_u32(base));
                 if (set_registers[i] == 15) pipeline_full = false;
             } else { // store
-                if (set_registers[i] == transfer_reg && Rn == transfer_reg) mem->write_u32(base, old_base);
-                else mem->write_u32(base, get_register(set_registers[i]));
+                if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_u32(base, old_base);
+                else write_u32(base, get_register(set_registers[i]));
             }
             if (!pre_index) base += 4;
 
@@ -553,11 +553,11 @@
             if (pre_index) base -= 4;
             if (load) {
                 if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_back = false;
-                set_register(set_registers[i], mem->read_u32(base));
+                set_register(set_registers[i], read_u32(base));
                 if (set_registers[i] == 15) pipeline_full = false;
             } else { // store
-                if (set_registers[i] == transfer_reg && Rn == transfer_reg) mem->write_u32(base, old_base);
-                else mem->write_u32(base, get_register(set_registers[i]));
+                if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_u32(base, old_base);
+                else write_u32(base, get_register(set_registers[i]));
             }
             if (!pre_index) base -= 4;
 
@@ -583,14 +583,14 @@
 
     u32 swap_address = get_register(Rn);
     if (byte) { // swap a byte
-        u8 temp = mem->read_u8(swap_address);
+        u8 temp = read_u8(swap_address);
         u8 source = get_register(Rm) & 0xFF; // bottom byte of source register
-        mem->write_u8(swap_address, source);
+        write_u8(swap_address, source);
         set_register(Rd, temp);
     } else { // swap a word
-        u32 temp = mem->read_u32(swap_address);
+        u32 temp = read_u32(swap_address);
         u32 source = get_register(Rm);
-        mem->write_u32(swap_address, source);
+        write_u32(swap_address, source);
         set_register(Rd, temp);
     }
 }
@@ -971,7 +971,7 @@ void arm_7tdmi::pc_rel_load(u16 instruction) {
     clock(); // 1N
     clock(); // 1S
     clock(); // 1I
-    set_register(Rd, mem->read_u32(base));
+    set_register(Rd, read_u32(base));
 }
 
 void arm_7tdmi::load_store_reg(u16 instruction) {
@@ -986,14 +986,14 @@ void arm_7tdmi::load_store_reg(u16 instruction) {
     base += get_register(Ro); // add offset to base
 
     if (load) {
-        if (byte) set_register(Rd, mem->read_u8(base));
+        if (byte) set_register(Rd, read_u8(base));
         else {
-            set_register(Rd, mem->read_u32(base));
+            set_register(Rd, read_u32(base));
             clock(); // + 1S cycles for non byte load
         }
     } else { // store
-        if (byte) mem->write_u8(base, get_register(Rd) & 0xFF);
-        else mem->write_u32(base, get_register(Rd));
+        if (byte) write_u8(base, get_register(Rd) & 0xFF);
+        else write_u32(base, get_register(Rd));
     }
 
     clock(); // 1N
@@ -1012,19 +1012,19 @@ void arm_7tdmi::load_store_signed_halfword(u16 instruction) {
     base += get_register(Ro); // add offset to base
 
     if (!S && !H) { // store halfword
-        mem->write_u16(base, get_register(Rd) & 0xFFFF);
+        write_u16(base, get_register(Rd) & 0xFFFF);
     } else if (!S && H) { // load halfword
         u32 value = 0;
-        value |= mem->read_u16(base);
+        value |= read_u16(base);
         set_register(Rd, value);
         clock(); // + 1S cycles for non byte load
     } else if (S && !H) { // load sign-extended byte
-        u32 value = (u32) mem->read_u8(base);
+        u32 value = (u32) read_u8(base);
         if (value & 0x80) value |= ~0b11111111; // bit 7 of byte is 1, so sign extend bits 31-8 of register
         set_register(Rd, value);
         clock(); // + 1S cycles for non byte load
     } else { // load sign-extended halfword
-        u32 value = (u32) mem->read_u16(base);
+        u32 value = (u32) read_u16(base);
         if (value & 0x8000) value |= ~0b1111111111111111; // bit 15 of byte is 1, so sign extend bits 31-16 of register
         set_register(Rd, value);
         clock(); // + 1S cycles for non byte load
@@ -1048,15 +1048,15 @@ void arm_7tdmi::load_store_immediate(u16 instruction) {
     base += offset5; // add offset to base
 
     if (!load && !byte) { // store word
-        mem->write_u32(base, get_register(Rd));
+        write_u32(base, get_register(Rd));
     } else if (load && !byte) { // load word
         clock(); // + 1S cycles for load
-        set_register(Rd,  mem->read_u32(base));
+        set_register(Rd,  read_u32(base));
     } else if (!load && byte) { // store byte
-        mem->write_u8(base, get_register(Rd) & 0xFF);
+        write_u8(base, get_register(Rd) & 0xFF);
     } else { // load byte
         clock(); // + 1S cycles for load
-        set_register(Rd, mem->read_u8(base));
+        set_register(Rd, read_u8(base));
     }
 
     clock(); // 2N
@@ -1076,9 +1076,9 @@ void arm_7tdmi::load_store_halfword(u16 instruction) {
 
     if (load) {
         clock(); // + 1S cycles for load
-        set_register(Rd, mem->read_u16(base));
+        set_register(Rd, read_u16(base));
     } else { // store
-        mem->write_u16(base, get_register(Rd) & 0xFFFF);
+        write_u16(base, get_register(Rd) & 0xFFFF);
     }
 
     clock(); // 2N
@@ -1097,9 +1097,9 @@ void arm_7tdmi::sp_load_store(u16 instruction) {
 
     if (load) {
         clock(); // + 1S cycles for load
-        set_register(Rd, mem->read_u32(base));
+        set_register(Rd, read_u32(base));
     } else { // store
-        mem->write_u32(base, get_register(Rd));
+        write_u32(base, get_register(Rd));
     }
 
     clock(); // 2N
@@ -1122,7 +1122,7 @@ void arm_7tdmi::load_address(u16 instruction) {
         base += word8;
     }
 
-    set_register(Rd, mem->read_u32(base));
+    set_register(Rd, read_u32(base));
 
     clock(); // 1S
 }
@@ -1170,26 +1170,26 @@ void arm_7tdmi::push_pop(u16 instruction) {
         
         // push registers
         for (int i = 0; i < num_registers; ++i) {
-            mem->write_u32(base, get_register(set_registers[i]));
+            write_u32(base, get_register(set_registers[i]));
             base += 4; // increment stack pointer (4 bytes for word alignment)
             clock(); // 1S
         }
 
         if (R) { // push LR
-            mem->write_u32(base, get_register(14));
+            write_u32(base, get_register(14));
             // base -= 4; // increment stack pointer (4 bytes for word alignment)
             clock(); // 1S
         }
 
     } else { // POP Rlist
         for (int i = 0; i < num_registers; ++i) {
-            set_register(set_registers[i], mem->read_u32(base));
+            set_register(set_registers[i], read_u32(base));
             base += 4; // decrement stack pointer (4 bytes for word alignment)
             clock();
         }
 
         if (R) { // pop pc
-            set_register(15, mem->read_u32(base));
+            set_register(15, read_u32(base));
             base += 4; // decrement stack pointer (4 bytes for word alignment)
             clock();
         }
@@ -1219,7 +1219,7 @@ void arm_7tdmi::multiple_load_store(u16 instruction) {
 
     if (load) { 
         for (int i = 0; i < num_registers; ++i) {
-            set_register(set_registers[i], mem->read_u32(base));
+            set_register(set_registers[i], read_u32(base));
             base += 4; // decrement stack pointer (4 bytes for word alignment)
             clock();
         }
@@ -1227,7 +1227,7 @@ void arm_7tdmi::multiple_load_store(u16 instruction) {
         clock();
     } else { // store
         for (int i = 0; i < num_registers; ++i) {
-            mem->write_u32(base, get_register(set_registers[i]));
+            write_u32(base, get_register(set_registers[i]));
             base += 4; // increment stack pointer (4 bytes for word alignment)
             clock();
         }

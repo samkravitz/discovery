@@ -116,6 +116,14 @@ class arm_7tdmi {
         u32 get_register(u32);
         void set_register(int reg, u32 val);
 
+        // safely interface with memory
+        u8 read_u8(u32);
+        u16 read_u16(u32);
+        u32 read_u32(u32);
+        void write_u8(u32, u8);
+        void write_u16(u32, u16);
+        void write_u32(u32, u32);
+
         // instruction execution
         void branch_exchange(u32);
         void branch_link(u32);

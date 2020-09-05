@@ -18,6 +18,8 @@
 // uncomment this if running tests
 // #define TEST
 
+#define ABS(a, b) (a < b) ? (b - a) : (a - b)
+
 arm_7tdmi::arm_7tdmi() {
     state = SYS;
     mode = ARM;
@@ -105,18 +107,18 @@ void arm_7tdmi::fetch() {
         // fill pipeline
         switch (mode) {
             case ARM:
-                pipeline[0] = mem->read_u32(registers.r15);
+                pipeline[0] = read_u32(registers.r15);
                 registers.r15 += 4;
-                pipeline[1] = mem->read_u32(registers.r15);
+                pipeline[1] = read_u32(registers.r15);
                 registers.r15 += 4;
-                pipeline[2] = mem->read_u32(registers.r15);
+                pipeline[2] = read_u32(registers.r15);
                 break;
             case THUMB:
-                pipeline[0] = mem->read_u16(registers.r15);
+                pipeline[0] = read_u16(registers.r15);
                 registers.r15 += 2;
-                pipeline[1] = mem->read_u16(registers.r15);
+                pipeline[1] = read_u16(registers.r15);
                 registers.r15 += 2;
-                pipeline[2] = mem->read_u16(registers.r15);
+                pipeline[2] = read_u16(registers.r15);
                 break;
         }
 
@@ -126,10 +128,10 @@ void arm_7tdmi::fetch() {
 
     switch (mode) {
         case ARM:
-            pipeline[2] = mem->read_u32(registers.r15);
+            pipeline[2] = read_u32(registers.r15);
             break;
         case THUMB:
-            pipeline[2] = (u16) mem->read_u16(registers.r15);
+            pipeline[2] = (u16) read_u16(registers.r15);
             break;
     }
 }
@@ -741,6 +743,14 @@ void arm_7tdmi::update_psr(bool spsr, u32 value) {
 // advances the clock by some N or S cycles
 void arm_7tdmi::clock(u32 addr) {
     cycles++;
+
+    if (ABS(addr, last_accessed_addr) <= 4) {
+        // accessed addresses within word
+        cycles += mem->s_cycles;
+    } else {
+        // non-sequential access
+        cycles += mem->n_cycles;
+    }
 }
 
 // advances the cpu by one I cycle
@@ -833,6 +843,6 @@ inline bool arm_7tdmi::mem_check(u32 address) {
     //     if (!mem->stat->in_vBlank && !mem->stat->in_hBlank) return false;
     // }
 
-    last_accessed_addr = addr;
+    last_accessed_addr = address;
     return true;
 }

@@ -2,6 +2,12 @@
 #include "obj_attr.h"
 #include <ctime>
 
+#define S_TILE_LEN 32
+#define D_TILE_LEN 64
+
+#define PX_IN_TILE_ROW 8
+#define PX_IN_TILE_COL 8
+
 u8 five_bits_to_eight(u8);
 
 GPU::GPU() {
@@ -199,7 +205,8 @@ void GPU::draw_sprite(obj_attr attr, u32 *pixels) {
     if (attr.attr_2._two == 0) return;
     
     int starting_pixel = attr.attr_0.attr.y * SCREEN_WIDTH + attr.attr_1.attr.x;
-    u32 base_tile_addr = LOWER_SPRITE_BLOCK + (attr.attr_2.attr.tileno * 32);
+    
+    u32 base_tile_addr = LOWER_SPRITE_BLOCK + (attr.attr_2.attr.tileno * S_TILE_LEN);
     int cur_pixel_index = starting_pixel;
 
     // get width, height in tiles of sprite
@@ -258,74 +265,21 @@ void GPU::draw_sprite(obj_attr attr, u32 *pixels) {
             return;
     }
 
-    std::cout << "size: " << (int) attr.size() << "\n";
-    std::cout << "width: " << (int) attr.attr_0.attr.s << "\n" << "height: " << (int) attr.attr_1.attr.s << "\n";
-    std::cout << "attr0: " << std::hex << attr.attr_0._zero << "\n";
-    std::cout << "attr1: " << std::hex << attr.attr_1._one << "\n";
-    std::cout << "attr2: " << std::hex << attr.attr_2._two << "\n";
+    bool s_tile = attr.attr_0.attr.a == 0;
+
     for (int y = 0; y < width; ++y) {
         // add current number of rows to the current pixel index
         cur_pixel_index = starting_pixel + (y * SCREEN_WIDTH * 8); // because each tile is 8 pixels long
         for (int x = 0; x < height; ++x) {
-            draw_tile(base_tile_addr, cur_pixel_index, pixels);
-            // each tile is offset 32 from each other
-            base_tile_addr += 32;
-            cur_pixel_index += 8;
+            draw_tile(base_tile_addr, cur_pixel_index, pixels, s_tile);
+
+            // tile offset
+            base_tile_addr += s_tile ? S_TILE_LEN : D_TILE_LEN;
+            
+            // 8 pix / tile row
+            cur_pixel_index += PX_IN_TILE_ROW;
         }
     }
-
-    // for (int tile = 0; tile < 64; tile++) {
-    //     cur_y_line = (tile / 8) * SCREEN_WIDTH * 8;
-    //     for (int i = 0; i < 32; i++) {
-            
-    //         cur_pixel_index = starting_pixel + cur_y_line + ((tile % 8) * 8) + ((i / 4) * SCREEN_WIDTH) + ((i % 4) * 2);
-    //         palette_index = mem->read_u8_unprotected(base_tile_addr + i);
-            
-    //         u8 left_pixel = palette_index & 0xF;
-    //         u8 right_pixel = (palette_index >> 4) & 0xF;
-            
-    //         current_pixel = mem->read_u32_unprotected(TILE_PALETTE + left_pixel * sizeof(u16));
-            
-    //         r = five_bits_to_eight(current_pixel & 0b11111);
-    //         g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
-    //         b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
-
-    //         // add left pixel in argb format to pixel array
-    //         if (left_pixel == 0) {
-    //             // sprites use palette index 0 as a transparent pixel
-    //             pixels[cur_pixel_index] = 0;
-    //         } else {
-    //             pixels[cur_pixel_index] = alpha;
-    //             pixels[cur_pixel_index] <<= 8;
-    //             pixels[cur_pixel_index] |= r;
-    //             pixels[cur_pixel_index] <<= 8;
-    //             pixels[cur_pixel_index] |= g;
-    //             pixels[cur_pixel_index] <<= 8;
-    //             pixels[cur_pixel_index] |= b;
-    //         }
-
-    //         current_pixel = mem->read_u32_unprotected(TILE_PALETTE + right_pixel * sizeof(u16));
-            
-    //         r = five_bits_to_eight(current_pixel & 0b11111);
-    //         g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
-    //         b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
-
-    //         // add right pixel in argb format to pixel array
-    //         if (right_pixel == 0) {
-    //             // sprites use palette index 0 as a transparent pixel
-    //             pixels[cur_pixel_index + 1] = 0;
-    //         } else {
-    //             pixels[cur_pixel_index + 1] = alpha;
-    //             pixels[cur_pixel_index + 1] <<= 8;
-    //             pixels[cur_pixel_index + 1] |= r;
-    //             pixels[cur_pixel_index + 1] <<= 8;
-    //             pixels[cur_pixel_index + 1] |= g;
-    //             pixels[cur_pixel_index + 1] <<= 8;
-    //             pixels[cur_pixel_index + 1] |= b;
-    //         }
-    //     }
-    //     base_tile_addr += 32;
-    // }
 }
 
 // fills an obj_attr struct from OAM from the given index (0-127)
@@ -340,7 +294,7 @@ obj_attr GPU::get_attr(int index) {
 }
 
 // draws a single 8x8 pixel tile
-inline void GPU::draw_tile(int starting_address, int starting_pixel, u32 *pixels) {
+inline void GPU::draw_tile(int starting_address, int starting_pixel, u32 *pixels, bool s_tile) {
     int cur_pixel_index;
     u32 current_pixel;
     u8 palette_index;
@@ -349,55 +303,82 @@ inline void GPU::draw_tile(int starting_address, int starting_pixel, u32 *pixels
     u8 b;
     u8 alpha = 255;
 
-    // draw 
-    for (int i = 0; i < 32; i++) {
-        //cur_pixel_index = starting_pixel + cur_y_line + ((tile % 8) * 8) + ((i / 4) * SCREEN_WIDTH) + ((i % 4) * 2);
-        cur_pixel_index = starting_pixel  + ((i / 4) * SCREEN_WIDTH) + ((i % 4) * 2);
-        palette_index = mem->read_u8_unprotected(starting_address + i);
-        
-        u8 left_pixel = palette_index & 0xF;
-        u8 right_pixel = (palette_index >> 4) & 0xF;
-        
-        current_pixel = mem->read_u32_unprotected(TILE_PALETTE + left_pixel * sizeof(u16));
-        
-        r = five_bits_to_eight(current_pixel & 0b11111);
-        g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
-        b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
+    // draw
+    if (s_tile) { // 4 bits / pixel - s-tile
+        for (int i = 0; i < S_TILE_LEN; i++) {
+            //cur_pixel_index = starting_pixel + cur_y_line + ((tile % 8) * 8) + ((i / 4) * SCREEN_WIDTH) + ((i % 4) * 2);
+            cur_pixel_index = starting_pixel  + ((i / 4) * SCREEN_WIDTH) + ((i % 4) * 2);
+            palette_index = mem->read_u8_unprotected(starting_address + i);
+            
+            u8 left_pixel = palette_index & 0xF;
+            u8 right_pixel = (palette_index >> 4) & 0xF;
+            
+            current_pixel = mem->read_u32_unprotected(TILE_PALETTE + left_pixel * sizeof(u16));
+            
+            r = five_bits_to_eight(current_pixel & 0b11111);
+            g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
+            b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
 
-        // add left pixel in argb format to pixel array
-        if (left_pixel == 0) {
-            // sprites use palette index 0 as a transparent pixel
-            pixels[cur_pixel_index] = 0;
-        } else {
-            pixels[cur_pixel_index] = alpha;
-            pixels[cur_pixel_index] <<= 8;
-            pixels[cur_pixel_index] |= r;
-            pixels[cur_pixel_index] <<= 8;
-            pixels[cur_pixel_index] |= g;
-            pixels[cur_pixel_index] <<= 8;
-            pixels[cur_pixel_index] |= b;
+            // add left pixel in argb format to pixel array
+            if (left_pixel == 0) {
+                // sprites use palette index 0 as a transparent pixel
+                pixels[cur_pixel_index] = 0;
+            } else {
+                pixels[cur_pixel_index] = alpha;
+                pixels[cur_pixel_index] <<= 8;
+                pixels[cur_pixel_index] |= r;
+                pixels[cur_pixel_index] <<= 8;
+                pixels[cur_pixel_index] |= g;
+                pixels[cur_pixel_index] <<= 8;
+                pixels[cur_pixel_index] |= b;
+            }
+
+            current_pixel = mem->read_u32_unprotected(TILE_PALETTE + right_pixel * sizeof(u16));
+            
+            r = five_bits_to_eight(current_pixel & 0b11111);
+            g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
+            b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
+
+            // add right pixel in argb format to pixel array
+            if (right_pixel == 0) {
+                // sprites use palette index 0 as a transparent pixel
+                pixels[cur_pixel_index + 1] = 0;
+            } else {
+                pixels[cur_pixel_index + 1] = alpha;
+                pixels[cur_pixel_index + 1] <<= 8;
+                pixels[cur_pixel_index + 1] |= r;
+                pixels[cur_pixel_index + 1] <<= 8;
+                pixels[cur_pixel_index + 1] |= g;
+                pixels[cur_pixel_index + 1] <<= 8;
+                pixels[cur_pixel_index + 1] |= b;
+            }
         }
+    } else { // 8 bits / pixel - d-tile
+        for (int i = 0; i < D_TILE_LEN; i++) {
+            cur_pixel_index = starting_pixel  + ((i / 8) * SCREEN_WIDTH) + (i % 8);
+            palette_index = mem->read_u8_unprotected(starting_address + i);
+            current_pixel = mem->read_u32_unprotected(TILE_PALETTE + palette_index * sizeof(u16));
+            
+            r = five_bits_to_eight(current_pixel & 0b11111);
+            g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
+            b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
 
-        current_pixel = mem->read_u32_unprotected(TILE_PALETTE + right_pixel * sizeof(u16));
-        
-        r = five_bits_to_eight(current_pixel & 0b11111);
-        g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
-        b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
-
-        // add right pixel in argb format to pixel array
-        if (right_pixel == 0) {
-            // sprites use palette index 0 as a transparent pixel
-            pixels[cur_pixel_index + 1] = 0;
-        } else {
-            pixels[cur_pixel_index + 1] = alpha;
-            pixels[cur_pixel_index + 1] <<= 8;
-            pixels[cur_pixel_index + 1] |= r;
-            pixels[cur_pixel_index + 1] <<= 8;
-            pixels[cur_pixel_index + 1] |= g;
-            pixels[cur_pixel_index + 1] <<= 8;
-            pixels[cur_pixel_index + 1] |= b;
+            // add pixel in argb format to pixel array
+            if (current_pixel == 0) {
+                // sprites use palette index 0 as a transparent pixel
+                pixels[cur_pixel_index] = 0;
+            } else {
+                pixels[cur_pixel_index] = alpha;
+                pixels[cur_pixel_index] <<= 8;
+                pixels[cur_pixel_index] |= r;
+                pixels[cur_pixel_index] <<= 8;
+                pixels[cur_pixel_index] |= g;
+                pixels[cur_pixel_index] <<= 8;
+                pixels[cur_pixel_index] |= b;
+            }
         }
     }
+    
 }
 
 // given a range of 0-31 return a range of 0-255

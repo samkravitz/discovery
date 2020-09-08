@@ -803,6 +803,11 @@ u32 arm_7tdmi::read_u32(u32 address) {
     address &= ~0x3;
 
     if (!mem_check(address)) return 0;
+
+    // 8 cycles for gamepak rom access, 5 from mem_check and 3 here
+    if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END)
+        cycles += 3;
+
     return mem->read_u32(address);
 }
 
@@ -825,6 +830,11 @@ void arm_7tdmi::write_u32(u32 address, u32 value) {
     address &= ~0x3;
 
     if (!mem_check(address)) return;
+
+    // 8 cycles for gamepak rom access, 5 from mem_check and 3 here
+    if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END)
+        cycles += 3;
+
     mem->write_u32(address, value);
 }
 
@@ -841,6 +851,16 @@ inline bool arm_7tdmi::mem_check(u32 address) {
     // else if (address >= MEM_OAM_START && address <= MEM_OAM_END) {
     //     if (!mem->stat->in_vBlank && !mem->stat->in_hBlank) return false;
     // }
+
+    // add cycles for expensive memory accesses
+
+    // +1 cycles for VRAM accress while not in v-blank
+    if (address >= MEM_PALETTE_RAM_START && address <= MEM_OAM_END && !mem->stat->in_vBlank)
+        cycles++;
+    
+    // Gamepak ROM access
+    if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END)
+        cycles += 5;
 
     last_accessed_addr = address;
     return true;

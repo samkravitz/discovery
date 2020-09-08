@@ -1,6 +1,12 @@
 #include "obj_attr.h"
 
-u8 obj_attr::size() { return (attr_1.attr.s << 2) || attr_0.attr.s; }
+u8 obj_attr::size() {
+    u8 size = 0;
+    size |= attr_0.attr.s;
+    size <<= 2;
+    size |= attr_1.attr.s;
+    return size;
+}
 
 void obj_attr::print() {
     std::cout << "attr_0: " << std::hex << attr_0._zero << "\n";

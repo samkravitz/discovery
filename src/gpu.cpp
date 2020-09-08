@@ -206,59 +206,63 @@ void GPU::draw_sprite(obj_attr attr, u32 *pixels) {
     int width, height;
     switch (attr.size()) {
         case 0x0:
-            width = 8;
-            height = 8;
+            width = 1;
+            height = 1;
             break;
         case 0x1:
-            width = 16;
-            height = 16;
+            width = 2;
+            height = 2;
             break;
         case 0x2:
-            width = 32;
-            height = 32;
+            width = 4;
+            height = 4;
             break;
         case 0x3:
-            width = 64;
-            height = 64;
+            width = 8;
+            height = 8;
             break;
         case 0x4:
-            width = 16;
-            height = 8;
+            width = 2;
+            height = 1;
             break;
         case 0x5:
-            width = 32;
-            height = 8;
+            width = 4;
+            height = 1;
             break;
         case 0x6:
-            width = 32;
-            height = 16;
+            width = 4;
+            height = 2;
             break;
         case 0x7:
-            width = 64;
-            height = 32;
+            width = 8;
+            height = 4;
             break;
         case 0x8:
-            width = 8;
-            height = 16;
+            width = 1;
+            height = 2;
             break;
         case 0x9:
-            width = 8;
-            height = 32;
+            width = 1;
+            height = 4;
             break;
         case 0xA:
-            width = 16;
-            height = 32;
+            width = 2;
+            height = 4;
             break;
         case 0xB:
-            width = 32;
-            height = 64;
+            width = 4;
+            height = 8;
             break;
         default:
             std::cerr << "Error: invalid size for object.\n";
             return;
     }
 
-    std::cout << "width: " << width << "\n" << "height: " << height << "\n";
+    std::cout << "size: " << (int) attr.size() << "\n";
+    std::cout << "width: " << (int) attr.attr_0.attr.s << "\n" << "height: " << (int) attr.attr_1.attr.s << "\n";
+    std::cout << "attr0: " << std::hex << attr.attr_0._zero << "\n";
+    std::cout << "attr1: " << std::hex << attr.attr_1._one << "\n";
+    std::cout << "attr2: " << std::hex << attr.attr_2._two << "\n";
     for (int y = 0; y < width; ++y) {
         // add current number of rows to the current pixel index
         cur_pixel_index = starting_pixel + (y * SCREEN_WIDTH * 8); // because each tile is 8 pixels long

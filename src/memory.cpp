@@ -185,7 +185,10 @@ u8 *Memory::get_internal_region(u32 address) {
     else if (address >= MEM_IO_REG_START && address <= MEM_IO_REG_END) return &memory.io_reg[address - MEM_IO_REG_START];
     else if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALETTE_RAM_END) return &memory.palette_ram[address - MEM_PALETTE_RAM_START];
     else if (address >= MEM_VRAM_START && address <= MEM_VRAM_END) return &memory.vram[address - MEM_VRAM_START];
-    else if (address >= MEM_OAM_START && address <= MEM_OAM_END) return &memory.oam[address - MEM_OAM_START];
+    else if (address >= MEM_OAM_START && address <= MEM_OAM_END) {
+        //std::cout << "Oam accessed\n";
+        return &memory.oam[address - MEM_OAM_START];
+    }
     else if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END) {
         //std::cout << "Gamepak ROM ACCESSED!\n";
         return &game_rom[address - MEM_GAMEPAK_ROM_START];

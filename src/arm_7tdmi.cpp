@@ -740,22 +740,21 @@ void arm_7tdmi::update_psr(bool spsr, u32 value) {
     set_state(sr.bits.state);
 }
 
-// advances the clock by some N or S cycles
-void arm_7tdmi::clock(u32 addr) {
-    cycles++;
-
-    if (ABS(addr, last_accessed_addr) <= 4) {
-        // accessed addresses within word
-        cycles += mem->s_cycles;
-    } else {
-        // non-sequential access
-        cycles += mem->n_cycles;
+// advances the cpu clock
+// address is the current access address
+// type is the cycle type, either 'n', 's', or 'i'
+void arm_7tdmi::cycle(u32 address, char type) {
+    switch (type) {
+        case 'i':
+            cycles++;
+            return;
+        case 's':
+            cycles += mem->s_cycles;
+            break;
+        case 'n':
+            cycles += mem->n_cycles;
+            break;
     }
-}
-
-// advances the cpu by one I cycle
-void arm_7tdmi::clock() {
-    cycles++;
 }
 
 void arm_7tdmi::handle_interrupt() {

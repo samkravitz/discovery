@@ -102,8 +102,7 @@ class arm_7tdmi {
         void decode(u32);
         void execute(u32);
 
-        void clock();
-        void clock(u32);
+        void cycle(u32, char);
         
         // getters / setters
         uint8_t get_condition_code_flag(condition_code_flag_t);

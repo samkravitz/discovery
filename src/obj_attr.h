@@ -39,7 +39,7 @@ struct obj_attr {
             u8 v : 1; // vertical flip
 
             /*
-             * when concactinated with s from attr_0, determines shape:
+             * when concactinated with s from attr_0, determines size & shape (in pixels):
              * 0000: 8  x 8         
              * 0001: 16 x 16        
              * 0010: 32 x 32        

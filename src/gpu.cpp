@@ -8,7 +8,7 @@
 #define PX_IN_TILE_ROW 8
 #define PX_IN_TILE_COL 8
 
-u8 five_bits_to_eight(u8);
+u32 u16_to_u32_color(u16);
 
 GPU::GPU() {
     mem = NULL;
@@ -121,12 +121,12 @@ void GPU::draw() {
     // zero screen buffer for next frame
     memset(screen_buffer, 0, sizeof(u32) * SCREEN_WIDTH * SCREEN_HEIGHT);
 
-    // double duration;
-    // clock_t new_time = std::clock();
-    // duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
-    // std::cout << "Refresh took: " << duration << "\n";
-    // old_clock = new_time;
-    // stat->needs_refresh = false;
+    double duration;
+    clock_t new_time = std::clock();
+    duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
+    std::cout << "Refresh took: " << duration << "\n";
+    old_clock = new_time;
+    stat->needs_refresh = false;
 }
 
 // video mode 0 - sprite mode
@@ -135,25 +135,12 @@ void GPU::draw_mode0() { }
 // video mode 3 - bitmap mode
 void GPU::draw_mode3() {
     u16 current_pixel; // in mode 3 each pixel uses 2 bytes
-    u8 r;
-    u8 g;
-    u8 b;
-    u8 alpha = 255;
 
     for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; ++i) {
         current_pixel = mem->read_u16_unprotected(MEM_VRAM_START + (2 * i)); // multiply i * 2 b/c each pixel is 2 bytes
-        r = five_bits_to_eight(current_pixel & 0b11111);
-        g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
-        b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
 
         // add current pixel in argb format to pixel array
-        screen_buffer[i] = alpha;
-        screen_buffer[i] <<= 8;
-        screen_buffer[i] |= r;
-        screen_buffer[i] <<= 8;
-        screen_buffer[i] |= g;
-        screen_buffer[i] <<= 8;
-        screen_buffer[i] |= b;
+        screen_buffer[i] = u16_to_u32_color(current_pixel);
     }
 }
 
@@ -161,26 +148,13 @@ void GPU::draw_mode3() {
 void GPU::draw_mode4() {
     u8 pallette_index; // in mode 4 each pixel uses 1 byte 
     u32 current_pixel; // the color located at pallette_ram[pallette_index]
-    u8 r;
-    u8 g;
-    u8 b;
-    u8 alpha = 255;
 
     for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; ++i) {
         pallette_index = mem->read_u8_unprotected(MEM_VRAM_START + i);
         current_pixel = mem->read_u32_unprotected(MEM_PALETTE_RAM_START + (pallette_index * sizeof(u16)));
-        r = five_bits_to_eight(current_pixel & 0b11111);
-        g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
-        b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
 
         // add current pixel in argb format to pixel array
-        screen_buffer[i] = alpha;
-        screen_buffer[i] <<= 8;
-        screen_buffer[i] |= r;
-        screen_buffer[i] <<= 8;
-        screen_buffer[i] |= g;
-        screen_buffer[i] <<= 8;
-        screen_buffer[i] |= b;
+        screen_buffer[i] = u16_to_u32_color(current_pixel);
     }
 }
 
@@ -289,10 +263,6 @@ inline void GPU::draw_tile(int starting_address, int starting_pixel, bool s_tile
     int cur_pixel_index;
     u32 current_pixel;
     u8 palette_index;
-    u8 r;
-    u8 g;
-    u8 b;
-    u8 alpha = 0;
 
     // draw
     if (s_tile) { // 4 bits / pixel - s-tile
@@ -305,43 +275,23 @@ inline void GPU::draw_tile(int starting_address, int starting_pixel, bool s_tile
             u8 right_pixel = (palette_index >> 4) & 0xF;
             
             current_pixel = mem->read_u32_unprotected(TILE_PALETTE + left_pixel * sizeof(u16));
-            
-            r = five_bits_to_eight(current_pixel & 0b11111);
-            g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
-            b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
 
             // add left pixel in argb format to pixel array
             if (left_pixel == 0) {
                 // sprites use palette index 0 as a transparent pixel
                 screen_buffer[cur_pixel_index] = 0;
             } else {
-                screen_buffer[cur_pixel_index] = alpha;
-                screen_buffer[cur_pixel_index] <<= 8;
-                screen_buffer[cur_pixel_index] |= r;
-                screen_buffer[cur_pixel_index] <<= 8;
-                screen_buffer[cur_pixel_index] |= g;
-                screen_buffer[cur_pixel_index] <<= 8;
-                screen_buffer[cur_pixel_index] |= b;
+                screen_buffer[cur_pixel_index] = u16_to_u32_color(current_pixel);
             }
 
             current_pixel = mem->read_u32_unprotected(TILE_PALETTE + right_pixel * sizeof(u16));
-            
-            r = five_bits_to_eight(current_pixel & 0b11111);
-            g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
-            b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
 
             // add right pixel in argb format to pixel array
             if (right_pixel == 0) {
                 // sprites use palette index 0 as a transparent pixel
                 screen_buffer[cur_pixel_index + 1] = 0;
             } else {
-                screen_buffer[cur_pixel_index + 1] = alpha;
-                screen_buffer[cur_pixel_index + 1] <<= 8;
-                screen_buffer[cur_pixel_index + 1] |= r;
-                screen_buffer[cur_pixel_index + 1] <<= 8;
-                screen_buffer[cur_pixel_index + 1] |= g;
-                screen_buffer[cur_pixel_index + 1] <<= 8;
-                screen_buffer[cur_pixel_index + 1] |= b;
+                screen_buffer[cur_pixel_index + 1] = u16_to_u32_color(current_pixel);
             }
         }
     } else { // 8 bits / pixel - d-tile
@@ -349,29 +299,30 @@ inline void GPU::draw_tile(int starting_address, int starting_pixel, bool s_tile
             cur_pixel_index = starting_pixel  + ((i / 8) * SCREEN_WIDTH) + (i % 8);
             palette_index = mem->read_u8_unprotected(starting_address + i);
             current_pixel = mem->read_u32_unprotected(TILE_PALETTE + palette_index * sizeof(u16));
-            
-            r = five_bits_to_eight(current_pixel & 0b11111);
-            g = five_bits_to_eight((current_pixel >> 5) & 0b11111);
-            b = five_bits_to_eight((current_pixel >> 10) & 0b11111);
 
             // add pixel in argb format to pixel array
             if (current_pixel == 0) {
                 // sprites use palette index 0 as a transparent pixel
                 screen_buffer[cur_pixel_index] = 0;
             } else {
-                screen_buffer[cur_pixel_index] = alpha;
-                screen_buffer[cur_pixel_index] <<= 8;
-                screen_buffer[cur_pixel_index] |= r;
-                screen_buffer[cur_pixel_index] <<= 8;
-                screen_buffer[cur_pixel_index] |= g;
-                screen_buffer[cur_pixel_index] <<= 8;
-                screen_buffer[cur_pixel_index] |= b;
+                screen_buffer[cur_pixel_index] = u16_to_u32_color(current_pixel);
             }
         }
     }
 }
 
 // given a range of 0-31 return a range of 0-255
-inline u8 five_bits_to_eight (u8 u5) {
-    return u5 << 3;
+inline u32 u16_to_u32_color (u16 color_u16) {
+    u8 r, g, b;
+    u32 color = 255; // alpha value
+    color <<= 8;
+    r = ((color_u16 & 0b11111) << 3);
+    color |= r;
+    color <<= 8;
+    g = (((color_u16 >> 5) & 0b11111) << 3);
+    color |= g;
+    color <<= 8;
+    b = (((color_u16 >> 10) & 0b11111) << 3);
+    color |= b; 
+    return color;
 }

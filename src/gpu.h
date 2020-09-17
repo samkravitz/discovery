@@ -52,8 +52,14 @@ class GPU {
 
     private:
         SDL_Window *window;
-        SDL_Renderer *renderer;
-        SDL_Texture *texture;
+        SDL_Surface *final_screen;
+        SDL_Surface *original_screen;
+
+        u32 screen_buffer[SCREEN_WIDTH * SCREEN_HEIGHT];
+        //u32 sprite_buffer[SCREEN_WIDTH * SCREEN_HEIGHT];
+
+        // SDL_Renderer *renderer;
+        // SDL_Texture *texture;
 
         // video mode draws
         void draw_mode0();
@@ -63,8 +69,8 @@ class GPU {
         // misc
         obj_attr get_attr(int);
         void draw_sprites();
-        void draw_sprite(obj_attr, u32 *);
-        void draw_tile(int, int, u32 *, bool);
+        void draw_sprite(obj_attr);
+        void draw_tile(int, int, bool);
 };
 
 #endif // GPU_H

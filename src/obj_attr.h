@@ -67,7 +67,7 @@ struct obj_attr {
         struct attr {
             u16 tileno : 10; // tile number
             u8 p       : 2; // priority
-            u8 l       : 2; // palette number
+            u8 l       : 4; // palette number
         } attr;
 
         u16 _two;

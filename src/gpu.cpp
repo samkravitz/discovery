@@ -8,6 +8,10 @@
 #define PX_IN_TILE_ROW 8
 #define PX_IN_TILE_COL 8
 
+// length of each of palette RAM's 16 banks
+// in 4bpp mode (s-tiles)
+#define PALBANK_LEN 32
+
 u32 u16_to_u32_color(u16);
 
 GPU::GPU() {
@@ -121,12 +125,12 @@ void GPU::draw() {
     // zero screen buffer for next frame
     memset(screen_buffer, 0, sizeof(u32) * SCREEN_WIDTH * SCREEN_HEIGHT);
 
-    double duration;
-    clock_t new_time = std::clock();
-    duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
-    std::cout << "Refresh took: " << duration << "\n";
-    old_clock = new_time;
-    stat->needs_refresh = false;
+    // double duration;
+    // clock_t new_time = std::clock();
+    // duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
+    // std::cout << "Refresh took: " << duration << "\n";
+    // old_clock = new_time;
+    // stat->needs_refresh = false;
 }
 
 // video mode 0 - sprite mode
@@ -165,9 +169,8 @@ void GPU::draw_sprites() {
 }
 
 void GPU::draw_sprite(obj_attr attr) {
-    if (attr.attr_0._zero == 0) return;
-    if (attr.attr_1._one == 0) return;
-    if (attr.attr_2._two == 0) return;
+    // rendering disabled (hidden)
+    if (attr.attr_0.attr.d == 1 && attr.attr_0.attr.r == 0) return;
     
     int starting_pixel = attr.attr_0.attr.y * SCREEN_WIDTH + attr.attr_1.attr.x;
     
@@ -236,7 +239,7 @@ void GPU::draw_sprite(obj_attr attr) {
         // add current number of rows to the current pixel index
         cur_pixel_index = starting_pixel + (y * SCREEN_WIDTH * 8); // because each tile is 8 pixels long
         for (int x = 0; x < height; ++x) {
-            draw_tile(base_tile_addr, cur_pixel_index, s_tile);
+            draw_tile(base_tile_addr, cur_pixel_index, s_tile, attr.attr_2.attr.l);
 
             // tile offset
             base_tile_addr += s_tile ? S_TILE_LEN : D_TILE_LEN;
@@ -259,7 +262,7 @@ obj_attr GPU::get_attr(int index) {
 }
 
 // draws a single 8x8 pixel tile
-inline void GPU::draw_tile(int starting_address, int starting_pixel, bool s_tile) {
+inline void GPU::draw_tile(int starting_address, int starting_pixel, bool s_tile, u8 palbank) {
     int cur_pixel_index;
     u32 current_pixel;
     u8 palette_index;
@@ -274,7 +277,8 @@ inline void GPU::draw_tile(int starting_address, int starting_pixel, bool s_tile
             u8 left_pixel = palette_index & 0xF;
             u8 right_pixel = (palette_index >> 4) & 0xF;
             
-            current_pixel = mem->read_u32_unprotected(TILE_PALETTE + left_pixel * sizeof(u16));
+            // multiply by sizeof(u16) because each index in palram represents 2 bytes
+            current_pixel = mem->read_u16_unprotected(TILE_PALETTE + left_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
 
             // add left pixel in argb format to pixel array
             if (left_pixel == 0) {
@@ -284,7 +288,8 @@ inline void GPU::draw_tile(int starting_address, int starting_pixel, bool s_tile
                 screen_buffer[cur_pixel_index] = u16_to_u32_color(current_pixel);
             }
 
-            current_pixel = mem->read_u32_unprotected(TILE_PALETTE + right_pixel * sizeof(u16));
+            // multiply by sizeof(u16) because each index in palram represents 2 bytes
+            current_pixel = mem->read_u16_unprotected(TILE_PALETTE + right_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
 
             // add right pixel in argb format to pixel array
             if (right_pixel == 0) {

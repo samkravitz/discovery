@@ -183,7 +183,10 @@ u8 *Memory::get_internal_region(u32 address) {
     }
     else if (address >= MEM_CHIP_WRAM_START && address <= MEM_CHIP_WRAM_END) return &memory.chip_wram[address - MEM_CHIP_WRAM_START];
     else if (address >= MEM_IO_REG_START && address <= MEM_IO_REG_END) return &memory.io_reg[address - MEM_IO_REG_START];
-    else if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALETTE_RAM_END) return &memory.palette_ram[address - MEM_PALETTE_RAM_START];
+    else if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALETTE_RAM_END) {
+        //std::cout << "Pallette RAM accessed\n";
+        return &memory.palette_ram[address - MEM_PALETTE_RAM_START];
+    }
     else if (address >= MEM_VRAM_START && address <= MEM_VRAM_END) return &memory.vram[address - MEM_VRAM_START];
     else if (address >= MEM_OAM_START && address <= MEM_OAM_END) {
         //std::cout << "Oam accessed\n";

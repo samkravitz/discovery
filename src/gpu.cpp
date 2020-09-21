@@ -248,6 +248,16 @@ void GPU::draw_sprite(obj_attr attr) {
             cur_pixel_index += PX_IN_TILE_ROW;
         }
     }
+
+    // flip tile horizontally
+    if (attr.attr_1.attr.h == 1) {
+        
+    }
+
+    // flip sprite vertically
+    if (attr.attr_1.attr.v == 1) {
+        
+    }
 }
 
 // fills an obj_attr struct from OAM from the given index (0-127)

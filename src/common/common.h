@@ -25,6 +25,22 @@ const u32 REG_DISPCNT  = 0x4000000;
 const u32 REG_DISPSTAT = 0x4000004;
 const u32 REG_VCOUNT   = 0x4000006;
 
+const u32 REG_BG0CNT   = 0x4000008;
+const u32 REG_BG1CNT   = 0x400000A;
+const u32 REG_BG2CNT   = 0x400000C;
+const u32 REG_BG3CNT   = 0x400000E;
+
+const u32 REG_BG0HOFS  = 0x4000010;
+const u32 REG_BG1HOFS  = 0x4000014;
+const u32 REG_BG2HOFS  = 0x4000018;
+const u32 REG_BG3HOFS  = 0x400001C;
+
+const u32 REG_BG0VOFS  = 0x4000012;
+const u32 REG_BG1VOFS  = 0x4000016;
+const u32 REG_BG2VOFS  = 0x400001A;
+const u32 REG_BG3VOFS  = 0x400001E;
+
+
 // Sound registers
 
 // DMA Transfer Channels

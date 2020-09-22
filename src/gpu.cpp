@@ -125,11 +125,11 @@ void GPU::draw() {
     // zero screen buffer for next frame
     memset(screen_buffer, 0, sizeof(u32) * SCREEN_WIDTH * SCREEN_HEIGHT);
 
-    // double duration;
-    // clock_t new_time = std::clock();
-    // duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
-    // std::cout << "Refresh took: " << duration << "\n";
-    // old_clock = new_time;
+    double duration;
+    clock_t new_time = std::clock();
+    duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
+    std::cout << "Refresh took: " << duration << "\n";
+    old_clock = new_time;
     // stat->needs_refresh = false;
 }
 
@@ -173,11 +173,14 @@ void GPU::draw_sprite(obj_attr attr) {
     if (attr.attr_0.attr.d == 1 && attr.attr_0.attr.r == 0) return;
     
     // use some masking to make x and y fit in screen coordinates
+    s16 start_x = attr.attr_1.attr.x;
+    s8 start_y = attr.attr_0.attr.y;
+
     int starting_pixel = attr.attr_0.attr.y * SCREEN_WIDTH + attr.attr_1.attr.x;
     //std::cout << starting_pixel << "\n";
     
-    std::cout << "x: " << (int) attr.attr_1.attr.x << "\n";
-    std::cout << "y: " << (int) attr.attr_0.attr.y<< "\n";
+    // std::cout << "x: " << (int) attr.attr_1.attr.x << "\n";
+    // std::cout << "y: " << (int) attr.attr_0.attr.y<< "\n";
 
     u32 base_tile_addr = LOWER_SPRITE_BLOCK + (attr.attr_2.attr.tileno * S_TILE_LEN);
     int cur_pixel_index = starting_pixel;
@@ -258,7 +261,23 @@ void GPU::draw_sprite(obj_attr attr) {
 
     // flip tile horizontally
     if (attr.attr_1.attr.h == 1) {
-        
+        // u32 buffer[SCREEN_WIDTH * SCREEN_HEIGHT];
+        // for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; ++i) {
+        //     buffer[i] = screen_buffer[i];
+        // }
+
+        // for (int y = 0; y < height * 8; ++y) {
+        //     for (int x = 0; x < width * 8; ++x) {
+        //         std::cout << (y + start_y) * SCREEN_WIDTH + x + start_x << '\n';
+        //         buffer[(y + start_y) * SCREEN_WIDTH + x + start_x] = screen_buffer[(y + start_y) * SCREEN_WIDTH + start_x + (width - x)];
+        //     }
+        // }
+
+        // for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; ++i) {
+        //     screen_buffer[i] = buffer[i];
+        // }
+
+        // std::cout << width << '\n';
     }
 
     // flip sprite vertically
@@ -325,7 +344,7 @@ inline void GPU::draw_tile(int starting_address, int starting_pixel, bool s_tile
 
             // out of bounds
             if (cur_pixel_index > SCREEN_WIDTH * SCREEN_HEIGHT || cur_pixel_index < 0) continue;
-            
+
             palette_index = mem->read_u8_unprotected(starting_address + i);
             current_pixel = mem->read_u32_unprotected(TILE_PALETTE + palette_index * sizeof(u16));
 

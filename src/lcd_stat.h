@@ -28,6 +28,18 @@ struct lcd_stat {
     // REG_DISPCNT control
     u8 mode = 0;
     bool obj;
+
+    // background controls (BGXCNT)
+    struct bg_cnt {
+        u8 priority    : 2; 
+        u8 cbb         : 2; // character base block 
+        u8 mosaic      : 1;
+        u8 color_mode  : 1; // 16 colors (4bpp) if cleared; 256 colors (8bpp) if set
+        u8 sbb         : 5; // screen base block
+        u8 affine_wrap : 1;
+        u8 size        : 2;
+    } bg_cnt[4]; // backgrounds 0-3
+
 };
 
 #endif // LCD_STAT_H

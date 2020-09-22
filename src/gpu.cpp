@@ -260,6 +260,13 @@ void GPU::draw_sprite(obj_attr attr) {
 
     if (hor_flip) {
         u32 temp;
+        for (int h = 0; h < height * 8; ++h) {
+            for (int w = 0; w < width * 4; ++w) {
+                temp = screen_buffer[y + h][x + w];
+                screen_buffer[y + h][x + w] = screen_buffer[y + h][(x + width * 8) - w];
+                screen_buffer[y + h][(x + width * 8) - w] = temp;
+            }
+        }
     }
 
     if (vert_flip) {

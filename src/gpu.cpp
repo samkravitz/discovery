@@ -38,6 +38,8 @@ GPU::GPU() {
     reset();
 
     old_clock = clock();
+
+    i = 0;
 }
 
 GPU::~GPU() {
@@ -87,7 +89,9 @@ void GPU::clock_gpu() {
         stat->current_scanline_pixel = 0;
         stat->in_hBlank = false;
         stat->in_vBlank = false;
-        draw();
+        if (i > 10)
+            draw();
+        i++;
     }
 }
 
@@ -185,6 +189,9 @@ void GPU::draw_sprite(obj_attr attr) {
     u16 x = attr.attr_1.attr.x;
     u8 y = attr.attr_0.attr.y;
 
+    // std::cout << "x: " << (int) x << "\n";
+    // std::cout << "y: " <<  (int) y << "\n";
+
     u32 base_tile_addr = LOWER_SPRITE_BLOCK + (attr.attr_2.attr.tileno * S_TILE_LEN);
 
     // get width, height in tiles of sprite
@@ -258,6 +265,7 @@ void GPU::draw_sprite(obj_attr attr) {
         }
     }
 
+    // horizontal flip
     if (hor_flip) {
         u32 temp;
         for (int h = 0; h < height * 8; ++h) {
@@ -269,6 +277,7 @@ void GPU::draw_sprite(obj_attr attr) {
         }
     }
 
+    // vertical flip
     if (vert_flip) {
         u32 temp;
         for (int h = 0; h < height * 4; ++h) {
@@ -293,7 +302,7 @@ obj_attr GPU::get_attr(int index) {
 }
 
 // draws a single 8x8 pixel tile
-inline void GPU::draw_tile(int starting_address, int start_x, int start_y, bool s_tile, u8 palbank) {
+inline void GPU::draw_tile(int starting_address, u16 start_x, u8 start_y, bool s_tile, u8 palbank) {
     int cur_pixel_index;
     u32 current_pixel;
     u8 palette_index;
@@ -304,10 +313,6 @@ inline void GPU::draw_tile(int starting_address, int start_x, int start_y, bool 
         for (int i = 0; i < S_TILE_LEN; ++i) {
             x = start_x + (2 * (i % 4));
             y = start_y + (i / 4);
-
-            if (y >= MAX_Y) {
-                continue;
-            }
 
             palette_index = mem->read_u8_unprotected(starting_address + i);
             
@@ -342,11 +347,6 @@ inline void GPU::draw_tile(int starting_address, int start_x, int start_y, bool 
         for (int i = 0; i < D_TILE_LEN; i++) {
             x = start_x + (i % 8);
             y = start_y + (i / 8);
-
-            // out of bounds
-            if (y >= MAX_Y) {
-                continue;
-            }
 
             palette_index = mem->read_u8_unprotected(starting_address + i);
             current_pixel = mem->read_u32_unprotected(TILE_PALETTE + palette_index * sizeof(u16));

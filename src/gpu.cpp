@@ -154,14 +154,14 @@ void GPU::draw_mode0() {
     // std::cout << "BG 2 is : " << (reg_dsp >> 10 & 1) << "\n";
     // std::cout << "BG 3 is : " << (reg_dsp >> 11 & 1) << "\n";
     // std::cout << "BG: " << bk0 << "\n";
-    // std::cout << "BG charblock (tileset): " << (bk0 >> 2 & 0x2) << "\n";
-    // std::cout << "BG screenblock (tilemap): " << (bk0 >> 8 & 0x1F) << "\n";
+    std::cout << "BG charblock (tileset): " << (int) stat->bg_cnt[0].cbb << "\n";
+    std::cout << "BG screenblock (tilemap): " <<  (int) stat->bg_cnt[0].sbb << "\n";
 
     // initial address of background tileset
     u32 tileset_address = MEM_VRAM_START + CHARBLOCK_LEN * (bk0 >> 2 & 0x2);
     // initial address of background tilemap
     u32 tilemap_address = MEM_VRAM_START + SCREENBLOCK_LEN * (bk0 >> 8 & 0x1F);
-    
+
 }
 
 // video mode 3 - bitmap mode

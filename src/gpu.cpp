@@ -12,6 +12,9 @@
 // in 4bpp mode (s-tiles)
 #define PALBANK_LEN 32
 
+#define CHARBLOCK_LEN   0x4000
+#define SCREENBLOCK_LEN 0x800
+
 u32 u16_to_u32_color(u16);
 
 GPU::GPU() {
@@ -98,7 +101,7 @@ void GPU::clock_gpu() {
 void GPU::draw() {
     // if (!stat->needs_refresh) return;
 
-    std::cout << "Executing graphics mode: " << (mem->read_u32(REG_DISPCNT) & 0x7) << "\n";
+    //std::cout << "Executing graphics mode: " << (mem->read_u32(REG_DISPCNT) & 0x7) << "\n";
     switch (mem->read_u32_unprotected(REG_DISPCNT) & 0x7) { // bits 0-2 represent video mode
         case 0: draw_mode0(); break;
         case 3: draw_mode3(); break;
@@ -108,7 +111,9 @@ void GPU::draw() {
             break;
     }
 
-    draw_sprites();
+    // obj layer enabled
+    if ((mem->read_u32_unprotected(REG_DISPCNT) >> 12) & 0x1)
+        draw_sprites();
 
     // copy pixel buffer over to surface pixels
     if (SDL_MUSTLOCK(final_screen)) SDL_LockSurface(final_screen);
@@ -140,8 +145,24 @@ void GPU::draw() {
     // stat->needs_refresh = false;
 }
 
-// video mode 0 - sprite mode
-void GPU::draw_mode0() { }
+// video mode 0 - tile mode
+void GPU::draw_mode0() {
+    u32 reg_dsp = mem->read_u16_unprotected(REG_DISPCNT);
+    u32 bk0 = mem->read_u16_unprotected(REG_BG0CNT);
+    // std::cout << "BG 0 is : " << (reg_dsp >> 8 & 1) << "\n";
+    // std::cout << "BG 1 is : " << (reg_dsp >> 9 & 1) << "\n";
+    // std::cout << "BG 2 is : " << (reg_dsp >> 10 & 1) << "\n";
+    // std::cout << "BG 3 is : " << (reg_dsp >> 11 & 1) << "\n";
+    // std::cout << "BG: " << bk0 << "\n";
+    // std::cout << "BG charblock (tileset): " << (bk0 >> 2 & 0x2) << "\n";
+    // std::cout << "BG screenblock (tilemap): " << (bk0 >> 8 & 0x1F) << "\n";
+
+    // initial address of background tileset
+    u32 tileset_address = MEM_VRAM_START + CHARBLOCK_LEN * (bk0 >> 2 & 0x2);
+    // initial address of background tilemap
+    u32 tilemap_address = MEM_VRAM_START + SCREENBLOCK_LEN * (bk0 >> 8 & 0x1F);
+    
+}
 
 // video mode 3 - bitmap mode
 void GPU::draw_mode3() {

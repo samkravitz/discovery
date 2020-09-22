@@ -24,6 +24,8 @@
 
 #define SCREEN_WIDTH  240
 #define SCREEN_HEIGHT 160
+#define MAX_X         512
+#define MAX_Y         256
 
 #define HDRAW_CYCLES     960
 #define SCANLINE_CYCLES  1232
@@ -55,8 +57,7 @@ class GPU {
         SDL_Surface *final_screen;
         SDL_Surface *original_screen;
 
-        u32 screen_buffer[SCREEN_WIDTH * SCREEN_HEIGHT];
-        //u32 sprite_buffer[SCREEN_WIDTH * SCREEN_HEIGHT];
+        u32 screen_buffer[MAX_X][MAX_Y];
 
         // SDL_Renderer *renderer;
         // SDL_Texture *texture;
@@ -70,7 +71,7 @@ class GPU {
         obj_attr get_attr(int);
         void draw_sprites();
         void draw_sprite(obj_attr);
-        void draw_tile(int, int, bool, u8);
+        void draw_tile(int, int, int, bool, u8);
 };
 
 #endif // GPU_H

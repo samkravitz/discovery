@@ -244,7 +244,12 @@ void GPU::draw_sprite(obj_attr attr) {
     }
 
     bool s_tile = attr.attr_0.attr.a == 0;
-    
+
+    // flips
+    bool hor_flip = attr.attr_1.attr.h == 1;
+    bool vert_flip = attr.attr_1.attr.v == 1;
+
+
     for (int h = 0; h < height; ++h) {
         for (int w = 0; w < width; ++w) {
             // multiply 8 because each tile is 8 pixels wide
@@ -254,16 +259,6 @@ void GPU::draw_sprite(obj_attr attr) {
         }
         // each tile is 8 pixels tall
         y += PX_IN_TILE_COL;
-    }
-
-    // flip tile horizontally
-    if (attr.attr_1.attr.h == 1) {
-
-    }
-
-    // flip sprite vertically
-    if (attr.attr_1.attr.v == 1) {
-        
     }
 }
 

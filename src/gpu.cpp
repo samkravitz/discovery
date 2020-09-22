@@ -185,12 +185,6 @@ void GPU::draw_sprite(obj_attr attr) {
     u16 x = attr.attr_1.attr.x;
     u8 y = attr.attr_0.attr.y;
 
-    if (x > 255) x -= 255;
-    if (y > 128) y -= 128;
-
-    // std::cout << "x: " << (int) x << "\n";
-    // std::cout << "y: " << (int) y << "\n";
-
     u32 base_tile_addr = LOWER_SPRITE_BLOCK + (attr.attr_2.attr.tileno * S_TILE_LEN);
 
     // get width, height in tiles of sprite
@@ -297,9 +291,9 @@ inline void GPU::draw_tile(int starting_address, int start_x, int start_y, bool 
             x = start_x + (2 * (i % 4));
             y = start_y + (i / 4);
 
-            // out of bounds
-            if (x > SCREEN_WIDTH || y > SCREEN_HEIGHT) continue;
-            if (x < 0 || y < 0) continue;
+            if (y >= MAX_Y) {
+                continue;
+            }
 
             palette_index = mem->read_u8_unprotected(starting_address + i);
             
@@ -336,8 +330,9 @@ inline void GPU::draw_tile(int starting_address, int start_x, int start_y, bool 
             y = start_y + (i / 8);
 
             // out of bounds
-            if (x > SCREEN_WIDTH || y > SCREEN_HEIGHT) continue;
-            if (x < 0 || y < 0) continue;
+            if (y >= MAX_Y) {
+                continue;
+            }
 
             palette_index = mem->read_u8_unprotected(starting_address + i);
             current_pixel = mem->read_u32_unprotected(TILE_PALETTE + palette_index * sizeof(u16));

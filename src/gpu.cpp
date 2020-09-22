@@ -172,10 +172,17 @@ void GPU::draw_sprite(obj_attr attr) {
     // rendering disabled (hidden)
     if (attr.attr_0.attr.d == 1 && attr.attr_0.attr.r == 0) return;
     
+    // use some masking to make x and y fit in screen coordinates
     int starting_pixel = attr.attr_0.attr.y * SCREEN_WIDTH + attr.attr_1.attr.x;
+    //std::cout << starting_pixel << "\n";
     
+    std::cout << "x: " << (int) attr.attr_1.attr.x << "\n";
+    std::cout << "y: " << (int) attr.attr_0.attr.y<< "\n";
+
     u32 base_tile_addr = LOWER_SPRITE_BLOCK + (attr.attr_2.attr.tileno * S_TILE_LEN);
     int cur_pixel_index = starting_pixel;
+
+   
 
     // get width, height in tiles of sprite
     int width, height;
@@ -280,8 +287,11 @@ inline void GPU::draw_tile(int starting_address, int starting_pixel, bool s_tile
     // draw
     if (s_tile) { // 4 bits / pixel - s-tile
         for (int i = 0; i < S_TILE_LEN; i++) {
-            //cur_pixel_index = starting_pixel + cur_y_line + ((tile % 8) * 8) + ((i / 4) * SCREEN_WIDTH) + ((i % 4) * 2);
             cur_pixel_index = starting_pixel  + ((i / 4) * SCREEN_WIDTH) + ((i % 4) * 2);
+
+            // out of bounds
+            if (cur_pixel_index > SCREEN_WIDTH * SCREEN_HEIGHT || cur_pixel_index < 0) continue;
+
             palette_index = mem->read_u8_unprotected(starting_address + i);
             
             u8 left_pixel = palette_index & 0xF;
@@ -312,6 +322,10 @@ inline void GPU::draw_tile(int starting_address, int starting_pixel, bool s_tile
     } else { // 8 bits / pixel - d-tile
         for (int i = 0; i < D_TILE_LEN; i++) {
             cur_pixel_index = starting_pixel  + ((i / 8) * SCREEN_WIDTH) + (i % 8);
+
+            // out of bounds
+            if (cur_pixel_index > SCREEN_WIDTH * SCREEN_HEIGHT || cur_pixel_index < 0) continue;
+            
             palette_index = mem->read_u8_unprotected(starting_address + i);
             current_pixel = mem->read_u32_unprotected(TILE_PALETTE + palette_index * sizeof(u16));
 

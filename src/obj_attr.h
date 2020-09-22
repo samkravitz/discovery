@@ -17,7 +17,7 @@ struct obj_attr {
 
     union attr_0 {
         struct attr {
-            u8 y : 8; // y coordinate
+            s8 y : 8; // y coordinate
             u8 r : 1; // rotation/scaling on/off
             u8 d : 1; // 0 sprite is single sized 1 sprite is double sized
             u8 t : 2; // 00 - normal, 01 - semi-transparent, 01 obj window, 11 illegal
@@ -31,7 +31,7 @@ struct obj_attr {
 
     union attr_1 {
         struct attr {
-            u16 x : 9; // x coordinate
+            s16 x : 9; // x coordinate
             // index for rotation data
             // will be 5 wide for affine sprites, replacing h & v
             u8 f : 3;

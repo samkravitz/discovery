@@ -55,7 +55,7 @@ class GPU {
         SDL_Surface *final_screen;
         SDL_Surface *original_screen;
 
-        u32 screen_buffer[SCREEN_WIDTH * SCREEN_HEIGHT];
+        u32 screen_buffer[SCREEN_HEIGHT][SCREEN_WIDTH];
         //u32 sprite_buffer[SCREEN_WIDTH * SCREEN_HEIGHT];
 
         // SDL_Renderer *renderer;
@@ -70,7 +70,7 @@ class GPU {
         obj_attr get_attr(int);
         void draw_sprites();
         void draw_sprite(obj_attr);
-        void draw_tile(int, int, bool, u8);
+        void draw_tile(int, int, int, bool, u8);
 };
 
 #endif // GPU_H

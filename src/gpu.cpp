@@ -249,16 +249,28 @@ void GPU::draw_sprite(obj_attr attr) {
     bool hor_flip = attr.attr_1.attr.h == 1;
     bool vert_flip = attr.attr_1.attr.v == 1;
 
-
     for (int h = 0; h < height; ++h) {
         for (int w = 0; w < width; ++w) {
             // multiply 8 because each tile is 8 pixels wide
-            draw_tile(base_tile_addr, x + 8 * w, y, s_tile, attr.attr_2.attr.l);
+            draw_tile(base_tile_addr, x + 8 * w, y + 8 * h, s_tile, attr.attr_2.attr.l);
             // tile offset
             base_tile_addr += s_tile ? S_TILE_LEN : D_TILE_LEN;
         }
-        // each tile is 8 pixels tall
-        y += PX_IN_TILE_COL;
+    }
+
+    if (hor_flip) {
+        u32 temp;
+    }
+
+    if (vert_flip) {
+        u32 temp;
+        for (int h = 0; h < height * 4; ++h) {
+            for (int w = 0; w < width * 8; ++w) {
+                temp = screen_buffer[y + h][x + w];
+                screen_buffer[y + h][x + w] = screen_buffer[(y + height * 8) - h][x + w];
+                screen_buffer[(y + height * 8) - h][x + w] = temp;
+            }
+        }
     }
 }
 

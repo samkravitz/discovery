@@ -153,18 +153,102 @@ void GPU::draw_mode0() {
     // std::cout << "BG 1 is : " << (reg_dsp >> 9 & 1) << "\n";
     // std::cout << "BG 2 is : " << (reg_dsp >> 10 & 1) << "\n";
     // std::cout << "BG 3 is : " << (reg_dsp >> 11 & 1) << "\n";
-    // std::cout << "BG color_mode: " << (int) stat->bg_cnt[0].color_mode << "\n";
-    std::cout << "BG size: " << (int) stat->bg_cnt[0].size << "\n";
-    std::cout << "V_OFFSET: " << (int) mem->read_u16_unprotected(REG_BG0VOFS) << "\n";
-    std::cout << "H_OFFSET: " << (int) mem->read_u16_unprotected(REG_BG0HOFS) << "\n";
+    //std::cout << "BG color_mode: " << (int) stat->bg_cnt[0].color_mode << "\n";
+    // std::cout << "BG size: " << (int) stat->bg_cnt[0].size << "\n";
+    // std::cout << "V_OFFSET: " << (int) mem->read_u16_unprotected(REG_BG0VOFS) << "\n";
+    // std::cout << "H_OFFSET: " << (int) mem->read_u16_unprotected(REG_BG0HOFS) << "\n";
     // std::cout << "BG charblock (tileset): " << (int) stat->bg_cnt[0].cbb << "\n";
     // std::cout << "BG screenblock (tilemap): " <<  (int) stat->bg_cnt[0].sbb << "\n";
 
     // initial address of background tileset
-    u32 tileset_address = MEM_VRAM_START + CHARBLOCK_LEN * (bk0 >> 2 & 0x2);
+    u32 tileset_address = MEM_VRAM_START + CHARBLOCK_LEN * stat->bg_cnt[0].cbb;
     // initial address of background tilemap
-    u32 tilemap_address = MEM_VRAM_START + SCREENBLOCK_LEN * (bk0 >> 8 & 0x1F);
+    u32 tilemap_address = MEM_VRAM_START + SCREENBLOCK_LEN * stat->bg_cnt[0].sbb;
+    //std::cout << (int) stat->bg_cnt[0].cbb << " " << std::hex<< tileset_address << "\n";
 
+    // get width / height (in tiles) of background
+    int width, height;
+    switch(stat->bg_cnt[0].size) {
+        case 0:
+            width = 32;
+            height = 32;
+        break;
+        
+        case 1:
+            width = 64;
+            height = 32;
+        break;
+
+        case 2:
+            width = 32;
+            height = 64;
+        break;
+
+        case 3:
+            width = 64;
+            height = 64;
+        break;
+    }
+
+    u32 map[height * PX_IN_TILE_COL][width * PX_IN_TILE_ROW];
+    for (int x = 0; x < height * PX_IN_TILE_COL; x++) {
+        for (int n = 0; n < width * PX_IN_TILE_ROW; n++) {
+            map[x][n] = 0;
+        }
+    }
+
+    for (int y = 0; y < 32; ++y) {
+        for (int x = 0; x < 32; ++x) {
+            u16 screen_entry = mem->read_u16_unprotected(tilemap_address);
+            u16 tilemap_index = screen_entry & 0b1111111111;
+            //std::cout << (int) (tilemap_entry & 0b1111111111) << "\n";
+            u32 screenblock_ptr = tileset_address + 32 * tilemap_index;
+            //std::cout << std::hex<<screenblock_ptr << "\n";
+            u8 palbank = screen_entry >> 12 & 0xF;
+            //std::cout << (int) palbank << "\n";
+            //palbank <<= 4;
+            u16 current_pixel;
+            u8 palette_index;
+            int x_cor, y_cor;
+            for (int i = 0; i < 32; ++i) {
+                x_cor = x * 8 + 2 * (i % 4);
+                y_cor = y * 8 + (i / 4);
+                palette_index = mem->read_u8_unprotected(screenblock_ptr + i);
+
+                u8 left_pixel = palette_index & 0xF;
+                u8 right_pixel = (palette_index >> 4) & 0xF;
+                // left_pixel |= palbank;
+                // right_pixel |= palbank;
+                
+                // multiply by sizeof(u16) because each index in palram represents 2 bytes
+                current_pixel = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + left_pixel * sizeof(u16) + PALBANK_LEN * palbank);
+
+                // add left pixel in argb format to pixel array
+                if (left_pixel == 0) {
+                    // sprites use palette index 0 as a transparent pixel
+                    screen_buffer[y_cor][x_cor] = 0;
+                } else {
+                    screen_buffer[y_cor][x_cor] = u16_to_u32_color(current_pixel);
+                }
+
+                // multiply by sizeof(u16) because each index in palram represents 2 bytes
+                current_pixel = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + right_pixel * sizeof(u16) + PALBANK_LEN * palbank);
+
+                // add right pixel in argb format to pixel array
+                if (right_pixel == 0) {
+                    // sprites use palette index 0 as a transparent pixel
+                    screen_buffer[y_cor][x_cor + 1] = 0;
+                } else {
+                    screen_buffer[y_cor][x_cor + 1] = u16_to_u32_color(current_pixel);
+                }
+            }
+            // if (x == 1)
+            //     exit(0);
+            tilemap_address += 2;
+        }
+    }
+
+    // exit(0);
 }
 
 // video mode 3 - bitmap mode
@@ -344,7 +428,7 @@ inline void GPU::draw_tile(int starting_address, u16 start_x, u8 start_y, bool s
             u8 right_pixel = (palette_index >> 4) & 0xF;
             
             // multiply by sizeof(u16) because each index in palram represents 2 bytes
-            current_pixel = mem->read_u16_unprotected(TILE_PALETTE + left_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
+            current_pixel = mem->read_u16_unprotected(SPRITE_PALETTE + left_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
             
             // add left pixel in argb format to pixel array
             if (left_pixel == 0) {
@@ -355,7 +439,7 @@ inline void GPU::draw_tile(int starting_address, u16 start_x, u8 start_y, bool s
             }
 
             // multiply by sizeof(u16) because each index in palram represents 2 bytes
-            current_pixel = mem->read_u16_unprotected(TILE_PALETTE + right_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
+            current_pixel = mem->read_u16_unprotected(SPRITE_PALETTE + right_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
 
             // add right pixel in argb format to pixel array
             if (right_pixel == 0) {
@@ -373,7 +457,7 @@ inline void GPU::draw_tile(int starting_address, u16 start_x, u8 start_y, bool s
             y = start_y + (i / 8);
 
             palette_index = mem->read_u8_unprotected(starting_address + i);
-            current_pixel = mem->read_u32_unprotected(TILE_PALETTE + palette_index * sizeof(u16));
+            current_pixel = mem->read_u32_unprotected(SPRITE_PALETTE + palette_index * sizeof(u16));
 
             // add pixel in argb format to pixel array
             if (current_pixel == 0) {

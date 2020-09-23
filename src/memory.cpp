@@ -94,6 +94,9 @@ void Memory::write_u8(u32 address, u8 value) {
         break;
 
         case REG_DISPCNT + 1:
+            //if ((value >> 4 & 0x1) == 0) {
+                std::cout << std::hex << (int) value << "\n";
+            //}
             stat->bg_cnt[0].enabled                 = value >> 0 & 0x1; // bit 8
             stat->bg_cnt[1].enabled                 = value >> 1 & 0x1; // bit 9
             stat->bg_cnt[2].enabled                 = value >> 2 & 0x1; // bit A

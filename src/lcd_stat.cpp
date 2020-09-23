@@ -30,7 +30,7 @@ lcd_stat::lcd_stat() {
 
     // zero background ctl
     for (int i = 0; i < 4; ++i)
-        bg_cnt[i].priority = bg_cnt[i].cbb = bg_cnt[i].mosaic = bg_cnt[i].color_mode = bg_cnt[i].sbb = bg_cnt[i].affine_wrap = bg_cnt[i].size = 0;
+        bg_cnt[i].priority = bg_cnt[i].cbb = bg_cnt[i].mosaic = bg_cnt[i].color_mode = bg_cnt[i].sbb = bg_cnt[i].affine_wrap = bg_cnt[i].size = bg_cnt[i].enabled = 0;
 }
 
 lcd_stat::~lcd_stat() { }

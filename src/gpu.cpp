@@ -100,10 +100,9 @@ void GPU::clock_gpu() {
 }
 
 void GPU::draw() {
-    // if (!stat->needs_refresh) return;
-
-    //std::cout << "Executing graphics mode: " << (mem->read_u32(REG_DISPCNT) & 0x7) << "\n";
-    switch (mem->read_u32_unprotected(REG_DISPCNT) & 0x7) { // bits 0-2 represent video mode
+    // std::cout << "Executing graphics mode: " << (mem->read_u32(REG_DISPCNT) & 0x7) << "\n";
+    // std::cout << "Executing graphics mode: " << (int) stat->reg_dispcnt.obj_enabled << "\n";
+    switch (stat->reg_dispcnt.mode) { // bits 0-2 represent video mode
         case 0: draw_mode0(); break;
         case 3: draw_mode3(); break;
         case 4: draw_mode4(); break;
@@ -112,21 +111,19 @@ void GPU::draw() {
             break;
     }
 
-    // obj layer enabled
-    if ((mem->read_u32_unprotected(REG_DISPCNT) >> 12) & 0x1)
+    // sprites enabled
+    if (stat->reg_dispcnt.obj_enabled)
         draw_sprites();
 
     // copy pixel buffer over to surface pixels
     if (SDL_MUSTLOCK(final_screen)) SDL_LockSurface(final_screen);
 
     u32 *screen_pixels = (u32 *) final_screen->pixels;
-
     for (int y = 0; y < SCREEN_HEIGHT; ++y) {
         for (int x = 0; x < SCREEN_WIDTH; ++x) {
             screen_pixels[y * SCREEN_WIDTH + x] = screen_buffer[y][x];
         }
     }
-
 
     if (SDL_MUSTLOCK(final_screen)) SDL_UnlockSurface(final_screen);
 
@@ -138,12 +135,12 @@ void GPU::draw() {
     // zero screen buffer for next frame
     memset(screen_buffer, 0, sizeof(screen_buffer));
 
-    double duration;
-    clock_t new_time = std::clock();
-    duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
-    std::cout << "Refresh took: " << duration << "\n";
-    old_clock = new_time;
-    stat->needs_refresh = false;
+    // double duration;
+    // clock_t new_time = std::clock();
+    // duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
+    // std::cout << "Refresh took: " << duration << "\n";
+    // old_clock = new_time;
+    // stat->needs_refresh = false;
 }
 
 // video mode 0 - tile mode

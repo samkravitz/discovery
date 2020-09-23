@@ -834,7 +834,6 @@ void arm_7tdmi::write_u32(u32 address, u32 value) {
     // 8 cycles for gamepak rom access, 5 from mem_check and 3 here
     if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END)
         cycles += 3;
-
     mem->write_u32(address, value);
 }
 

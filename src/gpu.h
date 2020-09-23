@@ -73,7 +73,7 @@ class GPU {
         obj_attr get_attr(int);
         void draw_sprites();
         void draw_sprite(obj_attr);
-        void draw_tile(int, u16, u8, bool, u8);
+        void draw_sprite_tile(int, u16, u8, bool, u8);
 
         int i;
 };

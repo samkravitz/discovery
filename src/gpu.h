@@ -67,7 +67,7 @@ class GPU {
         void draw_mode3();
         void draw_mode4();
 
-        void render_reg_background(int);
+        void draw_reg_background(int);
 
         // misc
         obj_attr get_attr(int);

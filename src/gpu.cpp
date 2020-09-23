@@ -12,9 +12,10 @@
 // in 4bpp mode (s-tiles)
 #define PALBANK_LEN 32
 
-#define CHARBLOCK_LEN   0x4000
-#define SCREENBLOCK_LEN 0x800
-#define SCREENENTRY_LEN 32
+#define CHARBLOCK_LEN         0x4000
+#define SCREENBLOCK_LEN       0x800
+#define SCREENENTRY_LEN       32
+#define TILES_PER_SCREENBLOCK 32
 
 u32 u16_to_u32_color(u16);
 
@@ -135,25 +136,71 @@ void GPU::draw() {
     // zero screen buffer for next frame
     memset(screen_buffer, 0, sizeof(screen_buffer));
 
-    // double duration;
-    // clock_t new_time = std::clock();
-    // duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
-    // std::cout << "Refresh took: " << duration << "\n";
-    // old_clock = new_time;
-    // stat->needs_refresh = false;
+    double duration;
+    clock_t new_time = std::clock();
+    duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
+    std::cout << "Refresh took: " << duration << "\n";
+    old_clock = new_time;
+    stat->needs_refresh = false;
 }
 
 // video mode 0 - tile mode
+// can draw bg0-bg3 all regular
 void GPU::draw_mode0() {
+    for (int priority = 3; priority >= 0; --priority) { // draw highest priority first, lower priorities drawn on top
+        for (int i = 0; i < 3; ++i) { // bg0-bg3
+            if (stat->bg_cnt[i].enabled && stat->bg_cnt[i].priority == priority)
+                draw_reg_background(i);
+        }
+    }
+}
+
+// video mode 3 - bitmap mode
+// mode 3 straight up uses 2 bytes to represent each pixel in aRBG format, no palette used
+void GPU::draw_mode3() {
+    u16 current_pixel; // in mode 3 each pixel uses 2 bytes
+
+    int i = 0;
+    for (int y = 0; y < SCREEN_HEIGHT; ++y) {
+        for (int x = 0; x < SCREEN_WIDTH; ++x) {
+            current_pixel = mem->read_u16_unprotected(MEM_VRAM_START + (2 * i)); // multiply i * 2 b/c each pixel is 2 bytes
+            screen_buffer[y][x] = u16_to_u32_color(current_pixel);
+            ++i;
+        }
+    }
+}
+
+// video mode 4 - bitmap mode
+void GPU::draw_mode4() {
+    u8 palette_index; // in mode 4 each pixel uses 1 byte 
+    u32 color;        // the color located at pallette_ram[palette_index]
+
+    int i = 0;
+    for (int y = 0; y < SCREEN_HEIGHT; ++y) {
+        for (int x = 0; x < SCREEN_WIDTH; ++x) {
+            palette_index = mem->read_u8_unprotected(MEM_VRAM_START + i);
+            // multiply by sizeof(u16) because each entry in palram is 2 bytes
+            color = mem->read_u32_unprotected(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
+
+            // add current pixel in argb format to pixel array
+            screen_buffer[y][x] = u16_to_u32_color(color);
+            ++i;
+        }
+    }
+}
+
+// draws regular background
+// bg - background index (0-3)
+void GPU::draw_reg_background(int bg) {
     // initial address of background tileset
-    u32 tileset_address = MEM_VRAM_START + CHARBLOCK_LEN * stat->bg_cnt[0].cbb;
+    u32 tileset_address = MEM_VRAM_START + CHARBLOCK_LEN * stat->bg_cnt[bg].cbb;
 
     // initial address of background tilemap
-    u32 tilemap_address = MEM_VRAM_START + SCREENBLOCK_LEN * stat->bg_cnt[0].sbb;
+    u32 tilemap_address = MEM_VRAM_START + SCREENBLOCK_LEN * stat->bg_cnt[bg].sbb;
 
     // get width / height (in tiles) of background
     int width, height;
-    switch(stat->bg_cnt[0].size) {
+    switch(stat->bg_cnt[bg].size) {
         case 0:
             width = 32;
             height = 32;
@@ -192,7 +239,7 @@ void GPU::draw_mode0() {
             tilemap_index = screen_entry & 0x3FF; // bits 9-0 
             cur_screenblock = tileset_address + SCREENENTRY_LEN * tilemap_index;
 
-            if (stat->bg_cnt[0].color_mode == 0) { // s-tile (4bpp)
+            if (stat->bg_cnt[bg].color_mode == 0) { // s-tile (4bpp)
 
                 palbank = screen_entry >> 12 & 0xF; // bits F - C
             
@@ -209,14 +256,14 @@ void GPU::draw_mode0() {
                     if (left_pixel != 0) {
                         // multiply by sizeof(u16) because each entry in palram is 2 bytes
                         color = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + left_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
-                        screen_buffer[y][x] = u16_to_u32_color(color);
+                        map[y][x] = u16_to_u32_color(color);
                     }
 
                     // pixel value 0 is transparent, so only draw if not 0
                     if (right_pixel != 0) {
                         // multiply by sizeof(u16) because each entry in palram is 2 bytes
                         color = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + right_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
-                        screen_buffer[y][x + 1] = u16_to_u32_color(color);
+                        map[y][x + 1] = u16_to_u32_color(color);
                     }
                 }
 
@@ -227,38 +274,35 @@ void GPU::draw_mode0() {
             }
         }
     }
-}
 
-// video mode 3 - bitmap mode
-// mode 3 straight up uses 2 bytes to represent each pixel in aRBG format, no palette used
-void GPU::draw_mode3() {
-    u16 current_pixel; // in mode 3 each pixel uses 2 bytes
+    // get vertical & horizontal offset
+    u16 voff, hoff;
+    switch (bg) {
+        case 0:
+            voff = mem->read_u16_unprotected(REG_BG0VOFS) % (height * PX_IN_TILE_COL);
+            hoff = mem->read_u16_unprotected(REG_BG0HOFS) % (width * PX_IN_TILE_ROW);
+        break;
 
-    int i = 0;
-    for (int y = 0; y < SCREEN_HEIGHT; ++y) {
-        for (int x = 0; x < SCREEN_WIDTH; ++x) {
-            current_pixel = mem->read_u16_unprotected(MEM_VRAM_START + (2 * i)); // multiply i * 2 b/c each pixel is 2 bytes
-            screen_buffer[y][x] = u16_to_u32_color(current_pixel);
-            ++i;
-        }
+        case 1:
+            voff = mem->read_u16_unprotected(REG_BG1VOFS) % (height * PX_IN_TILE_COL);
+            hoff = mem->read_u16_unprotected(REG_BG1HOFS) % (width * PX_IN_TILE_ROW);
+        break;
+
+        case 2:
+            voff = mem->read_u16_unprotected(REG_BG2VOFS) % (height * PX_IN_TILE_COL);
+            hoff = mem->read_u16_unprotected(REG_BG2HOFS) % (width * PX_IN_TILE_ROW);
+        break;
+
+        case 3:
+            voff = mem->read_u16_unprotected(REG_BG3VOFS) % (height * PX_IN_TILE_COL);
+            hoff = mem->read_u16_unprotected(REG_BG3HOFS) % (width * PX_IN_TILE_ROW);
+        break;
     }
-}
 
-// video mode 4 - bitmap mode
-void GPU::draw_mode4() {
-    u8 palette_index; // in mode 4 each pixel uses 1 byte 
-    u32 color;        // the color located at pallette_ram[palette_index]
-
-    int i = 0;
+    // copy area of map that screen is over into screen buffer
     for (int y = 0; y < SCREEN_HEIGHT; ++y) {
         for (int x = 0; x < SCREEN_WIDTH; ++x) {
-            palette_index = mem->read_u8_unprotected(MEM_VRAM_START + i);
-            // multiply by sizeof(u16) because each entry in palram is 2 bytes
-            color = mem->read_u32_unprotected(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
-
-            // add current pixel in argb format to pixel array
-            screen_buffer[y][x] = u16_to_u32_color(color);
-            ++i;
+            screen_buffer[y][x] = map[y + voff][x + hoff];
         }
     }
 }

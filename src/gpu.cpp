@@ -113,8 +113,8 @@ void GPU::draw() {
     }
 
     // obj layer enabled
-    // if ((mem->read_u32_unprotected(REG_DISPCNT) >> 12) & 0x1)
-    //     draw_sprites();
+    if ((mem->read_u32_unprotected(REG_DISPCNT) >> 12) & 0x1)
+        draw_sprites();
 
     // copy pixel buffer over to surface pixels
     if (SDL_MUSTLOCK(final_screen)) SDL_LockSurface(final_screen);

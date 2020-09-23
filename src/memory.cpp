@@ -80,12 +80,27 @@ void Memory::write_u16(u32 address, u16 value) {
 
 // TODO - add protection against VRAM byte writes
 void Memory::write_u8(u32 address, u8 value) {
-    if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALETTE_RAM_END)
-        stat->needs_refresh = true;
-    if (address >= MEM_VRAM_START && address <= MEM_VRAM_END)
-        stat->needs_refresh = true;
-    
+
     switch (address) {
+
+        // REG_DISPCNT
+        case REG_DISPCNT:
+            stat->reg_dispcnt.mode                  = value >> 0 & 0x7; // bits 0-2     
+            stat->reg_dispcnt.gb                    = value >> 3 & 0x1; // bit 3
+            stat->reg_dispcnt.ps                    = value >> 4 & 0x1; // bit 4
+            stat->reg_dispcnt.hb                    = value >> 5 & 0x1; // bit 5
+            stat->reg_dispcnt.obj_map_mode          = value >> 6 & 0x1; // bit 6
+            stat->reg_dispcnt.fb                    = value >> 7 & 0x1; // bit 7    
+        break;
+
+        case REG_DISPCNT + 1:
+            stat->bg_cnt[0].enabled                 = value >> 0 & 0x1; // bit 8
+            stat->bg_cnt[1].enabled                 = value >> 1 & 0x1; // bit 9
+            stat->bg_cnt[2].enabled                 = value >> 2 & 0x1; // bit A
+            stat->bg_cnt[3].enabled                 = value >> 3 & 0x1; // bit B
+            stat->reg_dispcnt.obj_enabled           = value >> 4 & 0x1; // bit C
+            stat->reg_dispcnt.win_enabled           = value >> 5 & 0x7; // bits D-F
+        break;
 
         // REG_BG0CNT
         case REG_BG0CNT:

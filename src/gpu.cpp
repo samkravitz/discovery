@@ -153,9 +153,12 @@ void GPU::draw_mode0() {
     // std::cout << "BG 1 is : " << (reg_dsp >> 9 & 1) << "\n";
     // std::cout << "BG 2 is : " << (reg_dsp >> 10 & 1) << "\n";
     // std::cout << "BG 3 is : " << (reg_dsp >> 11 & 1) << "\n";
-    // std::cout << "BG: " << bk0 << "\n";
-    std::cout << "BG charblock (tileset): " << (int) stat->bg_cnt[0].cbb << "\n";
-    std::cout << "BG screenblock (tilemap): " <<  (int) stat->bg_cnt[0].sbb << "\n";
+    // std::cout << "BG color_mode: " << (int) stat->bg_cnt[0].color_mode << "\n";
+    std::cout << "BG size: " << (int) stat->bg_cnt[0].size << "\n";
+    std::cout << "V_OFFSET: " << (int) mem->read_u16_unprotected(REG_BG0VOFS) << "\n";
+    std::cout << "H_OFFSET: " << (int) mem->read_u16_unprotected(REG_BG0HOFS) << "\n";
+    // std::cout << "BG charblock (tileset): " << (int) stat->bg_cnt[0].cbb << "\n";
+    // std::cout << "BG screenblock (tilemap): " <<  (int) stat->bg_cnt[0].sbb << "\n";
 
     // initial address of background tileset
     u32 tileset_address = MEM_VRAM_START + CHARBLOCK_LEN * (bk0 >> 2 & 0x2);

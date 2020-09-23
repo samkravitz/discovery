@@ -89,58 +89,58 @@ void Memory::write_u8(u32 address, u8 value) {
 
         // REG_BG0CNT
         case REG_BG0CNT:
-            stat->bg_cnt[0].priority   = value >> 0 & 0x2; // bits 0-1
-            stat->bg_cnt[0].cbb        = value >> 2 & 0x2; // bits 2-3
-            stat->bg_cnt[0].mosaic     = value >> 6 & 0x1; // bit  6
-            stat->bg_cnt[0].color_mode = value >> 7 & 0x1; // bit  7
+            stat->bg_cnt[0].priority      = value >> 0 & 0x3; // bits 0-1
+            stat->bg_cnt[0].cbb           = value >> 2 & 0x3; // bits 2-3
+            stat->bg_cnt[0].mosaic        = value >> 6 & 0x1; // bit  6
+            stat->bg_cnt[0].color_mode    = value >> 7 & 0x1; // bit  7
         break;
 
         case REG_BG0CNT + 1:
             stat->bg_cnt[0].sbb           = value >> 0 & 0x1F; // bits 8-C
-            stat->bg_cnt[0].affine_wrap   = value >> 5 & 0x1; // bit  D
-            stat->bg_cnt[0].size          = value >> 6 & 0x2; // bits E-F
+            stat->bg_cnt[0].affine_wrap   = value >> 5 & 0x1;  // bit  D
+            stat->bg_cnt[0].size          = value >> 6 & 0x3;  // bits E-F
         break;
 
         // REG_BG1CNT
         case REG_BG1CNT:
-            stat->bg_cnt[1].priority   = value >> 0 & 0x2; // bits 0-1
-            stat->bg_cnt[1].cbb        = value >> 2 & 0x2; // bits 2-3
-            stat->bg_cnt[1].mosaic     = value >> 6 & 0x1; // bit  6
-            stat->bg_cnt[1].color_mode = value >> 7 & 0x1; // bit  7
+            stat->bg_cnt[1].priority      = value >> 0 & 0x3; // bits 0-1
+            stat->bg_cnt[1].cbb           = value >> 2 & 0x3; // bits 2-3
+            stat->bg_cnt[1].mosaic        = value >> 6 & 0x1; // bit  6
+            stat->bg_cnt[1].color_mode    = value >> 7 & 0x1; // bit  7
         break;
 
         case REG_BG1CNT + 1:
             stat->bg_cnt[1].sbb           = value >> 0 & 0x1F; // bits 8-C
-            stat->bg_cnt[1].affine_wrap   = value >> 5 & 0x1; // bit  D
-            stat->bg_cnt[1].size          = value >> 6 & 0x2; // bits E-F
+            stat->bg_cnt[1].affine_wrap   = value >> 5 & 0x1;  // bit  D
+            stat->bg_cnt[1].size          = value >> 6 & 0x3;  // bits E-F
         break;
 
         // REG_BG2CNT
         case REG_BG2CNT:
-            stat->bg_cnt[2].priority   = value >> 0 & 0x2; // bits 0-1
-            stat->bg_cnt[2].cbb        = value >> 2 & 0x2; // bits 2-3
-            stat->bg_cnt[2].mosaic     = value >> 6 & 0x1; // bit  6
-            stat->bg_cnt[2].color_mode = value >> 7 & 0x1; // bit  7
+            stat->bg_cnt[2].priority      = value >> 0 & 0x3; // bits 0-1
+            stat->bg_cnt[2].cbb           = value >> 2 & 0x3; // bits 2-3
+            stat->bg_cnt[2].mosaic        = value >> 6 & 0x1; // bit  6
+            stat->bg_cnt[2].color_mode    = value >> 7 & 0x1; // bit  7
         break;
 
         case REG_BG2CNT + 1:
             stat->bg_cnt[2].sbb           = value >> 0 & 0x1F; // bits 8-C
-            stat->bg_cnt[2].affine_wrap   = value >> 5 & 0x1; // bit  D
-            stat->bg_cnt[2].size          = value >> 6 & 0x2; // bits E-F
+            stat->bg_cnt[2].affine_wrap   = value >> 5 & 0x1;  // bit  D
+            stat->bg_cnt[2].size          = value >> 6 & 0x3;  // bits E-F
         break;
 
         // REG_BG3CNT
         case REG_BG3CNT:
-            stat->bg_cnt[3].priority   = value >> 0 & 0x2; // bits 0-1
-            stat->bg_cnt[3].cbb        = value >> 2 & 0x2; // bits 2-3
-            stat->bg_cnt[3].mosaic     = value >> 6 & 0x1; // bit  6
-            stat->bg_cnt[3].color_mode = value >> 7 & 0x1; // bit  7
+            stat->bg_cnt[3].priority      = value >> 0 & 0x3; // bits 0-1
+            stat->bg_cnt[3].cbb           = value >> 2 & 0x3; // bits 2-3
+            stat->bg_cnt[3].mosaic        = value >> 6 & 0x1; // bit  6
+            stat->bg_cnt[3].color_mode    = value >> 7 & 0x1; // bit  7
         break;
 
         case REG_BG3CNT + 1:
             stat->bg_cnt[3].sbb           = value >> 0 & 0x1F; // bits 8-C
-            stat->bg_cnt[3].affine_wrap   = value >> 5 & 0x1; // bit  D
-            stat->bg_cnt[3].size          = value >> 6 & 0x2; // bits E-F
+            stat->bg_cnt[3].affine_wrap   = value >> 5 & 0x1;  // bit  D
+            stat->bg_cnt[3].size          = value >> 6 & 0x3;  // bits E-F
         break;
         
         // write into waitstate ctl

@@ -272,11 +272,28 @@ void GPU::draw_reg_background(int bg) {
                             }
                         }
 
-                        tilemap_address += 2; // each tile is 2 bytes long
-
                     } else { // d-tile (8bpp)
+                        for (int i = 0; i < D_TILE_LEN; i++) {
 
+                            palette_index = mem->read_u8_unprotected(cur_screenblock + i);
+
+                            // pixel value 0 is transparent, so only draw if not 0
+                            if (palette_index == 0)
+                                continue; 
+
+                            // 256 bc each screenblock is 32 tiles, 32 * 8 = 256
+                            x = ssx * 256 + w * PX_IN_TILE_ROW + (i % 8);
+                            y = ssy * 256 + h * PX_IN_TILE_COL + (i / 8);
+
+                            // multiply by sizeof(u16) because each entry in palram is 2 bytes
+                            color = mem->read_u32_unprotected(SPRITE_PALETTE + palette_index * sizeof(u16));
+
+                            screen_buffer[y][x] = u16_to_u32_color(color);
+                        }
                     }
+
+                    tilemap_address += 2; // each tile is 2 bytes long
+                    
                 }
             }
         }
@@ -286,23 +303,23 @@ void GPU::draw_reg_background(int bg) {
     u16 voff, hoff;
     switch (bg) {
         case 0:
-            voff = mem->read_u16_unprotected(REG_BG0VOFS); //% (height * PX_IN_TILE_COL);
-            hoff = mem->read_u16_unprotected(REG_BG0HOFS); //% (width * PX_IN_TILE_ROW);
+            voff = mem->read_u16_unprotected(REG_BG0VOFS);
+            hoff = mem->read_u16_unprotected(REG_BG0HOFS);
         break;
 
         case 1:
-            voff = mem->read_u16_unprotected(REG_BG1VOFS); //% (height * PX_IN_TILE_COL);
-            hoff = mem->read_u16_unprotected(REG_BG1HOFS); //% (width * PX_IN_TILE_ROW);
+            voff = mem->read_u16_unprotected(REG_BG1VOFS);
+            hoff = mem->read_u16_unprotected(REG_BG1HOFS);
         break;
 
         case 2:
-            voff = mem->read_u16_unprotected(REG_BG2VOFS); //% (height * PX_IN_TILE_COL);
-            hoff = mem->read_u16_unprotected(REG_BG2HOFS); //% (width * PX_IN_TILE_ROW);
+            voff = mem->read_u16_unprotected(REG_BG2VOFS);
+            hoff = mem->read_u16_unprotected(REG_BG2HOFS);
         break;
 
         case 3:
-            voff = mem->read_u16_unprotected(REG_BG3VOFS); //% (height * PX_IN_TILE_COL);
-            hoff = mem->read_u16_unprotected(REG_BG3HOFS); //% (width * PX_IN_TILE_ROW);
+            voff = mem->read_u16_unprotected(REG_BG3VOFS);
+            hoff = mem->read_u16_unprotected(REG_BG3HOFS);
         break;
     }
 
@@ -495,7 +512,7 @@ obj_attr GPU::get_attr(int index) {
     return attr;
 }
 
-// given a range of 0-31 return a range of 0-255
+// given a 16 bit GBA color, make it a 32 bit SDL color
 inline u32 u16_to_u32_color (u16 color_u16) {
     u8 r, g, b;
     u32 color = 255; // alpha value

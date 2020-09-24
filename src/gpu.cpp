@@ -224,7 +224,7 @@ void GPU::draw_reg_background(int bg) {
     }
 
     // entire map (bigger than screen)
-    u32 map[height * PX_IN_TILE_COL][width * PX_IN_TILE_ROW];
+    u32 map[height * PX_IN_TILE_COL][width * PX_IN_TILE_ROW] = {0};
 
     u16 screen_entry;    // contains tile index, flipping flags, and balbank for s-tiles
     u16 tilemap_index;   // index # of current tile
@@ -248,13 +248,14 @@ void GPU::draw_reg_background(int bg) {
                         palbank = screen_entry >> 12 & 0xF; // bits F - C
                     
                         for (int i = 0; i < S_TILE_LEN; ++i) {
+                            // 256 bc each screenblock is 32 tiles, 32 * 8 = 256
                             x = ssx * 256 + w * PX_IN_TILE_ROW + 2 * (i % 4); // s-tiles get left/right px in one read 
                             y = ssy * 256 + h * PX_IN_TILE_COL + (i / 4);
                             palette_index = mem->read_u8_unprotected(cur_screenblock + i);
                             
                             u8 left_pixel = palette_index & 0xF;
                             u8 right_pixel = (palette_index >> 4) & 0xF;
-
+                            
                             // add left, right pixel to screen buffer
                             // pixel value 0 is transparent, so only draw if not 0
                             if (left_pixel != 0) {
@@ -285,30 +286,31 @@ void GPU::draw_reg_background(int bg) {
     u16 voff, hoff;
     switch (bg) {
         case 0:
-            voff = mem->read_u16_unprotected(REG_BG0VOFS) % (height * PX_IN_TILE_COL);
-            hoff = mem->read_u16_unprotected(REG_BG0HOFS) % (width * PX_IN_TILE_ROW);
+            voff = mem->read_u16_unprotected(REG_BG0VOFS); //% (height * PX_IN_TILE_COL);
+            hoff = mem->read_u16_unprotected(REG_BG0HOFS); //% (width * PX_IN_TILE_ROW);
         break;
 
         case 1:
-            voff = mem->read_u16_unprotected(REG_BG1VOFS) % (height * PX_IN_TILE_COL);
-            hoff = mem->read_u16_unprotected(REG_BG1HOFS) % (width * PX_IN_TILE_ROW);
+            voff = mem->read_u16_unprotected(REG_BG1VOFS); //% (height * PX_IN_TILE_COL);
+            hoff = mem->read_u16_unprotected(REG_BG1HOFS); //% (width * PX_IN_TILE_ROW);
         break;
 
         case 2:
-            voff = mem->read_u16_unprotected(REG_BG2VOFS) % (height * PX_IN_TILE_COL);
-            hoff = mem->read_u16_unprotected(REG_BG2HOFS) % (width * PX_IN_TILE_ROW);
+            voff = mem->read_u16_unprotected(REG_BG2VOFS); //% (height * PX_IN_TILE_COL);
+            hoff = mem->read_u16_unprotected(REG_BG2HOFS); //% (width * PX_IN_TILE_ROW);
         break;
 
         case 3:
-            voff = mem->read_u16_unprotected(REG_BG3VOFS) % (height * PX_IN_TILE_COL);
-            hoff = mem->read_u16_unprotected(REG_BG3HOFS) % (width * PX_IN_TILE_ROW);
+            voff = mem->read_u16_unprotected(REG_BG3VOFS); //% (height * PX_IN_TILE_COL);
+            hoff = mem->read_u16_unprotected(REG_BG3HOFS); //% (width * PX_IN_TILE_ROW);
         break;
     }
 
     // copy area of map that screen is over into screen buffer
     for (int y = 0; y < SCREEN_HEIGHT; ++y) {
         for (int x = 0; x < SCREEN_WIDTH; ++x) {
-            screen_buffer[y][x] = map[y + voff][x + hoff];
+            // modulo mapsize to allow wrapping
+            screen_buffer[y][x] = map[(y + voff) % (height * PX_IN_TILE_COL)][(x + hoff) % (width * PX_IN_TILE_ROW)];
         }
     }
 }

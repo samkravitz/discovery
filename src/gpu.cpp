@@ -147,12 +147,10 @@ void GPU::draw() {
 // video mode 0 - tile mode
 // can draw bg0-bg3 all regular
 void GPU::draw_mode0() {
-    for (int priority = 3; priority >= 0; --priority) { // draw highest priority first, lower priorities drawn on top
-        for (int i = 0; i < 3; ++i) { // bg0-bg3
+    for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
+        for (int i = 0; i < 3; ++i) // bg0-bg3
             if (stat->bg_cnt[i].enabled && stat->bg_cnt[i].priority == priority)
                 draw_reg_background(i);
-        }
-    }
 }
 
 // video mode 3 - bitmap mode
@@ -236,7 +234,7 @@ void GPU::draw_reg_background(int bg) {
 
     for (int ssy = 0; ssy < (height / 32); ++ssy) {
         for (int ssx = 0; ssx < (width / 32); ++ssx) {
-            tilemap_address = start_tilemap_address + ssx * SCREENBLOCK_LEN + ssy * SCREENBLOCK_LEN;
+            tilemap_address = start_tilemap_address + ssx * SCREENBLOCK_LEN + (2 * ssy * SCREENBLOCK_LEN);
             for (int h = 0; h < TILES_PER_SCREENBLOCK; ++h) {
                 for (int w = 0; w < TILES_PER_SCREENBLOCK; ++w) {
                     screen_entry = mem->read_u16_unprotected(tilemap_address);
@@ -255,7 +253,7 @@ void GPU::draw_reg_background(int bg) {
                             
                             u8 left_pixel = palette_index & 0xF;
                             u8 right_pixel = (palette_index >> 4) & 0xF;
-                            
+
                             // add left, right pixel to screen buffer
                             // pixel value 0 is transparent, so only draw if not 0
                             if (left_pixel != 0) {
@@ -273,6 +271,7 @@ void GPU::draw_reg_background(int bg) {
                         }
 
                     } else { // d-tile (8bpp)
+
                         for (int i = 0; i < D_TILE_LEN; i++) {
 
                             palette_index = mem->read_u8_unprotected(cur_screenblock + i);
@@ -293,7 +292,7 @@ void GPU::draw_reg_background(int bg) {
                     }
 
                     tilemap_address += 2; // each tile is 2 bytes long
-                    
+
                 }
             }
         }

@@ -12,10 +12,11 @@
 // in 4bpp mode (s-tiles)
 #define PALBANK_LEN 32
 
-#define CHARBLOCK_LEN         0x4000
-#define SCREENBLOCK_LEN       0x800
-#define SCREENENTRY_LEN       32
-#define TILES_PER_SCREENBLOCK 32
+#define CHARBLOCK_LEN             0x4000
+#define SCREENBLOCK_LEN           0x800
+#define S_SCREENENTRY_DEPTH       32    // s-tile SE depth
+#define D_SCREENENTRY_DEPTH       64    // d-tile SE depth
+#define TILES_PER_SCREENBLOCK     32
 
 u32 u16_to_u32_color(u16);
 
@@ -136,12 +137,12 @@ void GPU::draw() {
     // zero screen buffer for next frame
     memset(screen_buffer, 0, sizeof(screen_buffer));
 
-    double duration;
-    clock_t new_time = std::clock();
-    duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
-    std::cout << "Refresh took: " << duration << "\n";
-    old_clock = new_time;
-    stat->needs_refresh = false;
+    // double duration;
+    // clock_t new_time = std::clock();
+    // duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
+    // std::cout << "Refresh took: " << duration << "\n";
+    // old_clock = new_time;
+    // stat->needs_refresh = false;
 }
 
 // video mode 0 - tile mode
@@ -239,12 +240,11 @@ void GPU::draw_reg_background(int bg) {
                 for (int w = 0; w < TILES_PER_SCREENBLOCK; ++w) {
                     screen_entry = mem->read_u16_unprotected(tilemap_address);
                     tilemap_index = screen_entry & 0x3FF; // bits 9-0 
-                    cur_screenblock = tileset_address + SCREENENTRY_LEN * tilemap_index;
 
                     if (stat->bg_cnt[bg].color_mode == 0) { // s-tile (4bpp)
-
                         palbank = screen_entry >> 12 & 0xF; // bits F - C
-                    
+                        cur_screenblock = tileset_address + S_SCREENENTRY_DEPTH * tilemap_index;
+
                         for (int i = 0; i < S_TILE_LEN; ++i) {
                             // 256 bc each screenblock is 32 tiles, 32 * 8 = 256
                             x = ssx * 256 + w * PX_IN_TILE_ROW + 2 * (i % 4); // s-tiles get left/right px in one read 
@@ -271,6 +271,8 @@ void GPU::draw_reg_background(int bg) {
                         }
 
                     } else { // d-tile (8bpp)
+
+                        cur_screenblock = tileset_address + D_SCREENENTRY_DEPTH * tilemap_index;
 
                         for (int i = 0; i < D_TILE_LEN; i++) {
 
@@ -326,7 +328,8 @@ void GPU::draw_reg_background(int bg) {
     for (int y = 0; y < SCREEN_HEIGHT; ++y) {
         for (int x = 0; x < SCREEN_WIDTH; ++x) {
             // modulo mapsize to allow wrapping
-            screen_buffer[y][x] = map[(y + voff) % (height * PX_IN_TILE_COL)][(x + hoff) % (width * PX_IN_TILE_ROW)];
+            if (map[(y + voff) % (height * PX_IN_TILE_COL)][(x + hoff) % (width * PX_IN_TILE_ROW)] != 0)
+                screen_buffer[y][x] = map[(y + voff) % (height * PX_IN_TILE_COL)][(x + hoff) % (width * PX_IN_TILE_ROW)];
         }
     }
 }

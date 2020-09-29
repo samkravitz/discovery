@@ -37,6 +37,9 @@ Memory::Memory() {
 Memory::~Memory() { }
 
 u32 Memory::read_u32(u32 address) {
+    // if (address <= MEM_BIOS_END)  {
+    //     std::cout << std::hex << address << "\n";
+    // }
     return (read_u8(address + 3) << 24)
     | (read_u8(address + 2) << 16)
     | (read_u8(address + 1) << 8)
@@ -246,7 +249,9 @@ void Memory::load_bios() {
  * internal region the address points to, which saves a boatload of memory.
  */
 u8 *Memory::get_internal_region(u32 address) {
-    if (address <= MEM_BIOS_END) return &memory.bios[address];
+    if (address <= MEM_BIOS_END)  {
+        return &memory.bios[address];
+    }
     else if (address >= MEM_BOARD_WRAM_START && address <= MEM_BOARD_WRAM_END) {
         //std::cout << "WORK ROM ACCESSED!\n";
         return &memory.board_wram[address - MEM_BOARD_WRAM_START];

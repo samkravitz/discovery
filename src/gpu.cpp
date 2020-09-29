@@ -139,12 +139,12 @@ void GPU::draw() {
     // zero screen buffer for next frame
     memset(screen_buffer, 0, sizeof(screen_buffer));
 
-    double duration;
-    clock_t new_time = std::clock();
-    duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
-    std::cout << "Refresh took: " << duration << "\n";
-    old_clock = new_time;
-    stat->needs_refresh = false;
+    // double duration;
+    // clock_t new_time = std::clock();
+    // duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
+    // std::cout << "Refresh took: " << duration << "\n";
+    // old_clock = new_time;
+    // stat->needs_refresh = false;
 }
 
 // video mode 0 - tile mode
@@ -462,7 +462,8 @@ void GPU::draw_regular_sprite(obj_attr attr) {
 }
 
 void GPU::draw_affine_sprite(obj_attr attr) {
-
+    // std::cout << "You have an affine sprite \n";
+    // attr.print();
 }
 
 // draws a single 8x8 pixel tile

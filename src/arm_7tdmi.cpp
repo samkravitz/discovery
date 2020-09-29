@@ -141,9 +141,6 @@ void arm_7tdmi::decode(u32 instruction) {
 }
 
 void arm_7tdmi::execute(u32 instruction) {
-    int i = 0;
-    int j = 1;
-    int k = 2;
     switch (mode) {
         case ARM:
             if (!condition_met((condition_t) util::get_instruction_subset(instruction, 31, 28))) {
@@ -260,6 +257,7 @@ void arm_7tdmi::execute(u32 instruction) {
                     conditional_branch((u16) instruction);
                     break;
                 case SWI_T:
+                    std::cout << "dsalkjflkjsd";
                     software_interrupt_thumb((u16) instruction);
                     break;
                 case BAL_T:

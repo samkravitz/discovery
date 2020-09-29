@@ -186,19 +186,23 @@
             break;
         case TST:
             result = op1 & op2;
-            update_flags_logical(result, carry);
+            if (set_condition_code) update_flags_logical(result, carry);
             break;
         case TEQ:
             result = op1 ^ op2;
-            update_flags_logical(result, carry);
+            if (set_condition_code) update_flags_logical(result, carry);
             break;
         case CMP:
+        if (Rd == 15) exit(0);
+            //std::cout << op1 << " " << op2 << "\n";
             result = op1 - op2;
-            update_flags_subtraction(op1, op2, result);
+            //std::cout << "Flags before: " << (int) registers.cpsr.bits.n << (int) registers.cpsr.bits.z << (int) registers.cpsr.bits.c << (int) registers.cpsr.bits.v << "\n";
+            if (set_condition_code) update_flags_subtraction(op1, op2, result);
+            //std::cout << "Flags after: " << (int) registers.cpsr.bits.n << (int) registers.cpsr.bits.z << (int) registers.cpsr.bits.c << (int) registers.cpsr.bits.v << "\n\n";
             break;
         case CMN:
             result = op1 + op2;
-            update_flags_addition(op1, op2, result);
+            if (set_condition_code) update_flags_addition(op1, op2, result);
             break;
         case ORR:
             result = op1 | op2;

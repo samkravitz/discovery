@@ -53,13 +53,13 @@ u16 Memory::read_u16(u32 address) {
 u8 Memory::read_u8(u32 address) {
     u8 result = 0;
     switch (address) {
-        case REG_DISPSTAT:
-            if (stat->in_vBlank) // bit 0 of REG_DISPSTAT
-                result &= 0x1;
-            if (stat->in_hBlank) // bit 1
-                result &= 0x2;
-            std::cout << "Polling REG_DISPSTAT\n";
-            return result;
+        // case REG_DISPSTAT:
+        //     if (stat->in_vBlank) // bit 0 of REG_DISPSTAT
+        //         result &= 0x1;
+        //     if (stat->in_hBlank) // bit 1
+        //         result &= 0x2;
+        //     std::cout << "Polling REG_DISPSTAT\n";
+        //     return result;
         case REG_VCOUNT:
             return stat->current_scanline;
         // case REG_KEYINPUT:

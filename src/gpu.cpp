@@ -102,7 +102,7 @@ void GPU::clock_gpu() {
 }
 
 void GPU::draw() {
-    // std::cout << "Executing graphics mode: " << (mem->read_u32(REG_DISPCNT) & 0x7) << "\n";
+    //std::cout << "Executing graphics mode: " << (int) (stat->reg_dispcnt.mode) << "\n";
     // std::cout << "Executing graphics mode: " << (int) stat->reg_dispcnt.obj_enabled << "\n";
     switch (stat->reg_dispcnt.mode) { // bits 0-2 represent video mode
         case 0: draw_mode0(); break;

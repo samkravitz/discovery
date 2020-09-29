@@ -59,8 +59,8 @@ class GPU {
 
         u32 screen_buffer[MAX_X][MAX_Y];
 
-        // SDL_Renderer *renderer;
-        // SDL_Texture *texture;
+        // oam data structure
+        obj_attr objs[128]; // can support 128 normal objects
 
         // video mode draws
         void draw_mode0();
@@ -74,6 +74,7 @@ class GPU {
         void draw_sprites();
         void draw_sprite(obj_attr);
         void draw_sprite_tile(int, u16, u8, bool, u8);
+        void update_attr();
 
         int i;
 };

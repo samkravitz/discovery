@@ -105,7 +105,7 @@ bool arm_7tdmi::condition_met(condition_t condition_field) {
 void arm_7tdmi::fetch() {
     if (!pipeline_full) {
         // fill pipeline
-        switch (mode) {
+        switch (get_mode()) {
             case ARM:
                 pipeline[0] = read_u32(registers.r15);
                 registers.r15 += 4;
@@ -126,7 +126,7 @@ void arm_7tdmi::fetch() {
         return;
     }
 
-    switch (mode) {
+    switch (get_mode()) {
         case ARM:
             pipeline[2] = read_u32(registers.r15);
             break;

@@ -17,13 +17,12 @@ struct obj_attr {
 
     union attr_0 {
         struct attr {
-            u8 y : 8; // y coordinate
-            u8 r : 1; // rotation/scaling on/off
-            u8 d : 1; // 0 sprite is single sized 1 sprite is double sized
-            u8 t : 2; // 00 - normal, 01 - semi-transparent, 01 obj window, 11 illegal
-            u8 m : 1; // mosaic on/off
-            u8 a : 1; // 256 color if on, 16 color if off
-            u8 s : 2; // see s of attr_2
+            u8 y : 8;  // y coordinate
+            u8 om : 2; // object mode: 00 normal render, 01 affine, 10 hidden, 11 double-wide affine
+            u8 t : 2;  // 00 - normal, 01 - semi-transparent, 01 obj window, 11 illegal
+            u8 m : 1;  // mosaic on/off
+            u8 a : 1;  // 256 color if on, 16 color if off
+            u8 s : 2;  // see s of attr_2
         } attr;
 
         u16 _zero;        

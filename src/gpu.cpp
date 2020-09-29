@@ -114,8 +114,10 @@ void GPU::draw() {
     }
 
     // sprites enabled
-    if (stat->reg_dispcnt.obj_enabled)
+    if (stat->reg_dispcnt.obj_enabled) {
+        update_attr();
         draw_sprites();
+    }
 
     // copy pixel buffer over to surface pixels
     if (SDL_MUSTLOCK(final_screen)) SDL_LockSurface(final_screen);
@@ -335,15 +337,24 @@ void GPU::draw_reg_background(int bg) {
 }
 
 void GPU::draw_sprites() {
+    obj_attr attr;
     for (int i = 0; i < NUM_OBJS; ++i) {
-        draw_sprite(get_attr(i));
+        attr = objs[i];
+        switch (attr.attr_0.attr.om) {
+            case 0x0: // normal rendering
+                draw_regular_sprite(attr);
+                break;
+            case 0x1: // affine
+                draw_affine_sprite(attr);
+            case 0x2: // hidden
+                continue;
+            case 0x3: // double wide affine
+                break;
+        }
     }
 }
 
-void GPU::draw_sprite(obj_attr attr) {
-    // rendering disabled (hidden)
-    if (attr.attr_0.attr.d == 1 && attr.attr_0.attr.r == 0) return;
-
+void GPU::draw_regular_sprite(obj_attr attr) {
     // use some masking to make x and y fit in screen coordinates
     u16 x = attr.attr_1.attr.x;
     u8 y = attr.attr_0.attr.y;
@@ -351,6 +362,7 @@ void GPU::draw_sprite(obj_attr attr) {
     // std::cout << "x: " << (int) x << "\n";
     // std::cout << "y: " <<  (int) y << "\n";
 
+    // TODO - wat is this
     u32 base_tile_addr = LOWER_SPRITE_BLOCK + (attr.attr_2.attr.tileno * S_TILE_LEN);
 
     // get width, height in tiles of sprite
@@ -447,6 +459,10 @@ void GPU::draw_sprite(obj_attr attr) {
             }
         }
     }
+}
+
+void GPU::draw_affine_sprite(obj_attr attr) {
+
 }
 
 // draws a single 8x8 pixel tile

@@ -108,8 +108,8 @@ class arm_7tdmi {
         uint8_t get_condition_code_flag(condition_code_flag_t);
         void set_condition_code_flag(condition_code_flag_t, uint8_t);
 
-        state_t get_state() { return state; }
-        void set_state(state_t s) { state = s; }
+        state_t get_state() { return registers.cpsr.bits.state; }
+        void set_state(state_t s) { registers.cpsr.bits.state = s; }
 
         cpu_mode_t get_mode() { return mode; }
         void set_mode(cpu_mode_t m) { mode = m; }
@@ -168,7 +168,7 @@ class arm_7tdmi {
         u8 shift_register(u32, u32 &, u8);
         void increment_pc();
         bool condition_met(condition_t);
-        void update_psr(bool, u32);
+        void update_psr(bool, u32, bool);
         bool mem_check(u32);
 
     private:

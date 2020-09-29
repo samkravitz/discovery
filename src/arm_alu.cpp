@@ -285,7 +285,7 @@
             return;
         }
         
-        update_psr(spsr, get_register(Rm));
+        update_psr(spsr, get_register(Rm), false);
     } else if (util::get_instruction_subset(instruction, 21, 12) == 0b1010001111) { // MSR (transfer register contents or immediate value to PSR flag bits only)
         bool immediate = util::get_instruction_subset(instruction, 25, 25) == 1;
         u32 transfer_value;
@@ -323,7 +323,7 @@
         old_spr_value <<= 4;
         old_spr_value >>= 4;
         old_spr_value |= transfer_value;
-        update_psr(spsr, transfer_value);
+        update_psr(spsr, transfer_value, true);
 
     } else { // should not execute
         std::cerr << "Bad PSR transfer instruction!" << "\n";

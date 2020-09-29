@@ -464,8 +464,8 @@ void arm_7tdmi::set_register(int reg, u32 val) {
 
 
         case 0xf: registers.r15 = val; break; // all banks share r15
-        case 0x10: update_psr(false, val); break; // all banks share cpsr
-        case 0x11: update_psr(true, val); break; // special case for spsr
+        case 0x10: update_psr(false, val, false); break; // all banks share cpsr
+        case 0x11: update_psr(true, val, false); break; // special case for spsr
         default:
             std::cerr << "Unknown register: " << reg << "\n";
             break;
@@ -632,9 +632,9 @@ inline void arm_7tdmi::increment_pc() {
  * parameter spsr is true if the psr in question is current bank's spsr
  * else it is the cpsr
  */ 
-void arm_7tdmi::update_psr(bool spsr, u32 value) {
+void arm_7tdmi::update_psr(bool spsr, u32 value, bool flags_only) {
     if (spsr) {
-        switch (state) {
+        switch (get_state()) {
             case USR:
                 std::cerr << "Error: SPSR does not exist in user mode" << "\n";
                 return;
@@ -663,7 +663,7 @@ void arm_7tdmi::update_psr(bool spsr, u32 value) {
     sr.full = value;
 
     // in user mode, only condition bits can be changed
-    if (state == USR) {
+    if (flags_only || get_state() == USR) {
         registers.cpsr.bits.n = sr.bits.n;
         registers.cpsr.bits.z = sr.bits.z;
         registers.cpsr.bits.c = sr.bits.c;

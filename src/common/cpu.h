@@ -23,8 +23,8 @@ typedef enum State {
 
 // cpu mode 
 typedef enum Mode {
-    ARM,
-    THUMB
+    ARM = 0,
+    THUMB = 1
 } cpu_mode_t;
 
 // condition code flag of program status register

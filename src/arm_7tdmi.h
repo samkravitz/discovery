@@ -111,8 +111,8 @@ class arm_7tdmi {
         state_t get_state() { return registers.cpsr.bits.state; }
         void set_state(state_t s) { registers.cpsr.bits.state = s; }
 
-        cpu_mode_t get_mode() { return mode; }
-        void set_mode(cpu_mode_t m) { mode = m; }
+        cpu_mode_t get_mode() { return (cpu_mode_t) registers.cpsr.bits.t; }
+        void set_mode(cpu_mode_t m) { registers.cpsr.bits.t = m; }
 
         u32 get_register(u32);
         void set_register(int reg, u32 val);

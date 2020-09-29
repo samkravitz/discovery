@@ -174,14 +174,14 @@ void GPU::draw_mode3() {
 // video mode 4 - bitmap mode
 void GPU::draw_mode4() {
     u8 palette_index; // in mode 4 each pixel uses 1 byte 
-    u32 color;        // the color located at pallette_ram[palette_index]
+    u16 color;        // the color located at pallette_ram[palette_index]
 
     int i = 0;
     for (int y = 0; y < SCREEN_HEIGHT; ++y) {
         for (int x = 0; x < SCREEN_WIDTH; ++x) {
             palette_index = mem->read_u8_unprotected(MEM_VRAM_START + i);
             // multiply by sizeof(u16) because each entry in palram is 2 bytes
-            color = mem->read_u32_unprotected(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
+            color = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
 
             // add current pixel in argb format to pixel array
             screen_buffer[y][x] = u16_to_u32_color(color);

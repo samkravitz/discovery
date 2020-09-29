@@ -34,7 +34,6 @@
     // swith to THUMB mode if necessary
     if ((branch_address & 1) == 1) {
         registers.r15 -= 1; // continue at Rn - 1 for thumb mode
-        set_mode(THUMB);
         registers.cpsr.bits.t = 1; // TBIT
     }
 
@@ -966,7 +965,6 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
             // swith to ARM mode if necessary
             if ((op1 & 1) == 0) {
                 // registers.r15 += 4; // continue at Rn + 4 in arm mode (skip following halfword)
-                set_mode(ARM);
                 registers.cpsr.bits.t = 0; // TBIT
             } else {
                 // clear bit 0

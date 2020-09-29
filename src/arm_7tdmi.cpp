@@ -141,7 +141,7 @@ void arm_7tdmi::decode(u32 instruction) {
 }
 
 void arm_7tdmi::execute(u32 instruction) {
-    switch (mode) {
+    switch (get_mode()) {
         case ARM:
             if (!condition_met((condition_t) util::get_instruction_subset(instruction, 31, 28))) {
                 increment_pc();
@@ -744,7 +744,7 @@ void arm_7tdmi::cycle(u32 address, char type) {
     switch (type) {
         case 'i':
             cycles++;
-            return;
+            break;
         case 's':
             cycles += mem->s_cycles;
             break;

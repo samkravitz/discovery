@@ -166,6 +166,10 @@ void arm_7tdmi::execute(u32 instruction) {
                     multiply(instruction);
                     increment_pc();
                     break;
+                case MULL:
+                    multiply_long(instruction);
+                    increment_pc();
+                    break;
                 case PSR:
                     psr_transfer(instruction);
                     increment_pc();

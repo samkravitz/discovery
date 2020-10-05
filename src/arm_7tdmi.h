@@ -130,6 +130,7 @@ class arm_7tdmi {
         void branch_link(u32);
         void data_processing(u32);
         void multiply(u32);
+        void multiply_long(u32);
         void psr_transfer(u32);
         void single_data_transfer(u32);
         void halfword_data_transfer(u32);

@@ -231,7 +231,7 @@
     cycle(registers.r15, 's'); // 1S cycles for normal data processing
 }
 
- void arm_7tdmi::multiply(u32 instruction) {
+void arm_7tdmi::multiply(u32 instruction) {
      std::cout << "A multiplication" << std::endl;
     // assign registers
     u32 Rm = util::get_instruction_subset(instruction, 3, 0);   // first operand
@@ -259,6 +259,10 @@
         set_register(Rn, 0);
     }
     set_register(Rd, val);
+}
+
+void arm_7tdmi::multiply_long(u32 instruction) {
+    std::cout << "multiply long\n";
 }
 
 // allow access to CPSR and SPSR registers

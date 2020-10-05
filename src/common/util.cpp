@@ -68,6 +68,7 @@ instruction_set_format_t util::get_instruction_format(u32 instruction) {
             if (instruction & 0x2000000) return DP; // 25th bit is 1
             else if ((instruction & 0x100000) && ((instruction >> 23 & 0x3) == 0x2)) return DP; // 20th bit is 1, 24-23th bit is 10
             else if(((instruction >> 23) & 0x3) != 0x2) return DP;
+            else if (instruction & 0x800000) return MULL; // 23rd bit is 1
             else return MUL;
         }
 
@@ -75,6 +76,7 @@ instruction_set_format_t util::get_instruction_format(u32 instruction) {
             if ((instruction >> 4 & 0xF) == 0x9) { // bits 7-4 are 1001
                 if(instruction & 0x2000000) return DP; // 25th bit is 1
                 else if(((instruction >> 23) & 0x3) == 0x2) return SWP; // bits 24-23 are 10
+                else if (instruction & 0x800000) return MULL; // 23rd bit is 1
                 else return MUL;
             }
             else if (instruction & 0x2000000) return DP;

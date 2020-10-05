@@ -62,6 +62,7 @@ typedef enum Condition {
  * DP - Data Processing
  * PSR - PSR Transfer
  * MUL - Multiply 
+ * MULL - Multiply long
  * SDS - Single Data Swap
  * BEX - Branch and Exchange
  * HDT - Halfword Data Transfer
@@ -75,12 +76,10 @@ typedef enum Condition {
  * INT - Software Interrupt
  */
 typedef enum InstructionSetFormat {
-    // not one of ARM's types - but I wanted to include an unknown case
-    UNKNOWN_INSTRUCTION_FORMAT = 0,
-
     DP,
     PSR,
     MUL,
+    MULL, 
     SWP,
     BEX,
     HDT,

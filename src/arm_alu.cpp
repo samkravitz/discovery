@@ -958,7 +958,6 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
 
             result = op2 - op1;
             update_flags_subtraction(op2, op1, result);
-            set_register(Rd, result);
             increment_pc();
 
             cycle(registers.r15, 's'); // 1S
@@ -1195,8 +1194,9 @@ void arm_7tdmi::load_address(u16 instruction) {
     } else { // pc
         base = get_register(15);
         base &= ~2; // force bit 1 of PC to 0
-        base += word8;
     }
+
+    base += word8;
 
     set_register(Rd, base);
 

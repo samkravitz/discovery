@@ -587,7 +587,7 @@ void arm_7tdmi::block_data_transfer(u32 instruction) {
 
     }
 
-    if (!r15_in_register_list && !load) increment_pc(); // increment pc if flush is not necessary
+    if (!(r15_in_register_list && load)) increment_pc(); // increment pc if flush is not necessary
     if (load_psr) set_state(temp_state); // restore cpu state
     if (write_back) set_register(Rn, base); // write back final address if necessary
 }

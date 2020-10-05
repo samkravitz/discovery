@@ -181,7 +181,8 @@ void GPU::draw_mode4() {
             palette_index = mem->read_u8_unprotected(MEM_VRAM_START + i);
             // multiply by sizeof(u16) because each entry in palram is 2 bytes
             color = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
-            //std::cout<<std::hex<<color<<"\n";
+            // if (color != 0)
+            //     std::cout<<std::hex<<color<<"\n";
             // add current pixel in argb format to pixel array
             screen_buffer[y][x] = u16_to_u32_color(color);
             ++i;

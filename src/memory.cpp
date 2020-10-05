@@ -53,13 +53,11 @@ u16 Memory::read_u16(u32 address) {
 u8 Memory::read_u8(u32 address) {
     u8 result = 0;
     switch (address) {
-        // case REG_DISPSTAT:
-        //     if (stat->in_vBlank) // bit 0 of REG_DISPSTAT
-        //         result &= 0x1;
-        //     if (stat->in_hBlank) // bit 1
-        //         result &= 0x2;
-        //     std::cout << "Polling REG_DISPSTAT\n";
-        //     return result;
+        case REG_DISPSTAT:
+            result |= stat->in_vBlank ? 0b1  : 0b0;  // bit 0 set in vblank, clear in vdraw
+            result |= stat->in_hBlank ? 0b10 : 0b00; // bit 1 set in hblank, clear in hdraw
+            //std::cout << "Polling REG_DISPSTAT " << (int) result << "\n";
+            return result;
         case REG_VCOUNT:
             return stat->current_scanline;
         // case REG_KEYINPUT:
@@ -83,7 +81,8 @@ void Memory::write_u16(u32 address, u16 value) {
 
 // TODO - add protection against VRAM byte writes
 void Memory::write_u8(u32 address, u8 value) {
-
+    // if (address >= MEM_VRAM_START && address <= MEM_VRAM_END)
+    //     std::cout << "Writing to vram \n";
     switch (address) {
 
         // REG_DISPCNT

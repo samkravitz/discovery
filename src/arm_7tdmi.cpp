@@ -142,7 +142,7 @@ void arm_7tdmi::decode(u32 instruction) {
 }
 
 void arm_7tdmi::execute(u32 instruction) {
-    //std::cout << "Executing: " << std::hex << instruction << "\n";
+    std::cout << "Executing: " << std::hex << instruction << "\n";
     switch (get_mode()) {
         case ARM:
             if (!condition_met((condition_t) util::get_instruction_subset(instruction, 31, 28))) {
@@ -279,28 +279,28 @@ void arm_7tdmi::execute(u32 instruction) {
     }
 
     // // print registers
-    // std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << get_register(0) << 
-	// 			" -- R4  : 0x" << std::setw(8) << std::setfill('0') << get_register(4) << 
-	// 			" -- R8  : 0x" << std::setw(8) << std::setfill('0') << get_register(8) << 
-	// 			" -- R12 : 0x" << std::setw(8) << std::setfill('0') << get_register(12) << "\n";
+    std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << get_register(0) << 
+				" -- R4  : 0x" << std::setw(8) << std::setfill('0') << get_register(4) << 
+				" -- R8  : 0x" << std::setw(8) << std::setfill('0') << get_register(8) << 
+				" -- R12 : 0x" << std::setw(8) << std::setfill('0') << get_register(12) << "\n";
 
-	// 		std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << get_register(1) << 
-	// 			" -- R5  : 0x" << std::setw(8) << std::setfill('0') << get_register(5) << 
-	// 			" -- R9  : 0x" << std::setw(8) << std::setfill('0') << get_register(9) << 
-	// 			" -- R13 : 0x" << std::setw(8) << std::setfill('0') << get_register(13) << "\n";
+			std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << get_register(1) << 
+				" -- R5  : 0x" << std::setw(8) << std::setfill('0') << get_register(5) << 
+				" -- R9  : 0x" << std::setw(8) << std::setfill('0') << get_register(9) << 
+				" -- R13 : 0x" << std::setw(8) << std::setfill('0') << get_register(13) << "\n";
 
-	// 		std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << get_register(2) << 
-	// 			" -- R6  : 0x" << std::setw(8) << std::setfill('0') << get_register(6) << 
-	// 			" -- R10 : 0x" << std::setw(8) << std::setfill('0') << get_register(10) << 
-	// 			" -- R14 : 0x" << std::setw(8) << std::setfill('0') << get_register(14) << "\n";
+			std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << get_register(2) << 
+				" -- R6  : 0x" << std::setw(8) << std::setfill('0') << get_register(6) << 
+				" -- R10 : 0x" << std::setw(8) << std::setfill('0') << get_register(10) << 
+				" -- R14 : 0x" << std::setw(8) << std::setfill('0') << get_register(14) << "\n";
 
-	// 		std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << get_register(3) << 
-	// 			" -- R7  : 0x" << std::setw(8) << std::setfill('0') << get_register(7) << 
-	// 			" -- R11 : 0x" << std::setw(8) << std::setfill('0') << get_register(11) << 
-	// 			" -- R15 : 0x" << std::setw(8) << std::setfill('0') << get_register(15) << "\n";
+			std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << get_register(3) << 
+				" -- R7  : 0x" << std::setw(8) << std::setfill('0') << get_register(7) << 
+				" -- R11 : 0x" << std::setw(8) << std::setfill('0') << get_register(11) << 
+				" -- R15 : 0x" << std::setw(8) << std::setfill('0') << get_register(15) << "\n";
 
 	
-	// 		std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << registers.cpsr.full << "\t" << "\n";
+			std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << registers.cpsr.full << "\t" << "\n";
 }
 
 u32 arm_7tdmi::get_register(uint32_t reg) {
@@ -576,7 +576,7 @@ void arm_7tdmi::update_flags_subtraction(u32 op1, u32 op2, u32 result) {
     }
 }
 
-/* performs a shifted register operation on op2.
+/* performs a shift operation on op2.
  * returns the carry-out of the barrel shifter
  *
  *  @params:
@@ -584,8 +584,13 @@ void arm_7tdmi::update_flags_subtraction(u32 op1, u32 op2, u32 result) {
  *  num - the number that will actually be shifted
  *  opcode - an encoding of which type of shift to be performed
  */
-uint8_t arm_7tdmi::shift_register(u32 shift_amount, u32 &num, u8 opcode) {
-    uint8_t carry_out;
+uint8_t arm_7tdmi::barrel_shift(u32 shift_amount, u32 &num, u8 opcode) {
+    uint8_t carry_out = get_condition_code_flag(C); // preserve C flag
+
+    // if shift_amount is 0, leave num unchanged and return the old shift flag
+    if (shift_amount == 0)
+        return carry_out;
+
     // # of bits in a word (should be 32)
     size_t num_bits = sizeof(u32) * 8;
 
@@ -593,54 +598,45 @@ uint8_t arm_7tdmi::shift_register(u32 shift_amount, u32 &num, u8 opcode) {
     switch (opcode) {
         // LSL
         case 0b00:
-            if (shift_amount == 0) carry_out = get_condition_code_flag(C); // preserve C flag
-            for (int i = 0; i < shift_amount; ++i) {
-                carry_out = (num >> num_bits - 1) & 1;
-                num <<= 1;
+            if (shift_amount > num_bits) { // undefined behavior to try to shift by more than 32
+                num = 0;
+                carry_out = 0;
+            } else {
+                num <<= (shift_amount - 1);
+                carry_out = (num >> num_bits - 1) & 1; // most significant bit
+                num <<= 1; // shift last time
             }
             break;
         
         // LSR
         case 0b01:
-            if (shift_amount != 0) { // normal LSR
-                for (int i = 0; i < shift_amount; ++i) {
-                    carry_out = num & 1;
-                    num >>= 1;
-                }
-            } else { // special encoding for LSR #32
-                carry_out = (num >> num_bits - 1) & 1;
+            if (shift_amount > num_bits) { // undefined behavior to try to shift by more than 32
                 num = 0;
+                carry_out = 0;
+            } else {
+                num >>= (shift_amount - 1);
+                carry_out = num & 1;
+                num >>= 1;
             }
             break;
         
         // ASR
         case 0b10:
-            if (shift_amount != 0) {
-                for (int i = 0; i < shift_amount; ++i) {
-                    carry_out  = num & 1;
-                    uint8_t msb = (num >> num_bits - 1) & 1; // most significant bit
-                    num >>= 1;
-                    num |= (msb << num_bits - 1);
-                }
-            } else { // special encoding for ASR #32
-                carry_out = (num >> num_bits - 1) & 1;
-                num = carry_out == 0 ? 0 : (u32) ~0;
+            for (int i = 0; i < shift_amount; ++i) {
+                carry_out  = num & 1;
+                uint8_t msb = (num >> num_bits - 1) & 1; // most significant bit
+                num >>= 1;
+                num |= (msb << num_bits - 1);
             }
             break;
         
         // ROR
         case 0b11:
-            if (shift_amount != 0) { // normal rotate right
-                for (int i = 0; i < shift_amount; ++i) {
-                    carry_out = num & 1;
-                    uint8_t dropped_lsb = num & 1;  
-                    num >>= 1;
-                    num |= (dropped_lsb << num_bits - 1);
-                }
-            } else { // rotate right extended
+            for (int i = 0; i < shift_amount; ++i) {
                 carry_out = num & 1;
+                uint8_t dropped_lsb = num & 1;  
                 num >>= 1;
-                num |= (get_condition_code_flag(C) << num_bits - 1);
+                num |= (dropped_lsb << num_bits - 1);
             }
             break;
     }

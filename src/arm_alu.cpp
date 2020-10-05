@@ -115,23 +115,25 @@
             op2 |= (dropped_lsb << num_bits - 1);
         }
     } else { // op2 is shifted register
-        u32 shifted_register = util::get_instruction_subset(instruction, 3, 0);
         u32 shift = util::get_instruction_subset(instruction, 11, 4);
-        u32 shift_amount;
         u8 shift_type = util::get_instruction_subset(instruction, 6, 5);
+        u32 shift_amount;
+        u32 Rm = instruction & 15; // bits 3-0 
+        op2 = get_register(Rm);
 
         // get shift amount
         if ((shift & 1) == 1) { // shift amount contained in bottom byte of Rs
             u32 Rs = util::get_instruction_subset(instruction, 11, 8);
             shift_amount = get_register(Rs) & 0xFF;
-            // if this amount is 0, skip shifting
-            //if (shift_amount == 0) return 2;
         } else { // shift contained in immediate value in instruction
             shift_amount = util::get_instruction_subset(instruction, 11, 7);
+
+            // encodings of LSR #0, ASR #0, and ROR #0 should be interpreted as #LSR #2, ASR #32, and ROR #32
+            if (shift_amount == 0 && shift_type != 0) // shift_type == 0 is LSL
+                shift_amount = 32;
         }
 
-        op2 = get_register(shifted_register);
-        carry_out = shift_register(shift_amount, op2, shift_type);
+        carry_out = barrel_shift(shift_amount, op2, shift_type);
 
         cycle(registers.r15, 'i'); // + 1I cycles with register specified shift
     }
@@ -388,9 +390,13 @@ void arm_7tdmi::multiply_long(u32 instruction) {
     } else { // op2 is a shifted register
         u32 shift_amount = util::get_instruction_subset(instruction, 11, 7);
         u32 offset_register = util::get_instruction_subset(instruction, 3, 0);
-        offset = get_register(offset_register);
         u8 shift_type = util::get_instruction_subset(instruction, 6, 5);
-        shift_register(shift_amount, offset, shift_type); // offset will be modified to contain result of shifted register
+        offset = get_register(offset_register);
+
+        // encodings of LSR #0, ASR #0, and ROR #0 should be interpreted as #LSR #2, ASR #32, and ROR #32
+        if (shift_amount == 0 && shift_type != 0) // shift_type == 0 is LSL
+            shift_amount = 32;
+        barrel_shift(shift_amount, offset, shift_type); // offset will be modified to contain result of shifted register
     }
 
     u32 base = get_register(Rn);
@@ -664,7 +670,12 @@ void arm_7tdmi::move_shifted_register(u16 instruction) {
     u16 offset5 = util::get_instruction_subset(instruction, 10, 6); // 5 bit immediate offset
     u16 shift_type = util::get_instruction_subset(instruction, 12, 11);
     u32 op1 = get_register(Rs);
-    u8 carry_out = shift_register(offset5, op1, shift_type);
+
+    // encodings of LSR #0, ASR #0, and ROR #0 should be interpreted as #LSR #2, ASR #32, and ROR #32
+    if (offset5 == 0 && shift_type != 0) // shift_type == 0 is LSL
+        offset5 = 32;
+
+    u8 carry_out = barrel_shift(offset5, op1, shift_type);
     set_register(Rd, op1);
     update_flags_logical(op1, carry_out);
 
@@ -764,7 +775,7 @@ void arm_7tdmi::alu_thumb(u16 instruction) {
             break;
 
         case 0b0010: // LSL
-            carry = shift_register(op1, op2, 0b00);
+            carry = barrel_shift(op1 & 0xFF, op2, 0b00);
             set_register(Rd, op2);
             update_flags_logical(op2, carry);
 
@@ -774,7 +785,7 @@ void arm_7tdmi::alu_thumb(u16 instruction) {
             break;
 
         case 0b0011: // LSR
-            carry = shift_register(op1, op2, 0b01);
+            carry = barrel_shift(op1 & 0xFF, op2, 0b01);
             set_register(Rd, op2);
             update_flags_logical(op2, carry);
 
@@ -784,7 +795,7 @@ void arm_7tdmi::alu_thumb(u16 instruction) {
             break;
 
         case 0b0100: // ASR
-            carry = shift_register(op1, op2, 0b10);
+            carry = barrel_shift(op1 & 0xFF, op2, 0b10);
             set_register(Rd, op2);
             update_flags_logical(op2, carry);
 
@@ -812,7 +823,7 @@ void arm_7tdmi::alu_thumb(u16 instruction) {
             break;
 
         case 0b0111: // ROR
-            carry = shift_register(op1, op2, 0b11);
+            carry = barrel_shift(op1 & 0xFF, op2, 0b11);
             set_register(Rd, op2);
             update_flags_logical(op2, carry);
 

@@ -232,33 +232,62 @@
 }
 
 void arm_7tdmi::multiply(u32 instruction) {
-     std::cout << "A multiplication" << std::endl;
     // assign registers
     u32 Rm = util::get_instruction_subset(instruction, 3, 0);   // first operand
     u32 Rs = util::get_instruction_subset(instruction, 11, 8);  // source register
     u32 Rn = util::get_instruction_subset(instruction, 15, 12); // second operand
     u32 Rd = util::get_instruction_subset(instruction, 19, 16); // destination register
-    bool accumulate = util::get_instruction_subset(instruction, 21, 21);    
+    bool accumulate = util::get_instruction_subset(instruction, 21, 21) == 1;    
+    bool set_condition_code_flags = util::get_instruction_subset(instruction, 20, 20) == 1;
 
-    if (Rd == Rm) {
-        std::cout << "Rd must not be the same as Rm" << std::endl;
-        return;
-    } else if (Rd == 15 || Rm == 15) {
+    // Conflicting sources about this
+    // if (Rd == Rm) {
+    //     std::cout << "Rd must not be the same as Rm" << std::endl;
+    //     return;
+    // }
+    
+    if (Rd == 15 || Rm == 15) {
         std::cout << "Register 15 may not be used as destination nor operand register" << std::endl;
         return;
     }
+
+    cycle(registers.r15, 's'); // 1S
+    int m; // # of m cycles
     
-    u32 val;
+    u32 op1 = get_register(Rm);
+    u32 op2 = get_register(Rs);
+    u32 result = op1 * op2;
+
+    // determine how many m cycles
+    if ((op2 >> 8 == 0b111111111111111111111111) ||  (op2 >> 8 == 0))
+        m = 1;
+    if ((op2 >> 16 == 0b1111111111111111)        ||  (op2 >> 16 == 0))
+        m = 2;
+    if ((op2 >> 24 == 0b11111111)                ||  (op2 >> 24 == 0))
+        m = 3;
+    else
+        m = 4;
+    
     if (accumulate) {
-        // multiply-accumulate form gives Rd:=Rm*Rs+Rn
-        val = Rm * Rs + Rn;
-    } else {
-        // multiply form of the instruction gives Rd:=Rm*Rs,
-        // Rn is set to zero for compatibility with possible future instructionset upgrades
-        val = Rm * Rs;
-        set_register(Rn, 0);
+        result += get_register(Rn); // multiply-accumulate form gives Rd:=Rm*Rs+Rn
+        m++; // for MLA (m + 1) I cycles
     }
-    set_register(Rd, val);
+
+    set_register(Rd, result);
+
+    if (set_condition_code_flags) {
+        u8 new_n_flag = result & 0x80000000; // bit 31 of result
+        set_condition_code_flag(N, new_n_flag);
+
+        u8 new_z_flag = result == 0 ? 1 : 0;
+        set_condition_code_flag(Z, new_z_flag);
+
+        set_condition_code_flag(C, 1); // C is set to a meaningless value
+    }
+
+    // m I cycles
+    for (int i = 0; i < m; i++)
+        cycle(registers.r15, 'i');
 }
 
 void arm_7tdmi::multiply_long(u32 instruction) {

@@ -10,6 +10,7 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <iomanip>
 
 #include "arm_7tdmi.h"
 #include "common/util.h"
@@ -271,6 +272,30 @@ void arm_7tdmi::execute(u32 instruction) {
             }
         break;
     }
+
+    // print registers
+    std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << get_register(0) << 
+				" -- R4  : 0x" << std::setw(8) << std::setfill('0') << get_register(4) << 
+				" -- R8  : 0x" << std::setw(8) << std::setfill('0') << get_register(8) << 
+				" -- R12 : 0x" << std::setw(8) << std::setfill('0') << get_register(12) << "\n";
+
+			std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << get_register(1) << 
+				" -- R5  : 0x" << std::setw(8) << std::setfill('0') << get_register(5) << 
+				" -- R9  : 0x" << std::setw(8) << std::setfill('0') << get_register(9) << 
+				" -- R13 : 0x" << std::setw(8) << std::setfill('0') << get_register(13) << "\n";
+
+			std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << get_register(2) << 
+				" -- R6  : 0x" << std::setw(8) << std::setfill('0') << get_register(6) << 
+				" -- R10 : 0x" << std::setw(8) << std::setfill('0') << get_register(10) << 
+				" -- R14 : 0x" << std::setw(8) << std::setfill('0') << get_register(14) << "\n";
+
+			std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << get_register(3) << 
+				" -- R7  : 0x" << std::setw(8) << std::setfill('0') << get_register(7) << 
+				" -- R11 : 0x" << std::setw(8) << std::setfill('0') << get_register(11) << 
+				" -- R15 : 0x" << std::setw(8) << std::setfill('0') << get_register(15) << "\n";
+
+	
+			std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << registers.cpsr.full << "\t" << "\n";
 }
 
 u32 arm_7tdmi::get_register(uint32_t reg) {

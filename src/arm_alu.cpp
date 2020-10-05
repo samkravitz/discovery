@@ -1150,11 +1150,11 @@ void arm_7tdmi::load_address(u16 instruction) {
         base = get_register(13);
     } else { // pc
         base = get_register(15);
-        base += 4; // pc will be 4 bytes greater than current address
+        base &= ~2; // force bit 1 of PC to 0
         base += word8;
     }
 
-    set_register(Rd, read_u32(base));
+    set_register(Rd, base);
 
     cycle(base, 's'); // 1S
 }

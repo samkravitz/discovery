@@ -34,12 +34,14 @@ discovery::discovery() {
 void discovery::game_loop() {
     SDL_Event e;
     u32 old_cycles = 0;
+    int num = 0;
 
     while (true) {
         cpu.fetch();
         cpu.decode(cpu.pipeline[0]);
         cpu.execute(cpu.pipeline[0]);
-        // std::cout << "Executed: " << std::hex << cpu.pipeline[0] << "\n";
+        // std::cout << "Executed instruction " << std::dec << num << ": " << std::hex << cpu.pipeline[0] << "\n";
+        // ++num;
 
         // update pipeline
         cpu.pipeline[0] = cpu.pipeline[1];

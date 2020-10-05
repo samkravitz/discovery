@@ -103,7 +103,6 @@ void GPU::clock_gpu() {
 
 void GPU::draw() {
     //std::cout << "Executing graphics mode: " << (int) (stat->reg_dispcnt.mode) << "\n";
-    // std::cout << "Executing graphics mode: " << (int) stat->reg_dispcnt.obj_enabled << "\n";
     switch (stat->reg_dispcnt.mode) { // bits 0-2 represent video mode
         case 0: draw_mode0(); break;
         case 3: draw_mode3(); break;
@@ -182,7 +181,7 @@ void GPU::draw_mode4() {
             palette_index = mem->read_u8_unprotected(MEM_VRAM_START + i);
             // multiply by sizeof(u16) because each entry in palram is 2 bytes
             color = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
-
+            //std::cout<<std::hex<<color<<"\n";
             // add current pixel in argb format to pixel array
             screen_buffer[y][x] = u16_to_u32_color(color);
             ++i;

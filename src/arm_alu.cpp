@@ -1089,16 +1089,16 @@ void arm_7tdmi::load_store_signed_halfword(u16 instruction) {
         cycle(registers.r15 + 2, 's'); // + 1S cycles for non byte load
     } else if (S && !H) { // load sign-extended byte
         cycle(registers.r15, 'n');
-        u32 value = (u32) read_u8(base);
+        u32 value = read_u8(base);
         cycle(base, 'i');
-        if (value & 0x80) value |= ~0b11111111; // bit 7 of byte is 1, so sign extend bits 31-8 of register
+        if (value & 0x80) value |= 0xFFFFFF00; // bit 7 of byte is 1, so sign extend bits 31-8 of register
         set_register(Rd, value);
         cycle(registers.r15 + 2, 's'); // + 1S cycles for non byte load
     } else { // load sign-extended halfword
         cycle(registers.r15, 'n');
-        u32 value = (u32) read_u16(base);
+        u32 value = read_u16(base);
         cycle(base, 'i');
-        if (value & 0x8000) value |= ~0b1111111111111111; // bit 15 of byte is 1, so sign extend bits 31-16 of register
+        if (value & 0x8000) value |= 0xFFFF0000; // bit 15 of byte is 1, so sign extend bits 31-16 of register
         set_register(Rd, value);
         cycle(registers.r15 + 2, 's'); // + 1S cycles for non byte load
     }

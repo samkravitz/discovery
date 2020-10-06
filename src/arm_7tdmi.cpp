@@ -813,25 +813,31 @@ u8 arm_7tdmi::read_u8(u32 address) {
     return mem->read_u8(address);
 }
 
-u16 arm_7tdmi::read_u16(u32 address) {
-    // align address to halfword
-    address &= ~0x1;
-
+u32 arm_7tdmi::read_u16(u32 address) {
     if (!mem_check(address)) return 0;
-    return mem->read_u16(address);    
+
+    u32 data = (u32) mem->read_u16(address & ~1);
+
+    // misaligned read - reads from forcibly aligned address "addr AND (NOT 31", and does then rotate the data as "ROR 8"
+    if ((address & 1) != 0)
+        barrel_shift(8, data, 0b11);
+    return data;    
 }
 
 u32 arm_7tdmi::read_u32(u32 address) {
-    // align address to word
-    address &= ~0x3;
-
     if (!mem_check(address)) return 0;
+
+    u32 data = mem->read_u32(address & ~3);
+
+    // misaligned read - reads from forcibly aligned address "addr AND (NOT 3)", and does then rotate the data as "ROR (addr AND 3)*8"
+    if ((address & 3) != 0)
+        barrel_shift((address & 3) << 3, data, 0b11);
 
     // 8 cycles for gamepak rom access, 5 from mem_check and 3 here
     if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END)
         cycles += 3;
 
-    return mem->read_u32(address);
+    return data;
 }
 
 

@@ -416,7 +416,7 @@ void arm_7tdmi::multiply_long(u32 instruction) {
             value |= read_u8(base);
             set_register(Rd, value);
         } else { // load one word from memory
-            set_register(Rd, read_u32(base));
+            set_register(Rd, read_u32(base, true));
         }
 
         // normal loads instructions take 1S + 1N + 1I
@@ -485,7 +485,7 @@ void arm_7tdmi::multiply_long(u32 instruction) {
     switch (util::get_instruction_subset(instruction, 6, 5)) { // SH bits
         case 0b01: // unsigned halfwords
                 if (load) {
-                    set_register(Rd, read_u16(base));
+                    set_register(Rd, read_u16(base, false));
                 } else {
                     write_u16(base, get_register(Rd) & 0xFFFF);
                 }
@@ -504,7 +504,7 @@ void arm_7tdmi::multiply_long(u32 instruction) {
         
         case 0b11: // signed halfwords
                 if (load) {
-                    u32 value = (u32) read_u16(base);
+                    u32 value = read_u16(base, true);
                     if (value & 0x8000) value |= ~0b1111111111111111; // bit 15 of byte is 1, so sign extend bits 31-8 of register
                     set_register(Rd, value);
                 } else {
@@ -597,7 +597,7 @@ void arm_7tdmi::block_data_transfer(u32 instruction) {
             if (pre_index) base += 4;
             if (load) {
                 if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_back = false;
-                set_register(set_registers[i], read_u32(base));
+                set_register(set_registers[i], read_u32(base, false));
                 if (set_registers[i] == 15) pipeline_full = false;
             } else { // store
                 if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_u32(base, old_base);
@@ -614,7 +614,7 @@ void arm_7tdmi::block_data_transfer(u32 instruction) {
             if (pre_index) base -= 4;
             if (load) {
                 if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_back = false;
-                set_register(set_registers[i], read_u32(base));
+                set_register(set_registers[i], read_u32(base, false));
                 if (set_registers[i] == 15) pipeline_full = false;
             } else { // store
                 if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_u32(base, old_base);
@@ -649,7 +649,7 @@ void arm_7tdmi::block_data_transfer(u32 instruction) {
         write_u8(swap_address, source);
         set_register(Rd, temp);
     } else { // swap a word
-        u32 temp = read_u32(swap_address);
+        u32 temp = read_u32(swap_address, true);
         u32 source = get_register(Rm);
         write_u32(swap_address, source);
         set_register(Rd, temp);

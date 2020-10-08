@@ -108,18 +108,18 @@ void arm_7tdmi::fetch() {
         // fill pipeline
         switch (get_mode()) {
             case ARM:
-                pipeline[0] = read_u32(registers.r15);
+                pipeline[0] = read_u32(registers.r15, false);
                 registers.r15 += 4;
-                pipeline[1] = read_u32(registers.r15);
+                pipeline[1] = read_u32(registers.r15, false);
                 registers.r15 += 4;
-                pipeline[2] = read_u32(registers.r15);
+                pipeline[2] = read_u32(registers.r15, false);
                 break;
             case THUMB:
-                pipeline[0] = read_u16(registers.r15);
+                pipeline[0] = read_u16(registers.r15, false);
                 registers.r15 += 2;
-                pipeline[1] = read_u16(registers.r15);
+                pipeline[1] = read_u16(registers.r15, false);
                 registers.r15 += 2;
-                pipeline[2] = read_u16(registers.r15);
+                pipeline[2] = read_u16(registers.r15, false);
                 break;
         }
 
@@ -129,10 +129,10 @@ void arm_7tdmi::fetch() {
 
     switch (get_mode()) {
         case ARM:
-            pipeline[2] = read_u32(registers.r15);
+            pipeline[2] = read_u32(registers.r15, false);
             break;
         case THUMB:
-            pipeline[2] = (u16) read_u16(registers.r15);
+            pipeline[2] = (u16) read_u16(registers.r15, false);
             break;
     }
 }
@@ -142,7 +142,7 @@ void arm_7tdmi::decode(u32 instruction) {
 }
 
 void arm_7tdmi::execute(u32 instruction) {
-    std::cout << "Executing: " << std::hex << instruction << "\n";
+    //std::cout << "Executing: " << std::hex << instruction << "\n";
     switch (get_mode()) {
         case ARM:
             if (!condition_met((condition_t) util::get_instruction_subset(instruction, 31, 28))) {
@@ -253,7 +253,6 @@ void arm_7tdmi::execute(u32 instruction) {
                     break;
                 case POP_T:
                     push_pop((u16) instruction);
-                    increment_pc();
                     break;
                 case MOVM_T:
                     multiple_load_store((u16) instruction);
@@ -279,28 +278,28 @@ void arm_7tdmi::execute(u32 instruction) {
     }
 
     // // print registers
-    std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << get_register(0) << 
-				" -- R4  : 0x" << std::setw(8) << std::setfill('0') << get_register(4) << 
-				" -- R8  : 0x" << std::setw(8) << std::setfill('0') << get_register(8) << 
-				" -- R12 : 0x" << std::setw(8) << std::setfill('0') << get_register(12) << "\n";
+    // std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << get_register(0) << 
+	// 			" -- R4  : 0x" << std::setw(8) << std::setfill('0') << get_register(4) << 
+	// 			" -- R8  : 0x" << std::setw(8) << std::setfill('0') << get_register(8) << 
+	// 			" -- R12 : 0x" << std::setw(8) << std::setfill('0') << get_register(12) << "\n";
 
-			std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << get_register(1) << 
-				" -- R5  : 0x" << std::setw(8) << std::setfill('0') << get_register(5) << 
-				" -- R9  : 0x" << std::setw(8) << std::setfill('0') << get_register(9) << 
-				" -- R13 : 0x" << std::setw(8) << std::setfill('0') << get_register(13) << "\n";
+	// 		std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << get_register(1) << 
+	// 			" -- R5  : 0x" << std::setw(8) << std::setfill('0') << get_register(5) << 
+	// 			" -- R9  : 0x" << std::setw(8) << std::setfill('0') << get_register(9) << 
+	// 			" -- R13 : 0x" << std::setw(8) << std::setfill('0') << get_register(13) << "\n";
 
-			std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << get_register(2) << 
-				" -- R6  : 0x" << std::setw(8) << std::setfill('0') << get_register(6) << 
-				" -- R10 : 0x" << std::setw(8) << std::setfill('0') << get_register(10) << 
-				" -- R14 : 0x" << std::setw(8) << std::setfill('0') << get_register(14) << "\n";
+	// 		std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << get_register(2) << 
+	// 			" -- R6  : 0x" << std::setw(8) << std::setfill('0') << get_register(6) << 
+	// 			" -- R10 : 0x" << std::setw(8) << std::setfill('0') << get_register(10) << 
+	// 			" -- R14 : 0x" << std::setw(8) << std::setfill('0') << get_register(14) << "\n";
 
-			std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << get_register(3) << 
-				" -- R7  : 0x" << std::setw(8) << std::setfill('0') << get_register(7) << 
-				" -- R11 : 0x" << std::setw(8) << std::setfill('0') << get_register(11) << 
-				" -- R15 : 0x" << std::setw(8) << std::setfill('0') << get_register(15) << "\n";
+	// 		std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << get_register(3) << 
+	// 			" -- R7  : 0x" << std::setw(8) << std::setfill('0') << get_register(7) << 
+	// 			" -- R11 : 0x" << std::setw(8) << std::setfill('0') << get_register(11) << 
+	// 			" -- R15 : 0x" << std::setw(8) << std::setfill('0') << get_register(15) << "\n";
 
 	
-			std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << registers.cpsr.full << "\t" << "\n";
+	// 		std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << registers.cpsr.full << "\t" << "\n";
 }
 
 u32 arm_7tdmi::get_register(uint32_t reg) {
@@ -818,12 +817,12 @@ u8 arm_7tdmi::read_u8(u32 address) {
  * pass true if the halfword is signed, false otherwise
  * This needs to be known for misalignment reasons
  */
-u32 arm_7tdmi::read_u16(u32 address, bool signed) {
+u32 arm_7tdmi::read_u16(u32 address, bool sign) {
     if (!mem_check(address)) return 0;
 
     u32 data;
 
-    if (signed) {
+    if (sign) {
         data = (u32) mem->read_u16(address);
 
         // misaligned address, sign extend BYTE value

@@ -601,6 +601,8 @@ void arm_7tdmi::push_pop(u16 instruction) {
             cycle(base, 's'); // 1S
         }
 
+        increment_pc();
+
     } else { // POP Rlist
         for (int i = 0; i < num_registers; ++i) {
             set_register(set_registers[i], read_u32(base, false));
@@ -609,9 +611,11 @@ void arm_7tdmi::push_pop(u16 instruction) {
         }
 
         if (R) { // pop pc
-            set_register(15, read_u32(base, false));
+            set_register(15, read_u32(base, false) & ~1); // guaruntee halfword alignment
             base += 4; // decrement stack pointer (4 bytes for word alignment)
             cycle(base, 's');
+        } else {
+            increment_pc();
         }
 
         // write base back into sp

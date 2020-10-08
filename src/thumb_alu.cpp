@@ -379,7 +379,7 @@ void arm_7tdmi::pc_rel_load(u16 instruction) {
     base += word8;
 
     cycle(base, 'i'); // 1I
-    set_register(Rd, read_u32(base));
+    set_register(Rd, read_u32(base, true));
     cycle(registers.r15, 'n'); // 1N
     cycle(registers.r15 + 2, 's'); // 1S
 }
@@ -399,7 +399,7 @@ void arm_7tdmi::load_store_reg(u16 instruction) {
         cycle(registers.r15, 'n'); // 1N
         if (byte) set_register(Rd, read_u8(base));
         else {
-            set_register(Rd, read_u32(base));
+            set_register(Rd, read_u32(base, true));
             cycle(base, 'i'); // + 1I cycles for non byte load
         }
         cycle(base, 'n'); // 1N
@@ -428,8 +428,7 @@ void arm_7tdmi::load_store_signed_halfword(u16 instruction) {
         cycle(registers.r15, 's');
     } else if (!S && H) { // load halfword
         cycle(registers.r15, 's');
-        u32 value = 0;
-        value |= read_u16(base);
+        u32 value = read_u16(base, false);
         cycle(base, 'i');
         set_register(Rd, value);
         cycle(registers.r15 + 2, 's'); // + 1S cycles for non byte load
@@ -442,9 +441,8 @@ void arm_7tdmi::load_store_signed_halfword(u16 instruction) {
         cycle(registers.r15 + 2, 's'); // + 1S cycles for non byte load
     } else { // load sign-extended halfword
         cycle(registers.r15, 'n');
-        u32 value = read_u16(base);
+        u32 value = read_u16(base, true);
         cycle(base, 'i');
-        if (value & 0x8000) value |= 0xFFFF0000; // bit 15 of byte is 1, so sign extend bits 31-16 of register
         set_register(Rd, value);
         cycle(registers.r15 + 2, 's'); // + 1S cycles for non byte load
     }
@@ -470,7 +468,7 @@ void arm_7tdmi::load_store_immediate(u16 instruction) {
     } else if (load && !byte) { // load word
         cycle(registers.r15, 's'); // 1S
         cycle(registers.r15, 'i'); // 1I
-        set_register(Rd,  read_u32(base));
+        set_register(Rd,  read_u32(base, true));
         cycle(registers.r15 + 2, 'n');
     } else if (!load && byte) { // store byte
         cycle(registers.r15, 'n'); // 1N
@@ -497,7 +495,7 @@ void arm_7tdmi::load_store_halfword(u16 instruction) {
 
     if (load) {
         cycle(registers.r15, 's'); // + 1S cycles for load
-        set_register(Rd, read_u16(base));
+        set_register(Rd, read_u16(base, false));
     } else { // store
         write_u16(base, get_register(Rd) & 0xFFFF);
     }
@@ -518,7 +516,7 @@ void arm_7tdmi::sp_load_store(u16 instruction) {
 
     if (load) {
         cycle(base, 's'); // + 1S cycles for load
-        set_register(Rd, read_u32(base));
+        set_register(Rd, read_u32(base, true));
     } else { // store
         write_u32(base, get_register(Rd));
     }
@@ -605,13 +603,13 @@ void arm_7tdmi::push_pop(u16 instruction) {
 
     } else { // POP Rlist
         for (int i = 0; i < num_registers; ++i) {
-            set_register(set_registers[i], read_u32(base));
+            set_register(set_registers[i], read_u32(base, false));
             base += 4; // decrement stack pointer (4 bytes for word alignment)
             cycle(base, 's');
         }
 
         if (R) { // pop pc
-            set_register(15, read_u32(base));
+            set_register(15, read_u32(base, false));
             base += 4; // decrement stack pointer (4 bytes for word alignment)
             cycle(base, 's');
         }
@@ -641,7 +639,7 @@ void arm_7tdmi::multiple_load_store(u16 instruction) {
 
     if (load) { 
         for (int i = 0; i < num_registers; ++i) {
-            set_register(set_registers[i], read_u32(base));
+            set_register(set_registers[i], read_u32(base, false));
             base += 4; // decrement stack pointer (4 bytes for word alignment)
             cycle(base, 's');
         }

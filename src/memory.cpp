@@ -81,8 +81,8 @@ void Memory::write_u16(u32 address, u16 value) {
 
 // TODO - add protection against VRAM byte writes
 void Memory::write_u8(u32 address, u8 value) {
-    if (address >= MEM_VRAM_START && address <= MEM_VRAM_END)
-        std::cout << "Writing to vram \n";
+    // if (address >= MEM_VRAM_START && address <= MEM_VRAM_END)
+    //     std::cout << "Writing to vram \n";
     switch (address) {
 
         // REG_DISPCNT

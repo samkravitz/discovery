@@ -641,6 +641,12 @@ void arm_7tdmi::multiple_load_store(u16 instruction) {
 
     cycle(base, 'i');
 
+    // empty Rlist, Rb = Rb + 0x40
+    if (num_registers == 0) {
+        set_register(Rb, get_register(Rb) + 0x40);
+        return;
+    }
+
     if (load) { 
         for (int i = 0; i < num_registers; ++i) {
             set_register(set_registers[i], read_u32(base, false));

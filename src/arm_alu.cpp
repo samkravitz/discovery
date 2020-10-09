@@ -34,7 +34,7 @@
     // swith to THUMB mode if necessary
     if ((branch_address & 1) == 1) {
         registers.r15 -= 1; // continue at Rn - 1 for thumb mode
-        registers.cpsr.bits.t = 1; // TBIT
+        set_mode(THUMB);
     }
 
     // flush pipeline for refill
@@ -228,6 +228,12 @@
         default:
             std::cerr << "Unrecognized data processing opcode: " << util::get_instruction_subset(instruction, 24, 21) << "\n";
             break;
+    }
+
+    // if writing new value to PC, don't increment PC
+    if (Rd == 15) {
+        registers.r15 -= 4;
+        pipeline_full = false;
     }
 
     cycle(registers.r15, 's'); // 1S cycles for normal data processing

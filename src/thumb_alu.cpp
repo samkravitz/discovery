@@ -354,7 +354,7 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
             // swith to ARM mode if necessary
             if ((op1 & 1) == 0) {
                 // registers.r15 += 4; // continue at Rn + 4 in arm mode (skip following halfword)
-                registers.cpsr.bits.t = 0; // TBIT
+                set_mode(ARM);
             } else {
                 // clear bit 0
                 registers.r15 &= ~1;

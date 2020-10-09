@@ -3,7 +3,7 @@ LIBARIES = -lstdc++fs -l SDL2
 CFLAGS = -g 
 BIN = bin/
 SOURCEDIR = src/
-OBJECTS = arm_7tdmi.o util.o memory.o gpu.o arm_alu.o lcd_stat.o obj_attr.o
+OBJECTS = arm_7tdmi.o util.o memory.o gpu.o lcd_stat.o obj_attr.o arm_alu.o thumb_alu.o
 VPATH = $(SOURCEDIR)
 TESTS = $(SOURCEDIR)tests/tests.cpp $(SOURCEDIR)tests/instruction_tests.cpp $(SOURCEDIR)tests/data_processing_tests.cpp
 
@@ -15,8 +15,14 @@ discovery: $(OBJECTS) $(SOURCEDIR)discovery.cpp
 test: $(OBJECTS) $(TESTS)
 	g++ -o test $(OBJECTS) $(TESTS) $(LIBARIES)
 
-arm_7tdmi.o: $(SOURCEDIR)arm_7tdmi.h $(SOURCEDIR)arm_7tdmi.cpp
-	$(CC) $(CFLAGS) -c $(SOURCEDIR)arm_alu.cpp $(SOURCEDIR)arm_7tdmi.cpp
+arm_7tdmi.o: $(SOURCEDIR)arm_7tdmi.cpp $(SOURCEDIR)arm_7tdmi.h
+	$(CC) $(CFLAGS) -c $(SOURCEDIR)arm_7tdmi.cpp
+
+arm_alu.o: $(SOURCEDIR)arm_alu.cpp $(SOURCEDIR)arm_7tdmi.h
+	$(CC) $(CFLAGS) -c $(SOURCEDIR)arm_alu.cpp
+
+thumb_alu.o: $(SOURCEDIR)thumb_alu.cpp $(SOURCEDIR)arm_7tdmi.h
+	$(CC) $(CFLAGS) -c $(SOURCEDIR)thumb_alu.cpp
 
 util.o: $(SOURCEDIR)common/util.h $(SOURCEDIR)common/util.cpp
 	$(CC) $(CFLAGS) -c $(SOURCEDIR)common/util.cpp

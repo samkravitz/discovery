@@ -108,18 +108,18 @@ void arm_7tdmi::fetch() {
         // fill pipeline
         switch (get_mode()) {
             case ARM:
-                pipeline[0] = read_u32(registers.r15);
+                pipeline[0] = read_u32(registers.r15, false);
                 registers.r15 += 4;
-                pipeline[1] = read_u32(registers.r15);
+                pipeline[1] = read_u32(registers.r15, false);
                 registers.r15 += 4;
-                pipeline[2] = read_u32(registers.r15);
+                pipeline[2] = read_u32(registers.r15, false);
                 break;
             case THUMB:
-                pipeline[0] = read_u16(registers.r15);
+                pipeline[0] = read_u16(registers.r15, false);
                 registers.r15 += 2;
-                pipeline[1] = read_u16(registers.r15);
+                pipeline[1] = read_u16(registers.r15, false);
                 registers.r15 += 2;
-                pipeline[2] = read_u16(registers.r15);
+                pipeline[2] = read_u16(registers.r15, false);
                 break;
         }
 
@@ -129,10 +129,10 @@ void arm_7tdmi::fetch() {
 
     switch (get_mode()) {
         case ARM:
-            pipeline[2] = read_u32(registers.r15);
+            pipeline[2] = read_u32(registers.r15, false);
             break;
         case THUMB:
-            pipeline[2] = (u16) read_u16(registers.r15);
+            pipeline[2] = (u16) read_u16(registers.r15, false);
             break;
     }
 }
@@ -253,7 +253,6 @@ void arm_7tdmi::execute(u32 instruction) {
                     break;
                 case POP_T:
                     push_pop((u16) instruction);
-                    increment_pc();
                     break;
                 case MOVM_T:
                     multiple_load_store((u16) instruction);
@@ -813,24 +812,52 @@ u8 arm_7tdmi::read_u8(u32 address) {
     return mem->read_u8(address);
 }
 
-u32 arm_7tdmi::read_u16(u32 address) {
+/*
+ * Reads a halfword from the specified memory address
+ * pass true if the halfword is signed, false otherwise
+ * This needs to be known for misalignment reasons
+ */
+u32 arm_7tdmi::read_u16(u32 address, bool sign) {
     if (!mem_check(address)) return 0;
 
-    u32 data = (u32) mem->read_u16(address & ~1);
+    u32 data;
 
-    // misaligned read - reads from forcibly aligned address "addr AND (NOT 31", and does then rotate the data as "ROR 8"
-    if ((address & 1) != 0)
-        barrel_shift(8, data, 0b11);
+    if (sign) {
+        data = (u32) mem->read_u16(address);
+
+        // misaligned address, sign extend BYTE value
+        if ((address & 1) != 0) {
+            if (data & 0x80)
+                data |= 0xFFFFFF00;
+        } else { // correctly aligned address, sign extend HALFWORD value
+            if (data & 0x8000)
+                data |= 0xFFFF0000;
+        }
+    } else {
+        // read from forcibly aligned address
+        data = (u32) mem->read_u16(address & ~1);
+        // misaligned read - reads from forcibly aligned address "addr AND 1", and does then rotate the data as "ROR 8"
+        if ((address & 1) != 0)
+            barrel_shift(8, data, 0b11);
+    }
+    
     return data;    
 }
 
-u32 arm_7tdmi::read_u32(u32 address) {
+/*
+ * Reads a word from the specified memory address
+ * pass true if this is a LDR or SWP operation false otherwise
+ * This needs to be known for misalignment reasons
+ */
+u32 arm_7tdmi::read_u32(u32 address, bool ldr) {
     if (!mem_check(address)) return 0;
-
+    
+    // read from forcibly aligned address
     u32 data = mem->read_u32(address & ~3);
 
     // misaligned read - reads from forcibly aligned address "addr AND (NOT 3)", and does then rotate the data as "ROR (addr AND 3)*8"
-    if ((address & 3) != 0)
+    // only used for LDR and SWP operations, otherwise just use data from forcibly aligned address
+    if (ldr && ((address & 3) != 0))
         barrel_shift((address & 3) << 3, data, 0b11);
 
     // 8 cycles for gamepak rom access, 5 from mem_check and 3 here

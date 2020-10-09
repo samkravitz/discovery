@@ -119,8 +119,8 @@ class arm_7tdmi {
 
         // safely interface with memory
         u8 read_u8(u32);
-        u32 read_u16(u32);
-        u32 read_u32(u32);
+        u32 read_u16(u32, bool);
+        u32 read_u32(u32, bool);
         void write_u8(u32, u8);
         void write_u16(u32, u16);
         void write_u32(u32, u32);

@@ -657,9 +657,16 @@ void arm_7tdmi::block_data_transfer(u32 instruction) {
 }
 
 void arm_7tdmi::software_interrupt(u32 instruction) {
-    std::cout << "software interrupt arm";
-    exit(0);
-    set_state(SVC);
-    set_register(15, 0x08);
-    set_register(17, get_register(16)); // put CPSR in SPSR_<svc>
+    std::cout << "software interrupt arm\n";
+    
+    // bits 23 - 16 determine which interrupt
+    switch (instruction >> 16 & 0xFF) {
+
+        case 0x06:
+            swi_division();
+            break;
+
+        default:
+            std::cout << "Unknown SWI code: " << std::hex << (instruction >> 16 & 0xFF) << "\n";
+    }
 }

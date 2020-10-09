@@ -159,7 +159,10 @@ class arm_7tdmi {
         void unconditional_branch(u16);
         void long_branch_link(u16);
 
-        // handle interrupts
+        // software interrupts (swi)
+        void swi_division();
+
+        // handle hardware interrupts
         void handle_interrupt();
 
         // misc

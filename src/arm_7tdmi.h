@@ -172,7 +172,8 @@ class arm_7tdmi {
         u8   barrel_shift(u32, u32 &, u8);
         void increment_pc();
         bool condition_met(condition_t);
-        void update_psr(bool, u32, bool);
+        void update_cpsr(u32, bool);
+        void update_spsr(u32, bool);
         bool mem_check(u32);
 
     private:

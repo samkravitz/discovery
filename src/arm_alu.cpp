@@ -118,7 +118,7 @@
         u32 shift = util::get_instruction_subset(instruction, 11, 4);
         u8 shift_type = util::get_instruction_subset(instruction, 6, 5);
         u32 shift_amount;
-        u32 Rm = instruction & 15; // bits 3-0 
+        u32 Rm = instruction & 0b1111; // bits 3-0 
         op2 = get_register(Rm);
 
         // get shift amount
@@ -128,9 +128,13 @@
         } else { // shift contained in immediate value in instruction
             shift_amount = util::get_instruction_subset(instruction, 11, 7);
 
-            // encodings of LSR #0, ASR #0, and ROR #0 should be interpreted as #LSR #2, ASR #32, and ROR #32
-            if (shift_amount == 0 && shift_type != 0) // shift_type == 0 is LSL
-                shift_amount = 32;
+            // encodings of LSR #0, ASR #0, and ROR #0 should be interpreted as LSR #32, ASR #32, and RRX
+            if (shift_amount == 0 && shift_type != 0) {// shift_type == 0 is LSL
+                if (shift_type == 0b11) // rotate right extended
+                    shift_amount = 0xFFFFFFFF;
+                else // LSR #32 or ASR #32
+                    shift_amount = 32;
+            }
         }
 
         carry_out = barrel_shift(shift_amount, op2, shift_type);
@@ -194,12 +198,8 @@
             if (set_condition_code) update_flags_logical(result, carry);
             break;
         case CMP:
-        if (Rd == 15) exit(0);
-            //std::cout << op1 << " " << op2 << "\n";
             result = op1 - op2;
-            //std::cout << "Flags before: " << (int) registers.cpsr.bits.n << (int) registers.cpsr.bits.z << (int) registers.cpsr.bits.c << (int) registers.cpsr.bits.v << "\n";
             if (set_condition_code) update_flags_subtraction(op1, op2, result);
-            //std::cout << "Flags after: " << (int) registers.cpsr.bits.n << (int) registers.cpsr.bits.z << (int) registers.cpsr.bits.c << (int) registers.cpsr.bits.v << "\n\n";
             break;
         case CMN:
             result = op1 + op2;
@@ -304,7 +304,7 @@ void arm_7tdmi::multiply_long(u32 instruction) {
 
 // allow access to CPSR and SPSR registers
  void arm_7tdmi::psr_transfer(u32 instruction) {
-    bool spsr = util::get_instruction_subset(instruction, 22, 22) == 1 ? 1 : 0;
+    bool spsr = util::get_instruction_subset(instruction, 22, 22) == 1;
 
     if (util::get_instruction_subset(instruction, 21, 16) == 0b001111) { // MRS (transfer PSR contents to register)
         u32 Rd = util::get_instruction_subset(instruction, 15, 12);
@@ -313,59 +313,50 @@ void arm_7tdmi::multiply_long(u32 instruction) {
             return;
         }
 
-        if (spsr) { // Rd <- spsr_<mode>
-            set_register(Rd, get_register(17));
-        } else { // Rd <- cpsr
-            set_register(Rd, get_register(16));
-        }
-    } else if (util::get_instruction_subset(instruction, 21, 12) == 0b1010011111) { // MSR (transfer register contents to PSR)
+        if (spsr)
+            set_register(Rd, get_register(17)); // Rd <- spsr_<mode>
+        else
+            set_register(Rd, get_register(16)); // Rd <- cpsr
+    }
+    
+    else if (util::get_instruction_subset(instruction, 21, 12) == 0b1010011111) { // MSR (transfer register contents to PSR)
         u32 Rm = util::get_instruction_subset(instruction, 3, 0);
         if (Rm == 15) {
             std::cerr << "Can't use r15 as a PSR source register" << "\n";
             return;
         }
         
-        update_psr(spsr, get_register(Rm), false);
-    } else if (util::get_instruction_subset(instruction, 21, 12) == 0b1010001111) { // MSR (transfer register contents or immediate value to PSR flag bits only)
+        u32 new_value = get_register(Rm);
+        if (spsr)
+            update_spsr(new_value, false);
+        else
+            update_cpsr(new_value, false);
+    }
+    
+    else if (util::get_instruction_subset(instruction, 21, 12) == 0b1010001111) { // MSR (transfer register contents or immediate value to PSR flag bits only)
         bool immediate = util::get_instruction_subset(instruction, 25, 25) == 1;
-        u32 transfer_value;
-        // # of bits in a word (should be 32)
-        size_t num_bits = sizeof(u32) * 8;
+        u32 new_value;
 
         if (immediate) { // rotate on immediate value 
-            transfer_value = util::get_instruction_subset(instruction, 7, 0);
+            new_value = util::get_instruction_subset(instruction, 7, 0);
             uint32_t rotate = util::get_instruction_subset(instruction, 11, 8);
             rotate *= 2; // rotate by twice the value in the rotate field
 
             // perform right rotation
-            for (int i = 0; i < rotate; ++i) {
-                uint8_t dropped_lsb = transfer_value & 1;  
-                transfer_value >>= 1;
-                transfer_value |= (dropped_lsb << num_bits - 1);
-            }
+            barrel_shift(rotate, new_value, 0b11); // code for ROR
         } else { // use value in register
             u32 Rm = util::get_instruction_subset(instruction, 3, 0);
-            transfer_value = get_register(Rm);
+            new_value = get_register(Rm);
         }
 
-        // clear bits [27-0] of transfer_value
-        transfer_value >>= 28;
-        transfer_value <<= 28;
+        if (spsr)
+            update_spsr(new_value, true);
+        else
+            update_cpsr(new_value, true);
 
-        u32 old_spr_value;
-        if (spsr) {
-            old_spr_value = get_register(17);
-        } else {
-            old_spr_value = get_register(16);
-        }
-
-        // move transfer value into flag bits[31:28] of SPR
-        old_spr_value <<= 4;
-        old_spr_value >>= 4;
-        old_spr_value |= transfer_value;
-        update_psr(spsr, transfer_value, true);
-
-    } else { // should not execute
+    }
+    
+    else { // should not execute
         std::cerr << "Bad PSR transfer instruction!" << "\n";
         return;
     }

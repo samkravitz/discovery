@@ -361,8 +361,10 @@ u32 arm_7tdmi::get_register(uint32_t reg) {
                 case UND: return registers.r14_und;
             }
 
-        case 0xf: return registers.r15; // all banks share r15
-        case 0x10: return registers.cpsr.full;// all banks share cpsr
+        case 0xf:
+            return registers.r15; // all banks share r15
+        case 0x10:
+            return registers.cpsr.full; // all banks share cpsr
         case 0x11:
             switch(get_state()) {
                 case FIQ: return registers.spsr_fiq.full;
@@ -391,6 +393,7 @@ void arm_7tdmi::set_register(int reg, u32 val) {
         case 0x6: registers.r6 = val; break;
         case 0x7: registers.r7 = val; break;
 
+        // banked registers
         case 0x8:
             switch (get_state()) {
                 case FIQ:
@@ -492,8 +495,7 @@ void arm_7tdmi::set_register(int reg, u32 val) {
 
 
         case 0xf: registers.r15 = val; break; // all banks share r15
-        case 0x10: update_psr(false, val, false); break; // all banks share cpsr
-        case 0x11: update_psr(true, val, false); break; // special case for spsr
+        case 0x10: registers.cpsr.full = val; break; // all banks share cpsr
         default:
             std::cerr << "Unknown register: " << reg << "\n";
             break;
@@ -631,11 +633,17 @@ uint8_t arm_7tdmi::barrel_shift(u32 shift_amount, u32 &num, u8 opcode) {
         
         // ROR
         case 0b11:
-            for (int i = 0; i < shift_amount; ++i) {
+            if (shift_amount == 0xFFFFFFFF) { // rotate right extended
                 carry_out = num & 1;
-                uint8_t dropped_lsb = num & 1;  
                 num >>= 1;
-                num |= (dropped_lsb << num_bits - 1);
+                num |= get_condition_code_flag(C) << (num_bits - 1);
+            } else { // normal rotate right
+                for (int i = 0; i < shift_amount; ++i) {
+                    carry_out = num & 1;
+                    uint8_t dropped_lsb = num & 1;  
+                    num >>= 1;
+                    num |= (dropped_lsb << num_bits - 1);
+                }
             }
             break;
     }
@@ -651,38 +659,10 @@ inline void arm_7tdmi::increment_pc() {
 
 
 /*
- * Updates the value in the psr
+ * Updates the value in the cpsr
  * Can also change the emulator's state or mode depending on the value
- * parameter spsr is true if the psr in question is current bank's spsr
- * else it is the cpsr
  */ 
-void arm_7tdmi::update_psr(bool spsr, u32 value, bool flags_only) {
-    if (spsr) {
-        switch (get_state()) {
-            case USR:
-                std::cerr << "Error: SPSR does not exist in user mode" << "\n";
-                return;
-            case FIQ:
-                registers.spsr_fiq.full = value;
-                break;
-            case SVC:
-                registers.spsr_svc.full = value;
-                break;
-            case ABT:
-                registers.spsr_abt.full = value;
-                break;
-            case IRQ:
-                registers.spsr_irq.full = value;
-                break;
-            case UND:
-                registers.spsr_und.full = value;
-                break;
-        }
-
-        return;
-    }
-
-    // cpsr
+void arm_7tdmi::update_cpsr(u32 value, bool flags_only) {
     status_register sr;
     sr.full = value;
 
@@ -695,71 +675,101 @@ void arm_7tdmi::update_psr(bool spsr, u32 value, bool flags_only) {
         return;
     }
 
-    // switch (state) {
-    //     case USR: // in user mode, only condition bits can be changed
-    //         registers.cpsr.bits.n = sr.bits.n;
-    //         registers.cpsr.bits.z = sr.bits.z;
-    //         registers.cpsr.bits.c = sr.bits.c;
-    //         registers.cpsr.bits.v = sr.bits.v;
-    //         return;
-    //     case SYS:
-    //     case FIQ:
-    //     case SVC:
-    //     case ABT:
-    //     case IRQ:
-    //     case UND:
-    //         switch (sr.bits.state) {
-    //             case USR:
-    //                 registers.cpsr.bits.state = sr.bits.state;
-    //                 set_state(USR);
-    //                 break;
-    //             case FIQ:
-    //                 if (registers.cpsr.bits.f == 1) break; // fiq disabled bit set
-    //                 registers.cpsr.bits.state = sr.bits.state;
-    //                 set_state(FIQ);
-    //                 break;
-    //             case SVC:
-    //                 registers.cpsr.bits.state = sr.bits.state;
-    //                 set_state(SVC);
-    //                 break;
-    //             case ABT:
-    //                 registers.cpsr.bits.state = sr.bits.state;
-    //                 set_state(ABT);
-    //                 break;
-    //             case IRQ:
-    //                 if (registers.cpsr.bits.i == 1) break; // irq disabled bit set
-    //                 registers.cpsr.bits.state = sr.bits.state;
-    //                 set_state(IRQ);
-    //                 break;
-    //             case UND:
-    //                 registers.cpsr.bits.state = sr.bits.state;
-    //                 set_state(UND);
-    //                 break;
-    //         }
-    //     break;
-    // }
+    registers.cpsr.full = value;
 
-    // update N, Z, C, V, I, F, and T bits of cpsr
-    // registers.cpsr.bits.n = sr.bits.n;
-    // registers.cpsr.bits.z = sr.bits.z;
-    // registers.cpsr.bits.c = sr.bits.c;
-    // registers.cpsr.bits.v = sr.bits.v;
-
-    // registers.cpsr.bits.i = sr.bits.i; // irq disable flag
-    // registers.cpsr.bits.f = sr.bits.f; // fiq disable flag
-
-    if (registers.cpsr.bits.t != sr.bits.n) {
+    if (registers.cpsr.bits.t != sr.bits.t) {
         std::cout << "Software is changing TBIT in CPSR!" << "\n"; // is this allowed??
     }
 
-    if (sr.bits.state == IRQ && registers.cpsr.bits.i == 1) return; // irq disabled bit set
-    if (sr.bits.state == FIQ && registers.cpsr.bits.f == 1) return; // fiq disabled bit set
+    // if (sr.bits.state == IRQ && registers.cpsr.bits.i == 1) return; // irq disabled bit set
+    // if (sr.bits.state == FIQ && registers.cpsr.bits.f == 1) return; // fiq disabled bit set
+}
 
-    if (sr.bits.t == 1) set_mode(THUMB);
-    else set_mode(ARM);
+/*
+ * Updates the value in the spsr <mode>
+ */ 
+void arm_7tdmi::update_spsr(u32 value, bool flags_only) {
+    status_register old_spsr;
 
-    registers.cpsr.full = value;
-    set_state(sr.bits.state);
+    // get spsr_<mode>
+    switch (get_state()) {
+        case USR:
+            // spsr doesn't exist in user mode
+            std::cerr << "Error: SPSR does not exist in user mode" << "\n";
+            return;
+        case FIQ:
+            old_spsr = registers.spsr_fiq;
+            break;
+        case SVC:
+            old_spsr = registers.spsr_svc;
+            break;
+        case ABT:
+            old_spsr = registers.spsr_abt;
+            break;
+        case IRQ:
+            old_spsr = registers.spsr_irq;
+            break;
+        case UND:
+            old_spsr = registers.spsr_und;
+            break;
+    }
+
+    // new spsr
+    status_register sr;
+    sr.full = value;
+
+    // don't have to check for USR mode b/c that was done above
+    if (flags_only) {
+        old_spsr.bits.n = sr.bits.n;
+        old_spsr.bits.z = sr.bits.z;
+        old_spsr.bits.c = sr.bits.c;
+        old_spsr.bits.v = sr.bits.v;
+
+        // set updated spsr_<mode>
+        switch (get_state()) {
+            case FIQ:
+                registers.spsr_fiq = old_spsr;
+                break;
+            case SVC:
+                registers.spsr_svc = old_spsr;
+                break;
+            case ABT:
+                registers.spsr_abt = old_spsr;
+                break;
+            case IRQ:
+                registers.spsr_irq = old_spsr;
+                break;
+            case UND:
+                registers.spsr_und = old_spsr;
+                break;
+        }
+        
+        return;
+    }
+
+    old_spsr.full = value;
+
+    // set updated spsr_<mode>
+    switch (get_state()) {
+        case FIQ:
+            registers.spsr_fiq = old_spsr;
+            break;
+        case SVC:
+            registers.spsr_svc = old_spsr;
+            break;
+        case ABT:
+            registers.spsr_abt = old_spsr;
+            break;
+        case IRQ:
+            registers.spsr_irq = old_spsr;
+            break;
+        case UND:
+            registers.spsr_und = old_spsr;
+            break;
+    }
+
+    // if (sr.bits.state == IRQ && registers.cpsr.bits.i == 1) return; // irq disabled bit set
+    // if (sr.bits.state == FIQ && registers.cpsr.bits.f == 1) return; // fiq disabled bit set
 }
 
 // advances the cpu clock

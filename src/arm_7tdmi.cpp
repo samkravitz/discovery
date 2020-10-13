@@ -382,6 +382,7 @@ u32 arm_7tdmi::get_register(uint32_t reg) {
                 case SVC: return registers.spsr_svc.full;
                 case ABT: return registers.spsr_abt.full;
                 case IRQ: return registers.spsr_irq.full;
+                case SYS: return registers.cpsr.full;
                 case UND: return registers.spsr_und.full;
             }
             break;
@@ -719,6 +720,9 @@ void arm_7tdmi::update_spsr(u32 value, bool flags_only) {
             break;
         case IRQ:
             old_spsr = registers.spsr_irq;
+            break;
+        case SYS:
+            old_spsr = registers.cpsr;
             break;
         case UND:
             old_spsr = registers.spsr_und;

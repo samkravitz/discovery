@@ -449,9 +449,8 @@ void arm_7tdmi::multiply_long(u32 instruction) {
         else base -= offset; // offset is subtracted from base
     }
 
-    if ((write_back || !pre_index) && (!load || Rd != Rn)) {
+    if ((write_back || !pre_index) && (!load || Rd != Rn))
         set_register(Rn, base);
-    }     
 }
 
 // transfer halfword and signed data
@@ -467,9 +466,8 @@ void arm_7tdmi::multiply_long(u32 instruction) {
     u32 offset;
     u32 base = get_register(Rn);
 
-    if (Rm == 15) {
+    if (Rm == 15)
         std::cerr << "r15 cannot be used as offset register for HDT" << "\n";
-    }
 
     if (immediate) {
         u32 high_nibble = util::get_instruction_subset(instruction, 11, 8);
@@ -487,11 +485,10 @@ void arm_7tdmi::multiply_long(u32 instruction) {
     // transfer
     switch (util::get_instruction_subset(instruction, 6, 5)) { // SH bits
         case 0b01: // unsigned halfwords
-                if (load) {
+                if (load)
                     set_register(Rd, read_u16(base, false));
-                } else {
+                else
                     write_u16(base, get_register(Rd) & 0xFFFF);
-                }
             break;
         
         case 0b10: // signed byte
@@ -526,9 +523,8 @@ void arm_7tdmi::multiply_long(u32 instruction) {
         else base -= offset; // offset is subtracted from base
     }
 
-    if ((write_back || !pre_index) && Rn != 15) {
+    if ((write_back || !pre_index) && (!load || Rd != Rn))
         set_register(Rn, base);
-    }
 
     // Execution Time:
     // For Normal LDR, 1S+1N+1I.

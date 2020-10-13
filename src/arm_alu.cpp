@@ -560,7 +560,7 @@ void arm_7tdmi::block_data_transfer(u32 instruction) {
     u8 transfer_reg = 0xFF;
     u32 old_base = base;
 
-    bool r15_in_register_list = (register_list >> 15) & 0x1;
+    bool r15_in_register_list = ((register_list >> 15) & 0x1) == 1;
 
     if (Rn == 15) {
         std::cerr << "r15 cannot be used as base register in BDT!" << "\n";
@@ -572,16 +572,49 @@ void arm_7tdmi::block_data_transfer(u32 instruction) {
     for (int i = 0; i < 16; ++i) {
         if (register_list >> i & 1) {
             set_registers[num_registers] = i;
-            if (num_registers == 0) transfer_reg = i; // get first register in list
+            //if (num_registers == 0) transfer_reg = i; // get first register in list
             num_registers++;
         }
     }
 
     // TODO - this
     // special case - rlist = 0
-    if (num_registers == 0) {
-        if (load) { // load r15
+    // if (num_registers == 0) {
+    //     if (load) { // load r15
 
+    //     }
+    // }
+
+    u32 lowest_address = up ? base : base - num_registers * 4;
+    base = lowest_address;
+
+    if (load) { // load from memory
+        for (int i = 0; i < num_registers; ++i) {
+            if (pre_index) // pre increment
+                base += 4;
+
+            set_register(set_registers[i], read_u32(base, false));
+            if (set_registers[i] == 15) // loading into r15
+                pipeline_full = false; 
+
+            if (!pre_index) // post increment
+                base += 4;
+        }
+    }
+
+    else { // store to memory
+        for (int i = 0; i < num_registers; ++i) {
+            if (pre_index) // pre increment
+                base += 4;
+                
+            u32 value = get_register(set_registers[i]);
+            // if Rd is r15, the stored address will be the address of the current instruction plus 12
+            if (set_registers[i] == 15)
+                value += 4;
+            write_u32(base, value);
+
+            if (!pre_index) // post increment
+                base += 4;
         }
     }
     
@@ -589,45 +622,60 @@ void arm_7tdmi::block_data_transfer(u32 instruction) {
      * Transfer registers or memory
      * One of the ugliest blocks of code I've ever written... yikes
      */
-    if (up) { // addresses increment
+    // if (up) { // addresses increment
 
-        for (int i = 0; i < num_registers; ++i) {
+    //     for (int i = 0; i < num_registers; ++i) {
 
-            if (pre_index) base += 4;
-            if (load) {
-                if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_back = false;
-                set_register(set_registers[i], read_u32(base, false));
-                if (set_registers[i] == 15) pipeline_full = false;
-            } else { // store
-                if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_u32(base, old_base);
-                else write_u32(base, get_register(set_registers[i]));
-            }
-            if (!pre_index) base += 4;
+    //         if (pre_index) base += 4;
+    //         if (load) {
+    //             if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_back = false;
+    //             set_register(set_registers[i], read_u32(base, false));
+    //             if (set_registers[i] == 15) pipeline_full = false;
+    //         } else { // store
+    //             if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_u32(base, old_base);
+    //             else {
+    //                 u32 value = get_register(set_registers[i]);
+    //                 // if Rd is r15, the stored address will be the address of the current instruction plus 12
+    //                 if (set_registers[i] == 15)
+    //                     value += 4;
+    //                 write_u32(base, value);
+    //             }
+    //         }
+    //         if (!pre_index) base += 4;
 
-        }
+    //     }
 
-    } else { // addresses decrement
+    // } else { // addresses decrement
 
-        for (int i = num_registers - 1; i >= 0; --i) {
+    //     for (int i = num_registers - 1; i >= 0; --i) {
 
-            if (pre_index) base -= 4;
-            if (load) {
-                if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_back = false;
-                set_register(set_registers[i], read_u32(base, false));
-                if (set_registers[i] == 15) pipeline_full = false;
-            } else { // store
-                if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_u32(base, old_base);
-                else write_u32(base, get_register(set_registers[i]));
-            }
-            if (!pre_index) base -= 4;
+    //         if (pre_index) base -= 4;
+    //         if (load) {
+    //             if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_back = false;
+    //             set_register(set_registers[i], read_u32(base, false));
+    //             if (set_registers[i] == 15) pipeline_full = false;
+    //         } else { // store
+    //             if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_u32(base, old_base);
+    //             else {
+    //                 u32 value = get_register(set_registers[i]);
+    //                 // if Rd is r15, the stored address will be the address of the current instruction plus 12
+    //                 if (set_registers[i] == 15)
+    //                     value += 4;
+    //                 write_u32(base, value);
+    //             }
+    //         }
+    //         if (!pre_index) base -= 4;
 
-        }
+    //     }
 
-    }
+    // }
 
     if (!(r15_in_register_list && load)) increment_pc(); // increment pc if flush is not necessary
     if (load_psr) set_state(temp_state); // restore cpu state
-    if (write_back) set_register(Rn, base); // write back final address if necessary
+    if (write_back) {
+        u32 write_back_address = up ? base : lowest_address;
+        set_register(Rn, write_back_address); // write back final address if necessary
+    }
 }
 
  void arm_7tdmi::single_data_swap(u32 instruction) {

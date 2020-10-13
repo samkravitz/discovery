@@ -309,8 +309,6 @@ void arm_7tdmi::execute(u32 instruction) {
             if (get_condition_code_flag(V))
                 std::cout << "V";
             std::cout << "\n";
-            
-            
 }
 
 u32 arm_7tdmi::get_register(uint32_t reg) {
@@ -919,7 +917,7 @@ void arm_7tdmi::write_u32(u32 address, u32 value) {
 }
 
 // determine if an access at the specified address is allowed
-inline bool arm_7tdmi::mem_check(u32 address) {
+inline bool arm_7tdmi::mem_check(u32 &address) {
     // if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALETTE_RAM_END) {
     //     if (!mem->stat->in_vBlank && !mem->stat->in_hBlank) return false;
     // }
@@ -931,6 +929,10 @@ inline bool arm_7tdmi::mem_check(u32 address) {
     // else if (address >= MEM_OAM_START && address <= MEM_OAM_END) {
     //     if (!mem->stat->in_vBlank && !mem->stat->in_hBlank) return false;
     // }
+
+    // upper 4 bits of address bus are unused, so mirror it if trying to access
+    if (address >= 0x10000000)
+        address &= 0x0FFFFFFF;
 
     // add cycles for expensive memory accesses
 

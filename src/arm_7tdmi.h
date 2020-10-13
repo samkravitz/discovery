@@ -191,7 +191,7 @@ class arm_7tdmi {
         bool condition_met(condition_t);
         void update_cpsr(u32, bool);
         void update_spsr(u32, bool);
-        bool mem_check(u32);
+        bool mem_check(u32 &);
 
     private:
         state_t state;

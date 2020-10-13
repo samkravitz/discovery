@@ -109,7 +109,24 @@ class arm_7tdmi {
         void set_condition_code_flag(condition_code_flag_t, uint8_t);
 
         state_t get_state() { return registers.cpsr.bits.state; }
-        void set_state(state_t s) { registers.cpsr.bits.state = s; }
+        void set_state(state_t s) {
+            bool valid = false;
+
+            switch (s) {
+                case USR:
+                case FIQ:
+                case IRQ:
+                case SVC:
+                case ABT:
+                case SYS:
+                case UND:
+                    valid = true;
+            }
+
+            if (!valid)
+                std::cerr << "Invalid state being set to cpsr: " << (int) s << "\n";
+            registers.cpsr.bits.state = s;
+        }
 
         cpu_mode_t get_mode() { return (cpu_mode_t) registers.cpsr.bits.t; }
         void set_mode(cpu_mode_t m) { registers.cpsr.bits.t = m; }

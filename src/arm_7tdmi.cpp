@@ -299,7 +299,18 @@ void arm_7tdmi::execute(u32 instruction) {
 				" -- R15 : 0x" << std::setw(8) << std::setfill('0') << get_register(15) << "\n";
 
 	
-			std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << registers.cpsr.full << "\t" << "\n";
+			std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << registers.cpsr.full << "\t";
+            if (get_condition_code_flag(N))
+                std::cout << "N";
+            if (get_condition_code_flag(Z))
+                std::cout << "Z";
+            if (get_condition_code_flag(C))
+                std::cout << "C";
+            if (get_condition_code_flag(V))
+                std::cout << "V";
+            std::cout << "\n";
+            
+            
 }
 
 u32 arm_7tdmi::get_register(uint32_t reg) {

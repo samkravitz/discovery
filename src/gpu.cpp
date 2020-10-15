@@ -99,6 +99,8 @@ void GPU::clock_gpu()
         stat->current_scanline_pixel = 0;
         stat->in_hBlank = false;
         stat->in_vBlank = false;
+
+        draw();
     }
 }
 

@@ -10,16 +10,22 @@
 #include "common/util.h"
 #include "arm_7tdmi.h"
 
-void arm_7tdmi::move_shifted_register(u16 instruction) {
+void arm_7tdmi::move_shifted_register(u16 instruction)
+{
     u16 Rs = util::get_instruction_subset(instruction, 5, 3);
     u16 Rd = util::get_instruction_subset(instruction, 2, 0); 
-    u16 offset5 = util::get_instruction_subset(instruction, 10, 6); // 5 bit immediate offset
+    u32 offset5 = util::get_instruction_subset(instruction, 10, 6); // 5 bit immediate offset
     u16 shift_type = util::get_instruction_subset(instruction, 12, 11);
     u32 op1 = get_register(Rs);
 
     // encodings of LSR #0, ASR #0, and ROR #0 should be interpreted as #LSR #2, ASR #32, and ROR #32
     if (offset5 == 0 && shift_type != 0) // shift_type == 0 is LSL
-        offset5 = 32;
+    {
+        if (shift_type == 0b11) // rotate right extended
+            offset5 = 0xFFFFFFFF;
+        else // LSR #32 or ASR #32
+            offset5 = 32;
+    }
 
     u8 carry_out = barrel_shift(offset5, op1, shift_type);
     set_register(Rd, op1);
@@ -28,7 +34,8 @@ void arm_7tdmi::move_shifted_register(u16 instruction) {
     cycle(registers.r15, 's'); // 1S
 }
 
-void arm_7tdmi::add_sub(u16 instruction) {
+void arm_7tdmi::add_sub(u16 instruction)
+{
     u16 Rs = util::get_instruction_subset(instruction, 5, 3);
     u16 Rd = util::get_instruction_subset(instruction, 2, 0);
     u16 Rn_offset3 = util::get_instruction_subset(instruction, 8, 6);
@@ -40,16 +47,19 @@ void arm_7tdmi::add_sub(u16 instruction) {
 
     op1 = get_register(Rs);
 
-    if (immediate) {
+    if (immediate)
         op2 = Rn_offset3;
-    } else {
+    else
         op2 = get_register(Rn_offset3);
-    }
 
-    if (add) {
+    if (add)
+    {
         result = op1 + op2;
         update_flags_addition(op1, op2, result);
-    } else {
+    }
+    
+    else
+    {
         result = op1 - op2;
         update_flags_subtraction(op1, op2, result);
     }
@@ -59,7 +69,8 @@ void arm_7tdmi::add_sub(u16 instruction) {
     cycle(registers.r15, 's'); // 1S
 }
 
-void arm_7tdmi::move_immediate(u16 instruction) {
+void arm_7tdmi::move_immediate(u16 instruction)
+{
     u16 offset8 = util::get_instruction_subset(instruction, 7, 0);
     u16 Rd = util::get_instruction_subset(instruction, 10, 8);
     u16 opcode = util::get_instruction_subset(instruction, 12, 11);
@@ -67,7 +78,8 @@ void arm_7tdmi::move_immediate(u16 instruction) {
     u8 carry = get_condition_code_flag(C);
     u32 operand = get_register(Rd);
 
-    switch (opcode) {
+    switch (opcode)
+    {
         case 0: // MOV
             result = offset8;
             set_register(Rd, result);
@@ -92,7 +104,8 @@ void arm_7tdmi::move_immediate(u16 instruction) {
     cycle(registers.r15, 's'); // 1S
 }
 
-void arm_7tdmi::alu_thumb(u16 instruction) {
+void arm_7tdmi::alu_thumb(u16 instruction)
+{
     u16 Rs = util::get_instruction_subset(instruction, 5, 3);
     u16 Rd = util::get_instruction_subset(instruction, 2, 0); 
     u16 opcode = util::get_instruction_subset(instruction, 9, 6);
@@ -101,7 +114,8 @@ void arm_7tdmi::alu_thumb(u16 instruction) {
     u8 carry = get_condition_code_flag(C);
     u32 result;
 
-    switch (opcode) {
+    switch (opcode)
+    {
         case 0b0000: // AND
             result = op1 & op2;
             set_register(Rd, result);
@@ -253,13 +267,15 @@ void arm_7tdmi::alu_thumb(u16 instruction) {
     }
 }
 
-void arm_7tdmi::hi_reg_ops(u16 instruction) {
+void arm_7tdmi::hi_reg_ops(u16 instruction)
+{
     u16 Rs = util::get_instruction_subset(instruction, 5, 3);
     u16 Rd = util::get_instruction_subset(instruction, 2, 0); 
     u16 opcode = util::get_instruction_subset(instruction, 9, 8);
 
     bool H1 = util::get_instruction_subset(instruction, 7, 7) == 0x1; // Hi operand flag 1
     bool H2 = util::get_instruction_subset(instruction, 6, 6) == 0x1; // Hi operand flag 2
+
     // access hi registers (need a 4th bit)
     if (H2) Rs |= 0b1000;
     if (H1) Rd |= 0b1000;
@@ -268,20 +284,24 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
     u32 op2 = get_register(Rd);
     u32 result;
 
-    switch (opcode) {
+    switch (opcode)
+    {
         case 0b00: // ADD
-            if (!H1 && !H2) {
+            if (!H1 && !H2)
+            {
                 std::cerr << "Error: H1 = 0 and H2 = 0 for thumb ADD is not defined" << "\n";
                 return;
             }
 
             // clear bit 0 when destination is r15
-            if (Rd == 15) op1 &= ~0x1;
+            if (Rd == 15)
+                op1 &= ~0x1;
 
             result = op1 + op2;
             set_register(Rd, result);
 
-            if (Rd == 15) {
+            if (Rd == 15)
+            {
                 cycle(registers.r15, 'n'); // + 1N cycles for r15
 
                 pipeline_full = false;
@@ -289,7 +309,10 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
                 // + 2S cycles if r15 is destination
                 cycle(registers.r15, 's'); // 2S
                 cycle(registers.r15 + 2, 's');
-            } else {
+            }
+            
+            else
+            {
                 increment_pc();
                 cycle(registers.r15, 's'); // 1S
             }
@@ -297,7 +320,8 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
             break;
 
         case 0b01: // CMP
-            if (!H1 && !H2) {
+            if (!H1 && !H2)
+            {
                 std::cerr << "Error: H1 = 0 and H2 = 0 for thumb CMP is not defined" << "\n";
                 return;
             }
@@ -310,18 +334,21 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
 
             break;
         case 0b10: // MOV
-            if (!H1 && !H2) {
+            if (!H1 && !H2)
+            {
                 std::cerr << "Error: H1 = 0 and H2 = 0 for thumb MOV is not defined" << "\n";
                 return;
             }
 
             // clear bit 0 when destination is r15
-            if (Rd == 15) op1 &= ~0x1;
+            if (Rd == 15)
+                op1 &= ~0x1;
 
             result = op1;
             set_register(Rd, result);
 
-            if (Rd == 15) {
+            if (Rd == 15)
+            {
                 cycle(registers.r15, 'n'); // + 1N cycles for r15
 
                 pipeline_full = false;
@@ -329,20 +356,25 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
                 // + 2S cycles if r15 is destination
                 cycle(registers.r15, 's'); // 2S
                 cycle(registers.r15 + 2, 's');
-            } else {
+            }
+            
+            else
+            {
                 increment_pc();
                 cycle(registers.r15, 's'); // 1S
             }
 
             break;
         case 0b11: // BX
-            if (H1) {
+            if (H1)
+            {
                 std::cerr << "Error: H1 = 1 for thumb BX is not defined" << "\n";
                 return;
             }
 
             // clear bit 0 if Rs is 15
-            if (Rs == 15) {
+            if (Rs == 15)
+            {
                 op1 &= ~1;
                 op1 += 4;
             }
@@ -352,10 +384,13 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
             set_register(15, op1);
 
             // swith to ARM mode if necessary
-            if ((op1 & 1) == 0) {
+            if ((op1 & 1) == 0)
+            {
                 // registers.r15 += 4; // continue at Rn + 4 in arm mode (skip following halfword)
                 set_mode(ARM);
-            } else {
+            } else
+
+            {
                 // clear bit 0
                 registers.r15 &= ~1;
             }
@@ -369,7 +404,8 @@ void arm_7tdmi::hi_reg_ops(u16 instruction) {
     }
 }
 
-void arm_7tdmi::pc_rel_load(u16 instruction) {
+void arm_7tdmi::pc_rel_load(u16 instruction)
+{
     u16 Rd = util::get_instruction_subset(instruction, 10, 8); 
     u16 word8 = util::get_instruction_subset(instruction, 7, 0);
     u32 base = get_register(15);
@@ -384,7 +420,8 @@ void arm_7tdmi::pc_rel_load(u16 instruction) {
     cycle(registers.r15 + 2, 's'); // 1S
 }
 
-void arm_7tdmi::load_store_reg(u16 instruction) {
+void arm_7tdmi::load_store_reg(u16 instruction)
+{
     u16 Ro = util::get_instruction_subset(instruction, 8, 6); // offset register
     u16 Rb = util::get_instruction_subset(instruction, 5, 3); // base register
     u16 Rd = util::get_instruction_subset(instruction, 2, 0); // destination register
@@ -395,23 +432,33 @@ void arm_7tdmi::load_store_reg(u16 instruction) {
     u32 base = get_register(Rb);
     base += get_register(Ro); // add offset to base
 
-    if (load) {
+    if (load)
+    {
         cycle(registers.r15, 'n'); // 1N
-        if (byte) set_register(Rd, read_u8(base));
-        else {
+        if (byte)
+            set_register(Rd, read_u8(base));
+        else
+        {
             set_register(Rd, read_u32(base, true));
             cycle(base, 'i'); // + 1I cycles for non byte load
         }
         cycle(base, 'n'); // 1N
-    } else { // store
+    }
+    
+    // store
+    else
+    {
         cycle(registers.r15, 'n'); // 1N
-        if (byte) write_u8(base, get_register(Rd) & 0xFF);
-        else write_u32(base, get_register(Rd));
+        if (byte)
+            write_u8(base, get_register(Rd) & 0xFF);
+        else
+            write_u32(base, get_register(Rd));
         cycle(base, 'n'); // 1N
     }
 }
 
-void arm_7tdmi::load_store_signed_halfword(u16 instruction) {
+void arm_7tdmi::load_store_signed_halfword(u16 instruction)
+{
     u16 Ro = util::get_instruction_subset(instruction, 8, 6); // offset register
     u16 Rb = util::get_instruction_subset(instruction, 5, 3); // base register
     u16 Rd = util::get_instruction_subset(instruction, 2, 0); // destination register
@@ -422,24 +469,39 @@ void arm_7tdmi::load_store_signed_halfword(u16 instruction) {
     u32 base = get_register(Rb);
     base += get_register(Ro); // add offset to base
 
-    if (!S && !H) { // store halfword
+    // store halfword
+    if (!S && !H)
+    {
         cycle(registers.r15, 'n');
         write_u16(base, get_register(Rd) & 0xFFFF);
         cycle(registers.r15, 's');
-    } else if (!S && H) { // load halfword
+    }
+    
+    // load halfword
+    else if (!S && H)
+    {
         cycle(registers.r15, 's');
         u32 value = read_u16(base, false);
         cycle(base, 'i');
         set_register(Rd, value);
         cycle(registers.r15 + 2, 's'); // + 1S cycles for non byte load
-    } else if (S && !H) { // load sign-extended byte
+    }
+    
+    // load sign-extended byte
+    else if (S && !H)
+    {
         cycle(registers.r15, 'n');
         u32 value = read_u8(base);
         cycle(base, 'i');
-        if (value & 0x80) value |= 0xFFFFFF00; // bit 7 of byte is 1, so sign extend bits 31-8 of register
+        if (value & 0x80)
+            value |= 0xFFFFFF00; // bit 7 of byte is 1, so sign extend bits 31-8 of register
         set_register(Rd, value);
         cycle(registers.r15 + 2, 's'); // + 1S cycles for non byte load
-    } else { // load sign-extended halfword
+    }
+    
+    // load sign-extended halfword
+    else
+    {
         cycle(registers.r15, 'n');
         u32 value = read_u16(base, true);
         cycle(base, 'i');
@@ -448,7 +510,8 @@ void arm_7tdmi::load_store_signed_halfword(u16 instruction) {
     }
 }
 
-void arm_7tdmi::load_store_immediate(u16 instruction) {
+void arm_7tdmi::load_store_immediate(u16 instruction)
+{
     u16 Rb = util::get_instruction_subset(instruction, 5, 3); // base register
     u16 Rd = util::get_instruction_subset(instruction, 2, 0); // destination register
     u16 offset5 = util::get_instruction_subset(instruction, 10, 6); // 5 bit immediate offset
@@ -456,25 +519,39 @@ void arm_7tdmi::load_store_immediate(u16 instruction) {
     bool byte = util::get_instruction_subset(instruction, 12, 12) == 1;
     bool load = util::get_instruction_subset(instruction, 11, 11) == 1;
     
-    if (!byte) offset5 <<= 2; // assembler places #imm >> 2 in word5 for word accesses
+    if (!byte)
+        offset5 <<= 2; // assembler places #imm >> 2 in word5 for word accesses
 
     u32 base = get_register(Rb);
     base += offset5; // add offset to base
 
-    if (!load && !byte) { // store word
+    // store word
+    if (!load && !byte)
+    { 
         cycle(registers.r15, 'n'); // 1N
         write_u32(base, get_register(Rd));
         cycle(base, 'n'); // 1N
-    } else if (load && !byte) { // load word
+    }
+    
+    // load word
+    else if (load && !byte)
+    {
         cycle(registers.r15, 's'); // 1S
         cycle(registers.r15, 'i'); // 1I
         set_register(Rd,  read_u32(base, true));
         cycle(registers.r15 + 2, 'n');
-    } else if (!load && byte) { // store byte
+    }
+    
+    // store byte
+    else if (!load && byte)
+    {
         cycle(registers.r15, 'n'); // 1N
         write_u8(base, get_register(Rd) & 0xFF);
         cycle(base, 'n'); // 1N
-    } else { // load byte
+    }
+    
+    else
+    { // load byte
         cycle(registers.r15, 'n'); // 1N
         set_register(Rd, read_u8(base));
         cycle(registers.r15, 'i'); // 1I
@@ -482,7 +559,8 @@ void arm_7tdmi::load_store_immediate(u16 instruction) {
     }
 }
 
-void arm_7tdmi::load_store_halfword(u16 instruction) {
+void arm_7tdmi::load_store_halfword(u16 instruction)
+{
     u16 Rb = util::get_instruction_subset(instruction, 5, 3); // base register
     u16 Rd = util::get_instruction_subset(instruction, 2, 0); // destination register
     u16 offset5 = util::get_instruction_subset(instruction, 10, 6); // 5 bit immediate offset
@@ -493,10 +571,15 @@ void arm_7tdmi::load_store_halfword(u16 instruction) {
     u32 base = get_register(Rb);
     base += offset5; // add offset to base
 
-    if (load) {
+    if (load)
+    {
         cycle(registers.r15, 's'); // + 1S cycles for load
         set_register(Rd, read_u16(base, false));
-    } else { // store
+    }
+    
+    // store
+    else
+    {
         write_u16(base, get_register(Rd) & 0xFFFF);
     }
 
@@ -504,7 +587,8 @@ void arm_7tdmi::load_store_halfword(u16 instruction) {
     cycle(base, 'n');
 }
 
-void arm_7tdmi::sp_load_store(u16 instruction) {
+void arm_7tdmi::sp_load_store(u16 instruction)
+{
     u16 Rd = util::get_instruction_subset(instruction, 10, 8); // destination register
     u16 word8 = util::get_instruction_subset(instruction, 7, 0); // 8 bit immediate offset
     bool load = util::get_instruction_subset(instruction, 11, 11) == 1;
@@ -514,10 +598,15 @@ void arm_7tdmi::sp_load_store(u16 instruction) {
     u32 base = get_register(13); // current stack pointer is base address
     base += word8; // add offset to base
 
-    if (load) {
+    if (load)
+    {
         cycle(base, 's'); // + 1S cycles for load
         set_register(Rd, read_u32(base, true));
-    } else { // store
+    }
+    
+    // store
+    else
+    {
         write_u32(base, get_register(Rd));
     }
 
@@ -525,7 +614,8 @@ void arm_7tdmi::sp_load_store(u16 instruction) {
     cycle(base, 'n');
 }
 
-void arm_7tdmi::load_address(u16 instruction) {
+void arm_7tdmi::load_address(u16 instruction)
+{
     u16 Rd = util::get_instruction_subset(instruction, 10, 8); // destination register
     u16 word8 = util::get_instruction_subset(instruction, 7, 0); // 8 bit immediate offset
     bool sp = util::get_instruction_subset(instruction, 11, 11) == 1; // stack pointer if true, else PC
@@ -533,9 +623,13 @@ void arm_7tdmi::load_address(u16 instruction) {
 
     word8 <<= 2; // assembler places #imm >> 2 in word8 to ensure word alignment
 
-    if (sp) {
+    if (sp)
+    {
         base = get_register(13);
-    } else { // pc
+    }
+    
+    else
+    { // pc
         base = get_register(15);
         base &= ~2; // force bit 1 of PC to 0
     }
@@ -547,7 +641,8 @@ void arm_7tdmi::load_address(u16 instruction) {
     cycle(base, 's'); // 1S
 }
 
-void arm_7tdmi::add_offset_to_sp(u16 instruction) {
+void arm_7tdmi::add_offset_to_sp(u16 instruction)
+{
     u16 sword8 = util::get_instruction_subset(instruction, 6, 0); // 7 bit signed immediate value
     bool positive = util::get_instruction_subset(instruction, 7, 7) == 0; // sign bit of sword8
 
@@ -555,14 +650,17 @@ void arm_7tdmi::add_offset_to_sp(u16 instruction) {
 
     u32 base = get_register(13); // base address at SP
 
-    if (positive) base += sword8;
-    else base -= sword8;
+    if (positive)
+        base += sword8;
+    else
+        base -= sword8;
 
     set_register(13, base);
     cycle(base, 's'); // 1S
 }
 
-void arm_7tdmi::push_pop(u16 instruction) {
+void arm_7tdmi::push_pop(u16 instruction)
+{
     bool load = util::get_instruction_subset(instruction, 11, 11) == 1;
     bool R = util::get_instruction_subset(instruction, 8, 8) == 1; // PC/LR bit
     u32 base = get_register(13); // base address at SP
@@ -571,8 +669,10 @@ void arm_7tdmi::push_pop(u16 instruction) {
     int set_registers[8];
 
     // determine which registers are set
-    for (int i = 0; i < 8; ++i) {
-        if (instruction >> i & 0x1) { // bit i is set in Rlist
+    for (int i = 0; i < 8; ++i)
+    {
+        if (instruction >> i & 0x1) // bit i is set in Rlist
+        {
             set_registers[num_registers] = i;
             num_registers++;
         }
@@ -580,22 +680,26 @@ void arm_7tdmi::push_pop(u16 instruction) {
 
     cycle(base, 'n'); // 1N
 
-    if (!load) { // PUSH Rlist
+    if (!load) // PUSH Rlist
+    {
         // get final sp value
         base -= 4 * num_registers;
-        if (R) base -= 4;
+        if (R)
+            base -= 4;
 
         // write base back into sp
         set_register(13, base);
         
         // push registers
-        for (int i = 0; i < num_registers; ++i) {
+        for (int i = 0; i < num_registers; ++i)
+        {
             write_u32(base, get_register(set_registers[i]));
             base += 4; // increment stack pointer (4 bytes for word alignment)
             cycle(base, 's'); // 1S
         }
 
-        if (R) { // push LR
+        if (R) // push LR
+        {
             write_u32(base, get_register(14));
             // base -= 4; // increment stack pointer (4 bytes for word alignment)
             cycle(base, 's'); // 1S
@@ -603,18 +707,26 @@ void arm_7tdmi::push_pop(u16 instruction) {
 
         increment_pc();
 
-    } else { // POP Rlist
-        for (int i = 0; i < num_registers; ++i) {
+    }
+    
+    else // POP Rlist
+    {
+        for (int i = 0; i < num_registers; ++i)
+        {
             set_register(set_registers[i], read_u32(base, false));
             base += 4; // decrement stack pointer (4 bytes for word alignment)
             cycle(base, 's');
         }
 
-        if (R) { // pop pc
+        if (R) // pop pc
+        {
             set_register(15, read_u32(base, false) & ~1); // guaruntee halfword alignment
             base += 4; // decrement stack pointer (4 bytes for word alignment)
             cycle(base, 's');
-        } else {
+        }
+        
+        else
+        {
             increment_pc();
         }
 
@@ -623,7 +735,8 @@ void arm_7tdmi::push_pop(u16 instruction) {
     }
 }
 
-void arm_7tdmi::multiple_load_store(u16 instruction) {
+void arm_7tdmi::multiple_load_store(u16 instruction)
+{
     u16 Rb = util::get_instruction_subset(instruction, 10, 8); // base register
     bool load = util::get_instruction_subset(instruction, 11, 11) == 1;
     u32 base = get_register(Rb);
@@ -632,8 +745,10 @@ void arm_7tdmi::multiple_load_store(u16 instruction) {
     int set_registers[8];
 
     // determine which registers are set
-    for (int i = 0; i < 8; ++i) {
-        if (instruction >> i & 0x1) { // bit i is set in Rlist
+    for (int i = 0; i < 8; ++i)
+    {
+        if (instruction >> i & 0x1) // bit i is set in Rlist
+        {
             set_registers[num_registers] = i;
             num_registers++;
         }
@@ -642,21 +757,29 @@ void arm_7tdmi::multiple_load_store(u16 instruction) {
     cycle(base, 'i');
 
     // empty Rlist, Rb = Rb + 0x40
-    if (num_registers == 0) {
+    if (num_registers == 0)
+    {
         set_register(Rb, get_register(Rb) + 0x40);
         return;
     }
 
-    if (load) { 
-        for (int i = 0; i < num_registers; ++i) {
+    if (load)
+    { 
+        for (int i = 0; i < num_registers; ++i)
+        {
             set_register(set_registers[i], read_u32(base, false));
             base += 4; // decrement stack pointer (4 bytes for word alignment)
             cycle(base, 's');
         }
+
         cycle(base, 's');
         cycle(base, 's');
-    } else { // store
-        for (int i = 0; i < num_registers; ++i) {
+    }
+    
+    else // store
+    {
+        for (int i = 0; i < num_registers; ++i)
+        {
             write_u32(base, get_register(set_registers[i]));
             base += 4; // increment stack pointer (4 bytes for word alignment)
             cycle(base, 's');
@@ -667,12 +790,14 @@ void arm_7tdmi::multiple_load_store(u16 instruction) {
     set_register(Rb, base);
 }
 
-void arm_7tdmi::conditional_branch(u16 instruction) {
+void arm_7tdmi::conditional_branch(u16 instruction)
+{
     u16 soffset8 = util::get_instruction_subset(instruction, 7, 0); // signed 8 bit offset
     condition_t condition = (condition_t) util::get_instruction_subset(instruction, 11, 8);
     u32 base = get_register(15);
     u32 jump_address;
-    if (!condition_met(condition)) {
+    if (!condition_met(condition))
+    {
         cycle(base, 's');
         increment_pc();
         return;
@@ -681,12 +806,16 @@ void arm_7tdmi::conditional_branch(u16 instruction) {
     soffset8 <<= 1; // assembler places #imm >> 1 in word8 to ensure halfword alignment
 
     // if soffset8 is negative signed, convert two's complement and subtract
-    if (soffset8 >> 8) {
+    if (soffset8 >> 8)
+    {
         // flip bits and add 1
         u8 twos_comp = ~soffset8;
         twos_comp += 1;
         jump_address = base - twos_comp;
-    } else {
+    }
+    
+    else
+    {
         jump_address = base + soffset8;
     }
 
@@ -700,7 +829,8 @@ void arm_7tdmi::conditional_branch(u16 instruction) {
     pipeline_full = false;
 }
 
-void arm_7tdmi::software_interrupt_thumb(u16 instruction) {
+void arm_7tdmi::software_interrupt_thumb(u16 instruction)
+{
     set_register(14, instruction + 2); // move the address of the next instruction into LR
     set_register(16, get_register(15)); // move CPSR to SPSR
     set_register(15, 0x8); // load the SWI vector address (0x8) into the PC
@@ -714,7 +844,8 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction) {
     registers.cpsr.bits.t = 0;
 }
 
-void arm_7tdmi::unconditional_branch(u16 instruction) {
+void arm_7tdmi::unconditional_branch(u16 instruction)
+{
     u16 offset11 = util::get_instruction_subset(instruction, 10, 0); // signed 11 bit offset
     u32 base = get_register(15);
     u32 jump_address;
@@ -722,7 +853,8 @@ void arm_7tdmi::unconditional_branch(u16 instruction) {
     offset11 <<= 1; // assembler places #imm >> 1 in offset11 to ensure halfword alignment
 
     // if offset11 is negative signed, convert two's complement and subtract
-    if (offset11 >> 11) {
+    if (offset11 >> 11)
+    {
         // flip bits and add 1
         u16 twos_comp = ~offset11;
         
@@ -732,7 +864,10 @@ void arm_7tdmi::unconditional_branch(u16 instruction) {
         
         twos_comp += 1;
         jump_address = base - twos_comp;
-    } else {
+    }
+    
+    else
+    {
         jump_address = base + offset11;
     }
 
@@ -746,12 +881,14 @@ void arm_7tdmi::unconditional_branch(u16 instruction) {
     pipeline_full = false;
 }
 
-void arm_7tdmi::long_branch_link(u16 instruction) {
+void arm_7tdmi::long_branch_link(u16 instruction)
+{
     u32 offset = util::get_instruction_subset(instruction, 10, 0); // long branch offset
     bool H = util::get_instruction_subset(instruction, 11, 11) == 1; // high/low offset bit
     u32 base;
 
-    if (H) { // instruction 2
+    if (H) // instruction 2
+    {
         base = get_register(14); // LR
         offset <<= 1;
         base += offset;
@@ -770,11 +907,15 @@ void arm_7tdmi::long_branch_link(u16 instruction) {
         
         cycle(base, 's');
         cycle(base, 's');
-    } else { // instruction 1
+    }
+    
+    else // instruction 1
+    {
         base = get_register(15); // PC
         offset <<= 12;
 
-        if (offset >> 22) {
+        if (offset >> 22)
+        {
             // flip bits and add 1
             u32 twos_comp = ~offset;
 
@@ -784,7 +925,10 @@ void arm_7tdmi::long_branch_link(u16 instruction) {
 
             twos_comp += 1;
             base -= twos_comp;
-        } else {
+        }
+        
+        else
+        {
             base += offset;
         }
 

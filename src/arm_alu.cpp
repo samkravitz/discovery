@@ -330,6 +330,9 @@ void arm_7tdmi::multiply_long(u32 instruction)
         return;
     }
 
+    cycle(registers.r15, 's'); // 1S
+    int m; // # of m cycles
+
     // signed multiply long
     if (sign)
     {
@@ -346,6 +349,9 @@ void arm_7tdmi::multiply_long(u32 instruction)
             acc <<= 16;
             acc |= (s32) get_register(RdLo);
             result += acc;
+
+            // +1 m cycles for accumulate
+            m++;
         }
 
         s32 lo = result & 0xFFFFFFFF; // lower 32 bits of result
@@ -370,6 +376,16 @@ void arm_7tdmi::multiply_long(u32 instruction)
             set_condition_code_flag(C, 1);
             set_condition_code_flag(V, 1);
         }
+
+        // determine how many m cycles
+        if ((op2 >> 8 == 0b111111111111111111111111) ||  (op2 >> 8 == 0))
+            m = 1;
+        if ((op2 >> 16 == 0b1111111111111111)        ||  (op2 >> 16 == 0))
+            m = 2;
+        if ((op2 >> 24 == 0b11111111)                ||  (op2 >> 24 == 0))
+            m = 3;
+        else
+            m = 4;
     }
 
     // unsigned multiply long
@@ -388,6 +404,9 @@ void arm_7tdmi::multiply_long(u32 instruction)
             acc <<= 16;
             acc |= (u32) get_register(RdLo);
             result += acc;
+
+            // +1 m cycles for accumulate
+            m++;
         }
 
         u32 lo = result & 0xFFFFFFFF; // lower 32 bits of result
@@ -412,7 +431,21 @@ void arm_7tdmi::multiply_long(u32 instruction)
             set_condition_code_flag(C, 1);
             set_condition_code_flag(V, 1);
         }
+
+        // determine how many m cycles
+        if (op2 >> 8 == 0)
+            m = 1;
+        if (op2 >> 16 == 0)
+            m = 2;
+        if (op2 >> 24 == 0)
+            m = 3;
+        else
+            m = 4;
     }
+
+    // (m + 1)I cycles
+    for (int i = 0; i < m + 1; i++)
+        cycle(registers.r15, 'i');
 }
 
 // allow access to CPSR and SPSR registers

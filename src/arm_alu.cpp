@@ -545,137 +545,176 @@ void arm_7tdmi::multiply_long(u32 instruction) {
     }
 }
 
-void arm_7tdmi::block_data_transfer(u32 instruction) {
+void arm_7tdmi::block_data_transfer(u32 instruction)
+{
     bool pre_index = util::get_instruction_subset(instruction, 24, 24) == 1;  // bit 24 set = pre index, bit 24 0 = post index
     bool up = util::get_instruction_subset(instruction, 23, 23) == 1;         // bit 23 set = up, bit 23 0 = down
     bool load_psr = util::get_instruction_subset(instruction, 22, 22) == 1;   // bit 22 set = load PSR or force user mode
     bool write_back = util::get_instruction_subset(instruction, 21, 21) == 1; // bit 21 set = write address into base, bit 21 0 = no write back
     bool load = util::get_instruction_subset(instruction, 20, 20) == 1;       // bit 20 set = load, bit 20 0 = store
-    u32 Rn = util::get_instruction_subset(instruction, 19, 16);               // base register
+    u32 Rb = util::get_instruction_subset(instruction, 19, 16);               // base register
     u32 register_list = util::get_instruction_subset(instruction, 15, 0);
-    u32 base = get_register(Rn);
+    u32 base = get_register(Rb);
     int num_registers = 0; // number of set bits in the register list, should be between 0-16
     int set_registers[16];
     state_t temp_state = get_state();
-    u8 transfer_reg = 0xFF;
-    u32 old_base = base;
+    bool Rb_in_Rlist = false;
 
     bool r15_in_register_list = ((register_list >> 15) & 0x1) == 1;
 
-    if (Rn == 15) {
+    if (Rb == 15) {
         std::cerr << "r15 cannot be used as base register in BDT!" << "\n";
         return;
     }
 
-    // get set registers in list
-    // also determine if register list contains Rn
-    for (int i = 0; i < 16; ++i) {
-        if (register_list >> i & 1) {
+    // edge case - empty Rlist
+    if (register_list == 0)
+    {
+        if (load) // load r15
+        { 
+            set_register(15, read_u32(base, false));
+            pipeline_full = false;
+        }
+
+        else // store r15
+        {
+            write_u32(base, registers.r15 + 4);
+            increment_pc();
+        }
+
+        // store Rb = Rb +/- 0x40
+        if (up)
+            set_register(Rb, base + 0x40);
+        else
+            set_register(Rb, base - 0x40);
+
+        return;
+    }
+
+    // get registers set in list
+    // also determine if register list contains Rb
+    for (int i = 0; i < 16; ++i)
+    {
+        if (register_list >> i & 1)
+        {
             set_registers[num_registers] = i;
-            //if (num_registers == 0) transfer_reg = i; // get first register in list
             num_registers++;
+
+            // Rb in Rlist
+            if (i == Rb)
+                Rb_in_Rlist = true;
         }
     }
 
-    // TODO - this
-    // special case - rlist = 0
-    // if (num_registers == 0) {
-    //     if (load) { // load r15
+    u32 old_base = up ? base : base - num_registers * 4; // lowest address reached
 
-    //     }
-    // }
+    bool Rb_first_in_list = set_registers[0] == Rb;
 
-    u32 lowest_address = up ? base : base - num_registers * 4;
-    base = lowest_address;
+    // force use user bank registers
+    if (load_psr)
+        set_state(USR);
 
-    if (load) { // load from memory
-        for (int i = 0; i < num_registers; ++i) {
-            if (pre_index) // pre increment
-                base += 4;
+    if (load) // load from memory
+    { 
+        if (Rb_in_Rlist)
+            write_back = false;
 
-            set_register(set_registers[i], read_u32(base, false));
-            if (set_registers[i] == 15) // loading into r15
-                pipeline_full = false; 
+        if (up) // addresses increment
+        {
+            for (int i = 0; i < num_registers; ++i)
+            {
+                if (pre_index) // pre increment
+                    base += 4;
 
-            if (!pre_index) // post increment
-                base += 4;
+                set_register(set_registers[i], read_u32(base, false));
+                if (set_registers[i] == 15) // loading into r15
+                    pipeline_full = false; 
+
+                if (!pre_index) // post increment
+                    base += 4;
+            }
+        }
+
+        else // addresses decrement
+        {
+            for (int i = num_registers - 1; i >= 0; --i)
+            {
+                if (pre_index) // pre decrement
+                    base -= 4;
+
+                set_register(set_registers[i], read_u32(base, false));
+                if (set_registers[i] == 15) // loading into r15
+                    pipeline_full = false; 
+
+                if (!pre_index) // post decrement
+                    base -= 4;
+            }
         }
     }
 
-    else { // store to memory
-        for (int i = 0; i < num_registers; ++i) {
-            if (pre_index) // pre increment
-                base += 4;
-                
-            u32 value = get_register(set_registers[i]);
-            // if Rd is r15, the stored address will be the address of the current instruction plus 12
-            if (set_registers[i] == 15)
-                value += 4;
-            write_u32(base, value);
+    else // store to memory
+    {
+        if (up) // addresses increment
+        {
+            for (int i = 0; i < num_registers; ++i)
+            {
+                if (pre_index) // pre increment
+                    base += 4;
+                    
+                u32 value = get_register(set_registers[i]);
+                // if Rd is r15, the stored address will be the address of the current instruction plus 12
+                if (set_registers[i] == 15)
+                    value += 4;
+                write_u32(base, value);
 
-            if (!pre_index) // post increment
-                base += 4;
+                if (!pre_index) // post increment
+                    base += 4;
+            }
+        }
+
+        else // addresses decrement
+        {
+            for (int i = num_registers - 1; i >= 0; --i)
+            {
+                if (pre_index) // pre decrement
+                    base -= 4;
+                    
+                u32 value = get_register(set_registers[i]);
+                // if Rd is r15, the stored address will be the address of the current instruction plus 12
+                if (set_registers[i] == 15)
+                    value += 4;
+                write_u32(base, value);
+
+                if (!pre_index) // post decrement
+                    base -= 4;
+            }
         }
     }
     
-    /*
-     * Transfer registers or memory
-     * One of the ugliest blocks of code I've ever written... yikes
-     */
-    // if (up) { // addresses increment
+    if (!(r15_in_register_list && load))
+        increment_pc(); // increment pc if flush is not necessary
 
-    //     for (int i = 0; i < num_registers; ++i) {
+    if (write_back)
+    {
+        // edge case - Rb included in Rlist
+        if (Rb_in_Rlist)
+        {
+            // store OLD base if Rb is FIRST entry in Rlist
+            if (Rb_first_in_list)
+                set_register(Rb, old_base);
+        
+            // otherwise store NEW base
+            else
+                set_register(Rb, base);
+                       
+        }
 
-    //         if (pre_index) base += 4;
-    //         if (load) {
-    //             if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_back = false;
-    //             set_register(set_registers[i], read_u32(base, false));
-    //             if (set_registers[i] == 15) pipeline_full = false;
-    //         } else { // store
-    //             if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_u32(base, old_base);
-    //             else {
-    //                 u32 value = get_register(set_registers[i]);
-    //                 // if Rd is r15, the stored address will be the address of the current instruction plus 12
-    //                 if (set_registers[i] == 15)
-    //                     value += 4;
-    //                 write_u32(base, value);
-    //             }
-    //         }
-    //         if (!pre_index) base += 4;
-
-    //     }
-
-    // } else { // addresses decrement
-
-    //     for (int i = num_registers - 1; i >= 0; --i) {
-
-    //         if (pre_index) base -= 4;
-    //         if (load) {
-    //             if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_back = false;
-    //             set_register(set_registers[i], read_u32(base, false));
-    //             if (set_registers[i] == 15) pipeline_full = false;
-    //         } else { // store
-    //             if (set_registers[i] == transfer_reg && Rn == transfer_reg) write_u32(base, old_base);
-    //             else {
-    //                 u32 value = get_register(set_registers[i]);
-    //                 // if Rd is r15, the stored address will be the address of the current instruction plus 12
-    //                 if (set_registers[i] == 15)
-    //                     value += 4;
-    //                 write_u32(base, value);
-    //             }
-    //         }
-    //         if (!pre_index) base -= 4;
-
-    //     }
-
-    // }
-
-    if (!(r15_in_register_list && load)) increment_pc(); // increment pc if flush is not necessary
-    if (load_psr) set_state(temp_state); // restore cpu state
-    if (write_back) {
-        u32 write_back_address = up ? base : lowest_address;
-        set_register(Rn, write_back_address); // write back final address if necessary
+        else
+            set_register(Rb, base); // write back final address if LDM or Rb is NOT in Rlist 
     }
+
+    if (load_psr)
+        set_state(temp_state); // restore cpu state
 }
 
  void arm_7tdmi::single_data_swap(u32 instruction) {

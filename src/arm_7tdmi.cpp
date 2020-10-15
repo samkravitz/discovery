@@ -8,8 +8,6 @@
  * DESCRIPTION: Implementation of arm7tdmi functions
  */
 #include <iostream>
-#include <chrono>
-#include <thread>
 #include <iomanip>
 
 #include "arm_7tdmi.h"
@@ -19,37 +17,60 @@
 // uncomment this if running tests
 // #define TEST
 
-#define ABS(a, b) (a < b) ? (b - a) : (a - b)
-
-arm_7tdmi::arm_7tdmi() {
-    state = SYS;
-    mode = ARM;
+arm_7tdmi::arm_7tdmi()
+{
     registers = {0}; // zero out registers
     registers.r15 = 0x8000000; // starting address of gamepak flash rom
     registers.r13 = 0x3007f00;
     last_accessed_addr = 0x8000000;
+
+    set_state(SYS);
+    set_mode(ARM);
 
     // initialize cpsr
     registers.cpsr.bits.f = 1;
     registers.cpsr.bits.state = SYS;
 
     pipeline_full = false;
-
-    mem = NULL;
-
     cycles = 0;
 
+    mem = NULL;
+    
     // different initialization for the testing environment
     #ifdef TEST
     registers.r15 = 0;
-    state = USR;
+    set_state(USR);
     mem = new Memory();
     #endif
 }
 
 arm_7tdmi::~arm_7tdmi() { }
 
-uint8_t arm_7tdmi::get_condition_code_flag(condition_code_flag_t flag) {
+state_t arm_7tdmi::get_state() { return registers.cpsr.bits.state; }
+
+void arm_7tdmi::set_state(state_t s)
+{
+    bool valid = false;
+
+    switch (s)
+    {
+        case USR:
+        case FIQ:
+        case IRQ:
+        case SVC:
+        case ABT:
+        case SYS:
+        case UND:
+            valid = true;
+    }
+
+    if (!valid)
+        std::cerr << "Invalid state being set to cpsr: " << (int) s << "\n";
+    registers.cpsr.bits.state = s;
+}
+
+u8 arm_7tdmi::get_condition_code_flag(condition_code_flag_t flag)
+{
     switch (flag) {
         case N: return registers.cpsr.bits.n; 
         case Z: return registers.cpsr.bits.z;
@@ -61,14 +82,17 @@ uint8_t arm_7tdmi::get_condition_code_flag(condition_code_flag_t flag) {
     }
 }
 
-void arm_7tdmi::set_condition_code_flag(condition_code_flag_t flag, uint8_t bit) {
+void arm_7tdmi::set_condition_code_flag(condition_code_flag_t flag, u8 bit)
+{
     // bit can only be 0 or 1
-    if (bit > 1) {
+    if (bit > 1)
+    {
         std::cerr << "Error: set bit must be 0 or 1, it is: " << bit << "\n";
         return;
     }
 
-    switch (flag) {
+    switch (flag)
+    {
         case N: registers.cpsr.bits.n = bit; break;
         case Z: registers.cpsr.bits.z = bit; break;
         case C: registers.cpsr.bits.c = bit; break;
@@ -80,8 +104,10 @@ void arm_7tdmi::set_condition_code_flag(condition_code_flag_t flag, uint8_t bit)
 }
 
 // determine if the condition field of an instruction is true, given the state of the CPSR
-bool arm_7tdmi::condition_met(condition_t condition_field) {
-    switch (condition_field) {
+bool arm_7tdmi::condition_met(condition_t condition_field)
+{
+    switch (condition_field)
+    {
         case EQ: return get_condition_code_flag(Z); // Z set
         case NE: return !get_condition_code_flag(Z); // Z clear
         case CS: return get_condition_code_flag(C); // C set
@@ -103,10 +129,13 @@ bool arm_7tdmi::condition_met(condition_t condition_field) {
     }
 }
 
-void arm_7tdmi::fetch() {
-    if (!pipeline_full) {
+void arm_7tdmi::fetch()
+{
+    if (!pipeline_full)
+    {
         // fill pipeline
-        switch (get_mode()) {
+        switch (get_mode())
+        {
             case ARM:
                 pipeline[0] = read_u32(registers.r15, false);
                 registers.r15 += 4;
@@ -127,7 +156,8 @@ void arm_7tdmi::fetch() {
         return;
     }
 
-    switch (get_mode()) {
+    switch (get_mode())
+    {
         case ARM:
             pipeline[2] = read_u32(registers.r15, false);
             break;
@@ -137,21 +167,23 @@ void arm_7tdmi::fetch() {
     }
 }
 
-void arm_7tdmi::decode(u32 instruction) {
+void arm_7tdmi::decode(u32 instruction) { }
 
-}
-
-void arm_7tdmi::execute(u32 instruction) {
+void arm_7tdmi::execute(u32 instruction)
+{
    //std::cout << "Executing: " << std::hex << instruction << "\n";
-    switch (get_mode()) {
+    switch (get_mode())
+    {
         case ARM:
-            if (!condition_met((condition_t) util::get_instruction_subset(instruction, 31, 28))) {
+            if (!condition_met((condition_t) util::get_instruction_subset(instruction, 31, 28)))
+            {
                 increment_pc();
                 clock();
                 return;
             }
             
-            switch(util::get_instruction_format(instruction)) {
+            switch(util::get_instruction_format(instruction))
+            {
                 case BEX:
                     branch_exchange(instruction);
                     break;
@@ -199,7 +231,8 @@ void arm_7tdmi::execute(u32 instruction) {
             break;
 
         case THUMB:
-            switch(util::get_instruction_format((u16) instruction)) {
+            switch(util::get_instruction_format((u16) instruction))
+            {
                 case MSR_T:
                     move_shifted_register((u16) instruction);
                     increment_pc();
@@ -311,8 +344,10 @@ void arm_7tdmi::execute(u32 instruction) {
     //         std::cout << "\n";
 }
 
-u32 arm_7tdmi::get_register(uint32_t reg) {
-    switch (reg) {
+u32 arm_7tdmi::get_register(u32 reg)
+{
+    switch (reg)
+    {
         case 0x0: return registers.r0;
         case 0x1: return registers.r1;
         case 0x2: return registers.r2;
@@ -323,33 +358,39 @@ u32 arm_7tdmi::get_register(uint32_t reg) {
         case 0x7: return registers.r7;
 
         case 0x8:
-            switch (get_state()) {
+            switch (get_state())
+            {
                 case FIQ: return registers.r8_fiq;
                 default: return registers.r8;
             }
         case 0x9:
-            switch (get_state()) {
+            switch (get_state())
+            {
                 case FIQ: return registers.r9_fiq;
                 default: return registers.r9;
             }
         case 0xa:
-            switch (get_state()) {
+            switch (get_state())
+            {
                 case FIQ: return registers.r10_fiq;
                 default: return registers.r10;
             }
         case 0xb:
-            switch (get_state()) {
+            switch (get_state())
+            {
                 case FIQ: return registers.r11_fiq;
                 default: return registers.r11;
             }
         case 0xc:
-            switch (get_state()) {
+            switch (get_state())
+            {
                 case FIQ: return registers.r12_fiq;
                 default: return registers.r12;
             }
 
         case 0xd:
-            switch(get_state()) {
+            switch(get_state())
+            {
                 case USR:
                 case SYS: return registers.r13;
                 case FIQ: return registers.r13_fiq;
@@ -360,7 +401,8 @@ u32 arm_7tdmi::get_register(uint32_t reg) {
             }
 
         case 0xe:
-            switch(get_state()) {
+            switch(get_state())
+            {
                 case USR:
                 case SYS: return registers.r14;
                 case FIQ: return registers.r14_fiq;
@@ -375,7 +417,8 @@ u32 arm_7tdmi::get_register(uint32_t reg) {
         case 0x10:
             return registers.cpsr.full; // all banks share cpsr
         case 0x11:
-            switch(get_state()) {
+            switch(get_state())
+            {
                 case FIQ: return registers.spsr_fiq.full;
                 case SVC: return registers.spsr_svc.full;
                 case ABT: return registers.spsr_abt.full;
@@ -391,8 +434,10 @@ u32 arm_7tdmi::get_register(uint32_t reg) {
     return 100; // should never happen
 }
 
-void arm_7tdmi::set_register(int reg, u32 val) {
-    switch (reg) {
+void arm_7tdmi::set_register(int reg, u32 val)
+{
+    switch (reg)
+    {
         // all banks share r0 - r7
         case 0x0: registers.r0 = val; break;
         case 0x1: registers.r1 = val; break;
@@ -405,7 +450,8 @@ void arm_7tdmi::set_register(int reg, u32 val) {
 
         // banked registers
         case 0x8:
-            switch (get_state()) {
+            switch (get_state())
+            {
                 case FIQ:
                     registers.r8_fiq = val;
                     break;
@@ -415,7 +461,8 @@ void arm_7tdmi::set_register(int reg, u32 val) {
             }
             break;
         case 0x9:
-            switch (get_state()) {
+            switch (get_state())
+            {
                 case FIQ:
                     registers.r9_fiq = val;
                     break;
@@ -425,7 +472,8 @@ void arm_7tdmi::set_register(int reg, u32 val) {
             }
             break;
         case 0xa:
-            switch (get_state()) {
+            switch (get_state())
+            {
                 case FIQ:
                     registers.r10_fiq = val;
                     break;
@@ -435,7 +483,8 @@ void arm_7tdmi::set_register(int reg, u32 val) {
             }
             break;
         case 0xb:
-            switch (get_state()) {
+            switch (get_state())
+            {
                 case FIQ:
                     registers.r11_fiq = val;
                     break;
@@ -445,7 +494,8 @@ void arm_7tdmi::set_register(int reg, u32 val) {
             }
             break;
         case 0xc:
-            switch (get_state()) {
+            switch (get_state())
+            {
                 case FIQ:
                     registers.r12_fiq = val;
                     break;
@@ -456,7 +506,8 @@ void arm_7tdmi::set_register(int reg, u32 val) {
             break;
 
         case 0xd:
-            switch(get_state()) {
+            switch(get_state())
+            {
                 case USR:
                 case SYS:
                     registers.r13 = val;
@@ -480,7 +531,8 @@ void arm_7tdmi::set_register(int reg, u32 val) {
             break;
 
         case 0xe:
-            switch(get_state()) {
+            switch(get_state())
+            {
                 case USR:
                 case SYS:
                     registers.r14 = val;
@@ -513,7 +565,8 @@ void arm_7tdmi::set_register(int reg, u32 val) {
 }
 
 // update cpsr flags after a logical operation
-void arm_7tdmi::update_flags_logical(u32 result, uint8_t carry_out) {
+void arm_7tdmi::update_flags_logical(u32 result, u8 carry_out)
+{
     // C flag will be set to the carry out from the barrel shifter
     set_condition_code_flag(C, carry_out);
 
@@ -527,44 +580,44 @@ void arm_7tdmi::update_flags_logical(u32 result, uint8_t carry_out) {
 }
 
 // update cpsr flags after an addition operation
-void arm_7tdmi::update_flags_addition(u32 op1, u32 op2, u32 result) {
+void arm_7tdmi::update_flags_addition(u32 op1, u32 op2, u32 result)
+{
     // C flag will be set to the carry out of bit 31 of the ALU
-    if (op1 > result || op2 > result) {
+    if (op1 > result || op2 > result)
         set_condition_code_flag(C, 1);
-    } else {
+    else
         set_condition_code_flag(C, 0);
-    }
 
     // Z flag will be set if and only if the result was zero
-    uint8_t new_z = result == 0 ? 1 : 0;
+    u8 new_z = result == 0 ? 1 : 0;
     set_condition_code_flag(Z, new_z);
 
     // N flag will be set to the value of bit 31 of the result
-    uint8_t new_n = result & 0x80000000 ? 1 : 0;
+    u8 new_n = result & 0x80000000 ? 1 : 0;
     set_condition_code_flag(N, new_n); // 0x80000000 is 1 followed by 31 zeros in binary
 
     // V flag will be set overflow occurs into bit 31 of the result
-    uint8_t op1_msb = op1 & 0x80000000 ? 1 : 0;
-    uint8_t op2_msb = op2 & 0x80000000 ? 1 : 0;
-    uint8_t result_msb = result & 0x80000000 ? 1 : 0;
-    if (op1_msb == 0 && op2_msb == 0 && result_msb == 1) {
+    u8 op1_msb = op1 & 0x80000000 ? 1 : 0;
+    u8 op2_msb = op2 & 0x80000000 ? 1 : 0;
+    u8 result_msb = result & 0x80000000 ? 1 : 0;
+
+    if (op1_msb == 0 && op2_msb == 0 && result_msb == 1)
         set_condition_code_flag(V, 1);
-    } else if (op1_msb == 1 && op2_msb == 1 && result_msb == 0) {
+    else if (op1_msb == 1 && op2_msb == 1 && result_msb == 0)
         set_condition_code_flag(V, 1);
-    } else {
+    else
         set_condition_code_flag(V, 0);
-    }
 }
 
 // update cpsr flags after a subtraction operation
-void arm_7tdmi::update_flags_subtraction(u32 op1, u32 op2, u32 result) {
+void arm_7tdmi::update_flags_subtraction(u32 op1, u32 op2, u32 result)
+{
     // C flag will be set to the carry out of bit 31 of the ALU
     // ARM uses an inverted carry flag for borrow
-    if (result > op1) {
+    if (result > op1)
         set_condition_code_flag(C, 0);
-    } else {
+    else
         set_condition_code_flag(C, 1);
-    }
 
     // Z flag will be set if and only if the result was zero
     uint8_t new_z = result == 0 ? 1 : 0;
@@ -575,16 +628,17 @@ void arm_7tdmi::update_flags_subtraction(u32 op1, u32 op2, u32 result) {
     set_condition_code_flag(N, new_n); // 0x80000000 is 1 followed by 31 zeros in binary
 
     // V flag will be set overflow occurs into bit 31 of the result
-    uint8_t op1_msb = op1 & 0x80000000 ? 1 : 0;
-    uint8_t op2_msb = op2 & 0x80000000 ? 1 : 0;
-    uint8_t result_msb = result & 0x80000000 ? 1 : 0;
-    if (op1_msb == 0 && op2_msb == 1 && result_msb == 1) {
+    u8 op1_msb = op1 & 0x80000000 ? 1 : 0;
+    u8 op2_msb = op2 & 0x80000000 ? 1 : 0;
+    u8 result_msb = result & 0x80000000 ? 1 : 0;
+
+    if (op1_msb == 0 && op2_msb == 1 && result_msb == 1)
         set_condition_code_flag(V, 1);
-    } else if (op1_msb == 1 && op2_msb == 0 && result_msb == 0) {
+    else if (op1_msb == 1 && op2_msb == 0 && result_msb == 0)
         set_condition_code_flag(V, 1);
-    } else {
+    else
         set_condition_code_flag(V, 0);
-    }
+
 }
 
 /* performs a shift operation on op2.
@@ -595,8 +649,9 @@ void arm_7tdmi::update_flags_subtraction(u32 op1, u32 op2, u32 result) {
  *  num - the number that will actually be shifted
  *  opcode - an encoding of which type of shift to be performed
  */
-uint8_t arm_7tdmi::barrel_shift(u32 shift_amount, u32 &num, u8 opcode) {
-    uint8_t carry_out = get_condition_code_flag(C); // preserve C flag
+u8 arm_7tdmi::barrel_shift(u32 shift_amount, u32 &num, u8 opcode)
+{
+    u8 carry_out = get_condition_code_flag(C); // preserve C flag
 
     // if shift_amount is 0, leave num unchanged and return the old shift flag
     if (shift_amount == 0)
@@ -606,13 +661,18 @@ uint8_t arm_7tdmi::barrel_shift(u32 shift_amount, u32 &num, u8 opcode) {
     size_t num_bits = sizeof(u32) * 8;
 
     // perform shift
-    switch (opcode) {
+    switch (opcode)
+    {
         // LSL
         case 0b00:
-            if (shift_amount > num_bits) { // undefined behavior to try to shift by more than 32
+            if (shift_amount > num_bits) // undefined behavior to try to shift by more than 32
+            { 
                 num = 0;
                 carry_out = 0;
-            } else {
+            }
+            
+            else
+            {
                 num <<= (shift_amount - 1);
                 carry_out = (num >> num_bits - 1) & 1; // most significant bit
                 num <<= 1; // shift last time
@@ -621,10 +681,14 @@ uint8_t arm_7tdmi::barrel_shift(u32 shift_amount, u32 &num, u8 opcode) {
         
         // LSR
         case 0b01:
-            if (shift_amount > num_bits) { // undefined behavior to try to shift by more than 32
+            if (shift_amount > num_bits) // undefined behavior to try to shift by more than 32s
+            { 
                 num = 0;
                 carry_out = 0;
-            } else {
+            }
+            
+            else
+            {
                 num >>= (shift_amount - 1);
                 carry_out = num & 1;
                 num >>= 1;
@@ -633,7 +697,8 @@ uint8_t arm_7tdmi::barrel_shift(u32 shift_amount, u32 &num, u8 opcode) {
         
         // ASR
         case 0b10:
-            for (int i = 0; i < shift_amount; ++i) {
+            for (int i = 0; i < shift_amount; ++i)
+            {
                 carry_out  = num & 1;
                 uint8_t msb = (num >> num_bits - 1) & 1; // most significant bit
                 num >>= 1;
@@ -643,12 +708,17 @@ uint8_t arm_7tdmi::barrel_shift(u32 shift_amount, u32 &num, u8 opcode) {
         
         // ROR
         case 0b11:
-            if (shift_amount == 0xFFFFFFFF) { // rotate right extended
+            if (shift_amount == 0xFFFFFFFF) // rotate right extended
+            { 
                 carry_out = num & 1;
                 num >>= 1;
                 num |= get_condition_code_flag(C) << (num_bits - 1);
-            } else { // normal rotate right
-                for (int i = 0; i < shift_amount; ++i) {
+            }
+            
+            else // normal rotate right
+            {
+                for (int i = 0; i < shift_amount; ++i)
+                {
                     carry_out = num & 1;
                     uint8_t dropped_lsb = num & 1;  
                     num >>= 1;
@@ -672,12 +742,14 @@ inline void arm_7tdmi::increment_pc() {
  * Updates the value in the cpsr
  * Can also change the emulator's state or mode depending on the value
  */ 
-void arm_7tdmi::update_cpsr(u32 value, bool flags_only) {
+void arm_7tdmi::update_cpsr(u32 value, bool flags_only)
+{
     status_register sr;
     sr.full = value;
 
     // in user mode, only condition bits can be changed
-    if (flags_only || get_state() == USR) {
+    if (flags_only || get_state() == USR)
+    {
         registers.cpsr.bits.n = sr.bits.n;
         registers.cpsr.bits.z = sr.bits.z;
         registers.cpsr.bits.c = sr.bits.c;
@@ -687,9 +759,10 @@ void arm_7tdmi::update_cpsr(u32 value, bool flags_only) {
 
     registers.cpsr.full = value;
 
-    if (registers.cpsr.bits.t != sr.bits.t) {
+    if (registers.cpsr.bits.t != sr.bits.t)
         std::cout << "Software is changing TBIT in CPSR!" << "\n"; // is this allowed??
-    }
+
+    // TODO - validate CPSR was appropriately changed
 
     // if (sr.bits.state == IRQ && registers.cpsr.bits.i == 1) return; // irq disabled bit set
     // if (sr.bits.state == FIQ && registers.cpsr.bits.f == 1) return; // fiq disabled bit set
@@ -698,11 +771,13 @@ void arm_7tdmi::update_cpsr(u32 value, bool flags_only) {
 /*
  * Updates the value in the spsr <mode>
  */ 
-void arm_7tdmi::update_spsr(u32 value, bool flags_only) {
+void arm_7tdmi::update_spsr(u32 value, bool flags_only)
+{
     status_register old_spsr;
 
     // get spsr_<mode>
-    switch (get_state()) {
+    switch (get_state())
+    {
         case USR:
             // spsr doesn't exist in user mode
             std::cerr << "Error: SPSR does not exist in user mode" << "\n";
@@ -732,14 +807,16 @@ void arm_7tdmi::update_spsr(u32 value, bool flags_only) {
     sr.full = value;
 
     // don't have to check for USR mode b/c that was done above
-    if (flags_only) {
+    if (flags_only)
+    {
         old_spsr.bits.n = sr.bits.n;
         old_spsr.bits.z = sr.bits.z;
         old_spsr.bits.c = sr.bits.c;
         old_spsr.bits.v = sr.bits.v;
 
         // set updated spsr_<mode>
-        switch (get_state()) {
+        switch (get_state())
+        {
             case FIQ:
                 registers.spsr_fiq = old_spsr;
                 break;
@@ -763,7 +840,8 @@ void arm_7tdmi::update_spsr(u32 value, bool flags_only) {
     old_spsr.full = value;
 
     // set updated spsr_<mode>
-    switch (get_state()) {
+    switch (get_state())
+    {
         case FIQ:
             registers.spsr_fiq = old_spsr;
             break;
@@ -788,8 +866,10 @@ void arm_7tdmi::update_spsr(u32 value, bool flags_only) {
 // advances the cpu clock
 // address is the current access address
 // type is the cycle type, either 'n', 's', or 'i'
-void arm_7tdmi::cycle(u32 address, char type) {
-    switch (type) {
+void arm_7tdmi::cycle(u32 address, char type)
+{
+    switch (type)
+    {
         case 'i':
             cycles++;
             break;
@@ -802,18 +882,21 @@ void arm_7tdmi::cycle(u32 address, char type) {
     }
 }
 
-void arm_7tdmi::handle_interrupt() {
-    // new comment
+void arm_7tdmi::handle_interrupt()
+{
     // check if master interrupts are enabled
-    if ((mem->read_u32(REG_IME) & 1) && registers.cpsr.bits.i == 0) {
+    if ((mem->read_u32(REG_IME) & 1) && registers.cpsr.bits.i == 0) 
+    {
         std::cout << "Interupts enabled\n";
         // get enabled interrupts and requested interrupts
         u16 interrupts_enabled = mem->read_u16(REG_IF);
         u16 interrupts_requested = mem->read_u16(REG_IE);
 
         // get first identical set bit in enabled/requested interrupts
-        for (int i = 0; i < 14; ++i) { // 14 interrupts available
-            if (interrupts_enabled & (1 << i) && interrupts_requested & (1 << i)) {
+        for (int i = 0; i < 14; ++i) // 14 interrupts available
+        {
+            if (interrupts_enabled & (1 << i) && interrupts_requested & (1 << i))
+            {
                 // handle interrupt at position i
 
                 registers.cpsr.bits.state = IRQ;
@@ -830,7 +913,8 @@ void arm_7tdmi::handle_interrupt() {
     }
 }
 
-u8 arm_7tdmi::read_u8(u32 address) {
+u8 arm_7tdmi::read_u8(u32 address)
+{
     if (!mem_check(address)) return 0;
     return mem->read_u8(address);
 }
@@ -840,23 +924,33 @@ u8 arm_7tdmi::read_u8(u32 address) {
  * pass true if the halfword is signed, false otherwise
  * This needs to be known for misalignment reasons
  */
-u32 arm_7tdmi::read_u16(u32 address, bool sign) {
+u32 arm_7tdmi::read_u16(u32 address, bool sign)
+{
     if (!mem_check(address)) return 0;
 
     u32 data;
 
-    if (sign) {
+    if (sign)
+    {
         data = (u32) mem->read_u16(address);
 
         // misaligned address, sign extend BYTE value
-        if ((address & 1) != 0) {
+        if ((address & 1) != 0)
+        {
             if (data & 0x80)
                 data |= 0xFFFFFF00;
-        } else { // correctly aligned address, sign extend HALFWORD value
+        }
+        
+        // correctly aligned address, sign extend HALFWORD value
+        else
+        {
             if (data & 0x8000)
                 data |= 0xFFFF0000;
         }
-    } else {
+    }
+    
+    else
+    {
         // read from forcibly aligned address
         data = (u32) mem->read_u16(address & ~1);
         // misaligned read - reads from forcibly aligned address "addr AND 1", and does then rotate the data as "ROR 8"
@@ -872,7 +966,8 @@ u32 arm_7tdmi::read_u16(u32 address, bool sign) {
  * pass true if this is a LDR or SWP operation false otherwise
  * This needs to be known for misalignment reasons
  */
-u32 arm_7tdmi::read_u32(u32 address, bool ldr) {
+u32 arm_7tdmi::read_u32(u32 address, bool ldr)
+{
     if (!mem_check(address)) return 0;
     
     // read from forcibly aligned address
@@ -891,12 +986,14 @@ u32 arm_7tdmi::read_u32(u32 address, bool ldr) {
 }
 
 
-void arm_7tdmi::write_u8(u32 address, u8 value) {
+void arm_7tdmi::write_u8(u32 address, u8 value)
+{
     if (!mem_check(address)) return;
     mem->write_u8(address, value);
 }
 
-void arm_7tdmi::write_u16(u32 address, u16 value) {
+void arm_7tdmi::write_u16(u32 address, u16 value)
+{
     // align address to halfword
     address &= ~0x1;
 
@@ -904,7 +1001,8 @@ void arm_7tdmi::write_u16(u32 address, u16 value) {
     mem->write_u16(address, value);
 }
 
-void arm_7tdmi::write_u32(u32 address, u32 value) {
+void arm_7tdmi::write_u32(u32 address, u32 value)
+{
     // align address to word
     address &= ~0x3;
 
@@ -917,7 +1015,8 @@ void arm_7tdmi::write_u32(u32 address, u32 value) {
 }
 
 // determine if an access at the specified address is allowed
-inline bool arm_7tdmi::mem_check(u32 &address) {
+inline bool arm_7tdmi::mem_check(u32 &address)
+{
     // if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALETTE_RAM_END) {
     //     if (!mem->stat->in_vBlank && !mem->stat->in_hBlank) return false;
     // }

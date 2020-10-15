@@ -14,11 +14,11 @@
 #include "memory.h"
 #include "gpu.h"
 
-const u32 CYCLES_PER_MILLISEC = (1 << 24) / 1000; // 16.78 mHz or 2 ^ 24 cycles/sec
-
 // data type for special registers
-union status_register {
-    struct bits {
+union status_register
+{
+    struct bits
+    {
         state_t state : 5;
         u8 t : 1;
         u8 f : 1;
@@ -32,7 +32,8 @@ union status_register {
     u32 full;
 };
 
-class arm_7tdmi {
+class arm_7tdmi
+{
     public:
         arm_7tdmi();
         ~arm_7tdmi();
@@ -45,7 +46,8 @@ class arm_7tdmi {
         u32 cycles;
         u32 last_accessed_addr;
 
-        struct registers_struct {
+        struct registers
+        {
             // general purpose registers
             u32 r0;
             u32 r1;
@@ -106,41 +108,16 @@ class arm_7tdmi {
         
         // getters / setters
         uint8_t get_condition_code_flag(condition_code_flag_t);
-        void set_condition_code_flag(condition_code_flag_t, uint8_t);
+        void set_condition_code_flag(condition_code_flag_t, u8);
 
-        state_t get_state() { return registers.cpsr.bits.state; }
-        void set_state(state_t s) {
-            bool valid = false;
-
-            switch (s) {
-                case USR:
-                case FIQ:
-                case IRQ:
-                case SVC:
-                case ABT:
-                case SYS:
-                case UND:
-                    valid = true;
-            }
-
-            if (!valid)
-                std::cerr << "Invalid state being set to cpsr: " << (int) s << "\n";
-            registers.cpsr.bits.state = s;
-        }
+        state_t get_state();
+        void set_state(state_t s); 
 
         cpu_mode_t get_mode() { return (cpu_mode_t) registers.cpsr.bits.t; }
         void set_mode(cpu_mode_t m) { registers.cpsr.bits.t = m; }
 
         u32 get_register(u32);
         void set_register(int reg, u32 val);
-
-        // safely interface with memory
-        u8 read_u8(u32);
-        u32 read_u16(u32, bool);
-        u32 read_u32(u32, bool);
-        void write_u8(u32, u8);
-        void write_u16(u32, u16);
-        void write_u32(u32, u32);
 
         // instruction execution
         void branch_exchange(u32);
@@ -182,20 +159,25 @@ class arm_7tdmi {
         // handle hardware interrupts
         void handle_interrupt();
 
+    private:
+        // safely interface with memory
+        u8 read_u8(u32);
+        u32 read_u16(u32, bool);
+        u32 read_u32(u32, bool);
+        void write_u8(u32, u8);
+        void write_u16(u32, u16);
+        void write_u32(u32, u32);
+
         // misc
         void update_flags_logical(u32, u8);
         void update_flags_addition(u32, u32, u32);
         void update_flags_subtraction(u32, u32, u32);
-        u8   barrel_shift(u32, u32 &, u8);
         void increment_pc();
-        bool condition_met(condition_t);
         void update_cpsr(u32, bool);
         void update_spsr(u32, bool);
+        bool condition_met(condition_t);
         bool mem_check(u32 &);
-
-    private:
-        state_t state;
-        cpu_mode_t mode;
+        u8   barrel_shift(u32, u32 &, u8);
 }; 
 
 #endif // ARM_7TDMI_H

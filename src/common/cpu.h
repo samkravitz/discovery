@@ -11,7 +11,8 @@
 #define CPU_COMMON_H
 
 // cpu state
-typedef enum State {
+typedef enum State
+{
     USR = 0b10000, // The normal ARM program execution state
     FIQ = 0b10001, // Designed to support a data transfer or channel process
     IRQ = 0b10010, // Used for general-purpose interrupt handling
@@ -22,13 +23,15 @@ typedef enum State {
 } state_t;
 
 // cpu mode 
-typedef enum Mode {
+typedef enum Mode
+{
     ARM = 0,
     THUMB = 1
 } cpu_mode_t;
 
 // condition code flag of program status register
-typedef enum ConditionCodeFlag {
+typedef enum ConditionCodeFlag
+{
     N, // 31st bit 
     Z, // 30th bit
     C, // 29th bit
@@ -37,7 +40,8 @@ typedef enum ConditionCodeFlag {
 
 // condition field of an instruction
 // first 4 bits of an instruction
-typedef enum Condition {
+typedef enum Condition
+{
     EQ = 0b0000, // Z set,                       equal
     NE = 0b0001, // Z clear,                     not equal
     CS = 0b0010, // C set,                       unsigned >=
@@ -75,7 +79,8 @@ typedef enum Condition {
  * CRT - Coprocessor Register Transfer
  * INT - Software Interrupt
  */
-typedef enum InstructionSetFormat {
+typedef enum InstructionSetFormat
+{
     DP,
     PSR,
     MUL,
@@ -93,7 +98,8 @@ typedef enum InstructionSetFormat {
     INT,
 } instruction_set_format_t;
 
-typedef enum DataProcessingOpcodes {
+typedef enum DataProcessingOpcodes
+{
     AND = 0b0000, // op1 AND op2
     EOR = 0b0001, // op1 XOR op2
     SUB = 0b0010, // op1 - op2
@@ -113,7 +119,8 @@ typedef enum DataProcessingOpcodes {
 } dp_opcodes_t;
 
 // everything postfixed with "T", for thumb :)
-typedef enum ThumbInstructionFormat {
+typedef enum ThumbInstructionFormat
+{
     MSR_T,    // move shifted register
     ADDSUB_T, // add/subtract
     IMM_T,    // move/compare/add/subtract immediate

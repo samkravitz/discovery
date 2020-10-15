@@ -16,12 +16,14 @@
 #include "common/common.h"
 #include "common/memory.h"
 
-class Memory {
+class Memory
+{
     public:
         Memory();
         ~Memory();
 
-        struct memory_struct {
+        struct memory
+        {
             u8 bios[MEM_BIOS_SIZE];
             u8 board_wram[MEM_BOARD_WRAM_SIZE];
             u8 chip_wram[MEM_CHIP_WRAM_SIZE];

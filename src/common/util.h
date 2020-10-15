@@ -13,7 +13,8 @@
 #include "common.h"
 #include "cpu.h"
 
-namespace util {
+namespace util
+{
     // determine which type of operation the instruction is
     instruction_set_format_t get_instruction_format(u32 instruction);
 

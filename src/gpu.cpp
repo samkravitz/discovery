@@ -20,17 +20,20 @@
 
 u32 u16_to_u32_color(u16);
 
-GPU::GPU() {
+GPU::GPU()
+{
     mem = NULL;
     stat = NULL;
 
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+    if (SDL_Init(SDL_INIT_VIDEO) < 0)
+    {
         std::cerr << "Could not initialize GPU" << "\n";
         exit(2);
     }
 
     window = SDL_CreateWindow("discovery", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
-    if (window == NULL) {
+    if (window == NULL)
+    {
         std::cerr << "Could not create window" << "\n";
         exit(2);
     }
@@ -44,21 +47,22 @@ GPU::GPU() {
     reset();
 
     old_clock = clock();
-
-    i = 0;
 }
 
-GPU::~GPU() {
+GPU::~GPU()
+{
     std::cout << "GPU:: Shutdown\n";
     SDL_Quit();
 }
 
-void GPU::reset() {
+void GPU::reset()
+{
     memset(screen_buffer, 0, sizeof(screen_buffer));
 }
 
 // 1 clock cycle of the gpu
-void GPU::clock_gpu() {
+void GPU::clock_gpu()
+{
     lcd_clock++;
 
     // 4 cycles per pixel
@@ -66,12 +70,12 @@ void GPU::clock_gpu() {
         stat->current_scanline_pixel++;
 
     // finished hDraw
-    if (stat->current_scanline_pixel == SCREEN_WIDTH) {
+    if (stat->current_scanline_pixel == SCREEN_WIDTH)
         stat->in_hBlank = true;
-    }
 
     // completed a scanline
-    if (lcd_clock % SCANLINE_CYCLES == 0) {
+    if (lcd_clock % SCANLINE_CYCLES == 0)
+    {
         stat->current_scanline++;
         if (stat->current_scanline == NUM_SCANLINES)
             stat->current_scanline = 0;
@@ -84,26 +88,25 @@ void GPU::clock_gpu() {
     }
 
     // finished vDraw
-    if (stat->current_scanline == SCREEN_HEIGHT) {
+    if (stat->current_scanline == SCREEN_HEIGHT)
         stat->in_vBlank = true;
-    }
 
     // completed a refresh
-    if (lcd_clock == REFRESH_CYCLES) {
+    if (lcd_clock == REFRESH_CYCLES)
+    {
         lcd_clock = 0; // restart lcd_clock
         stat->current_scanline = 0;
         stat->current_scanline_pixel = 0;
         stat->in_hBlank = false;
         stat->in_vBlank = false;
-        if (i > 10)
-            draw();
-        i++;
     }
 }
 
-void GPU::draw() {
+void GPU::draw()
+{
     //std::cout << "Executing graphics mode: " << (int) (stat->reg_dispcnt.mode) << "\n";
-    switch (stat->reg_dispcnt.mode) { // bits 0-2 represent video mode
+    switch (stat->reg_dispcnt.mode)
+    {
         case 0: draw_mode0(); break;
         case 3: draw_mode3(); break;
         case 4: draw_mode4(); break;
@@ -113,22 +116,23 @@ void GPU::draw() {
     }
 
     // sprites enabled
-    if (stat->reg_dispcnt.obj_enabled) {
+    if (stat->reg_dispcnt.obj_enabled)
+    {
         update_attr();
         draw_sprites();
     }
 
     // copy pixel buffer over to surface pixels
-    if (SDL_MUSTLOCK(final_screen)) SDL_LockSurface(final_screen);
+    if (SDL_MUSTLOCK(final_screen))
+        SDL_LockSurface(final_screen);
 
     u32 *screen_pixels = (u32 *) final_screen->pixels;
-    for (int y = 0; y < SCREEN_HEIGHT; ++y) {
-        for (int x = 0; x < SCREEN_WIDTH; ++x) {
+    for (int y = 0; y < SCREEN_HEIGHT; ++y)
+        for (int x = 0; x < SCREEN_WIDTH; ++x)
             screen_pixels[y * SCREEN_WIDTH + x] = screen_buffer[y][x];
-        }
-    }
 
-    if (SDL_MUSTLOCK(final_screen)) SDL_UnlockSurface(final_screen);
+    if (SDL_MUSTLOCK(final_screen))
+        SDL_UnlockSurface(final_screen);
 
     //SDL_BlitSurface(original_screen, NULL, final_screen, NULL);
 
@@ -148,7 +152,8 @@ void GPU::draw() {
 
 // video mode 0 - tile mode
 // can draw bg0-bg3 all regular
-void GPU::draw_mode0() {
+void GPU::draw_mode0()
+{
     for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
         for (int i = 0; i < 3; ++i) // bg0-bg3
             if (stat->bg_cnt[i].enabled && stat->bg_cnt[i].priority == priority)
@@ -157,12 +162,15 @@ void GPU::draw_mode0() {
 
 // video mode 3 - bitmap mode
 // mode 3 straight up uses 2 bytes to represent each pixel in aRBG format, no palette used
-void GPU::draw_mode3() {
+void GPU::draw_mode3()
+{
     u16 current_pixel; // in mode 3 each pixel uses 2 bytes
 
     int i = 0;
-    for (int y = 0; y < SCREEN_HEIGHT; ++y) {
-        for (int x = 0; x < SCREEN_WIDTH; ++x) {
+    for (int y = 0; y < SCREEN_HEIGHT; ++y)
+    {
+        for (int x = 0; x < SCREEN_WIDTH; ++x)
+        {
             current_pixel = mem->read_u16_unprotected(MEM_VRAM_START + (2 * i)); // multiply i * 2 b/c each pixel is 2 bytes
             screen_buffer[y][x] = u16_to_u32_color(current_pixel);
             ++i;
@@ -171,13 +179,16 @@ void GPU::draw_mode3() {
 }
 
 // video mode 4 - bitmap mode
-void GPU::draw_mode4() {
+void GPU::draw_mode4()
+{
     u8 palette_index; // in mode 4 each pixel uses 1 byte 
     u16 color;        // the color located at pallette_ram[palette_index]
 
     int i = 0;
-    for (int y = 0; y < SCREEN_HEIGHT; ++y) {
-        for (int x = 0; x < SCREEN_WIDTH; ++x) {
+    for (int y = 0; y < SCREEN_HEIGHT; ++y)
+    {
+        for (int x = 0; x < SCREEN_WIDTH; ++x)
+        {
             palette_index = mem->read_u8_unprotected(MEM_VRAM_START + i);
             // multiply by sizeof(u16) because each entry in palram is 2 bytes
             color = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
@@ -190,7 +201,8 @@ void GPU::draw_mode4() {
 
 // draws regular background
 // bg - background index (0-3)
-void GPU::draw_reg_background(int bg) {
+void GPU::draw_reg_background(int bg)
+{
     // initial address of background tileset
     u32 tileset_address = MEM_VRAM_START + CHARBLOCK_LEN * stat->bg_cnt[bg].cbb;
 
@@ -200,7 +212,8 @@ void GPU::draw_reg_background(int bg) {
 
     // get width / height (in tiles) of background
     int width, height;
-    switch(stat->bg_cnt[bg].size) {
+    switch(stat->bg_cnt[bg].size)
+    {
         case 0:
             width = 32;
             height = 32;
@@ -233,19 +246,26 @@ void GPU::draw_reg_background(int bg) {
     u8 palbank;          // palette bank (for s-tiles)
     int x, y;            // (x, y) coordinate of current pixel;
 
-    for (int ssy = 0; ssy < (height / 32); ++ssy) {
-        for (int ssx = 0; ssx < (width / 32); ++ssx) {
+    // TODO - yikes...
+    for (int ssy = 0; ssy < (height / 32); ++ssy)
+    {
+        for (int ssx = 0; ssx < (width / 32); ++ssx)
+        {
             tilemap_address = start_tilemap_address + ssx * SCREENBLOCK_LEN + (2 * ssy * SCREENBLOCK_LEN);
-            for (int h = 0; h < TILES_PER_SCREENBLOCK; ++h) {
-                for (int w = 0; w < TILES_PER_SCREENBLOCK; ++w) {
+            for (int h = 0; h < TILES_PER_SCREENBLOCK; ++h)
+            {
+                for (int w = 0; w < TILES_PER_SCREENBLOCK; ++w)
+                {
                     screen_entry = mem->read_u16_unprotected(tilemap_address);
                     tilemap_index = screen_entry & 0x3FF; // bits 9-0 
 
-                    if (stat->bg_cnt[bg].color_mode == 0) { // s-tile (4bpp)
+                    if (stat->bg_cnt[bg].color_mode == 0) // s-tile (4bpp)
+                    {
                         palbank = screen_entry >> 12 & 0xF; // bits F - C
                         cur_screenblock = tileset_address + S_SCREENENTRY_DEPTH * tilemap_index;
 
-                        for (int i = 0; i < S_TILE_LEN; ++i) {
+                        for (int i = 0; i < S_TILE_LEN; ++i)
+                        {
                             // 256 bc each screenblock is 32 tiles, 32 * 8 = 256
                             x = ssx * 256 + w * PX_IN_TILE_ROW + 2 * (i % 4); // s-tiles get left/right px in one read 
                             y = ssy * 256 + h * PX_IN_TILE_COL + (i / 4);
@@ -256,25 +276,30 @@ void GPU::draw_reg_background(int bg) {
 
                             // add left, right pixel to screen buffer
                             // pixel value 0 is transparent, so only draw if not 0
-                            if (left_pixel != 0) {
+                            if (left_pixel != 0)
+                            {
                                 // multiply by sizeof(u16) because each entry in palram is 2 bytes
                                 color = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + left_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
                                 map[y][x] = u16_to_u32_color(color);
                             }
 
                             // pixel value 0 is transparent, so only draw if not 0
-                            if (right_pixel != 0) {
+                            if (right_pixel != 0)
+                            {
                                 // multiply by sizeof(u16) because each entry in palram is 2 bytes
                                 color = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + right_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
                                 map[y][x + 1] = u16_to_u32_color(color);
                             }
                         }
 
-                    } else { // d-tile (8bpp)
-
+                    }
+                    
+                    else // d-tile (8bpp)
+                    {
                         cur_screenblock = tileset_address + D_SCREENENTRY_DEPTH * tilemap_index;
 
-                        for (int i = 0; i < D_TILE_LEN; i++) {
+                        for (int i = 0; i < D_TILE_LEN; i++)
+                        {
 
                             palette_index = mem->read_u8_unprotected(cur_screenblock + i);
 
@@ -294,7 +319,6 @@ void GPU::draw_reg_background(int bg) {
                     }
 
                     tilemap_address += 2; // each tile is 2 bytes long
-
                 }
             }
         }
@@ -302,7 +326,8 @@ void GPU::draw_reg_background(int bg) {
 
     // get vertical & horizontal offset
     u16 voff, hoff;
-    switch (bg) {
+    switch (bg)
+    {
         case 0:
             voff = mem->read_u16_unprotected(REG_BG0VOFS);
             hoff = mem->read_u16_unprotected(REG_BG0HOFS);
@@ -325,8 +350,10 @@ void GPU::draw_reg_background(int bg) {
     }
 
     // copy area of map that screen is over into screen buffer
-    for (int y = 0; y < SCREEN_HEIGHT; ++y) {
-        for (int x = 0; x < SCREEN_WIDTH; ++x) {
+    for (int y = 0; y < SCREEN_HEIGHT; ++y)
+    {
+        for (int x = 0; x < SCREEN_WIDTH; ++x)
+        {
             // modulo mapsize to allow wrapping
             if (map[(y + voff) % (height * PX_IN_TILE_COL)][(x + hoff) % (width * PX_IN_TILE_ROW)] != 0)
                 screen_buffer[y][x] = map[(y + voff) % (height * PX_IN_TILE_COL)][(x + hoff) % (width * PX_IN_TILE_ROW)];
@@ -334,11 +361,14 @@ void GPU::draw_reg_background(int bg) {
     }
 }
 
-void GPU::draw_sprites() {
+void GPU::draw_sprites()
+{
     obj_attr attr;
-    for (int i = 0; i < NUM_OBJS; ++i) {
+    for (int i = 0; i < NUM_OBJS; ++i)
+    {
         attr = objs[i];
-        switch (attr.attr_0.attr.om) {
+        switch (attr.attr_0.attr.om)
+        {
             case 0x0: // normal rendering
                 draw_regular_sprite(attr);
                 break;
@@ -352,7 +382,8 @@ void GPU::draw_sprites() {
     }
 }
 
-void GPU::draw_regular_sprite(obj_attr attr) {
+void GPU::draw_regular_sprite(obj_attr attr)
+{
     // use some masking to make x and y fit in screen coordinates
     u16 x = attr.attr_1.attr.x;
     u8 y = attr.attr_0.attr.y;
@@ -365,7 +396,8 @@ void GPU::draw_regular_sprite(obj_attr attr) {
 
     // get width, height in tiles of sprite
     int width, height;
-    switch (attr.size()) {
+    switch (attr.size())
+    {
         case 0x0:
             width = 1;
             height = 1;
@@ -421,12 +453,10 @@ void GPU::draw_regular_sprite(obj_attr attr) {
 
     bool s_tile = attr.attr_0.attr.a == 0;
 
-    // flips
-    bool hor_flip = attr.attr_1.attr.h == 1;
-    bool vert_flip = attr.attr_1.attr.v == 1;
-
-    for (int h = 0; h < height; ++h) {
-        for (int w = 0; w < width; ++w) {
+    for (int h = 0; h < height; ++h)
+    {
+        for (int w = 0; w < width; ++w)
+        {
             // multiply 8 because each tile is 8 pixels wide
             draw_sprite_tile(base_tile_addr, x + 8 * w, y + 8 * h, s_tile, attr.attr_2.attr.l);
             // tile offset
@@ -435,10 +465,13 @@ void GPU::draw_regular_sprite(obj_attr attr) {
     }
 
     // horizontal flip
-    if (hor_flip) {
+    if (attr.attr_1.attr.h)
+    {
         u32 temp;
-        for (int h = 0; h < height * 8; ++h) {
-            for (int w = 0; w < width * 4; ++w) {
+        for (int h = 0; h < height * 8; ++h)
+        {
+            for (int w = 0; w < width * 4; ++w) 
+            {
                 temp = screen_buffer[y + h][x + w];
                 screen_buffer[y + h][x + w] = screen_buffer[y + h][(x + width * 8) - w];
                 screen_buffer[y + h][(x + width * 8) - w] = temp;
@@ -447,10 +480,13 @@ void GPU::draw_regular_sprite(obj_attr attr) {
     }
 
     // vertical flip
-    if (vert_flip) {
+    if (attr.attr_1.attr.v) 
+    {
         u32 temp;
-        for (int h = 0; h < height * 4; ++h) {
-            for (int w = 0; w < width * 8; ++w) {
+        for (int h = 0; h < height * 4; ++h)
+        {
+            for (int w = 0; w < width * 8; ++w)
+            {
                 temp = screen_buffer[y + h][x + w];
                 screen_buffer[y + h][x + w] = screen_buffer[(y + height * 8) - h][x + w];
                 screen_buffer[(y + height * 8) - h][x + w] = temp;
@@ -459,20 +495,24 @@ void GPU::draw_regular_sprite(obj_attr attr) {
     }
 }
 
-void GPU::draw_affine_sprite(obj_attr attr) {
+void GPU::draw_affine_sprite(obj_attr attr)
+{
     // std::cout << "You have an affine sprite \n";
     // attr.print();
 }
 
 // draws a single 8x8 pixel tile
-inline void GPU::draw_sprite_tile(int starting_address, u16 start_x, u8 start_y, bool s_tile, u8 palbank) {
+inline void GPU::draw_sprite_tile(int starting_address, u16 start_x, u8 start_y, bool s_tile, u8 palbank)
+{
     u16 color;
     u8 palette_index; // nth entry in palram
     int x, y;
 
     // draw
-    if (s_tile) { // 4 bits / pixel - s-tile
-        for (int i = 0; i < S_TILE_LEN; ++i) {
+    if (s_tile) // 4 bits / pixel - s-tile
+    {
+        for (int i = 0; i < S_TILE_LEN; ++i)
+        {
             palette_index = mem->read_u8_unprotected(starting_address + i);
 
             x = start_x + (2 * (i % 4));
@@ -483,14 +523,16 @@ inline void GPU::draw_sprite_tile(int starting_address, u16 start_x, u8 start_y,
             
             // add left, right pixel to screen buffer
             // pixel value 0 is transparent, so only draw if not 0
-            if (left_pixel != 0) {
+            if (left_pixel != 0)
+            {
                 // multiply by sizeof(u16) because each entry in palram is 2 bytes
                 color = mem->read_u16_unprotected(SPRITE_PALETTE + left_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
                 screen_buffer[y][x] = u16_to_u32_color(color);
             }
 
             // pixel value 0 is transparent, so only draw if not 0
-            if (right_pixel != 0) {
+            if (right_pixel != 0)
+            {
                 // multiply by sizeof(u16) because each entry in palram is 2 bytes
                 color = mem->read_u16_unprotected(SPRITE_PALETTE + right_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
                 screen_buffer[y][x + 1] = u16_to_u32_color(color);
@@ -498,8 +540,13 @@ inline void GPU::draw_sprite_tile(int starting_address, u16 start_x, u8 start_y,
         }
 
 
-    } else { // 8 bits / pixel - d-tile
-        for (int i = 0; i < D_TILE_LEN; i++) {
+    }
+    
+    // 8 bits / pixel - d-tile
+    else
+    {
+        for (int i = 0; i < D_TILE_LEN; i++)
+        {
 
             palette_index = mem->read_u8_unprotected(starting_address + i);
 
@@ -519,9 +566,12 @@ inline void GPU::draw_sprite_tile(int starting_address, u16 start_x, u8 start_y,
 }
 
 // fills the objs data structure every frame an object needs to be drawn
-void GPU::update_attr() {
+void GPU::update_attr()
+{
     u32 address = MEM_OAM_START;
-    for (int i = 0; i < 128; ++i) { // loop through all 128 objects
+    // loop through all 128 objects
+    for (int i = 0; i < 128; ++i)
+    {
         // attr 0
         objs[i].attr_0._zero = mem->read_u16(address);
         address += sizeof(u16);
@@ -541,7 +591,8 @@ void GPU::update_attr() {
 }
 
 // fills an obj_attr struct from OAM from the given index (0-127)
-obj_attr GPU::get_attr(int index) {
+obj_attr GPU::get_attr(int index)
+{
     // each oam entry is 4 u16s,
     u32 base_addr = MEM_OAM_START + index * (4 * sizeof(u16));
     obj_attr attr;
@@ -552,7 +603,8 @@ obj_attr GPU::get_attr(int index) {
 }
 
 // given a 16 bit GBA color, make it a 32 bit SDL color
-inline u32 u16_to_u32_color (u16 color_u16) {
+inline u32 u16_to_u32_color (u16 color_u16)
+{
     u8 r, g, b;
     u32 color = 255; // alpha value
     color <<= 8;

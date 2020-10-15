@@ -34,7 +34,8 @@
 
 #define NUM_OBJS 128 // number of sprites that can be rendered
 
-class GPU {
+class GPU
+{
     public:
         GPU();
         ~GPU();
@@ -76,8 +77,6 @@ class GPU {
         void draw_affine_sprite(obj_attr);
         void draw_sprite_tile(int, u16, u8, bool, u8);
         void update_attr();
-
-        int i;
 };
 
 #endif // GPU_H

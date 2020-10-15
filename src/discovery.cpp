@@ -6,7 +6,17 @@
 
 void print_keys(u16);
 
-discovery::discovery() {
+int main(int argc, char **argv)
+{
+    std::cout << "Gameboy emulator!" << "\n";
+    discovery emulator;
+    emulator.mem->load_bios();
+    emulator.run_asm(argv[1]);
+    return 0;
+}
+
+discovery::discovery()
+{
     mem = new Memory();
     cpu.mem = mem;
     gpu.mem = mem;
@@ -31,17 +41,17 @@ discovery::discovery() {
     gpu.stat = stat;
 }
 
-void discovery::game_loop() {
+void discovery::game_loop()
+{
     SDL_Event e;
     u32 old_cycles = 0;
-    int num = 0;
 
-    while (true) {
+    while (true)
+    {
         cpu.fetch();
         cpu.decode(cpu.pipeline[0]);
         cpu.execute(cpu.pipeline[0]);
         // std::cout << "Executed instruction " << std::dec << num << ": " << std::hex << cpu.pipeline[0] << "\n";
-        // ++num;
 
         // update pipeline
         cpu.pipeline[0] = cpu.pipeline[1];
@@ -53,11 +63,13 @@ void discovery::game_loop() {
             gpu.clock_gpu();
         old_cycles = system_cycles;
     
-        // TODO - need a much better timing system
-        // poll for key presses during vblank
-        if (gpu.stat->current_scanline == 160 && SDL_PollEvent(&e)) { // poll key press at the start of vblank
-            if (e.type == SDL_QUIT) break;
-            if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) poll_keys(e);
+        // poll for key presses at start of vblank
+        if (gpu.stat->current_scanline == 160 && SDL_PollEvent(&e))
+        {
+            if (e.type == SDL_QUIT)
+                break;
+            if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)
+                poll_keys(e);
         }
 
         cpu.handle_interrupt();
@@ -66,21 +78,15 @@ void discovery::game_loop() {
     shutdown();
 }
 
-void discovery::run_asm(char *name) {
+void discovery::run_asm(char *name)
+{
     cpu.mem->load_rom(name);
     game_loop();
 }
 
-int main(int argc, char **argv) {
-    std::cout << "Gameboy emulator!" << "\n";
-    discovery emulator;
-    emulator.mem->load_bios();
-    emulator.run_asm(argv[1]);
-    return 0;
-}
-
 // write current key state to KEYINPUT register
-void discovery::poll_keys(SDL_Event e) {
+void discovery::poll_keys(SDL_Event e)
+{
     /*
      * Order of keys in KEYINPUT is as follows:
      * a: 0
@@ -95,8 +101,10 @@ void discovery::poll_keys(SDL_Event e) {
      * l: 9
      */
     // poll button presses
-    if (e.type == SDL_KEYDOWN) {
-        switch(e.key.keysym.sym) {
+    if (e.type == SDL_KEYDOWN)
+    {
+        switch(e.key.keysym.sym)
+        {
             case SDLK_x:         gamepad.a     = 0; break;
             case SDLK_z:         gamepad.b     = 0; break;
             case SDLK_BACKSPACE: gamepad.sel   = 0; break;
@@ -112,8 +120,10 @@ void discovery::poll_keys(SDL_Event e) {
     }
 
     // poll button releases
-    if (e.type == SDL_KEYUP) {
-        switch(e.key.keysym.sym) {
+    if (e.type == SDL_KEYUP)
+    {
+        switch(e.key.keysym.sym)
+        {
             case SDLK_x:         gamepad.a     = 1; break;
             case SDLK_z:         gamepad.b     = 1; break;
             case SDLK_BACKSPACE: gamepad.sel   = 1; break;
@@ -147,7 +157,8 @@ void discovery::poll_keys(SDL_Event e) {
     mem->write_u32(REG_KEYINPUT, gamepad_result);
 }
 
-void print_keys(u16 keys) {
+void print_keys(u16 keys)
+{
     std::cout << "\n\n";
     if (((keys >> 9) & 1) == 0) std::cout << "L is pressed\n";
     if (((keys >> 8) & 1) == 0) std::cout << "R is pressed\n";
@@ -161,7 +172,8 @@ void print_keys(u16 keys) {
     if (((keys >> 0) & 1) == 0) std::cout << "a is pressed\n";
 }
 
-void discovery::shutdown() {
+void discovery::shutdown()
+{
     // free resources and shutdown
     delete mem;
     cpu.~arm_7tdmi();

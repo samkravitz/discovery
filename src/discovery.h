@@ -14,7 +14,8 @@
 #include "gpu.h"
 #include "memory.h"
 
-class discovery {
+class discovery
+{
     public:
         discovery();
 
@@ -22,7 +23,8 @@ class discovery {
         GPU gpu;
         Memory *mem;
 
-        struct gamepad {
+        struct gamepad
+        {
             u8 a;
             u8 b;
             u8 sel;

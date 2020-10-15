@@ -21,12 +21,14 @@
  * r3 abs(number DIV) denom, unsigned
  * 
  */
-void arm_7tdmi::swi_division() {
+void arm_7tdmi::swi_division()
+{
     s32 num = (s32) get_register(0);
     s32 denom = (s32) get_register(1);
 
     // divide by 0
-    if (denom == 0) {
+    if (denom == 0)
+    {
         std::cerr << "SWI DIV: dividing by 0!\n";
         return;
     }

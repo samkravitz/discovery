@@ -13,7 +13,8 @@
 
 #include "common/common.h"
 
-struct lcd_stat {
+struct lcd_stat
+{
     lcd_stat();
     ~lcd_stat();
 
@@ -26,7 +27,8 @@ struct lcd_stat {
     bool needs_refresh;
 
     // REG_DISPCNT control
-    struct reg_dispcnt {
+    struct reg_dispcnt
+    {
         u8 mode         : 3; // video mode (0-5)
         u8 gb           : 1; // set if gbc game
         u8 ps           : 1; // page select
@@ -39,7 +41,8 @@ struct lcd_stat {
     } reg_dispcnt;
 
     // background controls (BGXCNT)
-    struct bg_cnt {
+    struct bg_cnt
+    {
         u8 priority    : 2; 
         u8 cbb         : 2; // character base block 
         u8 mosaic      : 1;

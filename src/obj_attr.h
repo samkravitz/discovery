@@ -13,10 +13,13 @@
 #include <iostream>
 #include "common/common.h"
 
-struct obj_attr {
+struct obj_attr
+{
 
-    union attr_0 {
-        struct attr {
+    union attr_0
+    {
+        struct attr
+        {
             u8 y : 8;  // y coordinate
             u8 om : 2; // object mode: 00 normal render, 01 affine, 10 hidden, 11 double-wide affine
             u8 t : 2;  // 00 - normal, 01 - semi-transparent, 01 obj window, 11 illegal
@@ -28,8 +31,10 @@ struct obj_attr {
         u16 _zero;        
     } attr_0;
 
-    union attr_1 {
-        struct attr {
+    union attr_1
+    {
+        struct attr
+        {
             u16 x : 9; // x coordinate
             // index for rotation data
             // will be 5 wide for affine sprites, replacing h & v
@@ -62,8 +67,10 @@ struct obj_attr {
         u16 _one;
     } attr_1;
 
-    union attr_2 {
-        struct attr {
+    union attr_2
+    {
+        struct attr
+        {
             u16 tileno : 10; // tile number
             u8 p       : 2; // priority
             u8 l       : 4; // palette number

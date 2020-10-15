@@ -264,7 +264,7 @@ void arm_7tdmi::multiply(u32 instruction) {
     // }
     
     if (Rd == 15 || Rm == 15) {
-        std::cout << "Register 15 may not be used as destination nor operand register" << std::endl;
+        std::cerr << "Register 15 may not be used as destination nor operand register" << std::endl;
         return;
     }
 
@@ -307,8 +307,112 @@ void arm_7tdmi::multiply(u32 instruction) {
         cycle(registers.r15, 'i');
 }
 
-void arm_7tdmi::multiply_long(u32 instruction) {
-    std::cout << "multiply long\n";
+void arm_7tdmi::multiply_long(u32 instruction)
+{
+    u32 RdHi                = util::get_instruction_subset(instruction, 19, 16);
+    u32 RdLo                = util::get_instruction_subset(instruction, 15, 12);
+    u32 Rs                  = util::get_instruction_subset(instruction, 11, 8);
+    u32 Rm                  = util::get_instruction_subset(instruction, 3, 0);
+    bool set_condition_code = util::get_instruction_subset(instruction, 20, 20) == 1;
+    bool accumulate         = util::get_instruction_subset(instruction, 21, 21) == 1;
+    bool sign               = util::get_instruction_subset(instruction, 22, 22) == 1;
+
+    if (RdHi == 15 || RdLo == 15 || Rm == 15 || Rs == 15)
+    {
+        std::cerr << "Register 15 may not be used as destination nor operand register" << std::endl;
+        return;
+    }
+
+    // RdHi, RdLo, and Rm must all specify different registers
+    if (RdHi == RdLo || RdHi == Rm || RdLo == Rm)
+    {
+        std::cerr << "RdHi, RdLo, and Rm must all specify different registers" << std::endl;
+        return;
+    }
+
+    // signed multiply long
+    if (sign)
+    {
+        s32 op1 = (s32) get_register(Rm);
+        s32 op2 = (s32) get_register(Rs);
+        s64 result, temp;
+        temp = result = op1 * op2; // 64 bit result
+
+        // Add contents of RdHi, RdLo to result
+        if (accumulate)
+        {
+            s64 acc = (s32) get_register(RdHi);
+            acc <<= 16;
+            acc <<= 16;
+            acc |= (s32) get_register(RdLo);
+            result += acc;
+        }
+
+        s32 lo = result & 0xFFFFFFFF; // lower 32 bits of result
+        result >>= 16;
+        result >>= 16;
+        s32 hi = result;
+
+        result = temp;
+
+        set_register(RdHi, hi);
+        set_register(RdLo, lo);
+
+        if (set_condition_code)
+        {
+            u8 new_n_flag = result < 0 ? 1 : 0; // negative of result
+            set_condition_code_flag(N, new_n_flag);
+
+            u8 new_z_flag = result == 0 ? 1 : 0;
+            set_condition_code_flag(Z, new_z_flag);
+
+            // C, V are set to meaningless values
+            set_condition_code_flag(C, 1);
+            set_condition_code_flag(V, 1);
+        }
+    }
+
+    // unsigned multiply long
+    else
+    {
+        u64 op1 = get_register(Rm);
+        u64 op2 = get_register(Rs);
+        u64 result, temp;
+        temp = result = op1 * op2; // 64 bit result
+
+        // Add contents of RdHi, RdLo to result
+        if (accumulate)
+        {
+            u64 acc = (u32) get_register(RdHi);
+            acc <<= 16;
+            acc <<= 16;
+            acc |= (u32) get_register(RdLo);
+            result += acc;
+        }
+
+        u32 lo = result & 0xFFFFFFFF; // lower 32 bits of result
+        result >>= 16;
+        result >>= 16;
+        u32 hi = result;
+
+        result = temp;
+
+        set_register(RdHi, hi);
+        set_register(RdLo, lo);
+
+        if (set_condition_code)
+        {
+            u8 new_n_flag = result & 0x8000000000000000; // bit 63 of result
+            set_condition_code_flag(N, new_n_flag);
+
+            u8 new_z_flag = result == 0 ? 1 : 0;
+            set_condition_code_flag(Z, new_z_flag);
+
+            // C, V are set to meaningless values
+            set_condition_code_flag(C, 1);
+            set_condition_code_flag(V, 1);
+        }
+    }
 }
 
 // allow access to CPSR and SPSR registers

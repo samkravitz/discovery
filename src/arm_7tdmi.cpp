@@ -29,7 +29,6 @@ arm_7tdmi::arm_7tdmi()
 
     // initialize cpsr
     registers.cpsr.bits.f = 1;
-    registers.cpsr.bits.state = SYS;
 
     pipeline_full = false;
     cycles = 0;

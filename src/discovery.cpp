@@ -80,7 +80,7 @@ void discovery::game_loop()
 
 void discovery::run_asm(char *name)
 {
-    cpu.mem->load_rom(name);
+    mem->load_rom(name);
     game_loop();
 }
 

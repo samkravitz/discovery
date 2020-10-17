@@ -22,20 +22,10 @@ class Memory
         Memory();
         ~Memory();
 
-        struct memory
-        {
-            u8 bios[MEM_BIOS_SIZE];
-            u8 board_wram[MEM_BOARD_WRAM_SIZE];
-            u8 chip_wram[MEM_CHIP_WRAM_SIZE];
-            u8 io_reg [MEM_IO_REG_SIZE];
-            u8 palette_ram[MEM_PALETTE_RAM_SIZE];
-            u8 vram[MEM_VRAM_SIZE];
-            u8 oam[MEM_OAM_SIZE];
-        } memory;
+        u8 memory[0x8000000];
 
         lcd_stat *stat;
-
-        u8 * game_rom;
+        u8 *game_rom;
         
         u8 n_cycles;
         u8 s_cycles;

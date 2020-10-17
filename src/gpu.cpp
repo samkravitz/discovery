@@ -144,12 +144,12 @@ void GPU::draw()
     // zero screen buffer for next frame
     memset(screen_buffer, 0, sizeof(screen_buffer));
 
-    // double duration;
-    // clock_t new_time = std::clock();
-    // duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
-    // std::cout << "Refresh took: " << duration << "\n";
-    // old_clock = new_time;
-    // stat->needs_refresh = false;
+    double duration;
+    clock_t new_time = std::clock();
+    duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
+    std::cout << "Refresh took: " << duration << "\n";
+    old_clock = new_time;
+    stat->needs_refresh = false;
 }
 
 // video mode 0 - tile mode

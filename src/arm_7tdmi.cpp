@@ -169,8 +169,9 @@ void arm_7tdmi::fetch()
 void arm_7tdmi::decode(u32 instruction) { }
 
 void arm_7tdmi::execute(u32 instruction)
-{
-   //std::cout << "Executing: " << std::hex << instruction << "\n";
+{  
+    //std::cout << std::hex << registers.r15 << "\n";
+    //std::cout << "Executing: " << std::hex << instruction << "\n";
     switch (get_mode())
     {
         case ARM:

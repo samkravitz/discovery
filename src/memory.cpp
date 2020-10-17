@@ -15,21 +15,11 @@
 
 namespace fs = std::experimental::filesystem;
 
-Memory::Memory() {
-    for (int i = 0; i < MEM_BIOS_SIZE; ++i)
-        memory.bios[i] = 0;
-    for (int i = 0; i < MEM_BOARD_WRAM_SIZE; ++i)
-        memory.board_wram[i] = 0;
-    for (int i = 0; i < MEM_VRAM_SIZE; ++i)
-        memory.vram[i] = 0;
-        
-    // io_reg, palette, and oam regions all have the same size
-    for (int i = 0; i < MEM_IO_REG_SIZE; ++i)
-    {
-        memory.io_reg[i] = 0;
-        memory.palette_ram[i] = 0;
-        memory.oam[i] = 0;
-    }
+Memory::Memory()
+{
+    // zero memory
+    for (int i = 0; i < 0x8000000; i++)
+        memory[i] = 0;
 
     // default cycle accesses for wait statae
     n_cycles = 4;
@@ -56,9 +46,16 @@ u16 Memory::read_u16(u32 address)
 
 u8 Memory::read_u8(u32 address)
 {
+    if (address >= 0x8000000)
+    {
+        return game_rom[address - 0x8000000];
+    }
+
     u8 result = 0;
     switch (address)
     {
+
+        // IO REG
         case REG_DISPSTAT:
             result |= stat->in_vBlank ? 0b1  : 0b0;  // bit 0 set in vblank, clear in vdraw
             result |= stat->in_hBlank ? 0b10 : 0b00; // bit 1 set in hblank, clear in hdraw
@@ -66,10 +63,11 @@ u8 Memory::read_u8(u32 address)
             return result;
         case REG_VCOUNT:
             return stat->current_scanline;
-        // case REG_KEYINPUT:
-        //     return 
+
+        // game rom
         default:
-            return *get_internal_region(address);
+            //return *get_internal_region(address);
+            return memory[address];
     }
 }
 
@@ -90,6 +88,12 @@ void Memory::write_u16(u32 address, u16 value)
 // TODO - add protection against VRAM byte writes
 void Memory::write_u8(u32 address, u8 value)
 {
+    if (address >= 0x8000000)
+    {
+        game_rom[address - 0x8000000] = value;
+        return;
+    }
+
     switch (address)
     {
         // REG_DISPCNT
@@ -185,8 +189,8 @@ void Memory::write_u8(u32 address, u8 value)
         break;
 
         default:
-            u8 *normalized_address = get_internal_region(address);
-            *normalized_address = value;
+            //u8 *normalized_address = get_internal_region(address);
+            memory[address] = value;
     }
 }
 
@@ -205,7 +209,7 @@ u16 Memory::read_u16_unprotected(u32 address)
 
 u8 Memory::read_u8_unprotected(u32 address)
 {
-    return *get_internal_region(address);
+    return memory[address];
 }
 
 void Memory::write_u32_unprotected(u32 address, u32 value)
@@ -225,8 +229,7 @@ void Memory::write_u16_unprotected(u32 address, u16 value)
 // TODO - add protection against VRAM byte writes
 void Memory::write_u8_unprotected(u32 address, u8 value)
 {
-    u8 *normalized_address = get_internal_region(address);
-    *normalized_address = value;
+    memory[address] = value;
 }
 
 void Memory::load_rom(char *name)
@@ -261,7 +264,7 @@ void Memory::load_bios()
         return;
     }
 
-    bios.read((char *) memory.bios, MEM_BIOS_SIZE);
+    bios.read((char *) memory, MEM_BIOS_SIZE);
     bios.close();
 }
 
@@ -272,30 +275,31 @@ void Memory::load_bios()
  */
 u8 *Memory::get_internal_region(u32 address)
 {
-    if (address <= MEM_BIOS_END)  {
-        return &memory.bios[address];
-    }
-    else if (address >= MEM_BOARD_WRAM_START && address <= MEM_BOARD_WRAM_END) {
-        //std::cout << "WORK ROM ACCESSED!\n";
-        return &memory.board_wram[address - MEM_BOARD_WRAM_START];
-    }
-    else if (address >= MEM_CHIP_WRAM_START && address <= MEM_CHIP_WRAM_END) return &memory.chip_wram[address - MEM_CHIP_WRAM_START];
-    else if (address >= MEM_IO_REG_START && address <= MEM_IO_REG_END) return &memory.io_reg[address - MEM_IO_REG_START];
-    else if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALETTE_RAM_END) {
-        //std::cout << "Pallette RAM accessed\n";
-        return &memory.palette_ram[address - MEM_PALETTE_RAM_START];
-    }
-    else if (address >= MEM_VRAM_START && address <= MEM_VRAM_END) return &memory.vram[address - MEM_VRAM_START];
-    else if (address >= MEM_OAM_START && address <= MEM_OAM_END) {
-        //std::cout << "Oam accessed\n";
-        return &memory.oam[address - MEM_OAM_START];
-    }
-    else if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END) {
-        //std::cout << "Gamepak ROM ACCESSED!\n";
-        return &game_rom[address - MEM_GAMEPAK_ROM_START];
-    }
-    else {
-        std::cerr << "Error: invalid internal address specified: " << std::hex << "0x" << address << "\n";
-        exit(2);
-    }
+    // if (address <= MEM_BIOS_END)  {
+    //     return &memory.bios[address];
+    // }
+    // else if (address >= MEM_BOARD_WRAM_START && address <= MEM_BOARD_WRAM_END) {
+    //     //std::cout << "WORK ROM ACCESSED!\n";
+    //     return &memory.board_wram[address - MEM_BOARD_WRAM_START];
+    // }
+    // else if (address >= MEM_CHIP_WRAM_START && address <= MEM_CHIP_WRAM_END) return &memory.chip_wram[address - MEM_CHIP_WRAM_START];
+    // else if (address >= MEM_IO_REG_START && address <= MEM_IO_REG_END) return &memory.io_reg[address - MEM_IO_REG_START];
+    // else if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALETTE_RAM_END) {
+    //     //std::cout << "Pallette RAM accessed\n";
+    //     return &memory.palette_ram[address - MEM_PALETTE_RAM_START];
+    // }
+    // else if (address >= MEM_VRAM_START && address <= MEM_VRAM_END) return &memory.vram[address - MEM_VRAM_START];
+    // else if (address >= MEM_OAM_START && address <= MEM_OAM_END) {
+    //     //std::cout << "Oam accessed\n";
+    //     return &memory.oam[address - MEM_OAM_START];
+    // }
+    // else if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END) {
+    //     //std::cout << "Gamepak ROM ACCESSED!\n";
+    //     return &game_rom[address - MEM_GAMEPAK_ROM_START];
+    // }
+    // else {
+    //     std::cerr << "Error: invalid internal address specified: " << std::hex << "0x" << address << "\n";
+    //     exit(2);
+    // }
+    return 0;
 }

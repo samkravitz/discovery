@@ -60,6 +60,13 @@ u8 Memory::read_u8(u32 address)
             address -= MEM_EWRAM_SIZE;
     }
 
+    // IWRAM
+    else if (address >= MEM_IWRAM_START + MEM_IWRAM_SIZE && address <= MEM_IWRAM_END)
+    {   
+        while (address > MEM_IWRAM_START)
+            address -= MEM_IWRAM_SIZE;
+    }
+
     u8 result = 0;
     switch (address)
     {
@@ -107,6 +114,13 @@ void Memory::write_u8(u32 address, u8 value)
     {
         while (address > MEM_EWRAM_START)
             address -= MEM_EWRAM_SIZE;
+    }
+
+    // IWRAM
+    else if (address >= MEM_IWRAM_START + MEM_IWRAM_SIZE && address <= MEM_IWRAM_END)
+    {   
+        while (address > MEM_IWRAM_START)
+            address -= MEM_IWRAM_SIZE;
     }
 
     switch (address)

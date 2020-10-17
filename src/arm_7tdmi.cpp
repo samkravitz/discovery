@@ -70,7 +70,8 @@ void arm_7tdmi::set_state(state_t s)
 
 u8 arm_7tdmi::get_condition_code_flag(condition_code_flag_t flag)
 {
-    switch (flag) {
+    switch (flag)
+    {
         case N: return registers.cpsr.bits.n; 
         case Z: return registers.cpsr.bits.z;
         case C: return registers.cpsr.bits.c;
@@ -731,12 +732,10 @@ u8 arm_7tdmi::barrel_shift(u32 shift_amount, u32 &num, u8 opcode)
     return carry_out;
 }
 
-inline void arm_7tdmi::increment_pc() {
-    u32 instruction_ptr = get_register(15);
-    instruction_ptr += get_mode() == ARM ? 4 : 2;
-    set_register(15, instruction_ptr);
+inline void arm_7tdmi::increment_pc()
+{
+    registers.r15 += get_mode() == ARM ? 4 : 2;
 }
-
 
 /*
  * Updates the value in the cpsr

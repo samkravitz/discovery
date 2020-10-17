@@ -12,8 +12,8 @@
 
 // start and end addresses of internal memory regions
 #define MEM_BIOS_END          0x3FFF
-#define MEM_BOARD_WRAM_START  0x2000000
-#define MEM_BOARD_WRAM_END    0x203FFFF
+#define MEM_EWRAM_START       0x2000000
+#define MEM_EWRAM_END         0x20FFFFF
 #define MEM_CHIP_WRAM_START   0x3000000
 #define MEM_CHIP_WRAM_END     0x3007FFF
 #define MEM_IO_REG_START      0x4000000
@@ -30,11 +30,12 @@
 
 // sizes of internal regions
 #define MEM_BIOS_SIZE        0x4000
-#define MEM_BOARD_WRAM_SIZE  0x40000
+#define MEM_EWRAM_SIZE       0x40000
 #define MEM_CHIP_WRAM_SIZE   0x8000
 #define MEM_IO_REG_SIZE      0x400
 #define MEM_PALETTE_RAM_SIZE 0x400
 #define MEM_VRAM_SIZE        0x18000
 #define MEM_OAM_SIZE         0x400
+#define MEM_SIZE             0x8000000
 
 #endif // MEM_COMMON_H

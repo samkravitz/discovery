@@ -22,7 +22,7 @@ class Memory
         Memory();
         ~Memory();
 
-        u8 memory[0x8000000];
+        u8 memory[MEM_SIZE];
 
         lcd_stat *stat;
         u8 *game_rom;

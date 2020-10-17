@@ -56,15 +56,22 @@ u8 Memory::read_u8(u32 address)
     // EWRAM
     if (address >= MEM_EWRAM_START + MEM_EWRAM_SIZE && address <= MEM_EWRAM_END)
     {   
-        while (address > MEM_EWRAM_START)
+        while (address >= MEM_EWRAM_START + MEM_EWRAM_SIZE)
             address -= MEM_EWRAM_SIZE;
     }
 
     // IWRAM
     else if (address >= MEM_IWRAM_START + MEM_IWRAM_SIZE && address <= MEM_IWRAM_END)
     {   
-        while (address > MEM_IWRAM_START)
+        while (address >= MEM_IWRAM_START + MEM_IWRAM_SIZE)
             address -= MEM_IWRAM_SIZE;
+    }
+
+    // Palette RAM
+    else if (address >= MEM_PALETTE_RAM_START + MEM_PALETTE_RAM_SIZE && address <= MEM_PALETTE_RAM_END)
+    {   
+        while (address >= MEM_PALETTE_RAM_START + MEM_PALETTE_RAM_SIZE)
+            address -= MEM_PALETTE_RAM_SIZE;
     }
 
     u8 result = 0;
@@ -112,16 +119,24 @@ void Memory::write_u8(u32 address, u8 value)
     // EWRAM
     if (address >= MEM_EWRAM_START + MEM_EWRAM_SIZE && address <= MEM_EWRAM_END)
     {
-        while (address > MEM_EWRAM_START)
+        while (address >= MEM_EWRAM_START + MEM_EWRAM_SIZE)
             address -= MEM_EWRAM_SIZE;
     }
 
     // IWRAM
     else if (address >= MEM_IWRAM_START + MEM_IWRAM_SIZE && address <= MEM_IWRAM_END)
     {   
-        while (address > MEM_IWRAM_START)
+        while (address >= MEM_IWRAM_START + MEM_IWRAM_SIZE)
             address -= MEM_IWRAM_SIZE;
     }
+
+    // Palette RAM
+    else if (address >= MEM_PALETTE_RAM_START + MEM_PALETTE_RAM_SIZE && address <= MEM_PALETTE_RAM_END)
+    {   
+        while (address >= MEM_PALETTE_RAM_START + MEM_PALETTE_RAM_SIZE)
+            address -= MEM_PALETTE_RAM_SIZE;
+    }
+
 
     switch (address)
     {

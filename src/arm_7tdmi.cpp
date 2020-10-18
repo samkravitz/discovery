@@ -988,6 +988,57 @@ u32 arm_7tdmi::read_u32(u32 address, bool ldr)
 void arm_7tdmi::write_u8(u32 address, u8 value)
 {
     if (!mem_check(address)) return;
+
+    // byte write to Palette RAM is written in both upper and lower 8 bytes of halfword at address
+    if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALETTE_RAM_END)
+    {
+        mem->write_u8(address, value);
+        mem->write_u8(address + 1, value);
+        return;
+    }
+    
+    // byte write to OAM is ignored
+    if (address >= MEM_OAM_START && address <= MEM_OAM_END)
+        return;
+
+    // VRAM byte writes
+    if (address >= MEM_VRAM_START && address <= MEM_VRAM_END)
+    {      
+        switch (mem->stat->reg_dispcnt.mode)
+        {
+            // tile modes
+            case 0:
+            case 1:
+            case 2:
+                // writes to OBJ (0x6010000-0x6017FFF) are ignored
+                if (address >= 0x6010000)
+                    return;
+                
+                // writes to BG (0x6000000-0x6013FFF) write to both upper and lower bits
+                mem->write_u8(address, value);
+                mem->write_u8(address + 1, value);
+
+                break;
+
+            // bitmap modes
+            case 3:
+            case 4:
+            case 5:
+                // writes to OBJ (0x6014000-0x6017FFF) are ignored
+                if (address >= 0x6014000)
+                    return;
+                
+                // writes to BG (0x6000000-0x6013FFF) write to both upper and lower bits
+                mem->write_u8(address, value);
+                mem->write_u8(address + 1, value);
+
+                break;
+        }
+
+        return;
+    }
+
+    // normal byte write
     mem->write_u8(address, value);
 }
 

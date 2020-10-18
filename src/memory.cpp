@@ -304,12 +304,11 @@ void Memory::write_u8(u32 address, u8 value)
                 case 0: s_cycles = 2; break;
                 case 1: s_cycles = 1; break;
             }
+            
         break;
-
-        default:
-            //u8 *normalized_address = get_internal_region(address);
-            memory[address] = value;
     }
+
+    memory[address] = value;
 }
 
 u32 Memory::read_u32_unprotected(u32 address)

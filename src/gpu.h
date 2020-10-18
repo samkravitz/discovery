@@ -75,7 +75,6 @@ class GPU
         void draw_sprites();
         void draw_regular_sprite(obj_attr);
         void draw_affine_sprite(obj_attr);
-        void draw_sprite_tile(int, u16, u8, bool, u8);
         void update_attr();
 };
 

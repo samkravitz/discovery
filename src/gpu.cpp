@@ -148,7 +148,6 @@ void GPU::draw()
     // duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
     // std::cout << "Refresh took: " << duration << "\n";
     // old_clock = new_time;
-    // stat->needs_refresh = false;
 }
 
 // video mode 0 - tile mode
@@ -235,8 +234,6 @@ void GPU::draw_reg_background(int bg)
             height = 64;
         break;
     }
-
-    std::cout << "hi\n";
 
     // entire map (bigger than screen)
     u32 map[height * PX_IN_TILE_COL][width * PX_IN_TILE_ROW] = {0};
@@ -388,8 +385,8 @@ void GPU::draw_sprites()
 void GPU::draw_regular_sprite(obj_attr attr)
 {
     // use some masking to make x and y fit in screen coordinates
-    u16 x = attr.attr_1.attr.x;
-    u8 y = attr.attr_0.attr.y;
+    u16 start_x = attr.attr_1.attr.x;
+    u8 start_y = attr.attr_0.attr.y;
 
     // std::cout << "x: " << (int) x << "\n";
     // std::cout << "y: " <<  (int) y << "\n";
@@ -456,13 +453,72 @@ void GPU::draw_regular_sprite(obj_attr attr)
 
     bool s_tile = attr.attr_0.attr.a == 0;
 
+    u16 color;
+    u8 palette_index; // nth entry in palram
+    u8 palbank = attr.attr_2.attr.l;
+    u16 x;
+    u8 y;
+
+    // draw sprite tile by tile
     for (int h = 0; h < height; ++h)
     {
         for (int w = 0; w < width; ++w)
         {
-            // multiply 8 because each tile is 8 pixels wide
-            draw_sprite_tile(base_tile_addr, x + 8 * w, y + 8 * h, s_tile, attr.attr_2.attr.l);
-            // tile offset
+            if (s_tile) // 4 bits / pixel - s-tile
+            {
+                for (int i = 0; i < S_TILE_LEN; ++i)
+                {
+                    palette_index = mem->read_u8_unprotected(base_tile_addr + i);
+                    x = start_x + w * PX_IN_TILE_ROW + 2 * (i % 4); // s-tiles get left/right px in one read 
+                    y = start_y + h * PX_IN_TILE_COL + (i / 4);
+
+                    u8 left_pixel = palette_index & 0xF;
+                    u8 right_pixel = (palette_index >> 4) & 0xF;
+                    
+                    // add left, right pixel to screen buffer
+                    // pixel value 0 is transparent, so only draw if not 0
+                    if (left_pixel != 0)
+                    {
+                        // multiply by sizeof(u16) because each entry in palram is 2 bytes
+                        color = mem->read_u16_unprotected(SPRITE_PALETTE + left_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
+                        screen_buffer[y][x] = u16_to_u32_color(color);
+                    }
+
+                    // pixel value 0 is transparent, so only draw if not 0
+                    if (right_pixel != 0)
+                    {
+                        // multiply by sizeof(u16) because each entry in palram is 2 bytes
+                        color = mem->read_u16_unprotected(SPRITE_PALETTE + right_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
+                        screen_buffer[y][x + 1] = u16_to_u32_color(color);
+                    }
+                }
+
+
+            }
+            
+            // 8 bits / pixel - d-tile
+            else
+            {
+                for (int i = 0; i < D_TILE_LEN; i++)
+                {
+
+                    palette_index = mem->read_u8_unprotected(base_tile_addr + i);
+
+                    // pixel value 0 is transparent, so only draw if not 0
+                    if (palette_index == 0)
+                        continue; 
+
+                    x = start_x + w * PX_IN_TILE_ROW + (i % 8);
+                    y = start_y + h * PX_IN_TILE_COL + (i / 8);
+
+                    // multiply by sizeof(u16) because each entry in palram is 2 bytes
+                    color = mem->read_u32_unprotected(SPRITE_PALETTE + palette_index * sizeof(u16));
+
+                    screen_buffer[y][x] = u16_to_u32_color(color);
+                }
+            }
+
+            // increment start address for tile
             base_tile_addr += s_tile ? S_TILE_LEN : D_TILE_LEN;
         }
     }
@@ -501,71 +557,19 @@ void GPU::draw_regular_sprite(obj_attr attr)
 void GPU::draw_affine_sprite(obj_attr attr)
 {
     // std::cout << "You have an affine sprite \n";
-    // attr.print();
-}
+    // use some masking to make x and y fit in screen coordinates
+    u16 x = attr.attr_1.attr.x;
+    u8 y = attr.attr_0.attr.y;
 
-// draws a single 8x8 pixel tile
-inline void GPU::draw_sprite_tile(int starting_address, u16 start_x, u8 start_y, bool s_tile, u8 palbank)
-{
-    u16 color;
-    u8 palette_index; // nth entry in palram
-    int x, y;
+    // get affine matrix
+    u8 aff_index = (attr.attr_1.attr.v << 4) | (attr.attr_1.attr.h << 3) | (attr.attr_1.attr.f);
+    u32 oam_addr = MEM_OAM_START + aff_index * 32; // each affine entry is 32 bytes accross
+    s16 pa = (s16) mem->read_u16(oam_addr + 6);
+    s16 pb = (s16) mem->read_u16(oam_addr + 12);
+    s16 pc = (s16) mem->read_u16(oam_addr + 18);
+    s16 pd = (s16) mem->read_u16(oam_addr + 24);
 
-    // draw
-    if (s_tile) // 4 bits / pixel - s-tile
-    {
-        for (int i = 0; i < S_TILE_LEN; ++i)
-        {
-            palette_index = mem->read_u8_unprotected(starting_address + i);
-
-            x = start_x + (2 * (i % 4));
-            y = start_y + (i / 4);
-
-            u8 left_pixel = palette_index & 0xF;
-            u8 right_pixel = (palette_index >> 4) & 0xF;
-            
-            // add left, right pixel to screen buffer
-            // pixel value 0 is transparent, so only draw if not 0
-            if (left_pixel != 0)
-            {
-                // multiply by sizeof(u16) because each entry in palram is 2 bytes
-                color = mem->read_u16_unprotected(SPRITE_PALETTE + left_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
-                screen_buffer[y][x] = u16_to_u32_color(color);
-            }
-
-            // pixel value 0 is transparent, so only draw if not 0
-            if (right_pixel != 0)
-            {
-                // multiply by sizeof(u16) because each entry in palram is 2 bytes
-                color = mem->read_u16_unprotected(SPRITE_PALETTE + right_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
-                screen_buffer[y][x + 1] = u16_to_u32_color(color);
-            }
-        }
-
-
-    }
-    
-    // 8 bits / pixel - d-tile
-    else
-    {
-        for (int i = 0; i < D_TILE_LEN; i++)
-        {
-
-            palette_index = mem->read_u8_unprotected(starting_address + i);
-
-            // pixel value 0 is transparent, so only draw if not 0
-            if (palette_index == 0)
-                continue; 
-
-            x = start_x + (i % 8);
-            y = start_y + (i / 8);
-
-            // multiply by sizeof(u16) because each entry in palram is 2 bytes
-            color = mem->read_u32_unprotected(SPRITE_PALETTE + palette_index * sizeof(u16));
-
-            screen_buffer[y][x] = u16_to_u32_color(color);
-        }
-    }
+    //std::cout << "aff_index: " << (int) aff_index << "\n";
 }
 
 // fills the objs data structure every frame an object needs to be drawn

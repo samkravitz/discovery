@@ -24,7 +24,7 @@ struct lcd_stat
     bool in_vBlank;
     bool in_hBlank;
 
-    bool needs_refresh;
+    bool oam_needs_refresh;
 
     // REG_DISPCNT control
     struct reg_dispcnt

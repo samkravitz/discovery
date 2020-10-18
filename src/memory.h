@@ -30,6 +30,7 @@ class Memory
         u8 n_cycles;
         u8 s_cycles;
 
+        void reset();
         void load_rom(char *);
         void load_bios();
 

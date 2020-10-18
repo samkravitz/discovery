@@ -17,19 +17,26 @@ namespace fs = std::experimental::filesystem;
 
 Memory::Memory()
 {
-    // zero memory
-    for (int i = 0; i < MEM_SIZE; i++)
-        memory[i] = 0;
+    game_rom = NULL;
+    stat = NULL;
+    reset();
+}
 
+Memory::~Memory() { }
+
+void Memory::reset()
+{
     // default cycle accesses for wait statae
     n_cycles = 4;
     s_cycles = 2;
 
-    game_rom = NULL;
-    stat = NULL;
+    // zero memory
+    for (int i = 0; i < MEM_SIZE; i++)
+        memory[i] = 0;
+    
+    // write all 1s to keypad (all keys cleared)
+    write_u32_unprotected(REG_KEYINPUT, 0b1111111111);
 }
-
-Memory::~Memory() { }
 
 u32 Memory::read_u32(u32 address)
 {

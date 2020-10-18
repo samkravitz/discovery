@@ -235,6 +235,8 @@ void GPU::draw_reg_background(int bg)
         break;
     }
 
+    std::cout << "hi\n";
+
     // entire map (bigger than screen)
     u32 map[height * PX_IN_TILE_COL][width * PX_IN_TILE_ROW] = {0};
 
@@ -527,6 +529,8 @@ void GPU::draw_regular_sprite(obj_attr attr)
     if (attr.attr_1.attr.h)
     {
         u32 temp;
+        u16 x = start_x;
+        u8 y = start_y;
         for (int h = 0; h < height * 8; ++h)
         {
             for (int w = 0; w < width * 4; ++w) 
@@ -542,6 +546,8 @@ void GPU::draw_regular_sprite(obj_attr attr)
     if (attr.attr_1.attr.v) 
     {
         u32 temp;
+        u16 x = start_x;
+        u8 y = start_y;
         for (int h = 0; h < height * 4; ++h)
         {
             for (int w = 0; w < width * 8; ++w)
@@ -557,7 +563,7 @@ void GPU::draw_regular_sprite(obj_attr attr)
 void GPU::draw_affine_sprite(obj_attr attr)
 {
     // std::cout << "You have an affine sprite \n";
-    // use some masking to make x and y fit in screen coordinates
+    // x, y coordinate of center of sprite
     u16 start_x = attr.attr_1.attr.x;
     u8 start_y = attr.attr_0.attr.y;
 
@@ -650,8 +656,8 @@ void GPU::draw_affine_sprite(obj_attr attr)
                 for (int i = 0; i < S_TILE_LEN; ++i)
                 {
                     palette_index = mem->read_u8_unprotected(base_tile_addr + i);
-                    x = start_x + w * PX_IN_TILE_ROW + 2 * (i % 4); // s-tiles get left/right px in one read 
-                    y = start_y + h * PX_IN_TILE_COL + (i / 4);
+                    x = w * PX_IN_TILE_ROW + 2 * (i % 4); // s-tiles get left/right px in one read 
+                    y = h * PX_IN_TILE_COL + (i / 4);
 
                     u8 left_pixel = palette_index & 0xF;
                     u8 right_pixel = (palette_index >> 4) & 0xF;
@@ -687,8 +693,8 @@ void GPU::draw_affine_sprite(obj_attr attr)
                     if (palette_index == 0)
                         continue; 
 
-                    x = start_x + w * PX_IN_TILE_ROW + (i % 8);
-                    y = start_y + h * PX_IN_TILE_COL + (i / 8);
+                    x = w * PX_IN_TILE_ROW + (i % 8);
+                    y = h * PX_IN_TILE_COL + (i / 8);
 
                     // multiply by sizeof(u16) because each entry in palram is 2 bytes
                     color = mem->read_u32_unprotected(SPRITE_PALETTE + palette_index * sizeof(u16));
@@ -701,6 +707,26 @@ void GPU::draw_affine_sprite(obj_attr attr)
             base_tile_addr += s_tile ? S_TILE_LEN : D_TILE_LEN;
         }
     }
+
+    // copy transformed sprite onto the screen buffer
+    
+    // get top left corner of sprite
+    // u16 p_x = start_x - width * 4;
+    // u8 p_y = start_y - height * 4;
+
+    // int a = 0;
+    // int b = 0;
+
+    // for (int y = p_y; y < height * PX_IN_TILE_ROW; x++)
+    // {
+    //     a = 0;
+    //     for (int x = p_x; x < width * PX_IN_TILE_COL; y++)
+    //     {
+    //         screen_buffer[y][x] = sprite[b][a];
+    //         a++;
+    //     }
+    //     b++;
+    // }
 }
 
 // fills the objs data structure every frame an object needs to be drawn

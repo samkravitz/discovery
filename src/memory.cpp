@@ -69,22 +69,19 @@ u8 Memory::read_u8(u32 address)
     // EWRAM
     if (address > MEM_EWRAM_END && address < MEM_IWRAM_START)
     {   
-        while (address > MEM_EWRAM_END)
-            address -= MEM_EWRAM_SIZE;
+        address &= ~MEM_EWRAM_SIZE;
     }
 
     // IWRAM
     else if (address > MEM_IWRAM_END && address < MEM_IO_REG_START)
     {   
-        while (address > MEM_IWRAM_END)
-            address -= MEM_IWRAM_SIZE;
+        address &= ~MEM_IWRAM_SIZE;
     }
 
     // Palette RAM
     else if (address > MEM_PALETTE_RAM_END && address < MEM_VRAM_START)
-    {   
-        while (address > MEM_PALETTE_RAM_END)
-            address -= MEM_PALETTE_RAM_SIZE;
+    {
+           address &= ~MEM_PALETTE_RAM_SIZE;
     }
 
     // VRAM
@@ -304,7 +301,7 @@ void Memory::write_u8(u32 address, u8 value)
                 case 0: s_cycles = 2; break;
                 case 1: s_cycles = 1; break;
             }
-            
+
         break;
     }
 

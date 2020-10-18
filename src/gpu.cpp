@@ -236,7 +236,6 @@ void GPU::draw_reg_background(int bg)
             height = 64;
         break;
     }
-    std::cout << width << height << "\n";
 
     // entire map (bigger than screen)
     u32 map[height * PX_IN_TILE_COL][width * PX_IN_TILE_ROW] = {0};

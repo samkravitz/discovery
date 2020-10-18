@@ -49,6 +49,19 @@ u8 Memory::read_u8(u32 address)
     // game rom
     if (address >= MEM_SIZE)
     {
+
+        // rom image 2
+        if (address >= 0xC000000)
+        {
+            address -= 0x4000000;
+        }
+
+        // rom image 1
+        else if (address >= 0xA000000)
+        {
+            address -= 0x2000000;
+        }
+
         return game_rom[address - MEM_SIZE];
     }
 
@@ -135,9 +148,21 @@ void Memory::write_u8(u32 address, u8 value)
     // game rom
     if (address >= MEM_SIZE)
     {
-        std::cout << "hals";
+        // rom image 2
+        if (address >= 0xC000000)
+        {
+            address -= 0x4000000;
+        }
+
+        // rom image 1
+        else if (address >= 0xA000000)
+        {
+            address -= 0x2000000;
+        }
+
+        std::cerr << "Warning: writing to game rom\n";
+
         game_rom[address - MEM_SIZE] = value;
-        std::cout << "sadlfkj";
         return;
     }
 

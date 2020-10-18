@@ -54,24 +54,48 @@ u8 Memory::read_u8(u32 address)
 
     // memory mirrors
     // EWRAM
-    if (address >= MEM_EWRAM_START + MEM_EWRAM_SIZE && address <= MEM_EWRAM_END)
+    if (address > MEM_EWRAM_END && address < MEM_IWRAM_START)
     {   
-        while (address >= MEM_EWRAM_START + MEM_EWRAM_SIZE)
+        while (address > MEM_EWRAM_END)
             address -= MEM_EWRAM_SIZE;
     }
 
     // IWRAM
-    else if (address >= MEM_IWRAM_START + MEM_IWRAM_SIZE && address <= MEM_IWRAM_END)
+    else if (address > MEM_IWRAM_END && address < MEM_IO_REG_START)
     {   
-        while (address >= MEM_IWRAM_START + MEM_IWRAM_SIZE)
+        while (address > MEM_IWRAM_END)
             address -= MEM_IWRAM_SIZE;
     }
 
     // Palette RAM
-    else if (address >= MEM_PALETTE_RAM_START + MEM_PALETTE_RAM_SIZE && address <= MEM_PALETTE_RAM_END)
+    else if (address > MEM_PALETTE_RAM_END && address < MEM_VRAM_START)
     {   
-        while (address >= MEM_PALETTE_RAM_START + MEM_PALETTE_RAM_SIZE)
+        while (address > MEM_PALETTE_RAM_END)
             address -= MEM_PALETTE_RAM_SIZE;
+    }
+
+    // VRAM
+    else if (address > MEM_VRAM_END && address < MEM_OAM_START)
+    {
+        //x06010000 - 0x06017FFF is mirrored from 0x06018000 - 0x0601FFFF.
+        if (address <= 0x601FFFF)
+        {
+            address -= 0x8000;
+        }
+
+        // otherwise mirrors every 0x20000
+        else
+        {
+            while (address > MEM_VRAM_END)
+                address -= MEM_VRAM_SIZE;   
+        }
+    }
+
+    // OAM
+    else if (address > MEM_OAM_END && address < MEM_SIZE)
+    {   
+        while (address > MEM_OAM_END)
+            address -= MEM_OAM_SIZE;
     }
 
     u8 result = 0;
@@ -111,32 +135,57 @@ void Memory::write_u8(u32 address, u8 value)
     // game rom
     if (address >= MEM_SIZE)
     {
+        std::cout << "hals";
         game_rom[address - MEM_SIZE] = value;
+        std::cout << "sadlfkj";
         return;
     }
 
     // memory mirrors
     // EWRAM
-    if (address >= MEM_EWRAM_START + MEM_EWRAM_SIZE && address <= MEM_EWRAM_END)
+    if (address > MEM_EWRAM_END && address < MEM_IWRAM_START)
     {
-        while (address >= MEM_EWRAM_START + MEM_EWRAM_SIZE)
+        while (address > MEM_EWRAM_END)
             address -= MEM_EWRAM_SIZE;
     }
 
     // IWRAM
-    else if (address >= MEM_IWRAM_START + MEM_IWRAM_SIZE && address <= MEM_IWRAM_END)
+    else if (address > MEM_IWRAM_END && address < MEM_IO_REG_START)
     {   
-        while (address >= MEM_IWRAM_START + MEM_IWRAM_SIZE)
+        while (address > MEM_IWRAM_END)
             address -= MEM_IWRAM_SIZE;
     }
 
     // Palette RAM
-    else if (address >= MEM_PALETTE_RAM_START + MEM_PALETTE_RAM_SIZE && address <= MEM_PALETTE_RAM_END)
+    else if (address > MEM_PALETTE_RAM_END && address < MEM_VRAM_START)
     {   
-        while (address >= MEM_PALETTE_RAM_START + MEM_PALETTE_RAM_SIZE)
+        while (address > MEM_PALETTE_RAM_END)
             address -= MEM_PALETTE_RAM_SIZE;
     }
 
+    // VRAM
+    else if (address > MEM_VRAM_END && address < MEM_OAM_START)
+    {
+        //x06010000 - 0x06017FFF is mirrored from 0x06018000 - 0x0601FFFF.
+        if (address <= 0x601FFFF)
+        {
+            address -= 0x8000;
+        }
+
+        // otherwise mirrors every 0x20000
+        else
+        {
+            while (address > MEM_VRAM_END)
+                address -= MEM_VRAM_SIZE;   
+        }
+    }
+
+    // OAM
+    else if (address > MEM_OAM_END && address < MEM_GAMEPAK_ROM_START)
+    {   
+        while (address > MEM_OAM_END)
+            address -= MEM_OAM_SIZE;
+    }
 
     switch (address)
     {

@@ -44,7 +44,7 @@ class discovery
 
     private:
         void game_loop();
-        void poll_keys(SDL_Event);
+        void poll_keys(const SDL_Event &);
         void shutdown();
 };
 

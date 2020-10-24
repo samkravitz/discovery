@@ -886,7 +886,7 @@ void arm_7tdmi::handle_interrupt()
     // check if master interrupts are enabled
     if ((mem->read_u32(REG_IME) & 1) && registers.cpsr.bits.i == 0) 
     {
-        std::cout << "Interupts enabled\n";
+        //std::cout << "Interupts enabled\n";
         // get enabled interrupts and requested interrupts
         u16 interrupts_enabled = mem->read_u16(REG_IF);
         u16 interrupts_requested = mem->read_u16(REG_IE);
@@ -897,7 +897,7 @@ void arm_7tdmi::handle_interrupt()
             if (interrupts_enabled & (1 << i) && interrupts_requested & (1 << i))
             {
                 // handle interrupt at position i
-
+        
                 registers.cpsr.bits.state = IRQ;
                 set_state(IRQ);
 

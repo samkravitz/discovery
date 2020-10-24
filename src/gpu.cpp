@@ -143,11 +143,11 @@ void GPU::draw()
     // zero screen buffer for next frame
     memset(screen_buffer, 0, sizeof(screen_buffer));
 
-    // double duration;
-    // clock_t new_time = std::clock();
-    // duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
-    // std::cout << "Refresh took: " << duration << "\n";
-    // old_clock = new_time;
+    double duration;
+    clock_t new_time = std::clock();
+    duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
+    std::cout << "Refresh took: " << duration << "\n";
+    old_clock = new_time;
 }
 
 // video mode 0 - tile mode
@@ -234,8 +234,6 @@ void GPU::draw_reg_background(int bg)
             height = 64;
         break;
     }
-
-    std::cout << "hi\n";
 
     // entire map (bigger than screen)
     u32 map[height * PX_IN_TILE_COL][width * PX_IN_TILE_ROW] = {0};
@@ -571,12 +569,13 @@ void GPU::draw_affine_sprite(obj_attr attr)
     u8 aff_index = (attr.attr_1.attr.v << 4) | (attr.attr_1.attr.h << 3) | (attr.attr_1.attr.f);
     u32 oam_addr = MEM_OAM_START + aff_index * 32; // each affine entry is 32 bytes accross
     s16 pa = (s16) mem->read_u16(oam_addr + 6);
-    s16 pb = (s16) mem->read_u16(oam_addr + 12);
-    s16 pc = (s16) mem->read_u16(oam_addr + 18);
-    s16 pd = (s16) mem->read_u16(oam_addr + 24);
+    s16 pb = (s16) mem->read_u16(oam_addr + 14);
+    s16 pc = (s16) mem->read_u16(oam_addr + 22);
+    s16 pd = (s16) mem->read_u16(oam_addr + 30);
 
     //std::cout << "aff_index: " << (int) aff_index << "\n";
-    //std::cout << (int) pa << " " << (int) pb << " " << (int) pc << " " << (int) pd << "\n";
+    // std::cout << (int) pa << " " << (int) pb << " " << (int) pc << " " << (int) pd << "\n";
+    // std::cout << (int) start_x << " " << (int) start_y << "\n";
 
     u32 base_tile_addr = LOWER_SPRITE_BLOCK + (attr.attr_2.attr.tileno * S_TILE_LEN);
     bool s_tile = attr.attr_0.attr.a == 0;
@@ -668,7 +667,7 @@ void GPU::draw_affine_sprite(obj_attr attr)
                     {
                         // multiply by sizeof(u16) because each entry in palram is 2 bytes
                         color = mem->read_u16_unprotected(SPRITE_PALETTE + left_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
-                        sprite[y][x] = u16_to_u32_color(color);
+                        screen_buffer[y][x] = u16_to_u32_color(color);
                     }
 
                     // pixel value 0 is transparent, so only draw if not 0
@@ -676,7 +675,7 @@ void GPU::draw_affine_sprite(obj_attr attr)
                     {
                         // multiply by sizeof(u16) because each entry in palram is 2 bytes
                         color = mem->read_u16_unprotected(SPRITE_PALETTE + right_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
-                        sprite[y][x + 1] = u16_to_u32_color(color);
+                        screen_buffer[y][x + 1] = u16_to_u32_color(color);
                     }
                 }
             }
@@ -699,7 +698,7 @@ void GPU::draw_affine_sprite(obj_attr attr)
                     // multiply by sizeof(u16) because each entry in palram is 2 bytes
                     color = mem->read_u32_unprotected(SPRITE_PALETTE + palette_index * sizeof(u16));
 
-                    sprite[y][x] = u16_to_u32_color(color);
+                    screen_buffer[y][x] = u16_to_u32_color(color);
                 }
             }
 
@@ -709,7 +708,6 @@ void GPU::draw_affine_sprite(obj_attr attr)
     }
 
     // copy transformed sprite onto the screen buffer
-    
     // get top left corner of sprite
     // u16 p_x = start_x - width * 4;
     // u8 p_y = start_y - height * 4;
@@ -717,10 +715,13 @@ void GPU::draw_affine_sprite(obj_attr attr)
     // int a = 0;
     // int b = 0;
 
-    // for (int y = p_y; y < height * PX_IN_TILE_ROW; x++)
+    // std::cout << start_x << " " << p_x << "\n";
+    // std::cout << (int) start_y << " " << (int) p_y << "\n";
+
+    // for (int y = start_y; y < height * PX_IN_TILE_ROW; y++)
     // {
     //     a = 0;
-    //     for (int x = p_x; x < width * PX_IN_TILE_COL; y++)
+    //     for (int x = start_x; x < width * PX_IN_TILE_COL; x++)
     //     {
     //         screen_buffer[y][x] = sprite[b][a];
     //         a++;

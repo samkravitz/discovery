@@ -85,7 +85,7 @@ void discovery::run_asm(char *name)
 }
 
 // write current key state to KEYINPUT register
-void discovery::poll_keys(SDL_Event e)
+void discovery::poll_keys(const SDL_Event &e)
 {
     /*
      * Order of keys in KEYINPUT is as follows:
@@ -151,9 +151,9 @@ void discovery::poll_keys(SDL_Event e)
     gamepad_result |= gamepad.a     << 0;
 
     gamepad.keys = gamepad_result;
-    // print_keys(gamepad_result);
+    //print_keys(gamepad_result);
 
-    // // store gamepad result back into the KEYINPUT address
+    // store gamepad result back into the KEYINPUT address
     mem->write_u32(REG_KEYINPUT, gamepad_result);
 }
 

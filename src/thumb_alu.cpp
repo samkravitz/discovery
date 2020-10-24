@@ -842,12 +842,15 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction)
         case 0x00:
             swi_softreset();
             break;
+        case 0x01:
+            swi_register_ram_reset();
+            break;
         case 0x06:
             swi_division();
             break;
 
         default:
-            std::cout << "Unknown SWI code: " << std::hex << (instruction >> 16 & 0xFF) << "\n";
+            std::cout << "Unknown SWI code: " << std::hex << (instruction & 0xFF) << "\n";
     }
     //exit(0);
     // switch to ARM state and enter SVC mode

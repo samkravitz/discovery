@@ -155,6 +155,7 @@ class arm_7tdmi
 
         // software interrupts (swi)
         void swi_softreset();
+        void swi_register_ram_reset();
         void swi_division();
 
         // handle hardware interrupts

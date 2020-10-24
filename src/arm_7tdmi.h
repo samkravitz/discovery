@@ -154,6 +154,7 @@ class arm_7tdmi
         void long_branch_link(u16);
 
         // software interrupts (swi)
+        void swi_softreset();
         void swi_division();
 
         // handle hardware interrupts

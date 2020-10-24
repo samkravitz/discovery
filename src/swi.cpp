@@ -11,6 +11,16 @@
 #include "arm_7tdmi.h"
 
 /*
+ *
+ * 
+ * 
+ */
+void arm_7tdmi::swi_softreset()
+{
+    
+}
+
+/*
  * Signed division, r0 / r1
  * r0 signed 32 bit number
  * r1 signed 32 bit denom

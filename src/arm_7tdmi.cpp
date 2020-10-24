@@ -172,7 +172,7 @@ void arm_7tdmi::decode(u32 instruction) { }
 void arm_7tdmi::execute(u32 instruction)
 {  
     //std::cout << std::hex << registers.r15 << "\n";
-    //std::cout << "Executing: " << std::hex << instruction << "\n";
+    std::cout << "Executing: " << std::hex << instruction << "\n";
     switch (get_mode())
     {
         case ARM:
@@ -312,37 +312,37 @@ void arm_7tdmi::execute(u32 instruction)
     }
 
     // // print registers
-    // std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << get_register(0) << 
-	// 			" -- R4  : 0x" << std::setw(8) << std::setfill('0') << get_register(4) << 
-	// 			" -- R8  : 0x" << std::setw(8) << std::setfill('0') << get_register(8) << 
-	// 			" -- R12 : 0x" << std::setw(8) << std::setfill('0') << get_register(12) << "\n";
+    std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << get_register(0) << 
+				" -- R4  : 0x" << std::setw(8) << std::setfill('0') << get_register(4) << 
+				" -- R8  : 0x" << std::setw(8) << std::setfill('0') << get_register(8) << 
+				" -- R12 : 0x" << std::setw(8) << std::setfill('0') << get_register(12) << "\n";
 
-	// 		std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << get_register(1) << 
-	// 			" -- R5  : 0x" << std::setw(8) << std::setfill('0') << get_register(5) << 
-	// 			" -- R9  : 0x" << std::setw(8) << std::setfill('0') << get_register(9) << 
-	// 			" -- R13 : 0x" << std::setw(8) << std::setfill('0') << get_register(13) << "\n";
+			std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << get_register(1) << 
+				" -- R5  : 0x" << std::setw(8) << std::setfill('0') << get_register(5) << 
+				" -- R9  : 0x" << std::setw(8) << std::setfill('0') << get_register(9) << 
+				" -- R13 : 0x" << std::setw(8) << std::setfill('0') << get_register(13) << "\n";
 
-	// 		std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << get_register(2) << 
-	// 			" -- R6  : 0x" << std::setw(8) << std::setfill('0') << get_register(6) << 
-	// 			" -- R10 : 0x" << std::setw(8) << std::setfill('0') << get_register(10) << 
-	// 			" -- R14 : 0x" << std::setw(8) << std::setfill('0') << get_register(14) << "\n";
+			std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << get_register(2) << 
+				" -- R6  : 0x" << std::setw(8) << std::setfill('0') << get_register(6) << 
+				" -- R10 : 0x" << std::setw(8) << std::setfill('0') << get_register(10) << 
+				" -- R14 : 0x" << std::setw(8) << std::setfill('0') << get_register(14) << "\n";
 
-	// 		std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << get_register(3) << 
-	// 			" -- R7  : 0x" << std::setw(8) << std::setfill('0') << get_register(7) << 
-	// 			" -- R11 : 0x" << std::setw(8) << std::setfill('0') << get_register(11) << 
-	// 			" -- R15 : 0x" << std::setw(8) << std::setfill('0') << get_register(15) << "\n";
+			std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << get_register(3) << 
+				" -- R7  : 0x" << std::setw(8) << std::setfill('0') << get_register(7) << 
+				" -- R11 : 0x" << std::setw(8) << std::setfill('0') << get_register(11) << 
+				" -- R15 : 0x" << std::setw(8) << std::setfill('0') << get_register(15) << "\n";
 
 	
-	// 		std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << registers.cpsr.full << "\t";
-    //         if (get_condition_code_flag(N))
-    //             std::cout << "N";
-    //         if (get_condition_code_flag(Z))
-    //             std::cout << "Z";
-    //         if (get_condition_code_flag(C))
-    //             std::cout << "C";
-    //         if (get_condition_code_flag(V))
-    //             std::cout << "V";
-    //         std::cout << "\n";
+			std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << registers.cpsr.full << "\t";
+            if (get_condition_code_flag(N))
+                std::cout << "N";
+            if (get_condition_code_flag(Z))
+                std::cout << "Z";
+            if (get_condition_code_flag(C))
+                std::cout << "C";
+            if (get_condition_code_flag(V))
+                std::cout << "V";
+            std::cout << "\n";
 }
 
 u32 arm_7tdmi::get_register(u32 reg)
@@ -886,7 +886,7 @@ void arm_7tdmi::handle_interrupt()
     // check if master interrupts are enabled
     if ((mem->read_u32(REG_IME) & 1) && registers.cpsr.bits.i == 0) 
     {
-        std::cout << "Interupts enabled\n";
+        //std::cout << "Interupts enabled\n";
         // get enabled interrupts and requested interrupts
         u16 interrupts_enabled = mem->read_u16(REG_IF);
         u16 interrupts_requested = mem->read_u16(REG_IE);
@@ -897,7 +897,7 @@ void arm_7tdmi::handle_interrupt()
             if (interrupts_enabled & (1 << i) && interrupts_requested & (1 << i))
             {
                 // handle interrupt at position i
-
+        
                 registers.cpsr.bits.state = IRQ;
                 set_state(IRQ);
 

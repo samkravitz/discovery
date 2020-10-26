@@ -172,7 +172,7 @@ void arm_7tdmi::decode(u32 instruction) { }
 void arm_7tdmi::execute(u32 instruction)
 {  
     //std::cout << std::hex << registers.r15 << "\n";
-    //std::cout << "Executing: " << std::hex << instruction << "\n";
+    std::cout << "Executing: " << std::hex << instruction << "\n";
     switch (get_mode())
     {
         case ARM:
@@ -312,42 +312,42 @@ void arm_7tdmi::execute(u32 instruction)
         break;
     }
 
-    if (!check_state())
-    {
-        std::cerr << "dslkfjsda\n";
-    }
-    // // print registers
-    // std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << get_register(0) << 
-	// 			" -- R4  : 0x" << std::setw(8) << std::setfill('0') << get_register(4) << 
-	// 			" -- R8  : 0x" << std::setw(8) << std::setfill('0') << get_register(8) << 
-	// 			" -- R12 : 0x" << std::setw(8) << std::setfill('0') << get_register(12) << "\n";
+    // if (!check_state())
+    // {
+    //     std::cerr << "dslkfjsda\n";
+    // }
+    // print registers
+    std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << get_register(0) << 
+				" -- R4  : 0x" << std::setw(8) << std::setfill('0') << get_register(4) << 
+				" -- R8  : 0x" << std::setw(8) << std::setfill('0') << get_register(8) << 
+				" -- R12 : 0x" << std::setw(8) << std::setfill('0') << get_register(12) << "\n";
 
-	// 		std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << get_register(1) << 
-	// 			" -- R5  : 0x" << std::setw(8) << std::setfill('0') << get_register(5) << 
-	// 			" -- R9  : 0x" << std::setw(8) << std::setfill('0') << get_register(9) << 
-	// 			" -- R13 : 0x" << std::setw(8) << std::setfill('0') << get_register(13) << "\n";
+			std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << get_register(1) << 
+				" -- R5  : 0x" << std::setw(8) << std::setfill('0') << get_register(5) << 
+				" -- R9  : 0x" << std::setw(8) << std::setfill('0') << get_register(9) << 
+				" -- R13 : 0x" << std::setw(8) << std::setfill('0') << get_register(13) << "\n";
 
-	// 		std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << get_register(2) << 
-	// 			" -- R6  : 0x" << std::setw(8) << std::setfill('0') << get_register(6) << 
-	// 			" -- R10 : 0x" << std::setw(8) << std::setfill('0') << get_register(10) << 
-	// 			" -- R14 : 0x" << std::setw(8) << std::setfill('0') << get_register(14) << "\n";
+			std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << get_register(2) << 
+				" -- R6  : 0x" << std::setw(8) << std::setfill('0') << get_register(6) << 
+				" -- R10 : 0x" << std::setw(8) << std::setfill('0') << get_register(10) << 
+				" -- R14 : 0x" << std::setw(8) << std::setfill('0') << get_register(14) << "\n";
 
-	// 		std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << get_register(3) << 
-	// 			" -- R7  : 0x" << std::setw(8) << std::setfill('0') << get_register(7) << 
-	// 			" -- R11 : 0x" << std::setw(8) << std::setfill('0') << get_register(11) << 
-	// 			" -- R15 : 0x" << std::setw(8) << std::setfill('0') << get_register(15) << "\n";
+			std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << get_register(3) << 
+				" -- R7  : 0x" << std::setw(8) << std::setfill('0') << get_register(7) << 
+				" -- R11 : 0x" << std::setw(8) << std::setfill('0') << get_register(11) << 
+				" -- R15 : 0x" << std::setw(8) << std::setfill('0') << get_register(15) << "\n";
 
 	
-	// 		std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << registers.cpsr.full << "\t";
-    //         if (get_condition_code_flag(N))
-    //             std::cout << "N";
-    //         if (get_condition_code_flag(Z))
-    //             std::cout << "Z";
-    //         if (get_condition_code_flag(C))
-    //             std::cout << "C";
-    //         if (get_condition_code_flag(V))
-    //             std::cout << "V";
-    //         std::cout << "\n";
+			std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << registers.cpsr.full << "\t";
+            if (get_condition_code_flag(N))
+                std::cout << "N";
+            if (get_condition_code_flag(Z))
+                std::cout << "Z";
+            if (get_condition_code_flag(C))
+                std::cout << "C";
+            if (get_condition_code_flag(V))
+                std::cout << "V";
+            std::cout << "\n";
 }
 
 u32 arm_7tdmi::get_register(u32 reg)
@@ -983,8 +983,8 @@ u32 arm_7tdmi::read_u32(u32 address, bool ldr)
         barrel_shift((address & 3) << 3, data, 0b11);
 
     // 8 cycles for gamepak rom access, 5 from mem_check and 3 here
-    if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END)
-        cycles += 3;
+    // if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END)
+    //     cycles += 3;
 
     return data;
 }
@@ -1064,8 +1064,8 @@ void arm_7tdmi::write_u32(u32 address, u32 value)
     if (!mem_check(address)) return;
 
     // 8 cycles for gamepak rom access, 5 from mem_check and 3 here
-    if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END)
-        cycles += 3;
+    // if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END)
+    //     cycles += 3;
     mem->write_u32(address, value);
 }
 
@@ -1095,8 +1095,8 @@ inline bool arm_7tdmi::mem_check(u32 &address)
         cycles++;
     
     // Gamepak ROM access
-    if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END)
-        cycles += 5;
+    // if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END)
+    //     cycles += 5;
 
     last_accessed_addr = address;
     return true;

@@ -835,7 +835,8 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction)
     // set_register(16, get_register(15)); // move CPSR to SPSR
     // set_register(15, 0x8); // load the SWI vector address (0x8) into the PC
 
-    std::cout << "software interrupt thumb\n";
+    std::cout << "thumb SWI:  " << (instruction & 0xFF) << "\n";
+
     // bits 7 - 0 determine which interrupt
     switch (instruction & 0xFF)
     {
@@ -847,6 +848,9 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction)
             break;
         case 0x06:
             swi_division();
+            break;
+        case 0xb:
+            swi_cpu_set();
             break;
 
         default:

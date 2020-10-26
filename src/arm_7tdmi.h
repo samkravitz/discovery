@@ -157,6 +157,7 @@ class arm_7tdmi
         void swi_softreset();
         void swi_register_ram_reset();
         void swi_division();
+        void swi_cpu_set();
 
         // handle hardware interrupts
         void handle_interrupt();
@@ -180,6 +181,8 @@ class arm_7tdmi
         bool condition_met(condition_t);
         bool mem_check(u32 &);
         u8   barrel_shift(u32, u32 &, u8);
+
+        bool check_state();
 }; 
 
 #endif // ARM_7TDMI_H

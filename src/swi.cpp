@@ -110,7 +110,7 @@ void arm_7tdmi::swi_register_ram_reset()
  */
 void arm_7tdmi::swi_division()
 {
-    s32 num = (s32) get_register(0);
+    s32 num   = (s32) get_register(0);
     s32 denom = (s32) get_register(1);
 
     // divide by 0
@@ -123,4 +123,18 @@ void arm_7tdmi::swi_division()
     set_register(0, (u32) (num / denom));
     set_register(1, (u32) (num % denom));
     set_register(3, abs(num % denom));
+}
+
+void arm_7tdmi::swi_cpu_set()
+{
+    u32 src_ptr  = get_register(0);
+    u32 dest_ptr = get_register(1);
+    u32 mode     = get_register(2);
+
+    std::cout << "SWI CpuSet\n";
+    std::cout << "Src Ptr: " << std::hex<< src_ptr << "\n";
+    std::cout << "Dest Ptr: " << std::hex<< dest_ptr << "\n";
+    std::cout << "Mode: " << std::hex<< mode << "\n";
+
+    u32 h = 0x1FFFFF;
 }

@@ -297,6 +297,7 @@ void arm_7tdmi::execute(u32 instruction)
                     break;
                 case SWI_T:
                     software_interrupt_thumb((u16) instruction);
+                    //increment_pc();
                     break;
                 case BAL_T:
                     unconditional_branch((u16) instruction);
@@ -311,6 +312,10 @@ void arm_7tdmi::execute(u32 instruction)
         break;
     }
 
+    if (!check_state())
+    {
+        std::cerr << "dslkfjsda\n";
+    }
     // // print registers
     // std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << get_register(0) << 
 	// 			" -- R4  : 0x" << std::setw(8) << std::setfill('0') << get_register(4) << 
@@ -1095,4 +1100,23 @@ inline bool arm_7tdmi::mem_check(u32 &address)
 
     last_accessed_addr = address;
     return true;
+}
+
+bool arm_7tdmi::check_state()
+{
+    bool valid = false;
+
+    switch (get_state())
+    {
+        case USR:
+        case FIQ:
+        case IRQ:
+        case SVC:
+        case ABT:
+        case SYS:
+        case UND:
+            valid = true;
+    }
+
+    return valid;
 }

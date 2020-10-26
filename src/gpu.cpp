@@ -143,11 +143,11 @@ void GPU::draw()
     // zero screen buffer for next frame
     memset(screen_buffer, 0, sizeof(screen_buffer));
 
-    double duration;
-    clock_t new_time = std::clock();
-    duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
-    std::cout << "Refresh took: " << duration << "\n";
-    old_clock = new_time;
+    // double duration;
+    // clock_t new_time = std::clock();
+    // duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
+    // std::cout << "Refresh took: " << duration << "\n";
+    // old_clock = new_time;
 }
 
 // video mode 0 - tile mode
@@ -574,7 +574,7 @@ void GPU::draw_affine_sprite(obj_attr attr)
     s16 pd = (s16) mem->read_u16(oam_addr + 30);
 
     //std::cout << "aff_index: " << (int) aff_index << "\n";
-    // std::cout << (int) pa << " " << (int) pb << " " << (int) pc << " " << (int) pd << "\n";
+    //std::cout << (int) pa << " " << (int) pb << " " << (int) pc << " " << (int) pd << "\n";
     // std::cout << (int) start_x << " " << (int) start_y << "\n";
 
     u32 base_tile_addr = LOWER_SPRITE_BLOCK + (attr.attr_2.attr.tileno * S_TILE_LEN);
@@ -655,8 +655,8 @@ void GPU::draw_affine_sprite(obj_attr attr)
                 for (int i = 0; i < S_TILE_LEN; ++i)
                 {
                     palette_index = mem->read_u8_unprotected(base_tile_addr + i);
-                    x = w * PX_IN_TILE_ROW + 2 * (i % 4); // s-tiles get left/right px in one read 
-                    y = h * PX_IN_TILE_COL + (i / 4);
+                    x = start_x + w * PX_IN_TILE_ROW + 2 * (i % 4); // s-tiles get left/right px in one read 
+                    y = start_y + h * PX_IN_TILE_COL + (i / 4);
 
                     u8 left_pixel = palette_index & 0xF;
                     u8 right_pixel = (palette_index >> 4) & 0xF;
@@ -692,8 +692,8 @@ void GPU::draw_affine_sprite(obj_attr attr)
                     if (palette_index == 0)
                         continue; 
 
-                    x = w * PX_IN_TILE_ROW + (i % 8);
-                    y = h * PX_IN_TILE_COL + (i / 8);
+                    x = start_x + w * PX_IN_TILE_ROW + (i % 8);
+                    y = start_y + h * PX_IN_TILE_COL + (i / 8);
 
                     // multiply by sizeof(u16) because each entry in palram is 2 bytes
                     color = mem->read_u32_unprotected(SPRITE_PALETTE + palette_index * sizeof(u16));
@@ -756,16 +756,16 @@ void GPU::update_attr()
 }
 
 // fills an obj_attr struct from OAM from the given index (0-127)
-obj_attr GPU::get_attr(int index)
-{
-    // each oam entry is 4 u16s,
-    u32 base_addr = MEM_OAM_START + index * (4 * sizeof(u16));
-    obj_attr attr;
-    attr.attr_0._zero = mem->read_u16(base_addr + 0);
-    attr.attr_1._one = mem->read_u16(base_addr + 2);
-    attr.attr_2._two = mem->read_u16(base_addr + 4);
-    return attr;
-}
+// obj_attr GPU::get_attr(int index)
+// {
+//     // each oam entry is 4 u16s,
+//     u32 base_addr = MEM_OAM_START + index * (4 * sizeof(u16));
+//     obj_attr attr;
+//     attr.attr_0._zero = mem->read_u16(base_addr + 0);
+//     attr.attr_1._one = mem->read_u16(base_addr + 2);
+//     attr.attr_2._two = mem->read_u16(base_addr + 4);
+//     return attr;
+// }
 
 // given a 16 bit GBA color, make it a 32 bit SDL color
 inline u32 u16_to_u32_color (u16 color_u16)

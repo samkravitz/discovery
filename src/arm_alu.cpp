@@ -24,7 +24,8 @@ void arm_7tdmi::branch_exchange(u32 instruction)
     {
         std::cerr << "Undefined behavior: r15 as operand\n";
         set_state(UND);
-        return;
+        //return;
+        exit(0);
     }
     
     u32 branch_address = get_register(Rn);

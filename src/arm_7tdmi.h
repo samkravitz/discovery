@@ -181,7 +181,7 @@ class arm_7tdmi
         bool condition_met(condition_t);
         bool mem_check(u32 &);
         u8   barrel_shift(u32, u32 &, u8);
-
+        int i = 0;
         bool check_state();
 }; 
 

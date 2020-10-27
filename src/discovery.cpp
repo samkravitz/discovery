@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 
 #include "discovery.h"
 #include "lcd_stat.h"
@@ -45,13 +46,13 @@ void discovery::game_loop()
 {
     SDL_Event e;
     u32 old_cycles = 0;
-
+    int num = 0;
     while (true)
     {
         cpu.fetch();
         cpu.decode(cpu.pipeline[0]);
         cpu.execute(cpu.pipeline[0]);
-        // std::cout << "Executed instruction " << std::dec << num << ": " << std::hex << cpu.pipeline[0] << "\n";
+        //std::cout << "Executed instruction " << std::dec << num << ": " << std::hex << cpu.pipeline[0] << " " << cpu.registers.r15<< "\n";
 
         // update pipeline
         cpu.pipeline[0] = cpu.pipeline[1];
@@ -73,8 +74,43 @@ void discovery::game_loop()
         }
 
         cpu.handle_interrupt();
-    }
+        //num++;
 
+        // if (num > 200000)
+        // {
+        //     std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(0) << 
+		// 		" -- R4  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(4) << 
+		// 		" -- R8  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(8) << 
+		// 		" -- R12 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(12) << "\n";
+
+		// 	std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(1) << 
+		// 		" -- R5  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(5) << 
+		// 		" -- R9  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(9) << 
+		// 		" -- R13 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(13) << "\n";
+
+		// 	std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(2) << 
+		// 		" -- R6  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(6) << 
+		// 		" -- R10 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(10) << 
+		// 		" -- R14 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(14) << "\n";
+
+		// 	std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(3) << 
+		// 		" -- R7  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(7) << 
+		// 		" -- R11 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(11) << 
+		// 		" -- R15 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(15) << "\n";
+
+	
+		// 	std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << cpu.registers.cpsr.full << "\t";
+        //     if (cpu.get_condition_code_flag(N))
+        //         std::cout << "N";
+        //     if (cpu.get_condition_code_flag(Z))
+        //         std::cout << "Z";
+        //     if (cpu.get_condition_code_flag(C))
+        //         std::cout << "C";
+        //     if (cpu.get_condition_code_flag(V))
+        //         std::cout << "V";
+        //     std::cout << "\n";
+        // }
+    }
     shutdown();
 }
 

@@ -122,7 +122,7 @@ void arm_7tdmi::swi_division()
 
     set_register(0, (u32) (num / denom));
     set_register(1, (u32) (num % denom));
-    set_register(3, abs(num % denom));
+    set_register(3, abs(num / denom));
 }
 
 void arm_7tdmi::swi_cpu_set()

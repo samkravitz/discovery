@@ -10,7 +10,7 @@ TESTS = $(SOURCEDIR)tests/tests.cpp $(SOURCEDIR)tests/instruction_tests.cpp $(SO
 all: discovery #mov
 
 discovery: $(OBJECTS) $(SOURCEDIR)discovery.cpp
-	$(CC) -o discovery $(SOURCEDIR)discovery.cpp $(OBJECTS) $(LIBARIES)
+	$(CC) $(CFLAGS) -o discovery $(SOURCEDIR)discovery.cpp $(OBJECTS) $(LIBARIES)
 
 test: $(OBJECTS) $(TESTS)
 	g++ -o test $(OBJECTS) $(TESTS) $(LIBARIES)

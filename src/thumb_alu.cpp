@@ -324,6 +324,7 @@ void arm_7tdmi::hi_reg_ops(u16 instruction)
 
             break;
         case 0b11: // BX
+            // TODO - look at this
             if (H1)
             {
                 std::cerr << "Error: H1 = 1 for thumb BX is not defined" << "\n";
@@ -334,7 +335,7 @@ void arm_7tdmi::hi_reg_ops(u16 instruction)
             if (Rs == 15)
             {
                 op1 &= ~1;
-                op1 += 4;
+                //op1 += 4;
             }
 
             set_register(15, op1);
@@ -343,9 +344,12 @@ void arm_7tdmi::hi_reg_ops(u16 instruction)
             if ((op1 & 1) == 0)
             {
                 // registers.r15 += 4; // continue at Rn + 4 in arm mode (skip following halfword)
+                op1 &= ~3;
+                set_register(15, op1);
                 set_mode(ARM);
-            } else
-
+            }
+            
+            else
             {
                 // clear bit 0
                 registers.r15 &= ~1;
@@ -693,6 +697,27 @@ void arm_7tdmi::push_pop(u16 instruction)
         }
     }
 
+    // special case - empty registers list
+    // if (num_registers == 0)
+    // {
+    //     if (load) // load r15
+    //     { 
+    //         set_register(15, read_u32(base, false));
+    //         pipeline_full = false;
+    //     }
+
+    //     else // store r15
+    //     {
+    //         write_u32(base, registers.r15 + 4);
+    //         increment_pc();
+    //     }
+
+    //     // store Rb = Rb +/- 0x40
+    //     set_register(13, base + 0x4);
+
+    //     return;
+    // }
+
     if (!load) // PUSH Rlist
     {
         n = 2;
@@ -784,7 +809,21 @@ void arm_7tdmi::multiple_load_store(u16 instruction)
     // empty Rlist, Rb = Rb + 0x40
     if (num_registers == 0)
     {
-        set_register(Rb, get_register(Rb) + 0x40);
+        if (load) // load r15
+        { 
+            set_register(15, read_u32(base, false));
+            pipeline_full = false;
+        }
+
+        else // store r15
+        {
+            write_u32(base, registers.r15 + 4);
+            increment_pc();
+        }
+
+        // store Rb = Rb +/- 0x40
+        set_register(Rb, base + 0x40);
+
         return;
     }
 
@@ -884,6 +923,10 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction)
         default:
             std::cout << "Unknown SWI code: " << std::hex << (instruction & 0xFF) << "\n";
     }
+
+    i++;
+    if (i == 238)
+    {i++;}
 
     // cycles: 2S + 1N
     cycle(1, 2, 0);

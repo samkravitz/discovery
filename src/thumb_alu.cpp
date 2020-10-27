@@ -900,25 +900,23 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction)
     switch (instruction & 0xFF)
     {
         case 0x00:
-            swi_softreset();
+            swi_softReset();
             break;
         case 0x01:
-            swi_register_ram_reset();
+            swi_registerRamReset();
             break;
         case 0x06:
             swi_division();
             break;
-        case 0xb:
-            swi_cpu_set();
+        case 0x08:
+            swi_sqrt();
             break;
-
+        case 0xb:
+            swi_cpuSet();
+            break;
         default:
             std::cout << "Unknown SWI code: " << std::hex << (instruction & 0xFF) << "\n";
     }
-
-    i++;
-    if (i == 238)
-    {i++;}
 
     // cycles: 2S + 1N
     cycle(1, 2, 0);

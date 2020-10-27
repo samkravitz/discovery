@@ -154,10 +154,11 @@ class arm_7tdmi
         void long_branch_link(u16);
 
         // software interrupts (swi)
-        void swi_softreset();
-        void swi_register_ram_reset();
+        void swi_softReset();
+        void swi_registerRamReset();
         void swi_division();
-        void swi_cpu_set();
+        void swi_sqrt();
+        void swi_cpuSet();
 
         // handle hardware interrupts
         void handle_interrupt();
@@ -181,7 +182,6 @@ class arm_7tdmi
         bool condition_met(condition_t);
         bool mem_check(u32 &);
         u8   barrel_shift(u32, u32 &, u8);
-        int i = 0;
         bool check_state();
 }; 
 

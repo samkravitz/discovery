@@ -8,6 +8,8 @@
  * DESCRIPTION: software interrupt handlers
  */
 
+#include <cmath>
+
 #include "arm_7tdmi.h"
 
 /*
@@ -15,7 +17,7 @@
  * 
  * 
  */
-void arm_7tdmi::swi_softreset()
+void arm_7tdmi::swi_softReset()
 {
     
 }
@@ -36,7 +38,7 @@ void arm_7tdmi::swi_softreset()
  * The function always switches the screen into forced blank by setting DISPCNT=0080h
  * (regardless of incoming R0, screen becomes white).
  */
-void arm_7tdmi::swi_register_ram_reset()
+void arm_7tdmi::swi_registerRamReset()
 {
     u8 flags = get_register(0) & 0xFF;
 
@@ -99,14 +101,13 @@ void arm_7tdmi::swi_register_ram_reset()
 
 /*
  * Signed division, r0 / r1
- * r0 signed 32 bit number
- * r1 signed 32 bit denom
+ * r0 - signed 32 bit number
+ * r1 - signed 32 bit denom
  * 
  * return:
  * r0 - number DIV denom, signed
  * r1 - number MOD denom, signed
- * r3 abs(number DIV) denom, unsigned
- * 
+ * r3 - abs(number DIV) denom, unsigned
  */
 void arm_7tdmi::swi_division()
 {
@@ -125,7 +126,7 @@ void arm_7tdmi::swi_division()
     set_register(3, abs(num / denom));
 }
 
-void arm_7tdmi::swi_cpu_set()
+void arm_7tdmi::swi_cpuSet()
 {
     u32 src_ptr  = get_register(0);
     u32 dest_ptr = get_register(1);

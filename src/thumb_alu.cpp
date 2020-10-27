@@ -324,36 +324,28 @@ void arm_7tdmi::hi_reg_ops(u16 instruction)
 
             break;
         case 0b11: // BX
-            // TODO - look at this
             if (H1)
             {
                 std::cerr << "Error: H1 = 1 for thumb BX is not defined" << "\n";
                 return;
             }
 
-            // clear bit 0 if Rs is 15
-            if (Rs == 15)
-            {
-                op1 &= ~1;
-                //op1 += 4;
-            }
-
-            set_register(15, op1);
-
             // swith to ARM mode if necessary
             if ((op1 & 1) == 0)
             {
-                // registers.r15 += 4; // continue at Rn + 4 in arm mode (skip following halfword)
+                // align to word boundary
                 op1 &= ~3;
                 set_register(15, op1);
                 set_mode(ARM);
             }
-            
+
             else
             {
                 // clear bit 0
-                registers.r15 &= ~1;
+                op1 &= ~1;
             }
+
+            set_register(15, op1);
 
             // flush pipeline for refill
             pipeline_full = false;

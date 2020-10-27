@@ -126,6 +126,21 @@ void arm_7tdmi::swi_division()
     set_register(3, abs(num / denom));
 }
 
+/*
+ * Calculate square root
+ * r0 - u32 operand
+ * 
+ * return:
+ * r0 - u16 result
+ */
+void arm_7tdmi::swi_sqrt()
+{
+    u32 num = get_register(0);
+    u16 result = (u16) sqrt(num);
+
+    set_register(0, result);
+}
+
 void arm_7tdmi::swi_cpuSet()
 {
     u32 src_ptr  = get_register(0);

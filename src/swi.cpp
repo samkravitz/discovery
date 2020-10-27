@@ -141,6 +141,28 @@ void arm_7tdmi::swi_sqrt()
     set_register(0, result);
 }
 
+/*
+ * Calculate the two param arctan
+ * r0 - x 16 bit (1bit sign, 1bit integral part, 14bit decimal part)
+ * r1 - y 16 bit (1bit sign, 1bit integral part, 14bit decimal part)
+ * 
+ * return:
+ * r0 - 0x0000 - 0xFFFF for 0 <= theta <= 2π
+ */
+void arm_7tdmi::swi_arctan2()
+{
+    s16 x = (s16) get_register(0);
+    s16 y = (s16) get_register(1);
+
+    double result = atan2(y, x);
+
+    // arctan has range [0, 2π) but we want
+    // result in range [0x0, 0xFFFF]
+    result *= (0xFFFF / (2 * M_PI));
+
+    set_register(0, (u16) result);
+}
+
 void arm_7tdmi::swi_cpuSet()
 {
     u32 src_ptr  = get_register(0);

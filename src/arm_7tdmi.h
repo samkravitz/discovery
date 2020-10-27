@@ -158,6 +158,7 @@ class arm_7tdmi
         void swi_registerRamReset();
         void swi_division();
         void swi_sqrt();
+        void swi_arctan2();
         void swi_cpuSet();
 
         // handle hardware interrupts

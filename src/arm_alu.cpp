@@ -29,9 +29,6 @@ void arm_7tdmi::branch_exchange(u32 instruction)
     
     u32 branch_address = get_register(Rn);
 
-    // during the first cyle, calculate branch address
-    cycle(registers.r15, 'n'); // 1N
-
     set_register(15, branch_address); 
 
     // swith to THUMB mode if necessary
@@ -45,12 +42,11 @@ void arm_7tdmi::branch_exchange(u32 instruction)
     pipeline_full = false;
 
     // cycles: 2S + 1N
-    cycle(registers.r15, 's'); // 2S
-    cycle(registers.r15, 's');
+    cycle(1, 2, 0);
 }
 
- void arm_7tdmi::branch_link(u32 instruction)
- {
+void arm_7tdmi::branch_link(u32 instruction)
+{
     bool link = util::get_instruction_subset(instruction, 24, 24) == 0x1;
     u32 offset = util::get_instruction_subset(instruction, 23, 0);
     bool is_neg = offset >> 23 == 0x1;
@@ -61,9 +57,6 @@ void arm_7tdmi::branch_exchange(u32 instruction)
     // maintain sign by padding offset sign extension to 32 bits with 1s
     if (is_neg)
         offset |= 0b11111100000000000000000000000000;
-
-    // during the first cyle, calculate branch address
-    cycle(registers.r15, 'n'); // 1N
 
     if (link)
     {
@@ -82,8 +75,7 @@ void arm_7tdmi::branch_exchange(u32 instruction)
     pipeline_full = false;
 
     // cycles: 2S + 1N
-    cycle(registers.r15, 's'); // 2S
-    cycle(registers.r15, 's');
+    cycle(1, 2, 0);
 }
 
  void arm_7tdmi::data_processing(u32 instruction)
@@ -94,13 +86,19 @@ void arm_7tdmi::branch_exchange(u32 instruction)
     u32 op2;
     u32 result;
 
+    // cycles
+    u8 n = 0;
+    u8 s = 1; // 1S cycles for normal data processing
+    u8 i = 0;
+
     bool immediate = util::get_instruction_subset(instruction, 25, 25) == 0x1;
     bool set_condition_code = util::get_instruction_subset(instruction, 20, 20) == 0x1;
     
     if (Rd == 15)
     {
-        cycle(registers.r15, 's'); // + 2S cycles if PC written
-        cycle(registers.r15 + 4, 's');
+        // +1 N and +1 S cycles if Rd is r15
+        ++n;
+        ++s;
     }
     
     u8 carry_out = 2;
@@ -160,7 +158,7 @@ void arm_7tdmi::branch_exchange(u32 instruction)
         if (prefetch)
             op2 += 4;
 
-        cycle(registers.r15, 'i'); // + 1I cycles with register specified shift
+        ++i; // + 1I cycles with register specified shift
     }
     
     // for arithmetic operations that use a carry bit, this will either equal
@@ -262,7 +260,9 @@ void arm_7tdmi::branch_exchange(u32 instruction)
             set_register(16, get_register(17));
     }
 
-    cycle(registers.r15, 's'); // 1S cycles for normal data processing
+    // cycles: (1+p)S + rI + pN
+    // Whereas r=1 if I=0 and R=1 (ie. shift by register); otherwise r=0. And p=1 if Rd=R15; otherwise p=0.
+    cycle(n, s, i); 
 }
 
 void arm_7tdmi::multiply(u32 instruction)
@@ -286,8 +286,7 @@ void arm_7tdmi::multiply(u32 instruction)
         return;
     }
 
-    cycle(registers.r15, 's'); // 1S
-    int m; // # of m cycles
+    u8 m; // # of m cycles
     
     u32 op1 = get_register(Rm);
     u32 op2 = get_register(Rs);
@@ -306,7 +305,7 @@ void arm_7tdmi::multiply(u32 instruction)
     if (accumulate)
     {
         result += get_register(Rn); // multiply-accumulate form gives Rd:=Rm*Rs+Rn
-        m++; // for MLA (m + 1) I cycles
+        ++m; // for MLA (m + 1) I cycles
     }
 
     set_register(Rd, result);
@@ -322,9 +321,8 @@ void arm_7tdmi::multiply(u32 instruction)
         set_condition_code_flag(C, 1); // C is set to a meaningless value
     }
 
-    // m I cycles
-    for (int i = 0; i < m; i++)
-        cycle(registers.r15, 'i');
+    // cycles: 1S, mI
+    cycle(0, 1, m);
 }
 
 void arm_7tdmi::multiply_long(u32 instruction)
@@ -350,8 +348,7 @@ void arm_7tdmi::multiply_long(u32 instruction)
         return;
     }
 
-    cycle(registers.r15, 's'); // 1S
-    int m; // # of m cycles
+    u8 m; // # of m cycles
 
     // signed multiply long
     if (sign)
@@ -463,9 +460,8 @@ void arm_7tdmi::multiply_long(u32 instruction)
             m = 4;
     }
 
-    // (m + 1)I cycles
-    for (int i = 0; i < m + 1; i++)
-        cycle(registers.r15, 'i');
+    // cycles: 1S, mI
+    cycle(0, 1, m);
 }
 
 // allow access to CPSR and SPSR registers
@@ -526,12 +522,13 @@ void arm_7tdmi::multiply_long(u32 instruction)
             update_cpsr(new_value, flags_only);
     }
 
-    cycle(registers.r15, 's'); // 1S cycles
+    // cycles: 1S
+    cycle(0, 1, 0);
 }
 
 // store or load single value to/from memory
- void arm_7tdmi::single_data_transfer(u32 instruction)
- {
+void arm_7tdmi::single_data_transfer(u32 instruction)
+{
     bool immediate = util::get_instruction_subset(instruction, 25, 25) == 0;
     bool pre_index = util::get_instruction_subset(instruction, 24, 24) == 1;  // bit 24 set = pre index, bit 24 0 = post index
     bool up = util::get_instruction_subset(instruction, 23, 23) == 1;         // bit 23 set = up, bit 23 0 = down
@@ -542,6 +539,11 @@ void arm_7tdmi::multiply_long(u32 instruction)
     u32 Rd = util::get_instruction_subset(instruction, 15, 12);
     u32 offset_encoding = util::get_instruction_subset(instruction, 11, 0);
     u32 offset; // the actual amount to offset
+
+    // cycles
+    u8 n = 0;
+    u8 i = 0;
+    u8 s = 0;
 
     if (immediate)
         offset = offset_encoding;
@@ -583,12 +585,9 @@ void arm_7tdmi::multiply_long(u32 instruction)
             base -= offset; // offset is subtracted from base
     }
 
-    cycle(registers.r15, 'n');
-
     // transfer
     if (load) // load from memory to register
     { 
-        cycle(base, 's');
         if (byte) // load one byte from memory, sign extend 0s
         {
             u32 value = 0;
@@ -601,13 +600,15 @@ void arm_7tdmi::multiply_long(u32 instruction)
             set_register(Rd, read_u32(base, true));
 
         // normal loads instructions take 1S + 1N + 1I
-        cycle(base, 'i');
+        ++s;
+        ++i;
+        ++n;
 
         // LDR PC takes an additional 1S + 1N cycles
         if (Rd == 15)
         {
-            cycle(registers.r15, 's');
-            cycle(registers.r15 + 4, 'n');
+            ++s;
+            ++n;
             // compensate for incrementing PC after this instruction
             registers.r15 -= 4;
             pipeline_full = false;
@@ -630,7 +631,7 @@ void arm_7tdmi::multiply_long(u32 instruction)
             write_u32(base, value);
 
         // stores take 2N cycles to execute
-        cycle(base, 'n');
+        n = 2;
     }
 
     // offset modification after transfer
@@ -642,6 +643,9 @@ void arm_7tdmi::multiply_long(u32 instruction)
 
     if ((write_back || !pre_index) && (!load || Rd != Rn))
         set_register(Rn, base);
+
+    // cycles: LDR: 1S + 1N + 1I. LDR PC: 2S + 2N + 1I. STR: 2N
+    cycle(n, s, i);
 }
 
 // transfer halfword and signed data
@@ -657,6 +661,11 @@ void arm_7tdmi::halfword_data_transfer(u32 instruction)
     u32 Rm = util::get_instruction_subset(instruction, 3, 0);                // offset register
     u32 offset;
     u32 base = get_register(Rn);
+
+    // cycles
+    u8 n = 0;
+    u8 i = 0;
+    u8 s = 0;
 
     if (Rm == 15)
     {
@@ -740,28 +749,27 @@ void arm_7tdmi::halfword_data_transfer(u32 instruction)
     if ((write_back || !pre_index) && (!load || Rd != Rn))
         set_register(Rn, base);
 
-    // Execution Time:
-    // For Normal LDR, 1S+1N+1I.
-    // For LDR PC, 2S+2N+1I.
-    // For STRH 2N.
+    // calculate cycles
     if (load)
     {
         if (Rd == 15)
         {
-            cycle(base, 's');
-            cycle(base, 'n');
+            ++s;
+            ++n;
         }
 
-        cycle(base, 'i');
-        cycle(base, 's');
-        cycle(base, 'n');
+        ++s;
+        ++n;
+        ++i;
     }
     
     else
     {
-        cycle(base, 'n');
-        cycle(base, 'n');
+        n = 2;
     }
+
+    // cycles: LDR: 1S + 1N + 1I. LDR PC: 2S + 2N + 1I. STR: 2N
+    cycle(n, s, i);
 }
 
 void arm_7tdmi::block_data_transfer(u32 instruction)
@@ -780,6 +788,11 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
     bool Rb_in_Rlist = false;
 
     bool r15_in_register_list = ((register_list >> 15) & 0x1) == 1;
+
+    // cycles
+    u8 n = 0;
+    u8 i = 0;
+    u8 s = 0;
 
     if (Rb == 15)
     {
@@ -836,6 +849,8 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
 
     if (load) // load from memory
     { 
+        ++n;
+        ++i;
         if (Rb_in_Rlist)
             write_back = false;
 
@@ -848,10 +863,17 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
 
                 set_register(set_registers[i], read_u32(base, false));
                 if (set_registers[i] == 15) // loading into r15
+                {
                     pipeline_full = false; 
+                    // +1 S, +1 N cycles for LDM PC
+                    ++s;
+                    ++n;
+                }
 
                 if (!pre_index) // post increment
                     base += 4;
+                // +1 S cycles for each word transferred
+                ++s;
             }
         }
 
@@ -864,16 +886,25 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
 
                 set_register(set_registers[i], read_u32(base, false));
                 if (set_registers[i] == 15) // loading into r15
+                {
                     pipeline_full = false; 
+                    // +1 S, +1 N cycles for LDM PC
+                    ++s;
+                    ++n;
+                }
 
                 if (!pre_index) // post decrement
                     base -= 4;
+                
+                // +1 S cycles for each word transferred
+                ++s;
             }
         }
     }
 
     else // store to memory
     {
+        n = 2; 
         if (up) // addresses increment
         {
             for (int i = 0; i < num_registers; ++i)
@@ -889,6 +920,9 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
 
                 if (!pre_index) // post increment
                     base += 4;
+                
+                // +1 S cycles for each word transferred
+                ++s;
             }
         }
 
@@ -907,6 +941,9 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
 
                 if (!pre_index) // post decrement
                     base -= 4;
+                
+                // +1 S cycles for each word transferred
+                ++s;
             }
         }
     }
@@ -935,6 +972,11 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
 
     if (load_psr)
         set_state(temp_state); // restore cpu state
+    
+    // cycles:
+    // For normal LDM, nS + 1N + 1I.
+    // For LDM PC, (n+1)S+2N+1I. For STM (n-1)S+2N. Where n is the number of words transferred.
+    cycle(n, s, i);
 }
 
 void arm_7tdmi::single_data_swap(u32 instruction)
@@ -969,6 +1011,9 @@ void arm_7tdmi::single_data_swap(u32 instruction)
         write_u32(swap_address, source);
         set_register(Rd, temp);
     }
+
+    // cycles: 1S + 2N + 1I
+    cycle(2, 1, 1);
 }
 
 void arm_7tdmi::software_interrupt(u32 instruction)
@@ -985,4 +1030,7 @@ void arm_7tdmi::software_interrupt(u32 instruction)
         default:
             std::cout << "Unknown SWI code: " << std::hex << (instruction >> 16 & 0xFF) << "\n";
     }
+
+    // cycles: 2S + 1N
+    cycle(1, 2, 0);
 }

@@ -44,7 +44,6 @@ class arm_7tdmi
         bool pipeline_full;
         
         u32 cycles;
-        u32 last_accessed_addr;
 
         struct registers
         {
@@ -104,7 +103,7 @@ class arm_7tdmi
         void decode(u32);
         void execute(u32);
 
-        void cycle(u32, char);
+        void cycle(u8, u8, u8);
         
         // getters / setters
         uint8_t get_condition_code_flag(condition_code_flag_t);
@@ -154,10 +153,13 @@ class arm_7tdmi
         void long_branch_link(u16);
 
         // software interrupts (swi)
-        void swi_softreset();
-        void swi_register_ram_reset();
+        void swi_softReset();
+        void swi_registerRamReset();
         void swi_division();
-        void swi_cpu_set();
+        void swi_sqrt();
+        void swi_arctan2();
+        void swi_cpuSet();
+        void swi_objAffineSet();
 
         // handle hardware interrupts
         void handle_interrupt();
@@ -181,7 +183,6 @@ class arm_7tdmi
         bool condition_met(condition_t);
         bool mem_check(u32 &);
         u8   barrel_shift(u32, u32 &, u8);
-
         bool check_state();
 }; 
 

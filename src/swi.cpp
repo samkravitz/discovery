@@ -8,6 +8,7 @@
  * DESCRIPTION: software interrupt handlers
  */
 
+#include <cmath>
 #include "arm_7tdmi.h"
 
 /*
@@ -15,7 +16,7 @@
  * 
  * 
  */
-void arm_7tdmi::swi_softreset()
+void arm_7tdmi::swi_softReset()
 {
     
 }
@@ -36,7 +37,7 @@ void arm_7tdmi::swi_softreset()
  * The function always switches the screen into forced blank by setting DISPCNT=0080h
  * (regardless of incoming R0, screen becomes white).
  */
-void arm_7tdmi::swi_register_ram_reset()
+void arm_7tdmi::swi_registerRamReset()
 {
     u8 flags = get_register(0) & 0xFF;
 
@@ -99,14 +100,13 @@ void arm_7tdmi::swi_register_ram_reset()
 
 /*
  * Signed division, r0 / r1
- * r0 signed 32 bit number
- * r1 signed 32 bit denom
+ * r0 - signed 32 bit number
+ * r1 - signed 32 bit denom
  * 
  * return:
  * r0 - number DIV denom, signed
  * r1 - number MOD denom, signed
- * r3 abs(number DIV) denom, unsigned
- * 
+ * r3 - abs(number DIV) denom, unsigned
  */
 void arm_7tdmi::swi_division()
 {
@@ -122,10 +122,48 @@ void arm_7tdmi::swi_division()
 
     set_register(0, (u32) (num / denom));
     set_register(1, (u32) (num % denom));
-    set_register(3, abs(num % denom));
+    set_register(3, abs(num / denom));
 }
 
-void arm_7tdmi::swi_cpu_set()
+/*
+ * Calculate square root
+ * r0 - u32 operand
+ * 
+ * return:
+ * r0 - u16 result
+ */
+void arm_7tdmi::swi_sqrt()
+{
+    u32 num    = get_register(0);
+    u16 result = (u16) sqrt(num);
+
+    set_register(0, result);
+}
+
+/*
+ * Calculate the two param arctan
+ * r0 - x 16 bit (1bit sign, 1bit integral part, 14bit decimal part)
+ * r1 - y 16 bit (1bit sign, 1bit integral part, 14bit decimal part)
+ * 
+ * return:
+ * r0 - 0x0000 - 0xFFFF for 0 <= theta <= 2π
+ */
+void arm_7tdmi::swi_arctan2()
+{
+    s16 x = get_register(0);
+    s16 y = get_register(1);
+
+    // TODO - handle case for negative x ?
+    float result = atan2f(y, x);
+
+    // arctan has range [0, 2π) but we want
+    // result in range [0x0, 0xFFFF]
+    result *= (0xFFFF / (2 * M_PI));
+
+    set_register(0, (u16) result);
+}
+
+void arm_7tdmi::swi_cpuSet()
 {
     u32 src_ptr  = get_register(0);
     u32 dest_ptr = get_register(1);
@@ -137,4 +175,46 @@ void arm_7tdmi::swi_cpu_set()
     std::cout << "Mode: " << std::hex<< mode << "\n";
 
     u32 h = 0x1FFFFF;
+}
+
+/*
+ * ObjAffineSet
+ */
+void arm_7tdmi::swi_objAffineSet()
+{
+    u32 src_ptr          = get_register(0);
+    u32 dest_ptr         = get_register(1);
+    u32 num_calculations = get_register(2);
+    u32 offset           = get_register(3);
+
+    float sx, sy;         // scale x, y
+	float alpha;          // angle of rotation
+	float pa, pb, pc, pd; // calculated P matrix
+
+    // // TODO - these more complex cases that I don't feel like doing now
+    if (num_calculations != 1)
+        std::cout << "SWI ObjAffineSet > 1 calculations\n";
+    
+    if (offset != 2) // for OAM, not bg
+        std::cout << "SWI ObjAffineSet for OAM\n";
+
+    // integer portion of 8.8f sx, sy
+    sx = (float) (mem->read_u16(src_ptr    ) >> 8);
+    sy = (float) (mem->read_u16(src_ptr + 2) >> 8);
+
+    // convert alpha from range [0x0 - 0xFFFF] to [0, 2π]
+    alpha = (mem->read_u16(src_ptr + 4)) / 32768.0 * M_PI;
+    pa = pd = cosf(alpha);
+    pb = pc = sinf(alpha);
+
+    pa *=  sx; // sx *  cos(α)
+    pb *= -sx; // sx * -sin(α)
+    pc *=  sy; // sy *  sin(α)
+    pd *=  sy; // sy *  cos(α)
+
+    // convert back to range [0x0 - 0xFFFF]
+    mem->write_u16(dest_ptr    , pa * 256);
+    mem->write_u16(dest_ptr + 2, pb * 256);
+    mem->write_u16(dest_ptr + 4, pc * 256);
+    mem->write_u16(dest_ptr + 6, pd * 256);
 }

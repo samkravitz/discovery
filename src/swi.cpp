@@ -150,10 +150,11 @@ void arm_7tdmi::swi_sqrt()
  */
 void arm_7tdmi::swi_arctan2()
 {
-    s16 x = (s16) get_register(0);
-    s16 y = (s16) get_register(1);
+    s16 x = get_register(0);
+    s16 y = get_register(1);
 
-    double result = atan2(y, x);
+    // TODO - handle case for negative x ?
+    float result = atan2f(y, x);
 
     // arctan has range [0, 2π) but we want
     // result in range [0x0, 0xFFFF]
@@ -179,7 +180,6 @@ void arm_7tdmi::swi_cpuSet()
 /*
  * ObjAffineSet
  */
-
 void arm_7tdmi::swi_objAffineSet()
 {
     u32 src_ptr          = get_register(0);

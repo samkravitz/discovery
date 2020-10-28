@@ -17,6 +17,8 @@
 // uncomment this if running tests
 //#define TEST
 
+//#define PRINT
+
 arm_7tdmi::arm_7tdmi()
 {
     registers = {0}; // zero out registers
@@ -174,9 +176,15 @@ void arm_7tdmi::decode(u32 instruction) { }
 void arm_7tdmi::execute(u32 instruction)
 {  
     //std::cout << std::hex << registers.r15 << "\n";
-    #ifdef TEST
+    #ifdef PRINT
     std::cout << "Executing: " << std::hex << instruction << "\n";
     #endif
+
+    if (registers.r15 == 0x8002f9a)
+    {
+        //#define PRINT
+        std::cout << "ole\n";
+    }
 
     int k = 0;
     switch (get_mode())
@@ -318,8 +326,7 @@ void arm_7tdmi::execute(u32 instruction)
         break;
     }
 
-    #ifdef TEST
-    if (get_mode() == ARM) {
+    #ifdef PRINT
     //print registers
     std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << get_register(0) << 
 				" -- R4  : 0x" << std::setw(8) << std::setfill('0') << get_register(4) << 
@@ -352,7 +359,7 @@ void arm_7tdmi::execute(u32 instruction)
             if (get_condition_code_flag(V))
                 std::cout << "V";
             std::cout << "\n";
-    }
+            std::cout << "Cycles: " << std::dec << cycles << "\n";
     #endif
 }
 
@@ -773,6 +780,22 @@ void arm_7tdmi::update_cpsr(u32 value, bool flags_only)
         std::cout << "Software is changing TBIT in CPSR!" << "\n"; // is this allowed??
 
     // TODO - validate CPSR was appropriately changed
+    bool valid = false;
+
+    switch (get_state())
+    {
+        case USR:
+        case FIQ:
+        case IRQ:
+        case SVC:
+        case ABT:
+        case SYS:
+        case UND:
+            valid = true;
+    }
+
+    if (!valid)
+        std::cerr << "Invalid state being set to cpsr: " << value << "\n";
 
     // if (sr.bits.state == IRQ && registers.cpsr.bits.i == 1) return; // irq disabled bit set
     // if (sr.bits.state == FIQ && registers.cpsr.bits.f == 1) return; // fiq disabled bit set
@@ -894,18 +917,6 @@ void arm_7tdmi::cycle(u8 n, u8 s, u8 i)
     
     // keep running total of cycles
     cycles += access_cycles;
-    // switch (type)
-    // {
-    //     case 'i':
-    //         cycles++;
-    //         break;
-    //     case 's':
-    //         cycles += mem->s_cycles;
-    //         break;
-    //     case 'n':
-    //         cycles += mem->n_cycles;
-    //         break;
-    // }
 }
 
 void arm_7tdmi::handle_interrupt()

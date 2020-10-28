@@ -23,7 +23,9 @@ void arm_7tdmi::branch_exchange(u32 instruction)
     if (Rn == 15)
     {
         std::cerr << "Undefined behavior: r15 as operand\n";
+        std::cerr << std::hex << registers.r15 << "\n";
         set_state(UND);
+        exit(0);
         return;
     }
     

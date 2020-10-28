@@ -895,6 +895,13 @@ void arm_7tdmi::conditional_branch(u16 instruction)
 void arm_7tdmi::software_interrupt_thumb(u16 instruction)
 {
     //std::cout << "thumb SWI:  " << (instruction & 0xFF) << "\n";
+    // set_state(SVC);
+    // set_register(14, get_register(15) - 2);
+    // update_spsr(get_register(16), false);
+    // set_mode(ARM);
+    // set_register(15, 0x08);
+    // pipeline_full = false;
+    // return;
 
     // bits 7 - 0 determine which interrupt
     switch (instruction & 0xFF)
@@ -917,8 +924,11 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction)
         case 0xB:
             swi_cpuSet();
             break;
-        default: ;
-            //std::cout << "Unknown SWI code: " << std::hex << (instruction & 0xFF) << "\n";
+        case 0xF:
+            swi_objAffineSet();
+            break;
+        default:
+            std::cout << "Unknown SWI code: " << std::hex << (instruction & 0xFF) << "\n";
     }
 
     // cycles: 2S + 1N

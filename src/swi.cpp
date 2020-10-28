@@ -9,7 +9,6 @@
  */
 
 #include <cmath>
-
 #include "arm_7tdmi.h"
 
 /*
@@ -135,7 +134,7 @@ void arm_7tdmi::swi_division()
  */
 void arm_7tdmi::swi_sqrt()
 {
-    u32 num = get_register(0);
+    u32 num    = get_register(0);
     u16 result = (u16) sqrt(num);
 
     set_register(0, result);
@@ -175,4 +174,47 @@ void arm_7tdmi::swi_cpuSet()
     std::cout << "Mode: " << std::hex<< mode << "\n";
 
     u32 h = 0x1FFFFF;
+}
+
+/*
+ * ObjAffineSet
+ */
+
+void arm_7tdmi::swi_objAffineSet()
+{
+    u32 src_ptr          = get_register(0);
+    u32 dest_ptr         = get_register(1);
+    u32 num_calculations = get_register(2);
+    u32 offset           = get_register(3);
+
+    float sx, sy;         // scale x, y
+	float alpha;          // angle of rotation
+	float pa, pb, pc, pd; // calculated P matrix
+
+    // // TODO - these more complex cases that I don't feel like doing now
+    if (num_calculations != 1)
+        std::cout << "SWI ObjAffineSet > 1 calculations\n";
+    
+    if (offset != 2) // for OAM, not bg
+        std::cout << "SWI ObjAffineSet for OAM\n";
+
+    // integer portion of 8.8f sx, sy
+    sx = (float) (mem->read_u16(src_ptr    ) >> 8);
+    sy = (float) (mem->read_u16(src_ptr + 2) >> 8);
+
+    // convert alpha from range [0x0 - 0xFFFF] to [0, 2π]
+    alpha = (mem->read_u16(src_ptr + 4)) / 32768.0 * M_PI;
+    pa = pd = cosf(alpha);
+    pb = pc = sinf(alpha);
+
+    pa *=  sx; // sx *  cos(α)
+    pb *= -sx; // sx * -sin(α)
+    pc *=  sy; // sy *  sin(α)
+    pd *=  sy; // sy *  cos(α)
+
+    // convert back to range [0x0 - 0xFFFF]
+    mem->write_u16(dest_ptr    , pa * 256);
+    mem->write_u16(dest_ptr + 2, pb * 256);
+    mem->write_u16(dest_ptr + 4, pc * 256);
+    mem->write_u16(dest_ptr + 6, pd * 256);
 }

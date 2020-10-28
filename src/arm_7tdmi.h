@@ -160,6 +160,7 @@ class arm_7tdmi
         void swi_sqrt();
         void swi_arctan2();
         void swi_cpuSet();
+        void swi_objAffineSet();
 
         // handle hardware interrupts
         void handle_interrupt();

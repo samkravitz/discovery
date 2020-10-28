@@ -301,7 +301,7 @@ void arm_7tdmi::execute(u32 instruction)
                     break;
                 case SWI_T:
                     software_interrupt_thumb((u16) instruction);
-                    increment_pc();
+                    //increment_pc();
                     break;
                 case BAL_T:
                     unconditional_branch((u16) instruction);

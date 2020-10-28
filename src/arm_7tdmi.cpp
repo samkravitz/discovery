@@ -175,18 +175,10 @@ void arm_7tdmi::decode(u32 instruction) { }
 
 void arm_7tdmi::execute(u32 instruction)
 {  
-    //std::cout << std::hex << registers.r15 << "\n";
     #ifdef PRINT
     std::cout << "Executing: " << std::hex << instruction << "\n";
     #endif
-
-    if (registers.r15 == 0x8002f9a)
-    {
-        //#define PRINT
-        std::cout << "ole\n";
-    }
-
-    int k = 0;
+    ii++;
     switch (get_mode())
     {
         case ARM:
@@ -327,7 +319,6 @@ void arm_7tdmi::execute(u32 instruction)
     }
 
     #ifdef PRINT
-    //print registers
     std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << get_register(0) << 
 				" -- R4  : 0x" << std::setw(8) << std::setfill('0') << get_register(4) << 
 				" -- R8  : 0x" << std::setw(8) << std::setfill('0') << get_register(8) << 
@@ -359,7 +350,7 @@ void arm_7tdmi::execute(u32 instruction)
             if (get_condition_code_flag(V))
                 std::cout << "V";
             std::cout << "\n";
-            std::cout << "Cycles: " << std::dec << cycles << "\n";
+            std:: cout << std::dec << ii << " instructions\n";
     #endif
 }
 
@@ -458,12 +449,20 @@ void arm_7tdmi::set_register(int reg, u32 val)
     switch (reg)
     {
         // all banks share r0 - r7
-        case 0x0: registers.r0 = val; break;
-        case 0x1: registers.r1 = val; break;
+        case 0x0:
+            registers.r0 = val;
+            break;
+        case 0x1:
+            registers.r1 = val;
+            break;
         case 0x2: registers.r2 = val; break;
         case 0x3: registers.r3 = val; break;
-        case 0x4: registers.r4 = val; break;
-        case 0x5: registers.r5 = val; break;
+        case 0x4: 
+            registers.r4 = val;
+            break;
+        case 0x5:
+            registers.r5 = val;
+            break;
         case 0x6: registers.r6 = val; break;
         case 0x7: registers.r7 = val; break;
 

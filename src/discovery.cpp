@@ -6,12 +6,24 @@
 #include "common/common.h"
 
 void print_keys(u16);
+int debug = 0;
+
 
 int main(int argc, char **argv)
 {
     std::cout << "Gameboy emulator!" << "\n";
     discovery emulator;
     emulator.mem->load_bios();
+
+    std::string deb = "";
+
+    // debug mode
+    if (argc > 2)
+        deb += argv[2];
+
+    if (deb == "-d")
+        debug = 1;
+    
     emulator.run_asm(argv[1]);
     return 0;
 }
@@ -52,7 +64,6 @@ void discovery::game_loop()
         cpu.fetch();
         cpu.decode(cpu.pipeline[0]);
         cpu.execute(cpu.pipeline[0]);
-        //std::cout << "Executed instruction " << std::dec << num << ": " << std::hex << cpu.pipeline[0] << " " << cpu.registers.r15<< "\n";
 
         // update pipeline
         cpu.pipeline[0] = cpu.pipeline[1];
@@ -74,42 +85,6 @@ void discovery::game_loop()
         }
 
         cpu.handle_interrupt();
-        //num++;
-
-        // if (num > 200000)
-        // {
-        //     std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(0) << 
-		// 		" -- R4  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(4) << 
-		// 		" -- R8  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(8) << 
-		// 		" -- R12 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(12) << "\n";
-
-		// 	std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(1) << 
-		// 		" -- R5  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(5) << 
-		// 		" -- R9  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(9) << 
-		// 		" -- R13 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(13) << "\n";
-
-		// 	std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(2) << 
-		// 		" -- R6  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(6) << 
-		// 		" -- R10 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(10) << 
-		// 		" -- R14 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(14) << "\n";
-
-		// 	std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(3) << 
-		// 		" -- R7  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(7) << 
-		// 		" -- R11 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(11) << 
-		// 		" -- R15 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(15) << "\n";
-
-	
-		// 	std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << cpu.registers.cpsr.full << "\t";
-        //     if (cpu.get_condition_code_flag(N))
-        //         std::cout << "N";
-        //     if (cpu.get_condition_code_flag(Z))
-        //         std::cout << "Z";
-        //     if (cpu.get_condition_code_flag(C))
-        //         std::cout << "C";
-        //     if (cpu.get_condition_code_flag(V))
-        //         std::cout << "V";
-        //     std::cout << "\n";
-        // }
     }
     shutdown();
 }
@@ -117,7 +92,12 @@ void discovery::game_loop()
 void discovery::run_asm(char *name)
 {
     mem->load_rom(name);
-    game_loop();
+
+    if (debug)
+        game_loop_debug();
+    
+    else
+        game_loop();
 }
 
 // write current key state to KEYINPUT register
@@ -214,4 +194,119 @@ void discovery::shutdown()
     delete mem;
     cpu.~arm_7tdmi();
     gpu.~GPU();
+}
+
+void discovery::game_loop_debug()
+{
+    SDL_Event e;
+    u32 old_cycles = 0;
+    int num = 0;
+    std::string input;
+    u32 breakpoint;
+    while (true)
+    {
+        std::cout << "> ";
+        std::getline(std::cin, input);
+
+        switch (input.at(0))
+        {
+            case 'n':
+                cpu.fetch();
+                cpu.decode(cpu.pipeline[0]);
+                cpu.execute(cpu.pipeline[0]);
+                print_debug_info();
+                break;
+
+            case 'b':
+                breakpoint = std::stoi(input.substr(2));
+                continue;
+                break;
+            
+            case 'c':
+                while (cpu.registers.r15 != breakpoint)
+                {
+                    cpu.fetch();
+                    cpu.decode(cpu.pipeline[0]);
+                    cpu.execute(cpu.pipeline[0]);
+
+                    cpu.pipeline[0] = cpu.pipeline[1];
+                    cpu.pipeline[1] = cpu.pipeline[2];
+
+                    // run gpu for as many clock cycles as cpu used
+                    system_cycles = cpu.cycles;
+                    for (int i = system_cycles - old_cycles; i > 0; --i)
+                        gpu.clock_gpu();
+                    old_cycles = system_cycles;
+                
+                    // poll for key presses at start of vblank
+                    if (gpu.stat->current_scanline == 160 && SDL_PollEvent(&e))
+                    {
+                        if (e.type == SDL_QUIT)
+                            break;
+                    }
+                }
+                print_debug_info();
+                continue;
+        }
+        
+
+        // update pipeline
+        cpu.pipeline[0] = cpu.pipeline[1];
+        cpu.pipeline[1] = cpu.pipeline[2];
+
+        // run gpu for as many clock cycles as cpu used
+        system_cycles = cpu.cycles;
+        for (int i = system_cycles - old_cycles; i > 0; --i)
+            gpu.clock_gpu();
+        old_cycles = system_cycles;
+    
+        // poll for key presses at start of vblank
+        if (gpu.stat->current_scanline == 160 && SDL_PollEvent(&e))
+        {
+            if (e.type == SDL_QUIT)
+                break;
+        }
+
+        cpu.handle_interrupt();
+    }
+    shutdown();
+}
+
+void discovery::print_debug_info()
+{
+    std::cout << "Executed: " << std::hex << cpu.pipeline[0] << "\n";
+
+    //print registers
+    std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(0) << 
+				" -- R4  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(4) << 
+				" -- R8  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(8) << 
+				" -- R12 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(12) << "\n";
+
+			std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(1) << 
+				" -- R5  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(5) << 
+				" -- R9  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(9) << 
+				" -- R13 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(13) << "\n";
+
+			std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(2) << 
+				" -- R6  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(6) << 
+				" -- R10 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(10) << 
+				" -- R14 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(14) << "\n";
+
+			std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(3) << 
+				" -- R7  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(7) << 
+				" -- R11 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(11) << 
+				" -- R15 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(15) << "\n";
+
+	
+			std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << cpu.registers.cpsr.full << "\t";
+            if (cpu.get_condition_code_flag(N))
+                std::cout << "N";
+            if (cpu.get_condition_code_flag(Z))
+                std::cout << "Z";
+            if (cpu.get_condition_code_flag(C))
+                std::cout << "C";
+            if (cpu.get_condition_code_flag(V))
+                std::cout << "V";
+            std::cout << "\n";
+            std::cout << "Cycles: " << std::dec << cpu.cycles << "\n";
 }

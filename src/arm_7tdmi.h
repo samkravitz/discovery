@@ -105,6 +105,8 @@ class arm_7tdmi
 
         void cycle(u8, u8, u8);
         
+        int ii = 0;
+
         // getters / setters
         uint8_t get_condition_code_flag(condition_code_flag_t);
         void set_condition_code_flag(condition_code_flag_t, u8);

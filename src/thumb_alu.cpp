@@ -186,9 +186,9 @@ void arm_7tdmi::alu_thumb(u16 instruction)
             break;
 
         case 0b1001: // NEG
-            result = op1 * -1;
+            result = 0 - op1;
             set_register(Rd, result);
-            update_flags_logical(result, carry);
+            update_flags_subtraction(op2, op1, result);
             break;
 
         case 0b1010: // CMP

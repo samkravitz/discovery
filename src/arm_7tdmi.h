@@ -44,7 +44,6 @@ class arm_7tdmi
         bool pipeline_full;
         
         u32 cycles;
-        u32 last_accessed_addr;
 
         struct registers
         {

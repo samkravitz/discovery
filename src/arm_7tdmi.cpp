@@ -21,8 +21,10 @@ arm_7tdmi::arm_7tdmi()
 {
     registers = {0}; // zero out registers
     registers.r15 = 0x8000000; // starting address of gamepak flash rom
-    registers.r13 = 0x3007f00;
-    last_accessed_addr = 0x8000000;
+
+    registers.r13     = 0x3007F00; // starting address of user stack
+    registers.r13_svc = 0x3007FE0; // starting address of swi stack
+    registers.r13_irq = 0x3007FA0; // starting address of interrupt stack
 
     set_state(SYS);
     set_mode(ARM);
@@ -1102,7 +1104,6 @@ inline bool arm_7tdmi::mem_check(u32 &address)
     if (address >= MEM_PALETTE_RAM_START && address <= MEM_OAM_END && !mem->stat->in_vBlank)
         cycles++;
     
-    last_accessed_addr = address;
     return true;
 }
 

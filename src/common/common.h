@@ -46,6 +46,8 @@ const u32 REG_BG3VOFS  = 0x400001E;
 // Sound registers
 
 // DMA Transfer Channels
+const u32 REG_DMA0SAD = 0x40000B0;
+const u32 REG_DMA3CNT = 0x40000B8 + 36;
 
 // Timer Registers
 

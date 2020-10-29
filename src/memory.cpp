@@ -216,6 +216,10 @@ void Memory::write_u8(u32 address, u8 value)
             address -= MEM_OAM_SIZE;
     }
 
+    // DMA
+    if (address >= REG_DMA0SAD && address <= REG_DMA3CNT)
+        std::cout << "DMA OP\n";
+
     switch (address)
     {
         // REG_DISPCNT

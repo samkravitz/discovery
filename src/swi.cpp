@@ -169,12 +169,75 @@ void arm_7tdmi::swi_cpuSet()
     u32 dest_ptr = get_register(1);
     u32 mode     = get_register(2);
 
-    std::cout << "SWI CpuSet\n";
-    std::cout << "Src Ptr: " << std::hex<< src_ptr << "\n";
-    std::cout << "Dest Ptr: " << std::hex<< dest_ptr << "\n";
-    std::cout << "Mode: " << std::hex<< mode << "\n";
+    u32 wordcount = mode & 0x1FFFFF; // bits 0-20
+    u8 fill       = mode >> 24 & 1; // bit 24 (1 == fill, 0 == copy)
+    u8 datasize   = (mode >> 26 & 1) == 0 ? 2 : 4;
 
-    u32 h = 0x1FFFFF;
+    u32 val32;
+    u16 val16;
+
+    // memfill
+    if (fill == 1)
+    {
+        // get word / halfword
+        if (datasize == 2)
+        {
+            val16 = mem->read_u16(src_ptr);
+            for (int i = 0; i < datasize; ++i)
+            {
+                mem->write_u16(dest_ptr, val16);
+                dest_ptr += datasize;
+            }
+        }
+
+        else
+        {
+            val32 = mem->read_u32(src_ptr);
+            for (int i = 0; i < datasize; ++i)
+            {
+                mem->write_u32(dest_ptr, val32);
+                dest_ptr += datasize;
+            } 
+        }
+    }
+
+    // memcpy
+    else
+    {
+        for (int i = 0; i < datasize; ++i)
+        {
+            // halfword transfer
+            if (datasize == 2)
+            {
+                for (int i = 0; i < datasize; ++i)
+                {
+                    val16 = mem->read_u16(src_ptr);
+                    mem->write_u16(dest_ptr, val16);
+                    dest_ptr += datasize;
+                    src_ptr += datasize;
+                }
+            }
+                
+            else
+            {
+                for (int i = 0; i < datasize; ++i)
+                {
+                    val32 = mem->read_u32(src_ptr);
+                    mem->write_u32(dest_ptr, val32);
+                    dest_ptr += datasize;
+                    src_ptr += datasize;
+                }
+            }
+        }
+    }
+
+    // std::cout << "SWI CpuSet\n";
+    // std::cout << "Src Ptr: "   << std::hex << src_ptr << "\n";
+    // std::cout << "Dest Ptr: "  << std::hex << dest_ptr << "\n";
+    // std::cout << "Mode: "      << std::hex << mode << "\n";
+    // std::cout << "Wordcount: " << std::hex << wordcount << "\n";
+    // std::cout << "fill: "      << std::hex << (int) fill << "\n";
+    // std::cout << "datasize: "  << std::hex << (int) datasize << "\n";
 }
 
 /*

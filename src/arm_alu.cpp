@@ -6,7 +6,6 @@
  * DATE: June 27, 2020
  * DESCRIPTION: execution of arm instructions
  */
-
 #include <iostream>
 #include "common/util.h"
 #include "arm_7tdmi.h"
@@ -314,7 +313,7 @@ void arm_7tdmi::multiply(u32 instruction)
 
     if (set_condition_code_flags)
     {
-        u8 new_n_flag = result & 0x80000000; // bit 31 of result
+        u8 new_n_flag = result & 0x80000000 ? 1 : 0; // bit 31 of result
         set_condition_code_flag(N, new_n_flag);
 
         u8 new_z_flag = result == 0 ? 1 : 0;

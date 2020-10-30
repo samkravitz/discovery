@@ -109,6 +109,7 @@ void GPU::draw()
     switch (stat->reg_dispcnt.mode)
     {
         case 0: draw_mode0(); break;
+        case 1: draw_mode1(); break;
         case 3: draw_mode3(); break;
         case 4: draw_mode4(); break;
         default: 
@@ -151,13 +152,37 @@ void GPU::draw()
 }
 
 // video mode 0 - tile mode
-// can draw bg0-bg3 all regular
+// can draw bg0 - bg3 all regular
 void GPU::draw_mode0()
 {
     for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
-        for (int i = 0; i < 3; ++i) // bg0-bg3
+        for (int i = 0; i < 4; ++i) // bg0 - bg3
             if (stat->bg_cnt[i].enabled && stat->bg_cnt[i].priority == priority)
                 draw_reg_background(i);
+}
+
+// video mode 1 - tile mode
+// can draw bg0, bg1 regular and bg 2 affine
+void GPU::draw_mode1()
+{
+    for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
+        for (int i = 0; i < 3; ++i) // bg0 - bg2
+            if (stat->bg_cnt[i].enabled && stat->bg_cnt[i].priority == priority)
+            {
+                std::cout << "drawing background: " << i << "\n";
+                switch (i)
+                {
+                    case 0:
+                    case 1:
+                        draw_reg_background(i);
+                        break;
+                    case 2:
+                        draw_affine_background(i);
+                        break;
+                    default: // should never happen
+                        std::cerr << "Error: trying to draw invalid background in mode 1: " << i << "\n";
+                }
+            }
 }
 
 // video mode 3 - bitmap mode
@@ -359,6 +384,11 @@ void GPU::draw_reg_background(int bg)
                 screen_buffer[y][x] = map[(y + voff) % (height * PX_IN_TILE_COL)][(x + hoff) % (width * PX_IN_TILE_ROW)];
         }
     }
+}
+
+void GPU::draw_affine_background(int bg)
+{
+    
 }
 
 void GPU::draw_sprites()
@@ -568,13 +598,13 @@ void GPU::draw_affine_sprite(obj_attr attr)
     // get affine matrix
     u8 aff_index = (attr.attr_1.attr.v << 4) | (attr.attr_1.attr.h << 3) | (attr.attr_1.attr.f);
     u32 oam_addr = MEM_OAM_START + aff_index * 32; // each affine entry is 32 bytes accross
-    s16 pa = (s16) mem->read_u16(oam_addr + 6);
+    s16 pa = (s16) mem->read_u16(oam_addr + 6); 
     s16 pb = (s16) mem->read_u16(oam_addr + 14);
     s16 pc = (s16) mem->read_u16(oam_addr + 22);
     s16 pd = (s16) mem->read_u16(oam_addr + 30);
 
     //std::cout << "aff_index: " << (int) aff_index << "\n";
-    //std::cout << (int) pa << " " << (int) pb << " " << (int) pc << " " << (int) pd << "\n";
+    //std::cout << std::hex << (int) pa << " " << (int) pb << " " << (int) pc << " " << (int) pd << "\n";
     // std::cout << (int) start_x << " " << (int) start_y << "\n";
 
     u32 base_tile_addr = LOWER_SPRITE_BLOCK + (attr.attr_2.attr.tileno * S_TILE_LEN);

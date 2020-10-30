@@ -42,10 +42,21 @@ const u32 REG_BG1VOFS  = 0x4000016;
 const u32 REG_BG2VOFS  = 0x400001A;
 const u32 REG_BG3VOFS  = 0x400001E;
 
+// affine BG registers
+const u32 REG_BG2PAPD  = 0x4000020;
+const u32 REG_BG3PAPD  = 0x4000030;
+
+const u32 REG_BG2X     = 0x4000028;
+const u32 REG_BG3X     = 0x4000038;
+
+const u32 REG_BG2Y     = 0x400002C;
+const u32 REG_BG3Y     = 0x400003C;
+
 
 // Sound registers
 
 // DMA Transfer Channels
+// TODO - add the rest of DMA registers
 const u32 REG_DMA0SAD = 0x40000B0;
 const u32 REG_DMA3CNT = 0x40000B8 + 36;
 

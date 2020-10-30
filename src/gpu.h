@@ -65,10 +65,12 @@ class GPU
 
         // video mode draws
         void draw_mode0();
+        void draw_mode1();
         void draw_mode3();
         void draw_mode4();
 
         void draw_reg_background(int);
+        void draw_affine_background(int);
 
         // misc
         obj_attr get_attr(int);

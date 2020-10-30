@@ -178,7 +178,7 @@ void arm_7tdmi::execute(u32 instruction)
     #ifdef PRINT
     std::cout << "Executing: " << std::hex << instruction << "\n";
     #endif
-    ii++;
+    
     switch (get_mode())
     {
         case ARM:
@@ -358,47 +358,47 @@ u32 arm_7tdmi::get_register(u32 reg)
 {
     switch (reg)
     {
-        case 0x0: return registers.r0;
-        case 0x1: return registers.r1;
-        case 0x2: return registers.r2;
-        case 0x3: return registers.r3;
-        case 0x4: return registers.r4;
-        case 0x5: return registers.r5;
-        case 0x6: return registers.r6;
-        case 0x7: return registers.r7;
+        case 0: return registers.r0;
+        case 1: return registers.r1;
+        case 2: return registers.r2;
+        case 3: return registers.r3;
+        case 4: return registers.r4;
+        case 5: return registers.r5;
+        case 6: return registers.r6;
+        case 7: return registers.r7;
 
-        case 0x8:
+        case 8:
             switch (get_state())
             {
                 case FIQ: return registers.r8_fiq;
                 default: return registers.r8;
             }
-        case 0x9:
+        case 9:
             switch (get_state())
             {
                 case FIQ: return registers.r9_fiq;
                 default: return registers.r9;
             }
-        case 0xa:
+        case 10:
             switch (get_state())
             {
                 case FIQ: return registers.r10_fiq;
                 default: return registers.r10;
             }
-        case 0xb:
+        case 11:
             switch (get_state())
             {
                 case FIQ: return registers.r11_fiq;
                 default: return registers.r11;
             }
-        case 0xc:
+        case 12:
             switch (get_state())
             {
                 case FIQ: return registers.r12_fiq;
                 default: return registers.r12;
             }
 
-        case 0xd:
+        case 13:
             switch(get_state())
             {
                 case USR:
@@ -410,7 +410,7 @@ u32 arm_7tdmi::get_register(u32 reg)
                 case UND: return registers.r13_und;
             }
 
-        case 0xe:
+        case 14:
             switch(get_state())
             {
                 case USR:
@@ -422,11 +422,11 @@ u32 arm_7tdmi::get_register(u32 reg)
                 case UND: return registers.r14_und;
             }
 
-        case 0xf:
+        case 15:
             return registers.r15; // all banks share r15
-        case 0x10:
+        case 16:
             return registers.cpsr.full; // all banks share cpsr
-        case 0x11:
+        case 17:
             switch(get_state())
             {
                 case FIQ: return registers.spsr_fiq.full;
@@ -444,30 +444,22 @@ u32 arm_7tdmi::get_register(u32 reg)
     return 100; // should never happen
 }
 
-void arm_7tdmi::set_register(int reg, u32 val)
+void arm_7tdmi::set_register(u32 reg, u32 val)
 {
     switch (reg)
     {
         // all banks share r0 - r7
-        case 0x0:
-            registers.r0 = val;
-            break;
-        case 0x1:
-            registers.r1 = val;
-            break;
-        case 0x2: registers.r2 = val; break;
-        case 0x3: registers.r3 = val; break;
-        case 0x4: 
-            registers.r4 = val;
-            break;
-        case 0x5:
-            registers.r5 = val;
-            break;
-        case 0x6: registers.r6 = val; break;
-        case 0x7: registers.r7 = val; break;
+        case 0: registers.r0 = val; break;
+        case 1: registers.r1 = val; break;
+        case 2: registers.r2 = val; break;
+        case 3: registers.r3 = val; break;
+        case 4: registers.r4 = val; break;
+        case 5: registers.r5 = val; break;
+        case 6: registers.r6 = val; break;
+        case 7: registers.r7 = val; break;
 
         // banked registers
-        case 0x8:
+        case 8:
             switch (get_state())
             {
                 case FIQ:
@@ -478,7 +470,7 @@ void arm_7tdmi::set_register(int reg, u32 val)
                     break;
             }
             break;
-        case 0x9:
+        case 9:
             switch (get_state())
             {
                 case FIQ:
@@ -489,7 +481,7 @@ void arm_7tdmi::set_register(int reg, u32 val)
                     break;
             }
             break;
-        case 0xa:
+        case 10:
             switch (get_state())
             {
                 case FIQ:
@@ -500,7 +492,7 @@ void arm_7tdmi::set_register(int reg, u32 val)
                     break;
             }
             break;
-        case 0xb:
+        case 11:
             switch (get_state())
             {
                 case FIQ:
@@ -511,7 +503,7 @@ void arm_7tdmi::set_register(int reg, u32 val)
                     break;
             }
             break;
-        case 0xc:
+        case 12:
             switch (get_state())
             {
                 case FIQ:
@@ -523,7 +515,7 @@ void arm_7tdmi::set_register(int reg, u32 val)
             }
             break;
 
-        case 0xd:
+        case 13:
             switch(get_state())
             {
                 case USR:
@@ -548,7 +540,7 @@ void arm_7tdmi::set_register(int reg, u32 val)
             }
             break;
 
-        case 0xe:
+        case 14:
             switch(get_state())
             {
                 case USR:
@@ -574,8 +566,8 @@ void arm_7tdmi::set_register(int reg, u32 val)
             break;
 
 
-        case 0xf: registers.r15 = val; break; // all banks share r15
-        case 0x10: registers.cpsr.full = val; break; // all banks share cpsr
+        case 15: registers.r15 = val; break; // all banks share r15
+        case 16: registers.cpsr.full = val; break; // all banks share cpsr
         default:
             std::cerr << "Unknown register: " << reg << "\n";
             break;

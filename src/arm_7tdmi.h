@@ -105,10 +105,8 @@ class arm_7tdmi
 
         void cycle(u8, u8, u8);
         
-        int ii = 0;
-
         // getters / setters
-        uint8_t get_condition_code_flag(condition_code_flag_t);
+        u8 get_condition_code_flag(condition_code_flag_t);
         void set_condition_code_flag(condition_code_flag_t, u8);
 
         state_t get_state();
@@ -118,7 +116,7 @@ class arm_7tdmi
         void set_mode(cpu_mode_t m) { registers.cpsr.bits.t = m; }
 
         u32 get_register(u32);
-        void set_register(int reg, u32 val);
+        void set_register(u32, u32);
 
         // instruction execution
         void branch_exchange(u32);

@@ -755,14 +755,22 @@ void GPU::draw_affine_sprite(obj_attr attr)
     u32 oam_addr = MEM_OAM_START + aff_index * 32; // each affine entry is 32 bytes across
 
     // transform P matrix from 8.8f to float
+    // P = [pa pb]
+    //     [pc pd]
     float pa = (s16) mem->read_u16(oam_addr +  0x6) / 256.0; 
     float pb = (s16) mem->read_u16(oam_addr +  0xE) / 256.0;
     float pc = (s16) mem->read_u16(oam_addr + 0x16) / 256.0;
     float pd = (s16) mem->read_u16(oam_addr + 0x1E) / 256.0;
 
-    //std::cout << "aff_index: " << (int) aff_index << "\n";
-    //std::cout << pa << " " << pb << " " << pc << " " << pd << "\n";
-    // std::cout << (int) start_x << " " << (int) start_y << "\n";
+    // get inverse of matrix to map from texture space to screen space
+    //    1          [d -b]
+    // ------- 
+    // ad - bc       [-c a]
+    float det = 1 / ((pa * pd) - (pb * pc)); // determinate
+    float A = det *  pd;
+    float B = det * -pb;
+    float C = det * -pc;
+    float D = det *  pa;
 
     u32 base_tile_addr = LOWER_SPRITE_BLOCK + (attr.attr_2.attr.tileno * S_TILE_LEN);
     bool s_tile = attr.attr_0.attr.a == 0;
@@ -834,7 +842,6 @@ void GPU::draw_affine_sprite(obj_attr attr)
     u16 x0 = left_x + (width * 4);
     u8  y0 = top_y + (height * 4);
 
-    //std::cout << (int) x0 << " " << (int) y0 << "\n";
     // x, y coordinate of sprite before rot/scale (1) and after (2)
     u16 x1, x2;
     u8 y1, y2;
@@ -860,8 +867,8 @@ void GPU::draw_affine_sprite(obj_attr attr)
                     if (left_pixel != 0)
                     {
                         // get new position of pixel after rot / scale
-                        x2 = -pa * (x1 - x0) + -pb * (y1 - y0) + x0;
-                        y2 =  pc * (x1 - x0) +  pd * (y1 - y0) + y0;
+                        x2 = A * (x1 - x0) + B * (y1 - y0) + x0;
+                        y2 = C * (x1 - x0) + D * (y1 - y0) + y0;
 
                         // multiply by sizeof(u16) because each entry in palram is 2 bytes
                         color = mem->read_u16_unprotected(SPRITE_PALETTE + left_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
@@ -873,8 +880,8 @@ void GPU::draw_affine_sprite(obj_attr attr)
                     {
                         // get new position of pixel after rot / scale
                         // add 1 to x1 b/c this is the right pixel
-                        x2 = -pa * (x1 + 1 - x0) + -pb * (y1 - y0) + x0;
-                        y2 =  pc * (x1 + 1 - x0) +  pd * (y1 - y0) + y0;
+                        x2 = A * (x1 + 1 - x0) + B * (y1 - y0) + x0;
+                        y2 = C * (x1 + 1 - x0) + D * (y1 - y0) + y0;
 
                         // multiply by sizeof(u16) because each entry in palram is 2 bytes
                         color = mem->read_u16_unprotected(SPRITE_PALETTE + right_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
@@ -898,8 +905,8 @@ void GPU::draw_affine_sprite(obj_attr attr)
                     y1 = y0 + h * PX_IN_TILE_COL + (i / 8);
 
                     // get new position of pixel after rot / scale
-                    x2 = pa * (x1 - x0) + pb * (y1 - y0) + x0;
-                    y2 = pc * (x1 - x0) + pd * (y1 - y0) + y0;
+                    x2 = A * (x1 - x0) + C * (y1 - y0) + x0;
+                    y2 = B * (x1 - x0) + D * (y1 - y0) + y0;
 
                     // multiply by sizeof(u16) because each entry in palram is 2 bytes
                     color = mem->read_u32_unprotected(SPRITE_PALETTE + palette_index * sizeof(u16));

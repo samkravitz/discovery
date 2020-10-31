@@ -66,8 +66,10 @@ class Memory
         void write_u16_unprotected(u32, u16);
         void write_u32_unprotected(u32, u32);
 
-    private:
+        // DMA transfer routine
         void _dma(int);
+
+    private:
         void dma0();
         void dma1();
         void dma2();

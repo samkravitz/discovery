@@ -511,5 +511,65 @@ void Memory::dma2()
 
 void Memory::dma3()
 {
-    std::cout << "DMA 3\n";  
+    std::cout << "DMA 3\n";
+    
+    // increment for destination, src
+    int dest_inc, src_inc;
+    u32 dest_ptr = dma[3].dest_address;
+
+    // get increment mode for destination
+    if (dma[3].dest_adjust == 0)      // increment after each copy
+        dest_inc = 1;
+    else if (dma[3].dest_adjust == 1) // decrement after each copy
+        dest_inc = -1;
+    else if (dma[3].dest_adjust == 2) // leave unchanged
+        dest_inc = 0;
+    else                              // increment after each copy, reset after transfer
+        dest_inc = 1;
+    
+    // get increment mode for source
+    if (dma[3].src_adjust == 0)       // increment after each copy
+        src_inc = 1;
+    else if (dma[3].src_adjust == 1)  // decrement after each copy
+        src_inc = -1;
+    else if (dma[3].src_adjust == 2)  // leave unchanged
+        src_inc = 0;
+    else                              // illegal option for src
+        std::cout << "Error: src_adjust == 3 for DMA 3!\n";
+    
+    // 32 bit copy
+    if (dma[3].chunk_size == 1)
+    {
+        for (int i = 0; i < dma[3].num_transfers; ++i)
+        {
+            // copy memory from src address to dest address
+            write_u32(dma[3].dest_address, read_u32(dma[3].src_address));
+
+            // increment src, dest ptrs
+            dma[3].src_address  += src_inc;
+            dma[3].dest_address += dest_inc;
+        }
+    }
+
+    // 16 bit copy
+    else
+    {
+        for (int i = 0; i < dma[3].num_transfers; ++i)
+        {
+            // copy memory from src address to dest address
+            write_u16(dma[3].dest_address, read_u16(dma[3].src_address));
+
+            // increment src, dest ptrs
+            dma[3].src_address  += src_inc;
+            dma[3].dest_address += dest_inc;
+        }
+    }
+
+    // reset initial destination address if required
+    if (dma[3].dest_adjust == 3)
+        dma[3].dest_address = dest_ptr;
+
+    // turn off this transfer if repeat bit is not set
+    if (dma[3].repeat == 0)
+        dma[3].enable == 0;
 }

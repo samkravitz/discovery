@@ -71,7 +71,16 @@ void GPU::clock_gpu()
 
     // finished hDraw
     if (stat->current_scanline_pixel == SCREEN_WIDTH)
+    {
         stat->in_hBlank = true;
+
+        // check for DMA HBLANK requests
+        for (int i = 0; i < 4; ++i)
+        {
+            if (mem->dma[i].enable && mem->dma[i].mode == 2) // start at HBLANK
+                mem->_dma(i);
+        }
+    }
 
     // completed a scanline
     if (lcd_clock % SCANLINE_CYCLES == 0)
@@ -88,8 +97,16 @@ void GPU::clock_gpu()
     }
 
     // finished vDraw
-    if (stat->current_scanline == SCREEN_HEIGHT)
+    if (stat->current_scanline == SCREEN_HEIGHT) {
         stat->in_vBlank = true;
+
+        // check for DMA VBLANK requests
+        for (int i = 0; i < 4; ++i)
+        {
+            if (mem->dma[i].enable && mem->dma[i].mode == 1) // start at VBLANK
+                mem->_dma(i);
+        }
+    }
 
     // completed a refresh
     if (lcd_clock == REFRESH_CYCLES)
@@ -507,31 +524,6 @@ void GPU::draw_affine_background(int bg)
             }
         }
     }
-
-    // get vertical & horizontal offset
-    // u16 voff, hoff;
-    // switch (bg)
-    // {
-    //     case 0:
-    //         voff = mem->read_u16_unprotected(REG_BG0VOFS);
-    //         hoff = mem->read_u16_unprotected(REG_BG0HOFS);
-    //     break;
-
-    //     case 1:
-    //         voff = mem->read_u16_unprotected(REG_BG1VOFS);
-    //         hoff = mem->read_u16_unprotected(REG_BG1HOFS);
-    //     break;
-
-    //     case 2:
-    //         voff = mem->read_u16_unprotected(REG_BG2VOFS);
-    //         hoff = mem->read_u16_unprotected(REG_BG2HOFS);
-    //     break;
-
-    //     case 3:
-    //         voff = mem->read_u16_unprotected(REG_BG3VOFS);
-    //         hoff = mem->read_u16_unprotected(REG_BG3HOFS);
-    //     break;
-    // }
 
     // copy area of map that screen is over into screen buffer
     for (int y = 0; y < SCREEN_HEIGHT; ++y)

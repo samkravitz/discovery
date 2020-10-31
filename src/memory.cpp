@@ -151,8 +151,80 @@ u8 Memory::read_u8(u32 address)
 void Memory::write_u32(u32 address, u32 value)
 {
     // DMA
-    if (address >= REG_DMA0SAD && address <= REG_DMA3CNT)
-        std::cout << "DMA OP\n";
+    switch (address)
+    {
+        // REG_DMAxSAD
+        case REG_DMA0SAD:
+        case REG_DMA1SAD:
+        case REG_DMA2SAD:
+        case REG_DMA3SAD:
+        {
+            int i;
+            switch (address & 0xF)
+            {
+                case 0x0: i = 0; break;
+                case 0xC: i = 1; break;
+                case 0x8: i = 2; break;
+                case 0x4: i = 3; break;
+            }
+
+            dma[i].src_address = value;
+        }
+        break;
+
+        // REG_DMAxDAD
+        case REG_DMA0DAD:
+        case REG_DMA1DAD:
+        case REG_DMA2DAD:
+        case REG_DMA3DAD:
+        {
+            int i;
+            switch (address & 0xF)
+            {
+                case 0x4: i = 0; break;
+                case 0x0: i = 1; break;
+                case 0xC: i = 2; break;
+                case 0x8: i = 3; break;
+            }
+
+            dma[i].dest_address = value;
+        }
+        break;
+
+        // REG_DMAxCNT
+        case REG_DMA0CNT:
+        case REG_DMA1CNT:
+        case REG_DMA2CNT:
+        case REG_DMA3CNT:
+        {
+            int i;
+            switch (address & 0xF)
+            {
+                case 0x8: i = 0; break;
+                case 0x4: i = 1; break;
+                case 0x0: i = 2; break;
+                case 0xC: i = 3; break;
+            }
+
+            dma[i].num_transfers    = (value >>  0) & 0xFFFF; // bits 15 - 0
+            dma[i].dest_adjust      = (value >> 21) &    0x3; // bits 22 - 21
+            dma[i].src_adjust       = (value >> 23) &    0x3; // bits 24 - 23
+            dma[i].repeat           = (value >> 25) &    0x1; // bit  25
+            dma[i].chunk_size       = (value >> 26) &    0x1; // bit  26
+            dma[i].mode             = (value >> 28) &    0x3; // bits 29 - 28
+            dma[i].irq              = (value >> 30) &    0x1; // bit  30
+            dma[i].enable           = (value >> 31) &    0x1; // bit  31
+
+            // immediate transfer timing
+            if (dma[i].enable && dma[i].mode == 0)
+                _dma(i);
+        }
+        break;
+
+    }
+    
+    // if (address >= REG_DMA0SAD && address <= REG_DMA3CNT)
+    //     std::cout << "DMA OP\n";
     write_u8(address    , (value >>  0) & 0xFF);
     write_u8(address + 1, (value >>  8) & 0xFF);
     write_u8(address + 2, (value >> 16) & 0xFF);
@@ -424,20 +496,20 @@ void Memory::_dma(int n)
 
 void Memory::dma0()
 {
-
+    std::cout << "DMA 0\n";
 }
 
 void Memory::dma1()
 {
-    
+    std::cout << "DMA 1\n";   
 }
 
 void Memory::dma2()
 {
-    
+    std::cout << "DMA 2\n";   
 }
 
 void Memory::dma3()
 {
-    
+    std::cout << "DMA 3\n";  
 }

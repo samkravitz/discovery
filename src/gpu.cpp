@@ -540,7 +540,7 @@ void GPU::draw_affine_background(int bg)
         {
             // modulo mapsize to allow wrapping
             //if (map[(y + voff) % (height * PX_IN_TILE_COL)][(x + hoff) % (width * PX_IN_TILE_ROW)] != 0)
-                screen_buffer[y][x] = map[(y) % (height * PX_IN_TILE_COL)][(x) % (width * PX_IN_TILE_ROW)];
+                screen_buffer[y][x] = map[y][x];//map[(y) % (height * PX_IN_TILE_COL)][(x) % (width * PX_IN_TILE_ROW)];
         }
     }
 }
@@ -548,8 +548,8 @@ void GPU::draw_affine_background(int bg)
 void GPU::draw_sprites()
 {
     // make sure sprites are 1D mode, I haven't added 2D mode compatibility yet
-    if (stat->reg_dispcnt.obj_map_mode == 0)
-        std::cout << "Caution: sprite mode is 2D\n";
+    // if (stat->reg_dispcnt.obj_map_mode == 0)
+    //     std::cout << "Caution: sprite mode is 2D\n";
 
     obj_attr attr;
     // TODO - priority
@@ -741,6 +741,48 @@ void GPU::draw_regular_sprite(obj_attr attr)
             }
         }
     }
+
+    // mosaic
+    if (attr.attr_0.attr.m)
+    {
+        u16 mosaic = mem->read_u16_unprotected(REG_MOSAIC);
+        
+        // horizontal / vertical stretch
+        // add one to get range 1 - 16
+        u8 wm = ((mosaic >>  8) & 0xF) + 1; // bits 8 - B
+        u8 hm = ((mosaic >> 12) & 0xF) + 1; // bits C - F
+
+        u32 temp;
+        for (int y = 0; y < height * PX_IN_TILE_COL; y += hm)
+        {
+            for (int x = 0; x < width * PX_IN_TILE_ROW; x += wm)
+            {
+                //std::cout << (int) x << "\n";
+                temp = screen_buffer[y0 + y][x0 + x];
+
+                // fill wm more x values with the top left
+                for (int xi = 0; xi < wm; ++xi)
+                {
+                    // make sure it doesn't go past sprite's bounds
+                    //if (x0 + x + xi < (x0 + width * PX_IN_TILE_ROW))
+                    //std::cout << (int) x0 + x + xi << "\n";
+                        screen_buffer[y0 + y][x0 + x + xi] = temp;
+                }
+                    
+
+                // fill hm more y values with the top left    
+                for (int yi = 0; yi < hm; ++yi)
+                {
+                    std::cout << (int) y0 + y + yi << "\n";
+                   //if (y0 + y + yi < (y0 + height * PX_IN_TILE_COL))
+                        screen_buffer[y0 + y + yi][x0 + x] = temp;
+                }
+            }
+            std::cout << "\n";
+        }
+    }
+
+    //std::cout << "\n\n";
 }
 
 void GPU::draw_affine_sprite(obj_attr attr)

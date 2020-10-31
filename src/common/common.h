@@ -61,6 +61,8 @@ const u32 REG_BG3PB    = 0x4000032;
 const u32 REG_BG3PC    = 0x4000034;
 const u32 REG_BG3PD    = 0x4000036;
 
+const u32 REG_MOSAIC   = 0x400004C;
+
 // Sound registers
 
 // DMA Transfer Channels

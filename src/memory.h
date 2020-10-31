@@ -27,6 +27,21 @@ class Memory
         lcd_stat *stat;
         u8 *game_rom;
         
+        struct dma
+        {
+            u16 num_transfers;
+            u8  dest_adjust : 2; // destination adjustment
+            u8  src_adjust  : 2;  // source adjustment
+            u8  repeat      : 1;
+            u8  chunk_size  : 1;
+            u8  mode        : 2;
+            u8  irq         : 1;
+            u8  enable      : 1;
+
+            u32 src_address;
+            u32 dest_address;
+        } dma[4];
+
         u8 n_cycles;
         u8 s_cycles;
 
@@ -52,8 +67,11 @@ class Memory
         void write_u32_unprotected(u32, u32);
 
     private:
-        u8 *get_internal_region(u32);
-        std::size_t size;
+        void _dma(int);
+        void dma0();
+        void dma1();
+        void dma2();
+        void dma3();
 };
 
 #endif // MEMORY_H

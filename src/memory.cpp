@@ -31,8 +31,24 @@ void Memory::reset()
     s_cycles = 2;
 
     // zero memory
-    for (int i = 0; i < MEM_SIZE; i++)
+    for (int i = 0; i < MEM_SIZE; ++i)
         memory[i] = 0;
+    
+    // zero dma
+    for (int i = 0; i < 4; ++i)
+    {
+        dma[i].num_transfers    = 0;
+        dma[i].dest_adjust      = 0; 
+        dma[i].src_adjust       = 0;  
+        dma[i].repeat           = 0;
+        dma[i].chunk_size       = 0;
+        dma[i].mode             = 0;
+        dma[i].irq              = 0;
+        dma[i].enable           = 0;
+
+        dma[i].src_address      = 0;
+        dma[i].dest_address     = 0;
+    }
     
     // write all 1s to keypad (all keys cleared)
     write_u32_unprotected(REG_KEYINPUT, 0b1111111111);
@@ -134,8 +150,11 @@ u8 Memory::read_u8(u32 address)
 
 void Memory::write_u32(u32 address, u32 value)
 {
-    write_u8(address, value & 0xFF);
-    write_u8(address + 1, (value >> 8) & 0xFF);
+    // DMA
+    if (address >= REG_DMA0SAD && address <= REG_DMA3CNT)
+        std::cout << "DMA OP\n";
+    write_u8(address    , (value >>  0) & 0xFF);
+    write_u8(address + 1, (value >>  8) & 0xFF);
     write_u8(address + 2, (value >> 16) & 0xFF);
     write_u8(address + 3, (value >> 24) & 0xFF);
 }
@@ -215,10 +234,6 @@ void Memory::write_u8(u32 address, u8 value)
         while (address > MEM_OAM_END)
             address -= MEM_OAM_SIZE;
     }
-
-    // DMA
-    if (address >= REG_DMA0SAD && address <= REG_DMA3CNT)
-        std::cout << "DMA OP\n";
 
     switch (address)
     {
@@ -393,38 +408,36 @@ void Memory::load_bios()
     bios.close();
 }
 
-/*
- * GBA memory can be addressed anywhere from 0x00000000-0xFFFFFFFF, however most of those addresses are unused.
- * given a 4 u8 address, this function will return the address of the
- * internal region the address points to, which saves a boatload of memory.
- */
-u8 *Memory::get_internal_region(u32 address)
+void Memory::_dma(int n)
 {
-    // if (address <= MEM_BIOS_END)  {
-    //     return &memory.bios[address];
-    // }
-    // else if (address >= MEM_EWRAM_START && address <= MEM_EWRAM_END) {
-    //     //std::cout << "WORK ROM ACCESSED!\n";
-    //     return &memory.EWRAM[address - MEM_EWRAM_START];
-    // }
-    // else if (address >= MEM_CHIP_WRAM_START && address <= MEM_CHIP_WRAM_END) return &memory.chip_wram[address - MEM_CHIP_WRAM_START];
-    // else if (address >= MEM_IO_REG_START && address <= MEM_IO_REG_END) return &memory.io_reg[address - MEM_IO_REG_START];
-    // else if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALETTE_RAM_END) {
-    //     //std::cout << "Pallette RAM accessed\n";
-    //     return &memory.palette_ram[address - MEM_PALETTE_RAM_START];
-    // }
-    // else if (address >= MEM_VRAM_START && address <= MEM_VRAM_END) return &memory.vram[address - MEM_VRAM_START];
-    // else if (address >= MEM_OAM_START && address <= MEM_OAM_END) {
-    //     //std::cout << "Oam accessed\n";
-    //     return &memory.oam[address - MEM_OAM_START];
-    // }
-    // else if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END) {
-    //     //std::cout << "Gamepak ROM ACCESSED!\n";
-    //     return &game_rom[address - MEM_GAMEPAK_ROM_START];
-    // }
-    // else {
-    //     std::cerr << "Error: invalid internal address specified: " << std::hex << "0x" << address << "\n";
-    //     exit(2);
-    // }
-    return 0;
+    switch (n)
+    {
+        case 0: dma0(); break;
+        case 1: dma1(); break;
+        case 2: dma2(); break;
+        case 3: dma3(); break;
+
+        default: // should never happen
+            std::cerr << "Error: accessing unknown DMA: " << n << "\n";
+    }
+}
+
+void Memory::dma0()
+{
+
+}
+
+void Memory::dma1()
+{
+    
+}
+
+void Memory::dma2()
+{
+    
+}
+
+void Memory::dma3()
+{
+    
 }

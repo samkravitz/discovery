@@ -77,8 +77,11 @@ void GPU::clock_gpu()
         // check for DMA HBLANK requests
         for (int i = 0; i < 4; ++i)
         {
-            if (mem->dma[i].enable && mem->dma[i].mode == 2) // start at HBLANK
+            if (mem->dma[i].enable && mem->dma[i].mode == 2)
+            { // start at HBLANK
                 mem->_dma(i);
+                std::cout << "DMA" << i << " HBLANK\n";
+            }
         }
     }
 

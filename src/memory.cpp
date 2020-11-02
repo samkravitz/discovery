@@ -168,7 +168,7 @@ void Memory::write_u32(u32 address, u32 value)
                 case 0x4: i = 3; break;
             }
 
-            dma[i].src_address = value;
+            dma[i].src_address = value;// & 0x3FFFFFF; // only 27 bits are addressable
         }
         break;
 
@@ -187,7 +187,7 @@ void Memory::write_u32(u32 address, u32 value)
                 case 0x8: i = 3; break;
             }
 
-            dma[i].dest_address = value;
+            dma[i].dest_address = value;// & 0x7FFFFFF; // only 28 bits are addressable
         }
         break;
 
@@ -217,7 +217,10 @@ void Memory::write_u32(u32 address, u32 value)
 
             // immediate transfer timing
             if (dma[i].enable && dma[i].mode == 0)
+            {
+                std::cout << "DMA" << i << " immediate\n";
                 _dma(i);
+            }
         }
         break;
 
@@ -511,7 +514,7 @@ void Memory::dma2()
 
 void Memory::dma3()
 {
-    std::cout << "DMA 3\n";
+    //std::cout << "DMA 3\n";
     
     // increment for destination, src
     int dest_inc, src_inc;
@@ -572,4 +575,8 @@ void Memory::dma3()
     // turn off this transfer if repeat bit is not set
     if (dma[3].repeat == 0)
         dma[3].enable == 0;
+    
+    // IRQ request
+    if (dma[3].irq)
+        std::cout << "DMA3 IRQ request\n";
 }

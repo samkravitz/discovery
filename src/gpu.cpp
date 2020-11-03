@@ -114,6 +114,7 @@ void GPU::clock_gpu()
     // completed a refresh
     if (lcd_clock == REFRESH_CYCLES)
     {
+        //
         lcd_clock = 0; // restart lcd_clock
         stat->current_scanline = 0;
         stat->current_scanline_pixel = 0;

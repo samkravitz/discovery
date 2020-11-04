@@ -47,7 +47,6 @@ class GPU
         u8 scanline;
 
         void cycle();
-        
         void reset();
         void draw();
 

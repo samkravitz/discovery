@@ -533,8 +533,6 @@ void GPU::draw_affine_background(int bg)
                 screen_buffer[y][x] = map[y][x];//map[(y) % (height * PX_IN_TILE_COL)][(x) % (width * PX_IN_TILE_ROW)];
         }
     }
-
-    std::cout << "Drew 2" << bg << "\n";
 }
 
 void GPU::draw_sprites()
@@ -765,12 +763,12 @@ void GPU::draw_regular_sprite(obj_attr attr)
                 // fill hm more y values with the top left    
                 for (int yi = 0; yi < hm; ++yi)
                 {
-                    std::cout << (int) y0 + y + yi << "\n";
+                    //std::cout << (int) y0 + y + yi << "\n";
                    //if (y0 + y + yi < (y0 + height * PX_IN_TILE_COL))
                         screen_buffer[y0 + y + yi][x0 + x] = temp;
                 }
             }
-            std::cout << "\n";
+            //std::cout << "\n";
         }
     }
 

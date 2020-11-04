@@ -116,7 +116,7 @@ void discovery::game_loop()
                         // reset timer
                         timers[j]->data = timers[j]->start_data;
 
-                        std::cout << "Timer " << j << " overflow\n";
+                        //std::cout << "Timer " << j << " overflow\n";
 
                         // overflow irq
                         if (timers[j]->irq)

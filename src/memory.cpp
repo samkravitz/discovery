@@ -360,14 +360,16 @@ void Memory::write_u8(u32 address, u8 value)
         case REG_DMA0CNT:
             dma[0].num_transfers |= value;
         break;
+
         case REG_DMA0CNT + 1:
             dma[0].num_transfers |= (value << 8);
         break;
-            //dma[0].num_transfers |= ((memory[REG_DMA0CNT + 1] << 8) | (memory[REG_DMA0CNT])); // bits 0 - 16
+
         case REG_DMA0CNT + 2:
             dma[0].dest_adjust    = value >> 5 & 0x3;
             dma[0].src_adjust    |= value >> 6 & 0x1; 
         break;
+
         case REG_DMA0CNT + 3:
             dma[0].src_adjust    |= ((value & 0x1) << 1);
             dma[0].repeat         = value >> 1 & 0x1;
@@ -391,13 +393,16 @@ void Memory::write_u8(u32 address, u8 value)
         case REG_DMA1CNT:
             dma[1].num_transfers |= value;
         break;
+
         case REG_DMA1CNT + 1:
             dma[1].num_transfers |= (value << 8);
         break;
+
         case REG_DMA1CNT + 2:
             dma[1].dest_adjust    = value >> 5 & 0x3;
             dma[1].src_adjust    |= value >> 6 & 0x1; 
         break;
+
         case REG_DMA1CNT + 3:
             dma[1].src_adjust    |= ((value & 0x1) << 1);
             dma[1].repeat         = value >> 1 & 0x1;
@@ -453,14 +458,17 @@ void Memory::write_u8(u32 address, u8 value)
         // REG_DMA3CNT
         case REG_DMA3CNT:
             dma[3].num_transfers |= value;
-            break;
+        break;
+
         case REG_DMA3CNT + 1:
             dma[3].num_transfers |= (value << 8);
-            break;
+        break;
+
         case REG_DMA3CNT + 2:
             dma[3].dest_adjust    = value >> 5 & 0x3;
             dma[3].src_adjust    |= value >> 6 & 0x1; 
-            break;
+        break;
+
         case REG_DMA3CNT + 3:
             dma[3].src_adjust    |= ((value & 0x1) << 1);
             dma[3].repeat         = value >> 1 & 0x1;
@@ -486,38 +494,45 @@ void Memory::write_u8(u32 address, u8 value)
         case REG_TM0D:
             timers[0]->data       |= value;
             timers[0]->start_data |= value;
-            break;
+        break;
+
         case REG_TM0D + 1:
             timers[0]->data       |= (value << 8);
             timers[0]->start_data |= (value << 8);
-            break;
+        break;
         
         // REG_TM1D
         case REG_TM1D:
             timers[1]->data       |= value;
             timers[1]->start_data |= value;
-            break;
+        break;
+
         case REG_TM1D + 1:
             timers[1]->data       |= (value << 8);
             timers[1]->start_data |= (value << 8);
+        break;
 
         // REG_TM2D
         case REG_TM2D:
             timers[2]->data       |= value;
             timers[2]->start_data |= value;
-            break;
+        break;
+
         case REG_TM2D + 1:
             timers[2]->data       |= (value << 8);
             timers[2]->start_data |= (value << 8);
+        break;
 
         // REG_TM3D
         case REG_TM3D:
             timers[3]->data       |= value;
             timers[3]->start_data |= value;
-            break;
+        break;
+
         case REG_TM3D + 1:
             timers[3]->data       |= (value << 8);
             timers[3]->start_data |= (value << 8);
+        break;
         
         // REG_TM0CNT
         case REG_TM0CNT:

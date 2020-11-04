@@ -11,8 +11,6 @@
 #include <iomanip>
 
 #include "arm_7tdmi.h"
-#include "common/util.h"
-#include "common/memory.h"
 
 // uncomment this if running tests
 //#define TEST

@@ -1,6 +1,6 @@
-#include "gpu.h"
-#include "obj_attr.h"
 #include <ctime>
+
+#include "gpu.h"
 
 #define S_TILE_LEN 32
 #define D_TILE_LEN 64

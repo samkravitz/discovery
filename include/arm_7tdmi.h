@@ -10,8 +10,9 @@
 #ifndef ARM_7TDMI_H
 #define ARM_7TDMI_H
 
-#include "common/cpu.h"
+#include "cpu.h"
 #include "memory.h"
+#include "util.h"
 #include "gpu.h"
 
 // data type for special registers

@@ -2,8 +2,6 @@
 #include <iomanip>
 
 #include "discovery.h"
-#include "lcd_stat.h"
-#include "common/common.h"
 
 void print_keys(u16);
 int debug = 0;

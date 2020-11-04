@@ -7,19 +7,16 @@
  * DATE: July 13, 2020
  * DESCRIPTION: class definition for graphics processing unit (gpu)
  */
-
 #ifndef GPU_H
 #define GPU_H
 
 #include <SDL2/SDL.h>
 #include <iostream>
-
 #include <ctime>
-#include "common/memory.h"
-#include "common/common.h"
-#include "common/gpu.h"
+
+#include "gpu.h"
 #include "memory.h"
-#include "lcd_stat.h"
+#include "common.h"
 #include "obj_attr.h"
 
 #define SCREEN_WIDTH  240
@@ -34,6 +31,11 @@
 
 #define NUM_OBJS 128 // number of sprites that can be rendered
 
+const u32 LOWER_SPRITE_BLOCK = 0x6010000;
+const u32 HIGHER_SPRITE_BLOCK = 0x6014000;
+
+const u32 SPRITE_PALETTE = 0x5000200;
+
 class GPU
 {
     public:
@@ -47,6 +49,7 @@ class GPU
         u8 scanline;
 
         void cycle();
+        
         void reset();
         void draw();
 

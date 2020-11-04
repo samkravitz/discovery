@@ -7,8 +7,8 @@
  * DESCRIPTION: common typedefs throughout arm7tdmi use
  */
 
-#ifndef CPU_COMMON_H
-#define CPU_COMMON_H
+#ifndef CPU_H
+#define CPU_H
 
 // cpu state
 typedef enum State
@@ -143,4 +143,4 @@ typedef enum ThumbInstructionFormat
     UND_T   // undefined
 } thumb_instruction_format_t;
 
-#endif // CPU_COMMON_H
+#endif // CPU_H

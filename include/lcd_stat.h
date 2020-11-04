@@ -11,7 +11,7 @@
 #ifndef LCD_STAT_H
 #define LCD_STAT_H
 
-#include "common/common.h"
+#include "common.h"
 
 struct lcd_stat
 {

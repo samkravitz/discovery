@@ -11,7 +11,7 @@
 #define OBJ_ATTR_H
 
 #include <iostream>
-#include "common/common.h"
+#include "common.h"
 
 struct obj_attr
 {

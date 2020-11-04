@@ -10,7 +10,6 @@
 #ifndef DISCOVERY_H
 #define DISCOVERY_H
 
-#include <vector>
 #include "arm_7tdmi.h"
 #include "gpu.h"
 #include "memory.h"

@@ -7,11 +7,11 @@
  * DATE: July 13, 2020
  * DESCRIPTION: Implementation of memory related functions
  */
-#include "memory.h"
-
 #include <fstream>
 #include <iostream>
 #include <experimental/filesystem>
+
+#include "memory.h"
 
 namespace fs = std::experimental::filesystem;
 

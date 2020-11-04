@@ -6,8 +6,6 @@
  * DATE: October 8th, 2020
  * DESCRIPTION: execution of thumb instructions
  */
-#include <iostream>
-#include "common/util.h"
 #include "arm_7tdmi.h"
 
 void arm_7tdmi::move_shifted_register(u16 instruction)

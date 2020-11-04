@@ -80,6 +80,14 @@ const u32 REG_DMA3DAD = 0x40000D8;
 const u32 REG_DMA3CNT = 0x40000DC;
 
 // Timer Registers
+const u32 REG_TM0D    = 0x4000100;
+const u32 REG_TM0CNT  = 0x4000102;
+const u32 REG_TM1D    = 0x4000104;
+const u32 REG_TM1CNT  = 0x4000106;
+const u32 REG_TM2D    = 0x4000108;
+const u32 REG_TM2CNT  = 0x400010A;
+const u32 REG_TM3D    = 0x400010C;
+const u32 REG_TM3CNT  = 0x400010E;
 
 // Keypad Input
 const u32 REG_KEYINPUT = 0x4000130;

@@ -54,19 +54,21 @@ discovery::discovery()
     gpu.stat = stat;
 
     // initialize timers
-    timers = new std::vector<timer>;
-    timer t0;
-    timer t1;
-    timer t2;
-    timer t3;
+    timer *t0 = new timer();
+    timer *t1 = new timer();
+    timer *t2 = new timer();
+    timer *t3 = new timer();
 
-    timers->push_back(t0);
-    timers->push_back(t1);
-    timers->push_back(t2);
-    timers->push_back(t3);
+    timers[0] = t0;
+    timers[1] = t1;
+    timers[2] = t2;
+    timers[3] = t3;
     
     // link system's timers to memory's
-    mem->timers = timers;
+    mem->timers[0] = timers[0];
+    mem->timers[1] = timers[1];
+    mem->timers[2] = timers[2];
+    mem->timers[3] = timers[3];
 }
 
 void discovery::game_loop()
@@ -84,12 +86,34 @@ void discovery::game_loop()
         cpu.pipeline[0] = cpu.pipeline[1];
         cpu.pipeline[1] = cpu.pipeline[2];
 
-        // run gpu for as many clock cycles as cpu used
+        // run gpu and timers for as many clock cycles as cpu used
         system_cycles = cpu.cycles;
         for (int i = system_cycles - old_cycles; i > 0; --i)
+        {
+            ++old_cycles;
+
             gpu.clock_gpu();
-        old_cycles = system_cycles;
-    
+
+            // clock timers
+            for (int j = 0; j < 4; ++j)
+            {
+                // ignore if timer is disabled
+                if (!timers[j]->enable)
+                    continue;
+
+                //std::cout << "atimer " << j << " enables\n";
+
+                // ignore if cascade bit is set (timer will be incremented by previous timer)
+                // if (timers->at(j).cascade)
+                //     continue;
+                
+                //switch (timers->at(j).a)
+                //std::cout << "timer " << j << " enables\n";
+                // if (j == 2)
+                //     std::cout << "hi" << "\n";
+            }
+        }
+
         // poll for key presses at start of vblank
         if (gpu.stat->current_scanline == 160 && SDL_PollEvent(&e))
         {
@@ -207,7 +231,10 @@ void discovery::shutdown()
 {
     // free resources and shutdown
     delete mem;
-    delete timers;
+
+    for (int i = 0; i < 4; ++i)
+        delete timers[i];
+        
     cpu.~arm_7tdmi();
     gpu.~GPU();
 }

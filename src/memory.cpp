@@ -17,9 +17,12 @@ namespace fs = std::experimental::filesystem;
 
 Memory::Memory()
 {
-    game_rom = NULL;
-    stat     = NULL;
-    timers   = NULL;
+    game_rom  = NULL;
+    stat      = NULL;
+    timers[0] = NULL;
+    timers[1] = NULL;
+    timers[2] = NULL;
+    timers[3] = NULL;
     reset();
 }
 
@@ -143,6 +146,30 @@ u8 Memory::read_u8(u32 address)
             return result;
         case REG_VCOUNT:
             return stat->current_scanline;
+        
+        // REG_TM0D
+        case REG_TM0D:
+            return timers[0]->data & 0xFF;
+        case REG_TM0D + 1:
+            return (timers[0]->data >> 8) & 0xFF;
+        
+        // REG_TM1D
+        case REG_TM1D:
+            return timers[1]->data & 0xFF;
+        case REG_TM1D + 1:
+            return (timers[1]->data >> 8) & 0xFF;
+
+        // REG_TM2D
+        case REG_TM2D:
+            return timers[2]->data & 0xFF;
+        case REG_TM2D + 1:
+            return (timers[2]->data >> 8) & 0xFF;
+
+        // REG_TM3D
+        case REG_TM3D:
+            return timers[3]->data & 0xFF;
+        case REG_TM3D + 1:
+            return (timers[3]->data >> 8) & 0xFF;
 
         default:
             return memory[address];
@@ -452,6 +479,108 @@ void Memory::write_u8(u32 address, u8 value)
             }
 
         break;
+
+        // timers
+
+        // REG_TM0D
+        case REG_TM0D:
+            timers[0]->data |= value; break;
+        case REG_TM0D + 1:
+            timers[0]->data |= (value << 8); break;
+        
+        // REG_TM1D
+        case REG_TM1D:
+            timers[1]->data |= value; break;
+        case REG_TM1D + 1:
+            timers[1]->data |= (value << 8); break;
+
+        // REG_TM2D
+        case REG_TM2D:
+            timers[2]->data |= value; break;
+        case REG_TM2D + 1:
+            timers[2]->data |= (value << 8);
+            std::cout << "T2: " << (int) timers[2]->data << "\n";
+            break;
+
+        // REG_TM3D
+        case REG_TM3D:
+            timers[3]->data |= value; break;
+        case REG_TM3D + 1:
+            timers[3]->data |= (value << 8); break;
+        
+        // REG_TM0CNT
+        case REG_TM0CNT:
+            timers[0]->freq      |= value      & 0x3;
+            timers[0]->cascade    = value >> 2 & 0x1;
+            timers[0]->irq        = value >> 6 & 0x1;
+            timers[0]->enable     = value >> 7 & 0x1;
+
+            // get actual freq
+            switch(timers[0]->freq)
+            {
+                case 0: timers[0]->actual_freq = 1;    break;
+                case 1: timers[0]->actual_freq = 64;   break;
+                case 2: timers[0]->actual_freq = 256;  break;
+                case 3: timers[0]->actual_freq = 1024; break;
+                
+            }
+        break;
+
+        // REG_TM1CNT
+        case REG_TM1CNT:
+            timers[1]->freq      |= value      & 0x3;
+            timers[1]->cascade    = value >> 2 & 0x1;
+            timers[1]->irq        = value >> 6 & 0x1;
+            timers[1]->enable     = value >> 7 & 0x1;
+
+            // get actual freq
+            switch(timers[1]->freq)
+            {
+                case 0: timers[1]->actual_freq = 1;    break;
+                case 1: timers[1]->actual_freq = 64;   break;
+                case 2: timers[1]->actual_freq = 256;  break;
+                case 3: timers[1]->actual_freq = 1024; break;
+                
+            }
+        break;
+        
+        // REG_TM2CNT
+        case REG_TM2CNT:
+            std::cout << "Timer 2 " << std::hex << (int) value << "\n";
+            timers[2]->freq      |= value      & 0x3;
+            timers[2]->cascade    = value >> 2 & 0x1;
+            timers[2]->irq        = value >> 6 & 0x1;
+            timers[2]->enable     = value >> 7 & 0x1;
+
+            // get actual freq
+            switch(timers[2]->freq)
+            {
+                case 0: timers[2]->actual_freq = 1;    break;
+                case 1: timers[2]->actual_freq = 64;   break;
+                case 2: timers[2]->actual_freq = 256;  break;
+                case 3: timers[2]->actual_freq = 1024; break;
+                
+            }
+        break;
+
+        // REG_TM3CNT
+        case REG_TM3CNT:
+        std::cout << "Timer 3 " << std::hex << (int) value << "\n";
+            timers[3]->freq      |= value      & 0x3;
+            timers[3]->cascade    = value >> 2 & 0x1;
+            timers[3]->irq        = value >> 6 & 0x1;
+            timers[3]->enable     = value >> 7 & 0x1;
+
+            // get actual freq
+            switch(timers[3]->freq)
+            {
+                case 0: timers[3]->actual_freq = 1;    break;
+                case 1: timers[3]->actual_freq = 64;   break;
+                case 2: timers[3]->actual_freq = 256;  break;
+                case 3: timers[3]->actual_freq = 1024; break;
+            }
+        break;
+                
     }
 
     // write value at memory location

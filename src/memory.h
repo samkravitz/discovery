@@ -44,7 +44,7 @@ class Memory
             u32 dest_address;
         } dma[4];
 
-        std::vector<timer> *timers;
+        timer *timers[4];
 
         u8 n_cycles;
         u8 s_cycles;

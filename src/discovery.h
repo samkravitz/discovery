@@ -24,7 +24,7 @@ class discovery
         arm_7tdmi cpu;
         GPU gpu;
         Memory *mem;
-        std::vector<timer> *timers;
+        timer *timers[4];
 
         struct gamepad
         {

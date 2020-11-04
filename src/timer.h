@@ -18,16 +18,14 @@ struct timer
         timer();
         ~timer();
 
-        u32 cycles;
-    
-    private:
-        void cycle();
-
-        u8 num; // timer number
+        u16 data;
+        u16 start_data;
         u8 freq;
         u8 cascade;
         u8 irq;
         u8 enable;
+        u16 actual_freq;
+
 };
 
 #endif // TIMER_H

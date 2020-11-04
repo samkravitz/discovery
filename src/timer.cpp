@@ -11,11 +11,14 @@
 
 timer::timer()
 {
-    num = 0xFF;
+    // zero timers
+    data = 0;
+    start_data;
     freq = 0;
     cascade = 0;
     irq = 0;
     enable = 0;
+    actual_freq = 0;
 }
 
 timer::~timer() { }

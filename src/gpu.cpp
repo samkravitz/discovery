@@ -179,7 +179,10 @@ void GPU::draw_mode0()
     for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
         for (int i = 0; i <= 3; ++i) // bg0 - bg3
             if (stat->bg_cnt[i].enabled && stat->bg_cnt[i].priority == priority)
+            {
+                //std::cout << "drawing bg: " << i << "\n";
                 draw_reg_background(i);
+            }
 }
 
 // video mode 1 - tile mode

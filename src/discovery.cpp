@@ -100,17 +100,43 @@ void discovery::game_loop()
                 // ignore if timer is disabled
                 if (!timers[j]->enable)
                     continue;
-
-                //std::cout << "atimer " << j << " enables\n";
-
-                // ignore if cascade bit is set (timer will be incremented by previous timer)
-                // if (timers->at(j).cascade)
-                //     continue;
                 
-                //switch (timers->at(j).a)
-                //std::cout << "timer " << j << " enables\n";
-                // if (j == 2)
-                //     std::cout << "hi" << "\n";
+                // ignore if cascade bit is set (timer will be incremented by previous timer)
+                if (timers[j]->cascade)
+                    continue;
+                
+                // increment counter by 1
+                if (old_cycles % timers[j]->actual_freq == 0)
+                {
+                    timers[j]->data += 1; // increment timer
+
+                    // timer overflowed
+                    if (timers[j]->data == 0x0000)
+                    {
+                        // reset timer
+                        timers[j]->data = timers[j]->start_data;
+
+                        std::cout << "Timer " << j << " overflow\n";
+
+                        // overflow irq
+                        if (timers[j]->irq)
+                            std::cout << "Timer " << j << " overflow IRQ request\n";
+
+                        // cascade
+                        // timer 4 can't cascade any other timer
+                        if (j == 4)
+                            continue;
+                        
+                        if (timers[j + 1]->enable && timers[j + 1]->cascade)
+                        {
+                            timers[j + 1]->data += 1;
+
+                            // cascade caused overflow (deal with this later)
+                            if (timers[j + 1]->data == 0x0000)
+                                std::cout << "Timer " << (j + 1) << " overflow\n";
+                        }
+                    }
+                }
             }
         }
 

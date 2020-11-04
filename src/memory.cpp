@@ -484,29 +484,40 @@ void Memory::write_u8(u32 address, u8 value)
 
         // REG_TM0D
         case REG_TM0D:
-            timers[0]->data |= value; break;
+            timers[0]->data       |= value;
+            timers[0]->start_data |= value;
+            break;
         case REG_TM0D + 1:
-            timers[0]->data |= (value << 8); break;
+            timers[0]->data       |= (value << 8);
+            timers[0]->start_data |= (value << 8);
+            break;
         
         // REG_TM1D
         case REG_TM1D:
-            timers[1]->data |= value; break;
+            timers[1]->data       |= value;
+            timers[1]->start_data |= value;
+            break;
         case REG_TM1D + 1:
-            timers[1]->data |= (value << 8); break;
+            timers[1]->data       |= (value << 8);
+            timers[1]->start_data |= (value << 8);
 
         // REG_TM2D
         case REG_TM2D:
-            timers[2]->data |= value; break;
-        case REG_TM2D + 1:
-            timers[2]->data |= (value << 8);
-            std::cout << "T2: " << (int) timers[2]->data << "\n";
+            timers[2]->data       |= value;
+            timers[2]->start_data |= value;
             break;
+        case REG_TM2D + 1:
+            timers[2]->data       |= (value << 8);
+            timers[2]->start_data |= (value << 8);
 
         // REG_TM3D
         case REG_TM3D:
-            timers[3]->data |= value; break;
+            timers[3]->data       |= value;
+            timers[3]->start_data |= value;
+            break;
         case REG_TM3D + 1:
-            timers[3]->data |= (value << 8); break;
+            timers[3]->data       |= (value << 8);
+            timers[3]->start_data |= (value << 8);
         
         // REG_TM0CNT
         case REG_TM0CNT:
@@ -546,7 +557,6 @@ void Memory::write_u8(u32 address, u8 value)
         
         // REG_TM2CNT
         case REG_TM2CNT:
-            std::cout << "Timer 2 " << std::hex << (int) value << "\n";
             timers[2]->freq      |= value      & 0x3;
             timers[2]->cascade    = value >> 2 & 0x1;
             timers[2]->irq        = value >> 6 & 0x1;
@@ -565,7 +575,6 @@ void Memory::write_u8(u32 address, u8 value)
 
         // REG_TM3CNT
         case REG_TM3CNT:
-        std::cout << "Timer 3 " << std::hex << (int) value << "\n";
             timers[3]->freq      |= value      & 0x3;
             timers[3]->cascade    = value >> 2 & 0x1;
             timers[3]->irq        = value >> 6 & 0x1;

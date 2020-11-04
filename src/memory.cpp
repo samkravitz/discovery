@@ -18,7 +18,8 @@ namespace fs = std::experimental::filesystem;
 Memory::Memory()
 {
     game_rom = NULL;
-    stat = NULL;
+    stat     = NULL;
+    timers   = NULL;
     reset();
 }
 

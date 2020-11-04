@@ -10,9 +10,11 @@
 #ifndef DISCOVERY_H
 #define DISCOVERY_H
 
+#include <vector>
 #include "arm_7tdmi.h"
 #include "gpu.h"
 #include "memory.h"
+#include "timer.h"
 
 class discovery
 {
@@ -22,6 +24,7 @@ class discovery
         arm_7tdmi cpu;
         GPU gpu;
         Memory *mem;
+        std::vector<timer> *timers;
 
         struct gamepad
         {

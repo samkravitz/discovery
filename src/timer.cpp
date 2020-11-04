@@ -17,3 +17,5 @@ timer::timer()
     irq = 0;
     enable = 0;
 }
+
+timer::~timer() { }

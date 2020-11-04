@@ -52,6 +52,21 @@ discovery::discovery()
     lcd_stat *stat = new lcd_stat();
     mem->stat = stat;
     gpu.stat = stat;
+
+    // initialize timers
+    timers = new std::vector<timer>;
+    timer t0;
+    timer t1;
+    timer t2;
+    timer t3;
+
+    timers->push_back(t0);
+    timers->push_back(t1);
+    timers->push_back(t2);
+    timers->push_back(t3);
+    
+    // link system's timers to memory's
+    mem->timers = timers;
 }
 
 void discovery::game_loop()
@@ -192,6 +207,7 @@ void discovery::shutdown()
 {
     // free resources and shutdown
     delete mem;
+    delete timers;
     cpu.~arm_7tdmi();
     gpu.~GPU();
 }

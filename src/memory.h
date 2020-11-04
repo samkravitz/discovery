@@ -11,10 +11,12 @@
 #define MEMORY_H
 
 #include <stdlib.h>
+#include <vector>
 
 #include "lcd_stat.h"
 #include "common/common.h"
 #include "common/memory.h"
+#include "timer.h"
 
 class Memory
 {
@@ -41,6 +43,8 @@ class Memory
             u32 src_address;
             u32 dest_address;
         } dma[4];
+
+        std::vector<timer> *timers;
 
         u8 n_cycles;
         u8 s_cycles;

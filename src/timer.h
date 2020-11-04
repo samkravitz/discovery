@@ -7,6 +7,9 @@
  * DESCRIPTION: timer definition
  */
 
+#ifndef TIMER_H
+#define TIMER_H
+
 #include "common/common.h"
 
 struct timer
@@ -26,3 +29,5 @@ struct timer
         u8 irq;
         u8 enable;
 };
+
+#endif // TIMER_H

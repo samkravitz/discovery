@@ -232,10 +232,39 @@ void discovery::poll_keys(const SDL_Event &e)
     gamepad_result |= gamepad.a     << 0;
 
     gamepad.keys = gamepad_result;
-    //print_keys(gamepad_result);
+    
+    // check for key interrupt
+    u16 keycnt = mem->read_u16_unprotected(REG_KEYCNT);
+    if (keycnt >> 14 & 0x1) // key interrupts enabled
+    {
+        u16 keys = keycnt & 0x3FF; // keys to check
+
+        bool raise_interrupt = false;
+        if (keycnt >> 15) // use AND (raise if all keys are down)
+        {
+            // all keys to check are down (high)
+            if (keys == ~gamepad_result)
+                raise_interrupt = true;
+        }
+
+        else // use OR (raise if any keys are down)
+        {
+            for (int i = 0; i < 10; ++i) // 10 keys
+            {
+                if ((keys >> i & 1) && (gamepad_result >> i & 1) == 0) 
+                {
+                    raise_interrupt = true;
+                    break;
+                }
+            }
+        }
+
+        if (raise_interrupt)
+            std::cout << "Raising gamepad interrupt\n";
+    }
 
     // store gamepad result back into the KEYINPUT address
-    mem->write_u32(REG_KEYINPUT, gamepad_result);
+    mem->write_u32_unprotected(REG_KEYINPUT, gamepad_result);
 }
 
 void print_keys(u16 keys)

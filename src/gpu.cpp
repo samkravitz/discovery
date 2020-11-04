@@ -542,6 +542,8 @@ void GPU::draw_affine_background(int bg)
                 screen_buffer[y][x] = map[y][x];//map[(y) % (height * PX_IN_TILE_COL)][(x) % (width * PX_IN_TILE_ROW)];
         }
     }
+
+    std::cout << "Drew 2" << bg << "\n";
 }
 
 void GPU::draw_sprites()
@@ -1003,18 +1005,6 @@ void GPU::update_attr()
         address += sizeof(u16);
     }
 }
-
-// fills an obj_attr struct from OAM from the given index (0-127)
-// obj_attr GPU::get_attr(int index)
-// {
-//     // each oam entry is 4 u16s,
-//     u32 base_addr = MEM_OAM_START + index * (4 * sizeof(u16));
-//     obj_attr attr;
-//     attr.attr_0._zero = mem->read_u16(base_addr + 0);
-//     attr.attr_1._one = mem->read_u16(base_addr + 2);
-//     attr.attr_2._two = mem->read_u16(base_addr + 4);
-//     return attr;
-// }
 
 // given a 16 bit GBA color, make it a 32 bit SDL color
 inline u32 u16_to_u32_color (u16 color_u16)

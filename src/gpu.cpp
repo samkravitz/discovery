@@ -66,9 +66,13 @@ void GPU::cycle()
     // start HBlank
     if (cycles == HDRAW)
     {
-        stat->in_hBlank = true;
+        stat->dispstat.in_hBlank = true;
 
-        // check for DMA HBLANK requests
+        // fire HBlank interrupt if necessary
+        if (stat->dispstat.hbi)
+            std::cout << "Firing HBlank interrupt\n";
+
+        // check for DMA HBlank requests
         for (int i = 0; i < 4; ++i)
         {
             if (mem->dma[i].enable && mem->dma[i].mode == 2) // start at HBLANK
@@ -82,7 +86,11 @@ void GPU::cycle()
         if (scanline == VDRAW)
         {
             draw();
-            stat->in_vBlank = true;
+            stat->dispstat.in_vBlank = true;
+
+            // fire Vblank interrupt if necessary
+            if (stat->dispstat.vbi)
+                std::cout << "Firing VBlank interrupt\n";
 
             // check for DMA VBLANK requests
             for (int i = 0; i < 4; ++i)
@@ -99,7 +107,7 @@ void GPU::cycle()
         // completed full refresh
         if (scanline == VDRAW + VBLANK)
         {
-            stat->in_vBlank = false;
+            stat->dispstat.in_vBlank = false;
             scanline = 0;
             stat->scanline = 0;
         }
@@ -110,15 +118,33 @@ void GPU::cycle()
             stat->scanline++;
         }
 
+        // scanline has reached trigger value
+        if (scanline == stat->dispstat.vct)
+        {
+            // set trigger status
+            stat->dispstat.vcs = 1;
+            
+            // interrupt is triggered if requested
+            if (stat->dispstat.vci)
+                std::cout << "Firing VCount interrupt\n";
+        }
+        
+        // scanline is not equal to trigger value, reset this bit
+        else
+        {
+            stat->dispstat.vcs = 0;
+        }
+        
+
         cycles = 0;
-        stat->in_hBlank = false;
+        stat->dispstat.in_hBlank = false;
     }
 }
 
 void GPU::draw()
 {
-    //std::cout << "Executing graphics mode: " << (int) (stat->reg_dispcnt.mode) << "\n";
-    switch (stat->reg_dispcnt.mode)
+    //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
+    switch (stat->dispcnt.mode)
     {
         case 0: draw_mode0(); break;
         case 1: draw_mode1(); break;
@@ -130,7 +156,7 @@ void GPU::draw()
     }
 
     // sprites enabled
-    if (stat->reg_dispcnt.obj_enabled)
+    if (stat->dispcnt.obj_enabled)
     {
         update_attr();
         draw_sprites();
@@ -222,7 +248,9 @@ void GPU::draw_mode4()
 {
     u8 palette_index; // in mode 4 each pixel uses 1 byte 
     u16 color;        // the color located at pallette_ram[palette_index]
-
+    
+    // TODO - page flip
+    std::cout << (int) stat->dispcnt.ps << "\n";
     int i = 0;
     for (int y = 0; y < SCREEN_HEIGHT; ++y)
     {
@@ -538,7 +566,7 @@ void GPU::draw_affine_background(int bg)
 void GPU::draw_sprites()
 {
     // make sure sprites are 1D mode, I haven't added 2D mode compatibility yet
-    // if (stat->reg_dispcnt.obj_map_mode == 0)
+    // if (stat->dispcnt.obj_map_mode == 0)
     //     std::cout << "Caution: sprite mode is 2D\n";
 
     obj_attr attr;

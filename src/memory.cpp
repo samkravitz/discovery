@@ -140,10 +140,17 @@ u8 Memory::read_u8(u32 address)
     {
         // IO reg
         case REG_DISPSTAT:
-            result |= stat->in_vBlank ? 0b1  : 0b0;  // bit 0 set in vblank, clear in vdraw
-            result |= stat->in_hBlank ? 0b10 : 0b00; // bit 1 set in hblank, clear in hdraw
-            //std::cout << "Polling REG_DISPSTAT " << (int) result << "\n";
+            result |= stat->dispstat.in_vBlank ? 0b1      : 0b0;       // bit 0 set in vblank, clear in vdraw
+            result |= stat->dispstat.in_hBlank ? 0b10     : 0b00;      // bit 1 set in hblank, clear in hdraw
+            result |= stat->dispstat.vcs       ? 0b100    : 0b000;     // bit 2
+            result |= stat->dispstat.vbi       ? 0b1000   : 0b0000;    // bit 3
+            result |= stat->dispstat.hbi       ? 0b10000  : 0b00000;   // bit 4
+            result |= stat->dispstat.vci       ? 0b100000 : 0b000000;  // bit 5
             return result;
+        
+        case REG_DISPSTAT + 1:
+            return stat->dispstat.vct;
+
         case REG_VCOUNT:
             return stat->scanline;
         
@@ -263,21 +270,33 @@ void Memory::write_u8(u32 address, u8 value)
     {
         // REG_DISPCNT
         case REG_DISPCNT:
-            stat->reg_dispcnt.mode                  = value >> 0 & 0x7; // bits 0-2     
-            stat->reg_dispcnt.gb                    = value >> 3 & 0x1; // bit 3
-            stat->reg_dispcnt.ps                    = value >> 4 & 0x1; // bit 4
-            stat->reg_dispcnt.hb                    = value >> 5 & 0x1; // bit 5
-            stat->reg_dispcnt.obj_map_mode          = value >> 6 & 0x1; // bit 6
-            stat->reg_dispcnt.fb                    = value >> 7 & 0x1; // bit 7    
+            stat->dispcnt.mode                  = value >> 0 & 0x7; // bits 0-2     
+            stat->dispcnt.gb                    = value >> 3 & 0x1; // bit 3
+            stat->dispcnt.ps                    = value >> 4 & 0x1; // bit 4
+            stat->dispcnt.hb                    = value >> 5 & 0x1; // bit 5
+            stat->dispcnt.obj_map_mode          = value >> 6 & 0x1; // bit 6
+            stat->dispcnt.fb                    = value >> 7 & 0x1; // bit 7    
         break;
 
         case REG_DISPCNT + 1:
-            stat->bg_cnt[0].enabled                 = value >> 0 & 0x1; // bit 8
-            stat->bg_cnt[1].enabled                 = value >> 1 & 0x1; // bit 9
-            stat->bg_cnt[2].enabled                 = value >> 2 & 0x1; // bit A
-            stat->bg_cnt[3].enabled                 = value >> 3 & 0x1; // bit B
-            stat->reg_dispcnt.obj_enabled           = value >> 4 & 0x1; // bit C
-            stat->reg_dispcnt.win_enabled           = value >> 5 & 0x7; // bits D-F
+            stat->bg_cnt[0].enabled             = value >> 0 & 0x1; // bit 8
+            stat->bg_cnt[1].enabled             = value >> 1 & 0x1; // bit 9
+            stat->bg_cnt[2].enabled             = value >> 2 & 0x1; // bit A
+            stat->bg_cnt[3].enabled             = value >> 3 & 0x1; // bit B
+            stat->dispcnt.obj_enabled           = value >> 4 & 0x1; // bit C
+            stat->dispcnt.win_enabled           = value >> 5 & 0x7; // bits D-F
+        break;
+
+        // REG_DISPSTAT
+        case REG_DISPSTAT:
+            // skip bits 0-2, unwritable
+            stat->dispstat.vbi = value >> 3 & 1;
+            stat->dispstat.hbi = value >> 4 & 1;
+            stat->dispstat.vci = value >> 5 & 1;
+        break;
+
+        case REG_DISPSTAT + 1:
+            stat->dispstat.vct = value;
         break;
 
         // REG_BG0CNT

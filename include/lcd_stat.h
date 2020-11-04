@@ -17,11 +17,8 @@ struct lcd_stat
 {
     u8 scanline;
 
-    bool in_vBlank;
-    bool in_hBlank;
-
     // REG_DISPCNT control
-    struct reg_dispcnt
+    struct dispcnt
     {
         u8 mode         : 3; // video mode (0-5)
         u8 gb           : 1; // set if gbc game
@@ -32,7 +29,19 @@ struct lcd_stat
         u8 bg_enabled   : 4; // bg0-bg3 enabled
         u8 obj_enabled  : 1; // set if sprites are enabled
         u8 win_enabled  : 3; // windows 0, 1, and object window enabled
-    } reg_dispcnt;
+    } dispcnt;
+
+    // REG_DISPSTAT control
+    struct dispstat
+    {
+        u8 in_vBlank : 1;
+        u8 in_hBlank : 1;
+        u8 vcs       : 1; // VCount trigger Status set if current scanline matches scanline trigger
+        u8 vbi       : 1; // vblank irq
+        u8 hbi       : 1; // hblank irq
+        u8 vci       : 1; // vcount irq (fires interrupt when VCount trigger value == current scanline)
+        u8 vct       : 8; // vcount trigger value
+    } dispstat;
 
     // background controls (BGXCNT)
     struct bg_cnt
@@ -51,19 +60,26 @@ struct lcd_stat
     lcd_stat()
     {
         scanline = 0;
-        in_vBlank = false;
-        in_hBlank = false;
 
         // zero reg_dispcnt
-        reg_dispcnt.mode         = 0; 
-        reg_dispcnt.gb           = 0; 
-        reg_dispcnt.ps           = 0; 
-        reg_dispcnt.hb           = 0;
-        reg_dispcnt.obj_map_mode = 0; 
-        reg_dispcnt.fb           = 0; 
-        reg_dispcnt.bg_enabled   = 0; 
-        reg_dispcnt.obj_enabled  = 0; 
-        reg_dispcnt.win_enabled  = 0;
+        dispcnt.mode         = 0; 
+        dispcnt.gb           = 0; 
+        dispcnt.ps           = 0; 
+        dispcnt.hb           = 0;
+        dispcnt.obj_map_mode = 0; 
+        dispcnt.fb           = 0; 
+        dispcnt.bg_enabled   = 0; 
+        dispcnt.obj_enabled  = 0; 
+        dispcnt.win_enabled  = 0;
+
+        // zero reg_dispstat
+        dispstat.in_vBlank   = 0;
+        dispstat.in_hBlank   = 0;
+        dispstat.vcs         = 0;
+        dispstat.vbi         = 0;
+        dispstat.hbi         = 0;
+        dispstat.vci         = 0;
+        dispstat.vct         = 0;
 
         // zero background ctl
         for (int i = 0; i < 4; ++i)

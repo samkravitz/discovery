@@ -6,7 +6,6 @@
  * DATE: June 27, 2020
  * DESCRIPTION: execution of arm instructions
  */
-//#include <iostream>
 
 #include "arm_7tdmi.h"
 

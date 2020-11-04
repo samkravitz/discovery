@@ -1032,7 +1032,7 @@ void arm_7tdmi::write_u8(u32 address, u8 value)
     // VRAM byte writes
     if (address >= MEM_VRAM_START && address <= MEM_VRAM_END)
     {      
-        switch (mem->stat->reg_dispcnt.mode)
+        switch (mem->stat->dispcnt.mode)
         {
             // tile modes
             case 0:
@@ -1102,7 +1102,7 @@ inline bool arm_7tdmi::mem_check(u32 &address)
     // add cycles for expensive memory accesses
 
     // +1 cycles for VRAM accress while not in v-blank
-    if (address >= MEM_PALETTE_RAM_START && address <= MEM_OAM_END && !mem->stat->in_vBlank)
+    if (address >= MEM_PALETTE_RAM_START && address <= MEM_OAM_END && !mem->stat->dispstat.in_vBlank)
         cycles++;
     
     return true;

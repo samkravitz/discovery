@@ -27,10 +27,10 @@
 #define MAX_X         512
 #define MAX_Y         256
 
-#define HDRAW_CYCLES     960
-#define SCANLINE_CYCLES  1232
-#define NUM_SCANLINES    228
-#define REFRESH_CYCLES   280896
+#define HDRAW         960 // # of cycles in HDraw
+#define HBLANK        272 // # of cycles in HBlank
+#define VDRAW         160 // # of scanlines in VDraw
+#define VBLANK        68  // # of scanlines in VBlank
 
 #define NUM_OBJS 128 // number of sprites that can be rendered
 
@@ -43,10 +43,10 @@ class GPU
         Memory *mem;
         lcd_stat *stat;
 
-        u32 lcd_clock;
-        u8 current_scanline;
+        u32 cycles;
+        u8 scanline;
 
-        void clock_gpu();
+        void cycle();
         
         void reset();
         void draw();

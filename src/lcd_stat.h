@@ -15,16 +15,10 @@
 
 struct lcd_stat
 {
-    lcd_stat();
-    ~lcd_stat();
-
-    u32 current_scanline;
-    u16 current_scanline_pixel;
+    u8 scanline;
 
     bool in_vBlank;
     bool in_hBlank;
-
-    bool oam_needs_refresh;
 
     // REG_DISPCNT control
     struct reg_dispcnt
@@ -54,6 +48,39 @@ struct lcd_stat
         u8 enabled     : 1;
     } bg_cnt[4]; // backgrounds 0-3
 
+    lcd_stat()
+    {
+        scanline = 0;
+        in_vBlank = false;
+        in_hBlank = false;
+
+        // zero reg_dispcnt
+        reg_dispcnt.mode         = 0; 
+        reg_dispcnt.gb           = 0; 
+        reg_dispcnt.ps           = 0; 
+        reg_dispcnt.hb           = 0;
+        reg_dispcnt.obj_map_mode = 0; 
+        reg_dispcnt.fb           = 0; 
+        reg_dispcnt.bg_enabled   = 0; 
+        reg_dispcnt.obj_enabled  = 0; 
+        reg_dispcnt.win_enabled  = 0;
+
+        // zero background ctl
+        for (int i = 0; i < 4; ++i)
+        {
+            bg_cnt[i].priority    = 0; 
+            bg_cnt[i].cbb         = 0;  
+            bg_cnt[i].mosaic      = 0; 
+            bg_cnt[i].unused      = 0; 
+            bg_cnt[i].color_mode  = 0; 
+            bg_cnt[i].sbb         = 0; 
+            bg_cnt[i].affine_wrap = 0; 
+            bg_cnt[i].size        = 0; 
+            bg_cnt[i].enabled     = 0;
+        }
+    }
+
+    ~lcd_stat() { }
 };
 
 #endif // LCD_STAT_H

@@ -145,7 +145,7 @@ u8 Memory::read_u8(u32 address)
             //std::cout << "Polling REG_DISPSTAT " << (int) result << "\n";
             return result;
         case REG_VCOUNT:
-            return stat->current_scanline;
+            return stat->scanline;
         
         // REG_TM0D
         case REG_TM0D:

@@ -41,12 +41,7 @@ GPU::GPU()
     final_screen = SDL_GetWindowSurface(window);
     original_screen = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32, 0, 0, 0, 0);
 
-    lcd_clock = 0;
-    current_scanline = 0;
-
     reset();
-
-    old_clock = clock();
 }
 
 GPU::~GPU()
@@ -57,70 +52,66 @@ GPU::~GPU()
 
 void GPU::reset()
 {
+    cycles = 0;
+    scanline = 0;
     memset(screen_buffer, 0, sizeof(screen_buffer));
+    old_clock = clock();
 }
 
 // 1 clock cycle of the gpu
-void GPU::clock_gpu()
+void GPU::cycle()
 {
-    lcd_clock++;
+    cycles++;
 
-    // 4 cycles per pixel
-    if (lcd_clock % 4 == 0)
-        stat->current_scanline_pixel++;
-
-    // finished hDraw
-    if (stat->current_scanline_pixel == SCREEN_WIDTH)
+    // start HBlank
+    if (cycles == HDRAW)
     {
         stat->in_hBlank = true;
 
         // check for DMA HBLANK requests
         for (int i = 0; i < 4; ++i)
         {
-            if (mem->dma[i].enable && mem->dma[i].mode == 2)
-            { // start at HBLANK
+            if (mem->dma[i].enable && mem->dma[i].mode == 2) // start at HBLANK
+            {
                 mem->_dma(i);
                 //std::cout << "DMA" << i << " HBLANK\n";
             }
         }
-    }
-
-    // completed a scanline
-    if (lcd_clock % SCANLINE_CYCLES == 0)
-    {
-        stat->current_scanline++;
-        if (stat->current_scanline == NUM_SCANLINES)
-            stat->current_scanline = 0;
-
-        // go back into hDraw
-        stat->in_hBlank = false;
-
-        // reset current scanline pixels
-        stat->current_scanline_pixel = 0;
-    }
-
-    // finished vDraw
-    if (stat->current_scanline == SCREEN_HEIGHT) {
-        stat->in_vBlank = true;
-
-        // check for DMA VBLANK requests
-        for (int i = 0; i < 4; ++i)
+        
+        // start VBlank
+        if (scanline == VDRAW)
         {
-            if (mem->dma[i].enable && mem->dma[i].mode == 1) // start at VBLANK
-                mem->_dma(i);
+            draw();
+            stat->in_vBlank = true;
+
+            // check for DMA VBLANK requests
+            for (int i = 0; i < 4; ++i)
+            {
+                if (mem->dma[i].enable && mem->dma[i].mode == 1) // start at VBLANK
+                    mem->_dma(i);
+            }
         }
     }
 
-    // completed a refresh
-    if (lcd_clock == REFRESH_CYCLES)
+    // completed HBlank
+    else if (cycles == HDRAW + HBLANK)
     {
-        //
-        lcd_clock = 0; // restart lcd_clock
-        stat->current_scanline = 0;
-        stat->current_scanline_pixel = 0;
+        // completed full refresh
+        if (scanline == VDRAW + VBLANK)
+        {
+            stat->in_vBlank = false;
+            scanline = 0;
+            stat->scanline = 0;
+        }
+
+        else
+        {
+            scanline++;
+            stat->scanline++;
+        }
+
+        cycles = 0;
         stat->in_hBlank = false;
-        stat->in_vBlank = false; 
-        draw();
     }
 }
 

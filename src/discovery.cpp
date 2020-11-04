@@ -92,7 +92,7 @@ void discovery::game_loop()
         {
             ++old_cycles;
 
-            gpu.clock_gpu();
+            gpu.cycle();
 
             // clock timers
             for (int j = 0; j < 4; ++j)
@@ -141,7 +141,7 @@ void discovery::game_loop()
         }
 
         // poll for key presses at start of vblank
-        if (gpu.stat->current_scanline == 160 && SDL_PollEvent(&e))
+        if (gpu.stat->scanline == 160 && SDL_PollEvent(&e))
         {
             if (e.type == SDL_QUIT)
                 break;
@@ -333,11 +333,11 @@ void discovery::game_loop_debug()
                     // run gpu for as many clock cycles as cpu used
                     system_cycles = cpu.cycles;
                     for (int i = system_cycles - old_cycles; i > 0; --i)
-                        gpu.clock_gpu();
+                        gpu.cycle();
                     old_cycles = system_cycles;
                 
                     // poll for key presses at start of vblank
-                    if (gpu.stat->current_scanline == 160 && SDL_PollEvent(&e))
+                    if (gpu.stat->scanline == 160 && SDL_PollEvent(&e))
                     {
                         if (e.type == SDL_QUIT)
                             break;
@@ -355,11 +355,11 @@ void discovery::game_loop_debug()
         // run gpu for as many clock cycles as cpu used
         system_cycles = cpu.cycles;
         for (int i = system_cycles - old_cycles; i > 0; --i)
-            gpu.clock_gpu();
+            gpu.cycle();
         old_cycles = system_cycles;
     
         // poll for key presses at start of vblank
-        if (gpu.stat->current_scanline == 160 && SDL_PollEvent(&e))
+        if (gpu.stat->scanline == 160 && SDL_PollEvent(&e))
         {
             if (e.type == SDL_QUIT)
                 break;

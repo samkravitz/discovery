@@ -80,7 +80,7 @@ void GPU::clock_gpu()
             if (mem->dma[i].enable && mem->dma[i].mode == 2)
             { // start at HBLANK
                 mem->_dma(i);
-                std::cout << "DMA" << i << " HBLANK\n";
+                //std::cout << "DMA" << i << " HBLANK\n";
             }
         }
     }

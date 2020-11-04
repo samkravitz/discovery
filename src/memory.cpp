@@ -150,84 +150,6 @@ u8 Memory::read_u8(u32 address)
 
 void Memory::write_u32(u32 address, u32 value)
 {
-    // DMA
-    switch (address)
-    {
-        // REG_DMAxSAD
-        case REG_DMA0SAD:
-        case REG_DMA1SAD:
-        case REG_DMA2SAD:
-        case REG_DMA3SAD:
-        {
-            int i;
-            switch (address & 0xF)
-            {
-                case 0x0: i = 0; break;
-                case 0xC: i = 1; break;
-                case 0x8: i = 2; break;
-                case 0x4: i = 3; break;
-            }
-
-            dma[i].src_address = value;// & 0x3FFFFFF; // only 27 bits are addressable
-        }
-        break;
-
-        // REG_DMAxDAD
-        case REG_DMA0DAD:
-        case REG_DMA1DAD:
-        case REG_DMA2DAD:
-        case REG_DMA3DAD:
-        {
-            int i;
-            switch (address & 0xF)
-            {
-                case 0x4: i = 0; break;
-                case 0x0: i = 1; break;
-                case 0xC: i = 2; break;
-                case 0x8: i = 3; break;
-            }
-
-            dma[i].dest_address = value;// & 0x7FFFFFF; // only 28 bits are addressable
-        }
-        break;
-
-        // REG_DMAxCNT
-        case REG_DMA0CNT:
-        case REG_DMA1CNT:
-        case REG_DMA2CNT:
-        case REG_DMA3CNT:
-        {
-            int i;
-            switch (address & 0xF)
-            {
-                case 0x8: i = 0; break;
-                case 0x4: i = 1; break;
-                case 0x0: i = 2; break;
-                case 0xC: i = 3; break;
-            }
-
-            dma[i].num_transfers    = (value >>  0) & 0xFFFF; // bits 15 - 0
-            dma[i].dest_adjust      = (value >> 21) &    0x3; // bits 22 - 21
-            dma[i].src_adjust       = (value >> 23) &    0x3; // bits 24 - 23
-            dma[i].repeat           = (value >> 25) &    0x1; // bit  25
-            dma[i].chunk_size       = (value >> 26) &    0x1; // bit  26
-            dma[i].mode             = (value >> 28) &    0x3; // bits 29 - 28
-            dma[i].irq              = (value >> 30) &    0x1; // bit  30
-            dma[i].enable           = (value >> 31) &    0x1; // bit  31
-
-            // immediate transfer timing
-            if (dma[i].enable && dma[i].mode == 0)
-            {
-                std::cout << "DMA" << i << " immediate\n";
-                _dma(i);
-            }
-        }
-        break;
-
-    }
-    
-    // if (address >= REG_DMA0SAD && address <= REG_DMA3CNT)
-    //     std::cout << "DMA OP\n";
     write_u8(address    , (value >>  0) & 0xFF);
     write_u8(address + 1, (value >>  8) & 0xFF);
     write_u8(address + 2, (value >> 16) & 0xFF);
@@ -236,11 +158,10 @@ void Memory::write_u32(u32 address, u32 value)
 
 void Memory::write_u16(u32 address, u16 value)
 {
-    write_u8(address, value & 0xFF);
+    write_u8(address    , (value >> 0) & 0xFF);
     write_u8(address + 1, (value >> 8) & 0xFF);
 }
 
-// TODO - add protection against VRAM byte writes
 void Memory::write_u8(u32 address, u8 value)
 {
     // game rom
@@ -404,8 +325,135 @@ void Memory::write_u8(u32 address, u8 value)
             }
 
         break;
+        
+        // DMA
+
+        // REG_DMA0CNT
+        case REG_DMA0CNT:
+            dma[0].num_transfers |= value;
+        break;
+        case REG_DMA0CNT + 1:
+            dma[0].num_transfers |= (value << 8);
+        break;
+            //dma[0].num_transfers |= ((memory[REG_DMA0CNT + 1] << 8) | (memory[REG_DMA0CNT])); // bits 0 - 16
+        case REG_DMA0CNT + 2:
+            dma[0].dest_adjust    = value >> 5 & 0x3;
+            dma[0].src_adjust    |= value >> 6 & 0x1; 
+        break;
+        case REG_DMA0CNT + 3:
+            dma[0].src_adjust    |= ((value & 0x1) << 1);
+            dma[0].repeat         = value >> 1 & 0x1;
+            dma[0].chunk_size     = value >> 2 & 0x1;
+            dma[0].mode           = value >> 4 & 0x3;
+            dma[0].irq            = value >> 6 & 0x1;
+            dma[0].enable         = value >> 7 & 0x1; 
+
+            if (dma[0].enable && dma[0].mode == 0) // immediate mode
+            {
+                std::cout << "DMA0 immediate\n";
+                _dma(0);
+
+                // disable DMA after immediate transfer
+                dma[0].enable == 0;
+            }
+
+        break;
+
+        // REG_DMA1CNT
+        case REG_DMA1CNT:
+            dma[1].num_transfers |= value;
+        break;
+        case REG_DMA1CNT + 1:
+            dma[1].num_transfers |= (value << 8);
+        break;
+        case REG_DMA1CNT + 2:
+            dma[1].dest_adjust    = value >> 5 & 0x3;
+            dma[1].src_adjust    |= value >> 6 & 0x1; 
+        break;
+        case REG_DMA1CNT + 3:
+            dma[1].src_adjust    |= ((value & 0x1) << 1);
+            dma[1].repeat         = value >> 1 & 0x1;
+            dma[1].chunk_size     = value >> 2 & 0x1;
+            dma[1].mode           = value >> 4 & 0x3;
+            dma[1].irq            = value >> 6 & 0x1;
+            dma[1].enable         = value >> 7 & 0x1; 
+
+            if (dma[1].enable && dma[1].mode == 0) // immediate mode
+            {
+                std::cout << "DMA1 immediate\n";
+                _dma(1);
+
+                // disable DMA after immediate transfer
+                dma[1].enable == 0;
+            }
+
+        break;
+
+        // REG_DMA2CNT
+        case REG_DMA2CNT:
+            dma[2].num_transfers |= value;
+        break;
+
+        case REG_DMA2CNT + 1:
+            dma[2].num_transfers |= (value << 8);
+        break;
+
+        case REG_DMA2CNT + 2:
+            dma[2].dest_adjust    = value >> 5 & 0x3;
+            dma[2].src_adjust    |= value >> 6 & 0x1; 
+        break;
+
+        case REG_DMA2CNT + 3:
+            dma[2].src_adjust    |= ((value & 0x1) << 1);
+            dma[2].repeat         = value >> 1 & 0x1;
+            dma[2].chunk_size     = value >> 2 & 0x1;
+            dma[2].mode           = value >> 4 & 0x3;
+            dma[2].irq            = value >> 6 & 0x1;
+            dma[2].enable         = value >> 7 & 0x1; 
+
+            if (dma[2].enable && dma[2].mode == 0) // immediate mode
+            {
+                std::cout << "DMA2 immediate\n";
+                _dma(2);
+
+                // disable DMA after immediate transfer
+                dma[2].enable == 0;
+            }
+
+        break;
+
+        // REG_DMA3CNT
+        case REG_DMA3CNT:
+            dma[3].num_transfers |= value;
+            break;
+        case REG_DMA3CNT + 1:
+            dma[3].num_transfers |= (value << 8);
+            break;
+        case REG_DMA3CNT + 2:
+            dma[3].dest_adjust    = value >> 5 & 0x3;
+            dma[3].src_adjust    |= value >> 6 & 0x1; 
+            break;
+        case REG_DMA3CNT + 3:
+            dma[3].src_adjust    |= ((value & 0x1) << 1);
+            dma[3].repeat         = value >> 1 & 0x1;
+            dma[3].chunk_size     = value >> 2 & 0x1;
+            dma[3].mode           = value >> 4 & 0x3;
+            dma[3].irq            = value >> 6 & 0x1;
+            dma[3].enable         = value >> 7 & 0x1; 
+
+            if (dma[3].enable && dma[3].mode == 0) // immediate mode
+            {
+                std::cout << "DMA3 immediate\n";
+                _dma(3);
+
+                // disable DMA after immediate transfer
+                dma[3].enable == 0;
+            }
+
+        break;
     }
 
+    // write value at memory location
     memory[address] = value;
 }
 
@@ -514,31 +562,56 @@ void Memory::dma2()
 
 void Memory::dma3()
 {
-    //std::cout << "DMA 3\n";
-    
+    u32 dest_ptr, src_ptr, original_src, original_dest;
+    src_ptr  = original_src  = read_u32_unprotected(REG_DMA3SAD);
+    dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD);
+
     // increment for destination, src
     int dest_inc, src_inc;
-    u32 dest_ptr = dma[3].dest_address;
 
     // get increment mode for destination
-    if (dma[3].dest_adjust == 0)      // increment after each copy
-        dest_inc = 1;
-    else if (dma[3].dest_adjust == 1) // decrement after each copy
-        dest_inc = -1;
-    else if (dma[3].dest_adjust == 2) // leave unchanged
-        dest_inc = 0;
-    else                              // increment after each copy, reset after transfer
-        dest_inc = 1;
+    switch (dma[3].dest_adjust)
+    {
+        case 0:
+            dest_inc = 1;  // increment after each copy
+        break;
+
+        case 1:
+            dest_inc = -1; // decrement after each copy
+        break;
+
+        case 2:
+            dest_inc = 0;  // leave unchanged
+        break;
+
+        case 3:
+            dest_inc = 1;  // increment after each copy, reset after transfer
+        break;
+        
+        default: // should never happen
+            std::cout << "Error: Illegal option for DMA 3 destination adjust " << dma[3].dest_adjust << "\n";
+        break;
+    }
     
-    // get increment mode for source
-    if (dma[3].src_adjust == 0)       // increment after each copy
-        src_inc = 1;
-    else if (dma[3].src_adjust == 1)  // decrement after each copy
-        src_inc = -1;
-    else if (dma[3].src_adjust == 2)  // leave unchanged
-        src_inc = 0;
-    else                              // illegal option for src
-        std::cout << "Error: src_adjust == 3 for DMA 3!\n";
+    // get increment mode for destination
+    switch (dma[3].src_adjust)
+    {
+        case 0:
+            src_inc = 1;  // increment after each copy
+        break;
+
+        case 1:
+            src_inc = -1; // decrement after each copy
+        break;
+
+        case 2:
+            src_inc = 0;  // leave unchanged
+        break;
+        
+        default: // should never happen
+            std::cout << "Error: Illegal option for DMA 3 src adjust " << dma[3].src_adjust << "\n";
+        break;
+    }
     
     // 32 bit copy
     if (dma[3].chunk_size == 1)
@@ -546,11 +619,11 @@ void Memory::dma3()
         for (int i = 0; i < dma[3].num_transfers; ++i)
         {
             // copy memory from src address to dest address
-            write_u32(dma[3].dest_address, read_u32(dma[3].src_address));
+            write_u32(dest_ptr, read_u32(src_ptr));
 
             // increment src, dest ptrs
-            dma[3].src_address  += src_inc;
-            dma[3].dest_address += dest_inc;
+            src_ptr  += src_inc  * sizeof(u32);
+            dest_ptr += dest_inc * sizeof(u32);
         }
     }
 
@@ -560,17 +633,24 @@ void Memory::dma3()
         for (int i = 0; i < dma[3].num_transfers; ++i)
         {
             // copy memory from src address to dest address
-            write_u16(dma[3].dest_address, read_u16(dma[3].src_address));
+            write_u16(dest_ptr, read_u16(src_ptr));
 
             // increment src, dest ptrs
-            dma[3].src_address  += src_inc;
-            dma[3].dest_address += dest_inc;
+            src_ptr  += src_inc  * sizeof(u16);
+            dest_ptr += dest_inc * sizeof(u16);
         }
     }
 
     // reset initial destination address if required
     if (dma[3].dest_adjust == 3)
-        dma[3].dest_address = dest_ptr;
+        dest_ptr = original_dest;
+
+    // write back dest
+    write_u32_unprotected(REG_DMA3DAD, dest_ptr);
+
+    // write back src
+    write_u32_unprotected(REG_DMA3SAD, src_ptr);
+    
 
     // turn off this transfer if repeat bit is not set
     if (dma[3].repeat == 0)
@@ -578,5 +658,5 @@ void Memory::dma3()
     
     // IRQ request
     if (dma[3].irq)
-        std::cout << "DMA3 IRQ request\n";
+        std::cout << "DMA3 IRQ request\n";   
 }

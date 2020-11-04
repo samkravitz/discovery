@@ -701,24 +701,315 @@ void Memory::_dma(int n)
 
 void Memory::dma0()
 {
-    std::cout << "DMA 0\n";
+    //std::cout << "DMA 0\n";
+    u32 dest_ptr, src_ptr, original_src, original_dest;
+    src_ptr  = original_src  = read_u32_unprotected(REG_DMA3SAD) & 0x7FFFFFF; // 27 bit
+    dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD) & 0x7FFFFFF; // 27 bit;
+
+    // increment for destination, src
+    int dest_inc, src_inc;
+
+    // get increment mode for destination
+    switch (dma[0].dest_adjust)
+    {
+        case 0:
+            dest_inc = 1;  // increment after each copy
+        break;
+
+        case 1:
+            dest_inc = -1; // decrement after each copy
+        break;
+
+        case 2:
+            dest_inc = 0;  // leave unchanged
+        break;
+
+        case 3:
+            dest_inc = 1;  // increment after each copy, reset after transfer
+        break;
+        
+        default: // should never happen
+            std::cout << "Error: Illegal option for DMA 0 destination adjust " << dma[0].dest_adjust << "\n";
+        break;
+    }
+    
+    // get increment mode for destination
+    switch (dma[0].src_adjust)
+    {
+        case 0:
+            src_inc = 1;  // increment after each copy
+        break;
+
+        case 1:
+            src_inc = -1; // decrement after each copy
+        break;
+
+        case 2:
+            src_inc = 0;  // leave unchanged
+        break;
+        
+        default: // should never happen
+            std::cout << "Error: Illegal option for DMA 0 src adjust " << dma[0].src_adjust << "\n";
+        break;
+    }
+    
+    // 32 bit copy
+    if (dma[0].chunk_size == 1)
+    {
+        for (int i = 0; i < dma[0].num_transfers; ++i)
+        {
+            // copy memory from src address to dest address
+            write_u32(dest_ptr, read_u32(src_ptr));
+
+            // increment src, dest ptrs
+            src_ptr  += src_inc  * sizeof(u32);
+            dest_ptr += dest_inc * sizeof(u32);
+        }
+    }
+
+    // 16 bit copy
+    else
+    {
+        for (int i = 0; i < dma[0].num_transfers; ++i)
+        {
+            // copy memory from src address to dest address
+            write_u16(dest_ptr, read_u16(src_ptr));
+
+            // increment src, dest ptrs
+            src_ptr  += src_inc  * sizeof(u16);
+            dest_ptr += dest_inc * sizeof(u16);
+        }
+    }
+
+    // reset initial destination address if required
+    if (dma[0].dest_adjust == 3)
+        dest_ptr = original_dest;
+
+    // write back dest
+    write_u32_unprotected(REG_DMA3DAD, dest_ptr);
+
+    // write back src
+    write_u32_unprotected(REG_DMA3SAD, src_ptr);
+    
+
+    // turn off this transfer if repeat bit is not set
+    if (dma[0].repeat == 0)
+        dma[0].enable == 0;
+    
+    // IRQ request
+    if (dma[0].irq)
+        std::cout << "DMA0 IRQ request\n";
 }
 
 void Memory::dma1()
 {
-    std::cout << "DMA 1\n";   
+    //std::cout << "DMA 1\n";
+    u32 dest_ptr, src_ptr, original_src, original_dest;
+    src_ptr  = original_src  = read_u32_unprotected(REG_DMA3SAD) & 0xFFFFFFF; // 28 bit
+    dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD) & 0x7FFFFFF; // 27 bit;
+
+    // increment for destination, src
+    int dest_inc, src_inc;
+
+    // get increment mode for destination
+    switch (dma[1].dest_adjust)
+    {
+        case 0:
+            dest_inc = 1;  // increment after each copy
+        break;
+
+        case 1:
+            dest_inc = -1; // decrement after each copy
+        break;
+
+        case 2:
+            dest_inc = 0;  // leave unchanged
+        break;
+
+        case 3:
+            dest_inc = 1;  // increment after each copy, reset after transfer
+        break;
+        
+        default: // should never happen
+            std::cout << "Error: Illegal option for DMA 1 destination adjust " << dma[1].dest_adjust << "\n";
+        break;
+    }
+    
+    // get increment mode for destination
+    switch (dma[1].src_adjust)
+    {
+        case 0:
+            src_inc = 1;  // increment after each copy
+        break;
+
+        case 1:
+            src_inc = -1; // decrement after each copy
+        break;
+
+        case 2:
+            src_inc = 0;  // leave unchanged
+        break;
+        
+        default: // should never happen
+            std::cout << "Error: Illegal option for DMA 1 src adjust " << dma[1].src_adjust << "\n";
+        break;
+    }
+    
+    // 32 bit copy
+    if (dma[1].chunk_size == 1)
+    {
+        for (int i = 0; i < dma[1].num_transfers; ++i)
+        {
+            // copy memory from src address to dest address
+            write_u32(dest_ptr, read_u32(src_ptr));
+
+            // increment src, dest ptrs
+            src_ptr  += src_inc  * sizeof(u32);
+            dest_ptr += dest_inc * sizeof(u32);
+        }
+    }
+
+    // 16 bit copy
+    else
+    {
+        for (int i = 0; i < dma[1].num_transfers; ++i)
+        {
+            // copy memory from src address to dest address
+            write_u16(dest_ptr, read_u16(src_ptr));
+
+            // increment src, dest ptrs
+            src_ptr  += src_inc  * sizeof(u16);
+            dest_ptr += dest_inc * sizeof(u16);
+        }
+    }
+
+    // reset initial destination address if required
+    if (dma[1].dest_adjust == 3)
+        dest_ptr = original_dest;
+
+    // write back dest
+    write_u32_unprotected(REG_DMA3DAD, dest_ptr);
+
+    // write back src
+    write_u32_unprotected(REG_DMA3SAD, src_ptr);
+    
+
+    // turn off this transfer if repeat bit is not set
+    if (dma[1].repeat == 0)
+        dma[1].enable == 0;
+    
+    // IRQ request
+    if (dma[1].irq)
+        std::cout << "DMA1 IRQ request\n";
 }
 
 void Memory::dma2()
 {
-    std::cout << "DMA 2\n";   
+    //std::cout << "DMA 2\n";
+    u32 dest_ptr, src_ptr, original_src, original_dest;
+    src_ptr  = original_src  = read_u32_unprotected(REG_DMA3SAD) & 0xFFFFFFF; // 28 bit
+    dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD) & 0x7FFFFFF; // 27 bit;
+
+    // increment for destination, src
+    int dest_inc, src_inc;
+
+    // get increment mode for destination
+    switch (dma[2].dest_adjust)
+    {
+        case 0:
+            dest_inc = 1;  // increment after each copy
+        break;
+
+        case 1:
+            dest_inc = -1; // decrement after each copy
+        break;
+
+        case 2:
+            dest_inc = 0;  // leave unchanged
+        break;
+
+        case 3:
+            dest_inc = 1;  // increment after each copy, reset after transfer
+        break;
+        
+        default: // should never happen
+            std::cout << "Error: Illegal option for DMA 2 destination adjust " << dma[2].dest_adjust << "\n";
+        break;
+    }
+    
+    // get increment mode for destination
+    switch (dma[2].src_adjust)
+    {
+        case 0:
+            src_inc = 1;  // increment after each copy
+        break;
+
+        case 1:
+            src_inc = -1; // decrement after each copy
+        break;
+
+        case 2:
+            src_inc = 0;  // leave unchanged
+        break;
+        
+        default: // should never happen
+            std::cout << "Error: Illegal option for DMA 2 src adjust " << dma[2].src_adjust << "\n";
+        break;
+    }
+    
+    // 32 bit copy
+    if (dma[2].chunk_size == 1)
+    {
+        for (int i = 0; i < dma[2].num_transfers; ++i)
+        {
+            // copy memory from src address to dest address
+            write_u32(dest_ptr, read_u32(src_ptr));
+
+            // increment src, dest ptrs
+            src_ptr  += src_inc  * sizeof(u32);
+            dest_ptr += dest_inc * sizeof(u32);
+        }
+    }
+
+    // 16 bit copy
+    else
+    {
+        for (int i = 0; i < dma[2].num_transfers; ++i)
+        {
+            // copy memory from src address to dest address
+            write_u16(dest_ptr, read_u16(src_ptr));
+
+            // increment src, dest ptrs
+            src_ptr  += src_inc  * sizeof(u16);
+            dest_ptr += dest_inc * sizeof(u16);
+        }
+    }
+
+    // reset initial destination address if required
+    if (dma[2].dest_adjust == 3)
+        dest_ptr = original_dest;
+
+    // write back dest
+    write_u32_unprotected(REG_DMA3DAD, dest_ptr);
+
+    // write back src
+    write_u32_unprotected(REG_DMA3SAD, src_ptr);
+    
+
+    // turn off this transfer if repeat bit is not set
+    if (dma[2].repeat == 0)
+        dma[2].enable == 0;
+    
+    // IRQ request
+    if (dma[2].irq)
+        std::cout << "DMA3 IRQ request\n";
 }
 
 void Memory::dma3()
 {
     u32 dest_ptr, src_ptr, original_src, original_dest;
-    src_ptr  = original_src  = read_u32_unprotected(REG_DMA3SAD);
-    dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD);
+    src_ptr  = original_src  = read_u32_unprotected(REG_DMA3SAD) & 0xFFFFFFF; // 28 bit
+    dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD) & 0xFFFFFFF; // 28 bit;
 
     // increment for destination, src
     int dest_inc, src_inc;

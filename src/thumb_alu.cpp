@@ -918,6 +918,9 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction)
         case 0xF:
             swi_objAffineSet();
             break;
+        case 0x10:
+            swi_bitUnpack();
+            break;
         default:
             std::cout << "Unknown SWI code: " << std::hex << (instruction & 0xFF) << "\n";
     }

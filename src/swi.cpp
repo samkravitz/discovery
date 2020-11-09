@@ -281,3 +281,72 @@ void arm_7tdmi::swi_objAffineSet()
     mem->write_u16(dest_ptr + 4, pc * 256);
     mem->write_u16(dest_ptr + 6, pd * 256);
 }
+
+/*
+ *  Bit Unpack
+ * 
+ *  r0  Source Address      (no alignment required)
+ *  r1  Destination Address (must be 32bit-word aligned)
+ *  r2  Pointer to UnPack information:
+ *      16bit  Length of Source Data in bytes     (0-FFFFh)
+ *      8bit   Width of Source Units in bits      (only 1,2,4,8 supported)
+ *      8bit   Width of Destination Units in bits (only 1,2,4,8,16,32 supported)
+ *      32bit  Data Offset (Bit 0-30), and Zero Data Flag (Bit 31)
+ */
+void arm_7tdmi::swi_bitUnpack()
+{
+    u32 src_ptr     = get_register(0);
+    u32 dest_ptr    = get_register(1) & ~0x3;
+    u32 info_ptr    = get_register(2);
+
+    u32 info_lower  = mem->read_u32(info_ptr);
+    u32 data_offset = mem->read_u32(info_ptr + 4);
+
+    u16 len         = info_lower & 0xFFFF;
+    u8 src_width    = (info_lower >> 16) & 0xFF; // in bits
+    u8 dest_width   = (info_lower >> 24) & 0xFF; // in bits
+
+    // only 1, 2, 4, 8 supported for src
+    switch (src_width)
+    {
+        case 1:
+        case 2:
+        case 4:
+        case 8:
+            break;
+        
+        default:
+            std::cout << "Invalid src width given for SWI::bitUnpack " << (int) src_width << "\n";
+            return;
+    }
+
+    // only 1, 2, 4, 8, 16, 32 supported for dest
+    switch (dest_width)
+    {
+        case 1:
+        case 2:
+        case 4:
+        case 8:
+        case 16:
+        case 32:
+            break;
+        
+        default:
+            std::cout << "Invalid dest width given for SWI::bitUnpack " << (int) dest_width << "\n";
+            return;
+    }
+
+    for (int i = 0; i < len; ++i)
+    {
+        u8 x = mem->read_u8(src_ptr);
+        mem->write_u8(dest_ptr++, x & 0xFF);
+        x >>= 4;
+        mem->write_u8(dest_ptr++, x);
+        src_ptr++;
+    }
+
+    std::cout << "SWI 0x10 - Bit unpack\n";
+    std::cout << "len: " << std::hex << (int) len << "\n";
+    std::cout << "src_width: " << (int) src_width << "\n";
+    std::cout << "dest_width: " << (int) dest_width << "\n";
+}

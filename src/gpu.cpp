@@ -214,11 +214,11 @@ void GPU::draw_mode1()
                 {
                     case 0:
                     case 1:
-                    std::cout << "drawing reg " << i << "\n";
+                        //std::cout << "drawing reg " << i << "\n";
                         draw_reg_background(i);
                         break;
                     case 2:
-                    std::cout << "drawing aff " << i << "\n";
+                        //std::cout << "drawing aff " << i << "\n";
                         draw_affine_background(i);
                         break;
                     default: // should never happen
@@ -432,12 +432,14 @@ void GPU::draw_reg_background(int bg)
 
 void GPU::draw_affine_background(int bg)
 {
+    //std::cout << (int) stat->bg_cnt[bg].cbb << " " << (int) stat->bg_cnt[bg].sbb << "\n";
+
     // initial address of background tileset
-    u32 tileset_address = MEM_VRAM_START + CHARBLOCK_LEN * stat->bg_cnt[bg].cbb;
+    u32 start_tileset_ptr = MEM_VRAM_START + CHARBLOCK_LEN * stat->bg_cnt[bg].cbb;
 
     // initial address of background tilemap
-    u32 start_tilemap_address = MEM_VRAM_START + SCREENBLOCK_LEN * stat->bg_cnt[bg].sbb;
-    u32 tilemap_address = start_tilemap_address;
+    u32 start_tilemap_ptr = MEM_VRAM_START + SCREENBLOCK_LEN * stat->bg_cnt[bg].sbb;
+    u32 tilemap_ptr = start_tilemap_ptr;
 
     // get width / height (in tiles) of background
     int width, height;
@@ -467,91 +469,61 @@ void GPU::draw_affine_background(int bg)
     // entire map (bigger than screen)
     u32 map[height * PX_IN_TILE_COL][width * PX_IN_TILE_ROW] = {0};
 
-    u16 screen_entry;    // contains tile index, flipping flags, and balbank for s-tiles
-    u16 tilemap_index;   // index # of current tile
-    u32 cur_screenblock; // address of palette entries of current tile
+    u8 map_index;        // index # of current tile
+    u32 tileset_ptr; // address of palette entries of current tile
     u16 color;           // arbg color of current pixel
     u8 palette_index;    // index of entry in palette memory
-    u8 palbank;          // palette bank (for s-tiles)
     int x, y;            // (x, y) coordinate of current pixel;
 
-    // TODO - yikes...
-    for (int ssy = 0; ssy < (height / 32); ++ssy)
+    for (int h = 0; h < height; ++h)
     {
-        for (int ssx = 0; ssx < (width / 32); ++ssx)
+        for (int w = 0; w < width; ++w)
         {
-            tilemap_address = start_tilemap_address + ssx * SCREENBLOCK_LEN + (2 * ssy * SCREENBLOCK_LEN);
-            for (int h = 0; h < TILES_PER_SCREENBLOCK; ++h)
+            map_index = mem->read_u8(tilemap_ptr++);
+            
+            // start address to current tile's palette 
+            tileset_ptr = start_tileset_ptr + D_SCREENENTRY_DEPTH * map_index;
+
+            // all affine BG are 256 color mode (D-tile)
+            for (int i = 0; i < D_TILE_LEN; i++)
             {
-                for (int w = 0; w < TILES_PER_SCREENBLOCK; ++w)
-                {
-                    screen_entry = mem->read_u16_unprotected(tilemap_address);
-                    tilemap_index = screen_entry & 0x3FF; // bits 9-0 
+                palette_index = mem->read_u8_unprotected(tileset_ptr + i);
 
-                    if (stat->bg_cnt[bg].color_mode == 0) // s-tile (4bpp)
-                    {
-                        palbank = screen_entry >> 12 & 0xF; // bits F - C
-                        cur_screenblock = tileset_address + S_SCREENENTRY_DEPTH * tilemap_index;
+                // pixel value 0 is transparent, so only draw if not 0
+                if (palette_index == 0)
+                    continue; 
 
-                        for (int i = 0; i < S_TILE_LEN; ++i)
-                        {
-                            // 256 bc each screenblock is 32 tiles, 32 * 8 = 256
-                            x = ssx * 256 + w * PX_IN_TILE_ROW + 2 * (i % 4); // s-tiles get left/right px in one read 
-                            y = ssy * 256 + h * PX_IN_TILE_COL + (i / 4);
-                            palette_index = mem->read_u8_unprotected(cur_screenblock + i);
-                            
-                            u8 left_pixel = palette_index & 0xF;
-                            u8 right_pixel = (palette_index >> 4) & 0xF;
+                // get x, y coordinate
+                x = w * PX_IN_TILE_ROW + (i % 8);
+                y = h * PX_IN_TILE_COL + (i / 8);
 
-                            // add left, right pixel to screen buffer
-                            // pixel value 0 is transparent, so only draw if not 0
-                            if (left_pixel != 0)
-                            {
-                                // multiply by sizeof(u16) because each entry in palram is 2 bytes
-                                color = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + left_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
-                                map[y][x] = u16_to_u32_color(color);
-                            }
+                // multiply by sizeof(u16) because each entry in palram is 2 bytes
+                color = mem->read_u32_unprotected(MEM_PALETTE_RAM_START + palette_index * sizeof(u16));
 
-                            // pixel value 0 is transparent, so only draw if not 0
-                            if (right_pixel != 0)
-                            {
-                                // multiply by sizeof(u16) because each entry in palram is 2 bytes
-                                color = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + right_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
-                                map[y][x + 1] = u16_to_u32_color(color);
-                            }
-                        }
-
-                    }
-                    
-                    else // d-tile (8bpp)
-                    {
-                        cur_screenblock = tileset_address + D_SCREENENTRY_DEPTH * tilemap_index;
-
-                        for (int i = 0; i < D_TILE_LEN; i++)
-                        {
-
-                            palette_index = mem->read_u8_unprotected(cur_screenblock + i);
-
-                            // pixel value 0 is transparent, so only draw if not 0
-                            if (palette_index == 0)
-                                continue; 
-
-                            // 256 bc each screenblock is 32 tiles, 32 * 8 = 256
-                            x = ssx * 256 + w * PX_IN_TILE_ROW + (i % 8);
-                            y = ssy * 256 + h * PX_IN_TILE_COL + (i / 8);
-
-                            // multiply by sizeof(u16) because each entry in palram is 2 bytes
-                            color = mem->read_u32_unprotected(SPRITE_PALETTE + palette_index * sizeof(u16));
-
-                            screen_buffer[y][x] = u16_to_u32_color(color);
-                        }
-                    }
-
-                    tilemap_address += 2; // each tile is 2 bytes long
-                }
+                map[y][x] = u16_to_u32_color(color);
             }
         }
     }
+
+    s32 dx, dy; // displacement vector
+    switch (bg)
+    {
+        case 2:
+            dx = (s32) mem->read_u32_unprotected(REG_BG2X);
+            dy = (s32) mem->read_u32_unprotected(REG_BG2Y);
+        break;
+
+        case 3:
+            dx = (s32) mem->read_u32_unprotected(REG_BG3X);
+            dy = (s32) mem->read_u32_unprotected(REG_BG3Y);
+        break;
+    }
+
+    // remove fractional portion from displacement (24.8f)
+    dx >>= 8;
+    dy >>= 8;
+
+    //std::cout << (int) dx << " " << (int) dy << "\n";
 
     // copy area of map that screen is over into screen buffer
     for (int y = 0; y < SCREEN_HEIGHT; ++y)

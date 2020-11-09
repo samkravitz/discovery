@@ -506,16 +506,27 @@ void GPU::draw_affine_background(int bg)
     }
 
     s32 dx, dy; // displacement vector
+    float pa, pb, pc, pd; // P matrix
     switch (bg)
     {
         case 2:
             dx = (s32) mem->read_u32_unprotected(REG_BG2X);
             dy = (s32) mem->read_u32_unprotected(REG_BG2Y);
+
+            pa = (s16) mem->read_u16_unprotected(REG_BG2PA) / 256.0; 
+            pb = (s16) mem->read_u16_unprotected(REG_BG2PB) / 256.0;
+            pc = (s16) mem->read_u16_unprotected(REG_BG2PC) / 256.0;
+            pd = (s16) mem->read_u16_unprotected(REG_BG2PD) / 256.0;
         break;
 
         case 3:
             dx = (s32) mem->read_u32_unprotected(REG_BG3X);
             dy = (s32) mem->read_u32_unprotected(REG_BG3Y);
+
+            pa = (s16) mem->read_u16_unprotected(REG_BG3PA) / 256.0; 
+            pb = (s16) mem->read_u16_unprotected(REG_BG3PB) / 256.0;
+            pc = (s16) mem->read_u16_unprotected(REG_BG3PC) / 256.0;
+            pd = (s16) mem->read_u16_unprotected(REG_BG3PD) / 256.0;
         break;
     }
 
@@ -558,6 +569,39 @@ void GPU::draw_affine_background(int bg)
             }
         }
     }
+
+    // s16 x1, x2;
+    // s8  y1, y2;
+
+    // for (int y = 0; y < SCREEN_HEIGHT; ++y)
+    // {
+    //     for (int x = 0; x < SCREEN_WIDTH; ++x)
+    //     {
+    //         //std::cout << xx << " " << yy << "\n";
+    //         y1 = y + dy;
+    //         x1 = x + dx;
+
+    //         // get new position of pixel after rot / scale
+    //         // x2 = pa * (xx - x0) + pb * (yy - y0) + x0;
+    //         // y2 = pc * (xx - x0) + pd * (yy - y0) + y0;
+
+    //         x2 = pa * (x1) + pb * (y1);
+    //         y2 = pc * (x1) + pd * (y1);
+
+    //         // transfomation put pixel out of bounds
+    //         // if ((x2 >= hwidth) || (y2 >= hheight))
+    //         //     continue;
+            
+    //         // std::cout << (int) y1 << " " << (int) x1 << "\n";
+    //         // std::cout << (int) y2 << " " << (int) x2 << "\n";
+
+    //         // skip 0 pixel value (transparent)
+    //         if (map[y2][x2] != 0)
+    //             screen_buffer[y][x] = map[y2][x2];
+    //     }
+    // }
+
+    //exit(0);
 }
 
 void GPU::draw_sprites()

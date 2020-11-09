@@ -150,6 +150,7 @@ void GPU::draw()
         case 1: draw_mode1(); break;
         case 3: draw_mode3(); break;
         case 4: draw_mode4(); break;
+        case 5: draw_mode5(); break;
         default: 
             std::cerr << "Error: unknown video mode" << "\n";
             break;
@@ -261,6 +262,33 @@ void GPU::draw_mode4()
     for (int y = 0; y < SCREEN_HEIGHT; ++y)
     {
         for (int x = 0; x < SCREEN_WIDTH; ++x)
+        {
+            palette_index = mem->read_u8_unprotected(pal_ptr + i);
+            // multiply by sizeof(u16) because each entry in palram is 2 bytes
+            color = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
+            // add current pixel in argb format to pixel array
+            screen_buffer[y][x] = u16_to_u32_color(color);
+            ++i;
+        }
+    }
+}
+
+// video mode 5 - bitmap mode
+void GPU::draw_mode5()
+{
+    u8 palette_index;                  // in mode 4 each pixel uses 1 byte 
+    u16 color;                         // the color located at pallette_ram[palette_index]
+    u32 pal_ptr = MEM_VRAM_START;      // address of current palette
+
+    // page 2 starts at 0x600A000
+    if (stat->dispcnt.ps)
+        pal_ptr += 0xA000;
+
+    //std::cout << (int) stat->dispcnt.ps << "\n";
+    int i = 0;
+    for (int y = 0; y < 128; ++y)
+    {
+        for (int x = 0; x < 160; ++x)
         {
             palette_index = mem->read_u8_unprotected(pal_ptr + i);
             // multiply by sizeof(u16) because each entry in palram is 2 bytes

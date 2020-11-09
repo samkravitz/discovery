@@ -79,8 +79,8 @@ class Memory
         u8 s_cycles;
 
         void reset();
-        void load_rom(char *);
-        void load_bios();
+        bool load_rom(char *);
+        bool load_bios();
 
         // read / write from memory
         u32 read_u32(u32);

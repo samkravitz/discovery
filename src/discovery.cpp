@@ -11,7 +11,13 @@ int main(int argc, char **argv)
 {
     std::cout << "Gameboy emulator!" << "\n";
     discovery emulator;
-    emulator.mem->load_bios();
+
+    // load bios
+    if (!emulator.mem->load_bios())
+    {
+        std::cerr << "Error loading BIOS\n";
+        return 1;
+    }
 
     std::string deb = "";
 
@@ -154,7 +160,11 @@ void discovery::game_loop()
 
 void discovery::run_asm(char *name)
 {
-    mem->load_rom(name);
+    if (!mem->load_rom(name))
+    {
+        std::cerr << "Error loading ROM: " << name << "\n";
+        exit(1);
+    }
 
     if (debug)
         game_loop_debug();

@@ -687,41 +687,43 @@ void Memory::write_u8_unprotected(u32 address, u8 value)
     memory[address] = value;
 }
 
-void Memory::load_rom(char *name)
+bool Memory::load_rom(char *name)
 {
     std::ifstream rom(name, std::ios::in | std::ios::binary);
 
     if (!rom)
-        return;
+        return false;
 
     rom_size = fs::file_size(name);
 
     if (!rom.good())
     {
         std::cerr << "Bad rom!" << "\n";
-        return;
+        return false;
     }
 
     game_rom = new u8[rom_size]();
     rom.read((char *) game_rom, rom_size);
     rom.close();
+    return true;
 }
 
-void Memory::load_bios()
+bool Memory::load_bios()
 {
     // bios must be called gba_bios.bin
     std::ifstream bios("gba_bios.bin", std::ios::in | std::ios::binary);
     if (!bios)
-        return;
+        return false;
 
     if (!bios.good())
     {
         std::cerr << "Bad bios!" << "\n";
-        return;
+        return false;
     }
 
     bios.read((char *) memory, MEM_BIOS_SIZE);
     bios.close();
+    return true;
 }
 
 void Memory::_dma(int n)

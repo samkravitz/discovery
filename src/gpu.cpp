@@ -526,13 +526,36 @@ void GPU::draw_affine_background(int bg)
     //std::cout << (int) dx << " " << (int) dy << "\n";
 
     // copy area of map that screen is over into screen buffer
-    for (int y = 0; y < SCREEN_HEIGHT; ++y)
+
+    // wrapped
+    if (stat->bg_cnt[bg].affine_wrap == 1)
     {
-        for (int x = 0; x < SCREEN_WIDTH; ++x)
+        for (int y = 0; y < SCREEN_HEIGHT; ++y)
         {
-            // modulo mapsize to allow wrapping
-            //if (map[(y + voff) % (height * PX_IN_TILE_COL)][(x + hoff) % (width * PX_IN_TILE_ROW)] != 0)
-                screen_buffer[y][x] = map[y][x];//map[(y) % (height * PX_IN_TILE_COL)][(x) % (width * PX_IN_TILE_ROW)];
+            for (int x = 0; x < SCREEN_WIDTH; ++x)
+            {
+                // modulo mapsize to allow wrapping
+                if (map[(y + dy) % (height * PX_IN_TILE_COL)][(x + dx) % (width * PX_IN_TILE_ROW)] != 0)
+                    screen_buffer[y][x] = map[(y) % (height * PX_IN_TILE_COL)][(x) % (width * PX_IN_TILE_ROW)];
+            }
+        }
+    }
+
+    // no wrap
+    else
+    {
+        for (int y = 0; y < SCREEN_HEIGHT; ++y)
+        {
+            for (int x = 0; x < SCREEN_WIDTH; ++x)
+            {
+                // out of bounds
+                if ((y + dy < 0) || (x + dx < 0))
+                    continue;
+
+                // modulo mapsize to allow wrapping
+                if (map[y + dy][x + dx] != 0)
+                    screen_buffer[y][x] = map[y + dy][x + dx];
+            }
         }
     }
 }

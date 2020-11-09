@@ -43,10 +43,6 @@ const u32 REG_BG2VOFS  = 0x400001A;
 const u32 REG_BG3VOFS  = 0x400001E;
 
 // affine BG registers
-// const u32 REG_BG2X_L   = 0x4000028;
-// const u32 REG_BG2X_H   = 0x400002A;
-// const u32 REG_BG2Y_L   = 0x400002C;
-// const u32 REG_BG2Y_H   = 0x400002E;
 const u32 REG_BG2X     = 0x4000028;
 const u32 REG_BG2Y     = 0x400002C;
 const u32 REG_BG2PA    = 0x4000020;
@@ -54,16 +50,19 @@ const u32 REG_BG2PB    = 0x4000022;
 const u32 REG_BG2PC    = 0x4000024;
 const u32 REG_BG2PD    = 0x4000026;
 
-// const u32 REG_BG3X_L   = 0x4000038;
-// const u32 REG_BG3X_H   = 0x400003A;
-// const u32 REG_BG3Y_L   = 0x400003C;
-// const u32 REG_BG3Y_H   = 0x400003E;
 const u32 REG_BG3X     = 0x4000038;
 const u32 REG_BG3Y     = 0x400003C;
 const u32 REG_BG3PA    = 0x4000030;
 const u32 REG_BG3PB    = 0x4000032;
 const u32 REG_BG3PC    = 0x4000034;
 const u32 REG_BG3PD    = 0x4000036;
+
+const u32 REG_WIN0H    = 0x4000040;
+const u32 REG_WIN0V    = 0x4000042;
+const u32 REG_WIN1H    = 0x4000044;
+const u32 REG_WIN1V    = 0x4000046;
+const u32 REG_WININ    = 0x4000048;
+const u32 REG_WINOUT   = 0x400004A;
 
 const u32 REG_MOSAIC   = 0x400004C;
 

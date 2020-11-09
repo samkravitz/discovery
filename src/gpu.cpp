@@ -250,7 +250,7 @@ void GPU::draw_mode4()
     u16 color;        // the color located at pallette_ram[palette_index]
     
     // TODO - page flip
-    std::cout << (int) stat->dispcnt.ps << "\n";
+    //std::cout << (int) stat->dispcnt.ps << "\n";
     int i = 0;
     for (int y = 0; y < SCREEN_HEIGHT; ++y)
     {

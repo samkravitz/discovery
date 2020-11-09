@@ -1018,17 +1018,40 @@ void arm_7tdmi::single_data_swap(u32 instruction)
 
 void arm_7tdmi::software_interrupt(u32 instruction)
 {
-    std::cout << "software interrupt arm\n";
+    std::cout << "software interrupt arm " << (instruction >> 16 & 0xFF) << "\n";
+    std::cout << "Unknown SWI code: " << std::hex << (instruction) << "\n";
     
     // bits 23 - 16 determine which interrupt
     switch (instruction >> 16 & 0xFF)
     {
-        case 0x06:
+       case 0x0:
+            swi_softReset();
+            break;
+        case 0x1:
+            swi_registerRamReset();
+            break;
+        case 0x6:
             swi_division();
             break;
-
+        case 0x8:
+            swi_sqrt();
+            break;
+        case 0xA:
+            swi_arctan2();
+            break;
+        case 0xB:
+            swi_cpuSet();
+            break;
+        case 0xF:
+            swi_objAffineSet();
+            break;
+        case 0x10:
+            swi_bitUnpack();
+            break;
         default:
-            std::cout << "Unknown SWI code: " << std::hex << (instruction >> 16 & 0xFF) << "\n";
+            std::cout << "Unknown SWI code: " << std::hex << (instruction) << "\n";
+        // default:
+        //     std::cout << "Unknown SWI code: " << std::hex << (instruction >> 16 & 0xFF) << "\n";
     }
 
     // cycles: 2S + 1N

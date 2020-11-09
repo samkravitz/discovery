@@ -261,25 +261,32 @@ void arm_7tdmi::swi_objAffineSet()
     if (offset != 2) // for OAM, not bg
         std::cout << "SWI ObjAffineSet for OAM\n";
 
-    // integer portion of 8.8f sx, sy
-    sx = (float) (mem->read_u16(src_ptr    ) >> 8);
-    sy = (float) (mem->read_u16(src_ptr + 2) >> 8);
+    for (int i = 0; i < num_calculations; ++i)
+    {
+        // integer portion of 8.8f sx, sy
+        sx = (float) (mem->read_u16(src_ptr    ) >> 8);
+        sy = (float) (mem->read_u16(src_ptr + 2) >> 8);
 
-    // convert alpha from range [0x0 - 0xFFFF] to [0, 2π]
-    alpha = (mem->read_u16(src_ptr + 4)) / 32768.0 * M_PI;
-    pa = pd = cosf(alpha);
-    pb = pc = sinf(alpha);
+        // convert alpha from range [0x0 - 0xFFFF] to [0, 2π]
+        alpha = (mem->read_u16(src_ptr + 4)) / 32768.0 * M_PI;
+        pa = pd = cosf(alpha);
+        pb = pc = sinf(alpha);
 
-    pa *=  sx; // sx *  cos(α)
-    pb *= -sx; // sx * -sin(α)
-    pc *=  sy; // sy *  sin(α)
-    pd *=  sy; // sy *  cos(α)
+        pa *=  sx; // sx *  cos(α)
+        pb *= -sx; // sx * -sin(α)
+        pc *=  sy; // sy *  sin(α)
+        pd *=  sy; // sy *  cos(α)
 
-    // convert back to range [0x0 - 0xFFFF]
-    mem->write_u16(dest_ptr    , pa * 256);
-    mem->write_u16(dest_ptr + 2, pb * 256);
-    mem->write_u16(dest_ptr + 4, pc * 256);
-    mem->write_u16(dest_ptr + 6, pd * 256);
+        // convert back to range [0x0 - 0xFFFF]
+        mem->write_u16(dest_ptr    , pa * 256);
+        mem->write_u16(dest_ptr + 2, pb * 256);
+        mem->write_u16(dest_ptr + 4, pc * 256);
+        mem->write_u16(dest_ptr + 6, pd * 256);
+
+        src_ptr  += offset;
+        dest_ptr += 8;
+    }
+    
 }
 
 /*
@@ -342,7 +349,7 @@ void arm_7tdmi::swi_bitUnpack()
         mem->write_u8(dest_ptr++, x & 0xFF);
         x >>= 4;
         mem->write_u8(dest_ptr++, x);
-        src_ptr++;
+        src_ptr += 2;
     }
 
     std::cout << "SWI 0x10 - Bit unpack\n";

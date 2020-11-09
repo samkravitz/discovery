@@ -926,14 +926,13 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction)
     }
 
     // TODO - handle swi through bios ?
-
     // set_state(SVC);
     // set_register(14, get_register(15) - 2);
     // update_spsr(get_register(16), false);
     // set_mode(ARM);
     // set_register(15, 0x08);
     // pipeline_full = false;
-    //return;
+    // return;
 
     // cycles: 2S + 1N
     cycle(1, 2, 0);

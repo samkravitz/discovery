@@ -1019,8 +1019,16 @@ void arm_7tdmi::single_data_swap(u32 instruction)
 void arm_7tdmi::software_interrupt(u32 instruction)
 {
     std::cout << "software interrupt arm " << (instruction >> 16 & 0xFF) << "\n";
-    std::cout << "Unknown SWI code: " << std::hex << (instruction) << "\n";
-    
+
+    // TODO - handle swi through BIOS ?
+
+    // set_state(SVC);
+    // set_register(14, get_register(15) - 4);
+    // update_spsr(get_register(16), false);
+    // set_register(15, 0x08);
+    // pipeline_full = false;
+    // return;
+
     // bits 23 - 16 determine which interrupt
     switch (instruction >> 16 & 0xFF)
     {
@@ -1048,10 +1056,9 @@ void arm_7tdmi::software_interrupt(u32 instruction)
         case 0x10:
             swi_bitUnpack();
             break;
+        
         default:
-            std::cout << "Unknown SWI code: " << std::hex << (instruction) << "\n";
-        // default:
-        //     std::cout << "Unknown SWI code: " << std::hex << (instruction >> 16 & 0xFF) << "\n";
+            std::cout << "Unknown SWI code: " << std::hex << (instruction >> 16 & 0xFF) << "\n";
     }
 
     // cycles: 2S + 1N

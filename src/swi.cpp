@@ -309,6 +309,9 @@ void arm_7tdmi::swi_bitUnpack()
     u32 info_lower  = mem->read_u32(info_ptr);
     u32 data_offset = mem->read_u32(info_ptr + 4);
 
+    bool zero_flag = (data_offset >> 31) == 1;
+    data_offset &= 0x7FFFFFFF; // clear MSB6+2
+
     u16 len         = info_lower & 0xFFFF;
     u8 src_width    = (info_lower >> 16) & 0xFF; // in bits
     u8 dest_width   = (info_lower >> 24) & 0xFF; // in bits
@@ -343,17 +346,43 @@ void arm_7tdmi::swi_bitUnpack()
             return;
     }
 
+    // algorithm taken from
+    // https://github.com/Cult-of-GBA/BIOS/blob/master/bios_calls/decompression/bitunpack.s
+    u8 src_bit_count;
+    u8 dest_bit_count = 0;
+    u32 buffer = 0;
+    u8 mask, data, masked_data;
     for (int i = 0; i < len; ++i)
     {
-        u8 x = mem->read_u8(src_ptr);
-        mem->write_u8(dest_ptr++, x & 0xFF);
-        x >>= 4;
-        mem->write_u8(dest_ptr++, x);
-        src_ptr += 2;
+        
+        data = mem->read_u8(src_ptr++);
+        src_bit_count = 0;
+        mask = 0xFF >> (8 - src_width);
+
+        while (src_bit_count < 8)
+        {
+            masked_data = (data & mask) >> src_bit_count;
+            if (masked_data != 0 || zero_flag)
+                masked_data += data_offset;
+            
+            buffer |= masked_data << dest_bit_count;
+            dest_bit_count += dest_width;
+
+            if (dest_bit_count >= 32)
+            {
+                mem->write_u32(dest_ptr, buffer);
+                dest_ptr += sizeof(u32);
+                dest_bit_count = 0;
+                buffer = 0;
+            }
+
+            mask <<= src_width;
+            src_bit_count += src_width;
+        }
     }
 
-    std::cout << "SWI 0x10 - Bit unpack\n";
-    std::cout << "len: " << std::hex << (int) len << "\n";
-    std::cout << "src_width: " << (int) src_width << "\n";
-    std::cout << "dest_width: " << (int) dest_width << "\n";
+    // std::cout << "SWI 0x10 - Bit unpack\n";
+    // std::cout << "len: " << std::hex << (int) len << "\n";
+    // std::cout << "src_width: " << (int) src_width << "\n";
+    // std::cout << "dest_width: " << (int) dest_width << "\n";
 }

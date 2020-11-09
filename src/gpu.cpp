@@ -194,7 +194,7 @@ void GPU::draw()
 void GPU::draw_mode0()
 {
     for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
-        for (int i = 0; i <= 3; ++i) // bg0 - bg3
+        for (int i = 3; i >= 0; --i) // bg0 - bg3
             if (stat->bg_cnt[i].enabled && stat->bg_cnt[i].priority == priority)
             {
                 //std::cout << "drawing bg: " << i << "\n";
@@ -207,16 +207,18 @@ void GPU::draw_mode0()
 void GPU::draw_mode1()
 {
     for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
-        for (int i = 0; i <= 2; ++i) // bg0 - bg2
+        for (int i = 2; i >= 0; --i) // bg0 - bg2
             if (stat->bg_cnt[i].enabled && stat->bg_cnt[i].priority == priority)
             {
                 switch (i)
                 {
                     case 0:
                     case 1:
+                    std::cout << "drawing reg " << i << "\n";
                         draw_reg_background(i);
                         break;
                     case 2:
+                    std::cout << "drawing aff " << i << "\n";
                         draw_affine_background(i);
                         break;
                     default: // should never happen

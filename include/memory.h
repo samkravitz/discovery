@@ -54,6 +54,8 @@ class Memory
         u8 memory[MEM_SIZE];
 
         lcd_stat *stat;
+
+        size_t rom_size;
         u8 *game_rom;
         
         struct dma

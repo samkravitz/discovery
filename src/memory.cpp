@@ -34,6 +34,8 @@ void Memory::reset()
     n_cycles = 4;
     s_cycles = 2;
 
+    rom_size = 0;
+
     // zero memory
     for (int i = 0; i < MEM_SIZE; ++i)
         memory[i] = 0;
@@ -76,9 +78,20 @@ u8 Memory::read_u8(u32 address)
     // game rom
     if (address >= MEM_SIZE)
     {
+        // while ((address - MEM_SIZE) >= rom_size)
+        // {
+        //     address -= 0x2000000;
+        // }
+
+        // SRAM
+        if (address >= 0xE000000)
+        {
+            std::cout << "SRAM\n";
+            address -= 0x6000000;
+        }
 
         // rom image 2
-        if (address >= 0xC000000)
+        else if (address >= 0xC000000)
         {
             address -= 0x4000000;
         }
@@ -202,6 +215,12 @@ void Memory::write_u8(u32 address, u8 value)
     // game rom
     if (address >= MEM_SIZE)
     {
+        // SRAM
+        if (address >= 0xE000000)
+        {
+            address -= 0x6000000;
+        }
+        
         // rom image 2
         if (address >= 0xC000000)
         {
@@ -217,6 +236,7 @@ void Memory::write_u8(u32 address, u8 value)
         std::cerr << "Warning: writing to game rom\n";
 
         game_rom[address - MEM_SIZE] = value;
+        std::cerr << "Done\n";
         return;
     }
 
@@ -662,7 +682,6 @@ void Memory::write_u16_unprotected(u32 address, u16 value)
     write_u8_unprotected(address + 1, (value >> 8) & 0xFF);
 }
 
-// TODO - add protection against VRAM byte writes
 void Memory::write_u8_unprotected(u32 address, u8 value)
 {
     memory[address] = value;
@@ -674,7 +693,8 @@ void Memory::load_rom(char *name)
 
     if (!rom)
         return;
-    size_t size = fs::file_size(name);
+
+    rom_size = fs::file_size(name);
 
     if (!rom.good())
     {
@@ -682,8 +702,8 @@ void Memory::load_rom(char *name)
         return;
     }
 
-    game_rom = new u8[size]();
-    rom.read((char *) game_rom, size);
+    game_rom = new u8[rom_size]();
+    rom.read((char *) game_rom, rom_size);
     rom.close();
 }
 
@@ -720,7 +740,7 @@ void Memory::_dma(int n)
 
 void Memory::dma0()
 {
-    //std::cout << "DMA 0\n";
+    std::cout << "DMA 0\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = read_u32_unprotected(REG_DMA3SAD) & 0x7FFFFFF; // 27 bit
     dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD) & 0x7FFFFFF; // 27 bit;
@@ -818,11 +838,13 @@ void Memory::dma0()
     // IRQ request
     if (dma[0].irq)
         std::cout << "DMA0 IRQ request\n";
+    
+    std::cout << "DMA 0 Done\n";
 }
 
 void Memory::dma1()
 {
-    //std::cout << "DMA 1\n";
+    std::cout << "DMA 1\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = read_u32_unprotected(REG_DMA3SAD) & 0xFFFFFFF; // 28 bit
     dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD) & 0x7FFFFFF; // 27 bit;
@@ -920,11 +942,13 @@ void Memory::dma1()
     // IRQ request
     if (dma[1].irq)
         std::cout << "DMA1 IRQ request\n";
+    
+    std::cout << "DMA 1 Done\n";
 }
 
 void Memory::dma2()
 {
-    //std::cout << "DMA 2\n";
+    std::cout << "DMA 2\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = read_u32_unprotected(REG_DMA3SAD) & 0xFFFFFFF; // 28 bit
     dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD) & 0x7FFFFFF; // 27 bit;
@@ -1022,10 +1046,13 @@ void Memory::dma2()
     // IRQ request
     if (dma[2].irq)
         std::cout << "DMA3 IRQ request\n";
+    
+    std::cout << "DMA 2 Done\n";
 }
 
 void Memory::dma3()
 {
+    std::cout << "DMA 3\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = read_u32_unprotected(REG_DMA3SAD) & 0xFFFFFFF; // 28 bit
     dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD) & 0xFFFFFFF; // 28 bit;
@@ -1123,4 +1150,6 @@ void Memory::dma3()
     // IRQ request
     if (dma[3].irq)
         std::cout << "DMA3 IRQ request\n";   
+    
+    std::cout << "DMA 3 Done\n";
 }

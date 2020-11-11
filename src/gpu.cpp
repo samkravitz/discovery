@@ -143,7 +143,7 @@ void GPU::cycle()
 
 void GPU::draw()
 {
-    //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
+    std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
     switch (stat->dispcnt.mode)
     {
         case 0: draw_mode0(); break;

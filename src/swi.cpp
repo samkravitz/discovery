@@ -182,8 +182,12 @@ void arm_7tdmi::swi_cpuSet()
         // get word / halfword
         if (datasize == 2)
         {
+            // align src and dest addr
+            src_ptr  &= ~0x1;
+            dest_ptr &= ~0x1;
+
             val16 = mem->read_u16(src_ptr);
-            for (int i = 0; i < datasize; ++i)
+            for (int i = 0; i < wordcount; ++i)
             {
                 mem->write_u16(dest_ptr, val16);
                 dest_ptr += datasize;
@@ -192,8 +196,12 @@ void arm_7tdmi::swi_cpuSet()
 
         else
         {
+            // align src and dest addr
+            src_ptr  &= ~0x3;
+            dest_ptr &= ~0x3;
+
             val32 = mem->read_u32(src_ptr);
-            for (int i = 0; i < datasize; ++i)
+            for (int i = 0; i < wordcount; ++i)
             {
                 mem->write_u32(dest_ptr, val32);
                 dest_ptr += datasize;
@@ -209,7 +217,11 @@ void arm_7tdmi::swi_cpuSet()
             // halfword transfer
             if (datasize == 2)
             {
-                for (int i = 0; i < datasize; ++i)
+                // align src and dest addr
+                src_ptr  &= ~0x1;
+                dest_ptr &= ~0x1;
+
+                for (int i = 0; i < wordcount; ++i)
                 {
                     val16 = mem->read_u16(src_ptr);
                     mem->write_u16(dest_ptr, val16);
@@ -220,7 +232,11 @@ void arm_7tdmi::swi_cpuSet()
                 
             else
             {
-                for (int i = 0; i < datasize; ++i)
+                // align src and dest addr
+                src_ptr  &= ~0x3;
+                dest_ptr &= ~0x3;
+
+                for (int i = 0; i < wordcount; ++i)
                 {
                     val32 = mem->read_u32(src_ptr);
                     mem->write_u32(dest_ptr, val32);

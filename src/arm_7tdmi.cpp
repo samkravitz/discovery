@@ -912,7 +912,7 @@ void arm_7tdmi::cycle(u8 n, u8 s, u8 i)
 void arm_7tdmi::handle_interrupt()
 {
     // exit interrupt
-    if (in_interrupt && get_register(15) == 0x13C)
+    if (in_interrupt && get_register(15) == 0x138)
     {
         std::cout << "Handled interrupt!\n";
 
@@ -935,6 +935,7 @@ void arm_7tdmi::handle_interrupt()
 
         // re-enable interrupts
         registers.cpsr.bits.i = 0;
+        mem->write_u32_unprotected(REG_IME, 1);
 
         pipeline_full = false;
         in_interrupt  = false;
@@ -962,6 +963,12 @@ void arm_7tdmi::handle_interrupt()
 
                 // switch to IRQ
                 set_state(IRQ);
+                
+                if (!pipeline_full)
+                    std::cout << "Caution: interrupt after a branch\n";
+
+                // add r14, r15, 0
+                set_register(14, get_register(15) - 4);
 
                 // save CPSR to SPSR
                 update_spsr(get_register(16), false);
@@ -980,13 +987,16 @@ void arm_7tdmi::handle_interrupt()
                 // mov r0, 0x4000000
                 set_register(0, 0x4000000);
 
-                // add r14, r15, 0
-                set_register(15, get_register(0) - 0x4);
+                set_register(14, 0x138);
+
+                // ldr r15, [r0, -0x4]
+                set_register(15, mem->read_u32(get_register(0) - 0x4) & ~0x3);
 
                 registers.cpsr.bits.i = 1; // disable interrupts
                 set_mode(ARM);
                 pipeline_full = false;
                 in_interrupt  = true;
+                mem->write_u32_unprotected(REG_IME, 0);
 
                 std::cout << "interrupt handling!\n";
             }

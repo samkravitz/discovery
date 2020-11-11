@@ -31,7 +31,7 @@ GPU::GPU()
         exit(2);
     }
 
-    window = SDL_CreateWindow("discovery", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+    window = SDL_CreateWindow("discovery", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2, 0);
     if (window == NULL)
     {
         std::cerr << "Could not create window" << "\n";
@@ -143,7 +143,7 @@ void GPU::cycle()
 
 void GPU::draw()
 {
-    std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
+    //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
     switch (stat->dispcnt.mode)
     {
         case 0: draw_mode0(); break;
@@ -167,7 +167,7 @@ void GPU::draw()
     if (SDL_MUSTLOCK(final_screen))
         SDL_LockSurface(final_screen);
 
-    u32 *screen_pixels = (u32 *) final_screen->pixels;
+    u32 *screen_pixels = (u32 *) original_screen->pixels;
     for (int y = 0; y < SCREEN_HEIGHT; ++y)
         for (int x = 0; x < SCREEN_WIDTH; ++x)
             screen_pixels[y * SCREEN_WIDTH + x] = screen_buffer[y][x];
@@ -175,7 +175,13 @@ void GPU::draw()
     if (SDL_MUSTLOCK(final_screen))
         SDL_UnlockSurface(final_screen);
 
-    //SDL_BlitSurface(original_screen, NULL, final_screen, NULL);
+    SDL_Rect d;
+    d.w = 480;
+    d.h = 320;
+    d.x = 0;
+    d.y = 0;
+    SDL_BlitScaled(original_screen, NULL, final_screen, &d);
+    
 
     // draw final_screen pixels on screen
     SDL_UpdateWindowSurface(window);

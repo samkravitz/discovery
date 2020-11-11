@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iostream>
 #include <experimental/filesystem>
+#include <string.h>
 
 #include "memory.h"
 
@@ -17,7 +18,8 @@ namespace fs = std::experimental::filesystem;
 
 Memory::Memory()
 {
-    game_rom  = NULL;
+    cart_rom  = NULL;
+    cart_ram  = NULL;
     stat      = NULL;
     timers[0] = NULL;
     timers[1] = NULL;
@@ -35,6 +37,7 @@ void Memory::reset()
     s_cycles = 2;
 
     rom_size = 0;
+    ram_size = 0;
 
     // zero memory
     for (int i = 0; i < MEM_SIZE; ++i)
@@ -58,6 +61,65 @@ void Memory::reset()
     
     // write all 1s to keypad (all keys cleared)
     write_u32_unprotected(REG_KEYINPUT, 0b1111111111);
+}
+
+bool Memory::load_rom(char *name)
+{
+    std::ifstream rom(name, std::ios::in | std::ios::binary);
+
+    if (!rom)
+        return false;
+
+    rom_size = fs::file_size(name);
+
+    if (!rom.good())
+    {
+        std::cerr << "Bad rom!" << "\n";
+        return false;
+    }
+
+    cart_rom = new u8[rom_size]();
+    rom.read((char *) cart_rom, rom_size);
+    rom.close();
+
+    // get cart RAM type
+    char *rom_temp = (char *) cart_rom;
+    for (int i = 0; i < rom_size; ++i, ++rom_temp)
+    {
+        // FLASH RAM
+        if (*rom_temp == 'F')
+        {
+            if (strncmp(rom_temp, "FLASH512_V", 10) == 0)
+                std::cout << "FLASH512\n";
+            
+            if (strncmp(rom_temp, "FLASH1M_V", 8) == 0)
+                std::cout << "FLASH 128\n";
+            
+            if (strncmp(rom_temp, "FLASH_V", 7) == 0)
+                std::cout << "FLASH\n";
+        }
+    }
+
+
+    return true;
+}
+
+bool Memory::load_bios()
+{
+    // bios must be called gba_bios.bin
+    std::ifstream bios("gba_bios.bin", std::ios::in | std::ios::binary);
+    if (!bios)
+        return false;
+
+    if (!bios.good())
+    {
+        std::cerr << "Bad bios!" << "\n";
+        return false;
+    }
+
+    bios.read((char *) memory, MEM_BIOS_SIZE);
+    bios.close();
+    return true;
 }
 
 u32 Memory::read_u32(u32 address)
@@ -141,7 +203,7 @@ u8 Memory::read_u8(u32 address)
 
     // game rom
     if (address >= MEM_SIZE)
-        return game_rom[address - MEM_SIZE];
+        return cart_rom[address - MEM_SIZE];
 
 
     u8 result = 0;
@@ -275,7 +337,7 @@ void Memory::write_u8(u32 address, u8 value)
     if (address >= MEM_SIZE)
     {
         std::cerr << "Warning: writing to game rom\n";
-        game_rom[address - MEM_SIZE] = value;
+        cart_rom[address - MEM_SIZE] = value;
         std::cerr << "Done\n";
         return;
     }
@@ -679,45 +741,6 @@ void Memory::write_u16_unprotected(u32 address, u16 value)
 void Memory::write_u8_unprotected(u32 address, u8 value)
 {
     memory[address] = value;
-}
-
-bool Memory::load_rom(char *name)
-{
-    std::ifstream rom(name, std::ios::in | std::ios::binary);
-
-    if (!rom)
-        return false;
-
-    rom_size = fs::file_size(name);
-
-    if (!rom.good())
-    {
-        std::cerr << "Bad rom!" << "\n";
-        return false;
-    }
-
-    game_rom = new u8[rom_size]();
-    rom.read((char *) game_rom, rom_size);
-    rom.close();
-    return true;
-}
-
-bool Memory::load_bios()
-{
-    // bios must be called gba_bios.bin
-    std::ifstream bios("gba_bios.bin", std::ios::in | std::ios::binary);
-    if (!bios)
-        return false;
-
-    if (!bios.good())
-    {
-        std::cerr << "Bad bios!" << "\n";
-        return false;
-    }
-
-    bios.read((char *) memory, MEM_BIOS_SIZE);
-    bios.close();
-    return true;
 }
 
 void Memory::_dma(int n)

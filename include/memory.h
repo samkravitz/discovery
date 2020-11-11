@@ -55,8 +55,11 @@ class Memory
 
         lcd_stat *stat;
 
+        // cart buffers & sizes
+        u8 *cart_rom;
+        u8 *cart_ram;
         size_t rom_size;
-        u8 *game_rom;
+        size_t ram_size;
         
         struct dma
         {

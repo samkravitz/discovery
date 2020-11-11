@@ -227,12 +227,13 @@ u8 Memory::read_u8(u32 address)
             address -= 0x4000000;
             break;
         
-        // SRAM
-        case 0xE:
+        // Cart RAM
         case 0xF:
-            std::cout << "SRAM\n";
-            address &= 0xF007FFF;
-            break;
+            address -= 0x1000000;
+        case 0xE:
+            std::cout << "Reading from cart RAM\n";
+            address &= ~ram_size; // RAM Mirror
+            return cart_ram[address - 0xE000000];
         
         default:
             std::cerr << "Invalid address to read: 0x" << std::hex << address << "\n";
@@ -360,12 +361,14 @@ void Memory::write_u8(u32 address, u8 value)
             address -= 0x4000000;
             break;
         
-        // SRAM
-        case 0xE:
+        // Cart RAM
         case 0xF:
-            std::cout << "SRAM\n";
-            address &= 0xF007FFF;
-            break;
+            address -= 0x1000000;
+        case 0xE:
+            std::cout << "Writing to cart RAM\n";
+            address &= ~ram_size; // RAM Mirror
+            cart_ram[address - 0xE000000] = value;
+            return;
         
         default:
             std::cerr << "Invalid address to write: 0x" << std::hex << address << "\n";

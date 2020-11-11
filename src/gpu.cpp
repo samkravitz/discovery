@@ -73,12 +73,13 @@ void GPU::cycle()
             std::cout << "Firing HBlank interrupt\n";
 
         // check for DMA HBlank requests
+        // TODO - Don't fire DMA Hblank in VBlank
         for (int i = 0; i < 4; ++i)
         {
             if (mem->dma[i].enable && mem->dma[i].mode == 2) // start at HBLANK
             {
                 mem->_dma(i);
-                //std::cout << "DMA" << i << " HBLANK\n";
+                std::cout << "DMA" << i << " HBLANK\n";
             }
         }
         
@@ -96,7 +97,10 @@ void GPU::cycle()
             for (int i = 0; i < 4; ++i)
             {
                 if (mem->dma[i].enable && mem->dma[i].mode == 1) // start at VBLANK
+                {
                     mem->_dma(i);
+                    std::cout << "DMA" << i << " VBLANK\n";
+                }
             }
         }
     }

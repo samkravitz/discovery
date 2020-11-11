@@ -417,7 +417,7 @@ void Memory::write_u8(u32 address, u8 value)
                 _dma(0);
 
                 // disable DMA after immediate transfer
-                dma[0].enable == 0;
+                dma[0].enable = 0;
             }
 
         break;
@@ -450,7 +450,7 @@ void Memory::write_u8(u32 address, u8 value)
                 _dma(1);
 
                 // disable DMA after immediate transfer
-                dma[1].enable == 0;
+                dma[1].enable = 0;
             }
 
         break;
@@ -483,7 +483,7 @@ void Memory::write_u8(u32 address, u8 value)
                 _dma(2);
 
                 // disable DMA after immediate transfer
-                dma[2].enable == 0;
+                dma[2].enable = 0;
             }
 
         break;
@@ -516,7 +516,7 @@ void Memory::write_u8(u32 address, u8 value)
                 _dma(3);
 
                 // disable DMA after immediate transfer
-                dma[3].enable == 0;
+                dma[3].enable = 0;
             }
 
         break;
@@ -747,45 +747,24 @@ void Memory::dma0()
     // get increment mode for destination
     switch (dma[0].dest_adjust)
     {
-        case 0:
-            dest_inc = 1;  // increment after each copy
-        break;
-
-        case 1:
-            dest_inc = -1; // decrement after each copy
-        break;
-
-        case 2:
-            dest_inc = 0;  // leave unchanged
-        break;
-
-        case 3:
-            dest_inc = 1;  // increment after each copy, reset after transfer
-        break;
-        
+        case 0: dest_inc =  1; break;  // increment after each copy
+        case 1: dest_inc = -1; break;  // decrement after each copy
+        case 2: dest_inc =  0; break;  // leave unchanged
+        case 3: dest_inc =  1; break;  // increment after each copy, reset after transfer
         default: // should never happen
             std::cout << "Error: Illegal option for DMA 0 destination adjust " << dma[0].dest_adjust << "\n";
-        break;
+            break;
     }
     
     // get increment mode for destination
     switch (dma[0].src_adjust)
     {
-        case 0:
-            src_inc = 1;  // increment after each copy
-        break;
-
-        case 1:
-            src_inc = -1; // decrement after each copy
-        break;
-
-        case 2:
-            src_inc = 0;  // leave unchanged
-        break;
-        
+        case 0: src_inc =  1; break; // increment after each copy
+        case 1: src_inc = -1; break; // decrement after each copy
+        case 2: src_inc =  0; break; // leave unchanged
         default: // should never happen
             std::cout << "Error: Illegal option for DMA 0 src adjust " << dma[0].src_adjust << "\n";
-        break;
+            break;
     }
     
     // 32 bit copy
@@ -829,7 +808,7 @@ void Memory::dma0()
 
     // turn off this transfer if repeat bit is not set
     if (dma[0].repeat == 0)
-        dma[0].enable == 0;
+        dma[0].enable = 0;
     
     // IRQ request
     if (dma[0].irq)
@@ -843,7 +822,7 @@ void Memory::dma1()
     std::cout << "DMA 1\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = read_u32_unprotected(REG_DMA3SAD) & 0xFFFFFFF; // 28 bit
-    dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD) & 0x7FFFFFF; // 27 bit;
+    dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD) & 0x7FFFFFF; // 27 bit
 
     // increment for destination, src
     int dest_inc, src_inc;
@@ -851,22 +830,10 @@ void Memory::dma1()
     // get increment mode for destination
     switch (dma[1].dest_adjust)
     {
-        case 0:
-            dest_inc = 1;  // increment after each copy
-        break;
-
-        case 1:
-            dest_inc = -1; // decrement after each copy
-        break;
-
-        case 2:
-            dest_inc = 0;  // leave unchanged
-        break;
-
-        case 3:
-            dest_inc = 1;  // increment after each copy, reset after transfer
-        break;
-        
+        case 0: dest_inc =  1; break;  // increment after each copy
+        case 1: dest_inc = -1; break;  // decrement after each copy
+        case 2: dest_inc =  0; break;  // leave unchanged
+        case 3: dest_inc =  1; break;  // increment after each copy, reset after transfer
         default: // should never happen
             std::cout << "Error: Illegal option for DMA 1 destination adjust " << dma[1].dest_adjust << "\n";
         break;
@@ -875,21 +842,12 @@ void Memory::dma1()
     // get increment mode for destination
     switch (dma[1].src_adjust)
     {
-        case 0:
-            src_inc = 1;  // increment after each copy
-        break;
-
-        case 1:
-            src_inc = -1; // decrement after each copy
-        break;
-
-        case 2:
-            src_inc = 0;  // leave unchanged
-        break;
-        
+        case 0: src_inc =  1; break; // increment after each copy
+        case 1: src_inc = -1; break; // decrement after each copy
+        case 2: src_inc =  0; break; // leave unchanged
         default: // should never happen
             std::cout << "Error: Illegal option for DMA 1 src adjust " << dma[1].src_adjust << "\n";
-        break;
+            break;
     }
     
     // 32 bit copy
@@ -933,7 +891,7 @@ void Memory::dma1()
 
     // turn off this transfer if repeat bit is not set
     if (dma[1].repeat == 0)
-        dma[1].enable == 0;
+        dma[1].enable = 0;
     
     // IRQ request
     if (dma[1].irq)
@@ -955,45 +913,24 @@ void Memory::dma2()
     // get increment mode for destination
     switch (dma[2].dest_adjust)
     {
-        case 0:
-            dest_inc = 1;  // increment after each copy
-        break;
-
-        case 1:
-            dest_inc = -1; // decrement after each copy
-        break;
-
-        case 2:
-            dest_inc = 0;  // leave unchanged
-        break;
-
-        case 3:
-            dest_inc = 1;  // increment after each copy, reset after transfer
-        break;
-        
+        case 0: dest_inc =  1; break;  // increment after each copy
+        case 1: dest_inc = -1; break;  // decrement after each copy
+        case 2: dest_inc =  0; break;  // leave unchanged
+        case 3: dest_inc =  1; break;  // increment after each copy, reset after transfer
         default: // should never happen
             std::cout << "Error: Illegal option for DMA 2 destination adjust " << dma[2].dest_adjust << "\n";
-        break;
+            break;
     }
     
     // get increment mode for destination
     switch (dma[2].src_adjust)
     {
-        case 0:
-            src_inc = 1;  // increment after each copy
-        break;
-
-        case 1:
-            src_inc = -1; // decrement after each copy
-        break;
-
-        case 2:
-            src_inc = 0;  // leave unchanged
-        break;
-        
+        case 0: src_inc =  1; break; // increment after each copy
+        case 1: src_inc = -1; break; // decrement after each copy
+        case 2: src_inc =  0; break; // leave unchanged
         default: // should never happen
             std::cout << "Error: Illegal option for DMA 2 src adjust " << dma[2].src_adjust << "\n";
-        break;
+            break;
     }
     
     // 32 bit copy
@@ -1037,7 +974,7 @@ void Memory::dma2()
 
     // turn off this transfer if repeat bit is not set
     if (dma[2].repeat == 0)
-        dma[2].enable == 0;
+        dma[2].enable = 0;
     
     // IRQ request
     if (dma[2].irq)
@@ -1048,7 +985,7 @@ void Memory::dma2()
 
 void Memory::dma3()
 {
-    std::cout << "DMA 3\n";
+    //std::cout << "DMA 3\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = read_u32_unprotected(REG_DMA3SAD) & 0xFFFFFFF; // 28 bit
     dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD) & 0xFFFFFFF; // 28 bit;
@@ -1059,45 +996,24 @@ void Memory::dma3()
     // get increment mode for destination
     switch (dma[3].dest_adjust)
     {
-        case 0:
-            dest_inc = 1;  // increment after each copy
-        break;
-
-        case 1:
-            dest_inc = -1; // decrement after each copy
-        break;
-
-        case 2:
-            dest_inc = 0;  // leave unchanged
-        break;
-
-        case 3:
-            dest_inc = 1;  // increment after each copy, reset after transfer
-        break;
-        
+        case 0: dest_inc =  1; break;  // increment after each copy
+        case 1: dest_inc = -1; break;  // decrement after each copy
+        case 2: dest_inc =  0; break;  // leave unchanged
+        case 3: dest_inc =  1; break;  // increment after each copy, reset after transfer
         default: // should never happen
             std::cout << "Error: Illegal option for DMA 3 destination adjust " << dma[3].dest_adjust << "\n";
-        break;
+            break;
     }
     
     // get increment mode for destination
     switch (dma[3].src_adjust)
     {
-        case 0:
-            src_inc = 1;  // increment after each copy
-        break;
-
-        case 1:
-            src_inc = -1; // decrement after each copy
-        break;
-
-        case 2:
-            src_inc = 0;  // leave unchanged
-        break;
-        
+        case 0: src_inc =  1; break; // increment after each copy
+        case 1: src_inc = -1; break; // decrement after each copy
+        case 2: src_inc =  0; break; // leave unchanged
         default: // should never happen
             std::cout << "Error: Illegal option for DMA 3 src adjust " << dma[3].src_adjust << "\n";
-        break;
+            break;
     }
     
     // 32 bit copy
@@ -1141,11 +1057,11 @@ void Memory::dma3()
 
     // turn off this transfer if repeat bit is not set
     if (dma[3].repeat == 0)
-        dma[3].enable == 0;
+        dma[3].enable = 0;
     
     // IRQ request
     if (dma[3].irq)
         std::cout << "DMA3 IRQ request\n";   
     
-    std::cout << "DMA 3 Done\n";
+    //std::cout << "DMA 3 Done\n";
 }

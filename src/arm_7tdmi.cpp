@@ -916,9 +916,10 @@ void arm_7tdmi::handle_interrupt()
         //std::cout << "Interupts enabled\n";
 
         // get enabled interrupts and requested interrupts
-        u16 interrupts_enabled   = mem->read_u16_unprotected(REG_IF);
-        u16 interrupts_requested = mem->read_u16_unprotected(REG_IE);
+        u16 interrupts_enabled   = mem->read_u16_unprotected(REG_IE);
+        u16 interrupts_requested = mem->read_u16_unprotected(REG_IF);
 
+        //std::cout << std::hex << (int) interrupts_requested << "\n";
         // get first identical set bit in enabled/requested interrupts
         for (int i = 0; i < 14; ++i) // 14 interrupts available
         {

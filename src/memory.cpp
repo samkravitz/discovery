@@ -61,7 +61,7 @@ void Memory::reset()
         dma[i].src_address      = 0;
         dma[i].dest_address     = 0;
     }
-    
+
     // write all 1s to keypad (all keys cleared)
     write_u32_unprotected(REG_KEYINPUT, 0b1111111111);
 }

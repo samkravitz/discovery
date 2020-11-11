@@ -6,18 +6,17 @@
 void print_keys(u16);
 int debug = 0;
 
-
 int main(int argc, char **argv)
 {
     std::cout << "Gameboy emulator!" << "\n";
     discovery emulator;
 
     // load bios
-    if (!emulator.mem->load_bios())
-    {
-        std::cerr << "Error loading BIOS\n";
-        return 1;
-    }
+    // if (!emulator.mem->load_bios())
+    // {
+    //     std::cerr << "Error loading BIOS\n";
+    //     return 1;
+    // }
 
     std::string deb = "";
 
@@ -267,8 +266,16 @@ void discovery::poll_keys(const SDL_Event &e)
             }
         }
 
+        // raise keypad interrupt
         if (raise_interrupt)
+        {
             std::cout << "Raising gamepad interrupt\n";
+            u16 old_irq = mem->read_u16_unprotected(REG_IF);
+            std::cout << (int) old_irq << "\n";
+            old_irq |= IRQ_KEYPAD;
+            std::cout << (int) old_irq << "\n";
+            mem->write_u16_unprotected(REG_IF, old_irq);
+        }
     }
 
     // store gamepad result back into the KEYINPUT address

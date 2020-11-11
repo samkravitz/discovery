@@ -70,7 +70,7 @@ void GPU::cycle()
 
         // fire HBlank interrupt if necessary
         if (stat->dispstat.hbi)
-            std::cout << "Firing HBlank interrupt\n";
+            mem->memory[REG_IF] |= IRQ_HBLANK;
 
         // check for DMA HBlank requests
         // TODO - Don't fire DMA Hblank in VBlank

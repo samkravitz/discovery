@@ -310,7 +310,7 @@ void arm_7tdmi::execute(u32 instruction)
                     long_branch_link((u16) instruction);
                     break;
                 default:
-                    std::cerr << "Cannot execute thumb instruction: " << (u16) instruction << "\n";
+                    std::cerr << "Cannot execute thumb instruction: " << (u16) instruction << " " << std::hex << registers.r15 << "\n";
                     break;
             }
         break;

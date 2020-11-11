@@ -90,16 +90,55 @@ bool Memory::load_rom(char *name)
         if (*rom_temp == 'F')
         {
             if (strncmp(rom_temp, "FLASH512_V", 10) == 0)
-                std::cout << "FLASH512\n";
-            
+            {
+                std::cout << "Cart RAM FLASH512 detected\n";
+
+                ram_size = 0x10000;
+                cart_ram = new u8[ram_size]();
+            }
+
             if (strncmp(rom_temp, "FLASH1M_V", 8) == 0)
-                std::cout << "FLASH 128\n";
-            
+            {
+                std::cout << "Cart RAM FLASH128 detected\n";
+
+                ram_size = 0x20000;
+                cart_ram = new u8[ram_size]();
+            }
+
             if (strncmp(rom_temp, "FLASH_V", 7) == 0)
-                std::cout << "FLASH\n";
+            {
+                std::cout << "Cart RAM FLASH detected\n";
+
+                ram_size = 0x10000;
+                cart_ram = new u8[ram_size]();
+            }
+        }
+
+        // SRAM
+        if (*rom_temp == 'S')
+        {
+            if (strncmp(rom_temp, "SRAM_V", 6) == 0)
+            {
+                std::cout << "Cart RAM SRAM detected\n";
+
+                ram_size = 0x8000;
+                cart_ram = new u8[ram_size]();
+            }
+        }
+
+        // EEPROM
+        if (*rom_temp == 'E')
+        {
+            if (strncmp(rom_temp, "EEPROM_V", 8) == 0)
+            {
+                std::cout << "Cart RAM EEPROM detected\n";
+            }
         }
     }
 
+    // no cart RAM detected
+    if (ram_size == 0)
+        std::cout << "No cart RAM detected!\n";
 
     return true;
 }
@@ -479,7 +518,7 @@ void Memory::write_u8(u32 address, u8 value)
                 _dma(0);
 
                 // disable DMA after immediate transfer
-                dma[0].enable = 0;
+                //dma[0].enable = 0;
             }
 
         break;
@@ -512,7 +551,7 @@ void Memory::write_u8(u32 address, u8 value)
                 _dma(1);
 
                 // disable DMA after immediate transfer
-                dma[1].enable = 0;
+                //dma[1].enable = 0;
             }
 
         break;
@@ -545,7 +584,7 @@ void Memory::write_u8(u32 address, u8 value)
                 _dma(2);
 
                 // disable DMA after immediate transfer
-                dma[2].enable = 0;
+                //dma[2].enable = 0;
             }
 
         break;
@@ -578,7 +617,7 @@ void Memory::write_u8(u32 address, u8 value)
                 _dma(3);
 
                 // disable DMA after immediate transfer
-                dma[3].enable = 0;
+                //dma[3].enable = 0;
             }
 
         break;

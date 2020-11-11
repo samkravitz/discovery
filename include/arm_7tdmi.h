@@ -43,6 +43,7 @@ class arm_7tdmi
 
         u32 pipeline[3];
         bool pipeline_full;
+        bool in_interrupt;
         
         u32 cycles;
 

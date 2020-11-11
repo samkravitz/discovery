@@ -32,6 +32,7 @@ arm_7tdmi::arm_7tdmi()
     // initialize cpsr
     registers.cpsr.bits.f = 1;
 
+    in_interrupt  = false;
     pipeline_full = false;
     cycles = 0;
 
@@ -923,17 +924,37 @@ void arm_7tdmi::handle_interrupt()
         // get first identical set bit in enabled/requested interrupts
         for (int i = 0; i < 14; ++i) // 14 interrupts available
         {
+            // handle interrupt at position i
             if (interrupts_enabled & (1 << i) && interrupts_requested & (1 << i))
             {
-                // handle interrupt at position i
-        
-                registers.cpsr.bits.state = IRQ;
+                // emulate how BIOS handles interrupts
+
+                // switch to IRQ
                 set_state(IRQ);
 
-                registers.cpsr.bits.t = 1;
-                set_mode(ARM);
+                // save CPSR to SPSR
+                update_spsr(get_register(16), false);
 
-                set_register(15, 0x18);
+                // save registers to SP_irq
+                // stmfd  r13!, r0-r3, r12, r14
+                u32 sp = get_register(13);
+                sp -= 4; mem->write_u32(sp, get_register(14)); 
+                sp -= 4; mem->write_u32(sp, get_register(12));
+                sp -= 4; mem->write_u32(sp, get_register(3));
+                sp -= 4; mem->write_u32(sp, get_register(2));
+                sp -= 4; mem->write_u32(sp, get_register(1));
+                sp -= 4; mem->write_u32(sp, get_register(0));
+                set_register(13, sp);
+
+                // mov r0, 0x4000000
+                set_register(0, 0x4000000);
+
+                // add r14, r15, 0
+                set_register(15, get_register(0) - 0x4);
+
+                set_mode(ARM);
+                pipeline_full = false;
+                in_interrupt  = true;
 
                 std::cout << "interrupt handling!\n";
             }

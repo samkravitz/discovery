@@ -221,16 +221,12 @@ u8 Memory::read_u8(u32 address)
         // ROM image 1
         case 0xA:
         case 0xB:
-            std::cout << "1\n";
-            std::cout << std::hex << address << "\n";
             address -= 0x2000000;
-            std::cout << std::hex << address << "\n";
             break;
         
         // ROM image 2
         case 0xC:
         case 0xD:
-            std::cout << "2\n";
             address -= 0x4000000;
             break;
         
@@ -238,7 +234,7 @@ u8 Memory::read_u8(u32 address)
         case 0xF:
             address -= 0x1000000;
         case 0xE:
-            std::cout << "Reading from cart RAM\n";
+            //std::cout << "Reading from cart RAM\n";
             address &= ~ram_size; // RAM Mirror
             return cart_ram[address - 0xE000000];
         
@@ -251,12 +247,9 @@ u8 Memory::read_u8(u32 address)
     // game rom
     if (address >= MEM_SIZE)
     {
-        std::cout << "s\n";
-        std::cout << std::hex << address - MEM_SIZE<< "\n";
-        u8 value = cart_rom[address - MEM_SIZE];
-        
-        std::cout << std::hex << (int) value << "\n";
-        std::cout << "d\n";
+        if (address - MEM_SIZE > rom_size)
+            std::cout << "Caution: reading outside known cart length\n";
+
         return cart_rom[address - MEM_SIZE];
     }
 

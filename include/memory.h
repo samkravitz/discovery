@@ -56,7 +56,7 @@ class Memory
         lcd_stat *stat;
 
         // cart buffers & sizes
-        u8 *cart_rom;
+        u8  cart_rom[0x2000000];
         u8 *cart_ram;
         size_t rom_size;
         size_t ram_size;

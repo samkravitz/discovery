@@ -18,7 +18,7 @@ namespace fs = std::experimental::filesystem;
 
 Memory::Memory()
 {
-    cart_rom  = NULL;
+    //cart_rom  = NULL;
     cart_ram  = NULL;
     stat      = NULL;
     timers[0] = NULL;
@@ -42,6 +42,9 @@ void Memory::reset()
     // zero memory
     for (int i = 0; i < MEM_SIZE; ++i)
         memory[i] = 0;
+    
+    for (int i = 0; i < 0x2000000; ++i)
+        cart_rom[i] = 0;
     
     // zero dma
     for (int i = 0; i < 4; ++i)
@@ -78,7 +81,7 @@ bool Memory::load_rom(char *name)
         return false;
     }
 
-    cart_rom = new u8[rom_size]();
+    //cart_rom = new u8[rom_size]();
     rom.read((char *) cart_rom, rom_size);
     rom.close();
 
@@ -218,12 +221,16 @@ u8 Memory::read_u8(u32 address)
         // ROM image 1
         case 0xA:
         case 0xB:
+            std::cout << "1\n";
+            std::cout << std::hex << address << "\n";
             address -= 0x2000000;
+            std::cout << std::hex << address << "\n";
             break;
         
         // ROM image 2
         case 0xC:
         case 0xD:
+            std::cout << "2\n";
             address -= 0x4000000;
             break;
         
@@ -243,7 +250,15 @@ u8 Memory::read_u8(u32 address)
 
     // game rom
     if (address >= MEM_SIZE)
+    {
+        std::cout << "s\n";
+        std::cout << std::hex << address - MEM_SIZE<< "\n";
+        u8 value = cart_rom[address - MEM_SIZE];
+        
+        std::cout << std::hex << (int) value << "\n";
+        std::cout << "d\n";
         return cart_rom[address - MEM_SIZE];
+    }
 
 
     u8 result = 0;

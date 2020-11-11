@@ -63,6 +63,9 @@ void Memory::reset()
     }
 
     // write all 1s to keypad (all keys cleared)
+    write_u32_unprotected(REG_IF, 0x1000);
+
+    // write all 1s to keypad (all keys cleared)
     write_u32_unprotected(REG_KEYINPUT, 0b1111111111);
 }
 

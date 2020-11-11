@@ -146,13 +146,15 @@ void discovery::game_loop()
         // poll for key presses at start of vblank
         if (gpu.stat->scanline == 160 && SDL_PollEvent(&e))
         {
+            num++;
             if (e.type == SDL_QUIT)
                 break;
             if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)
                 poll_keys(e);
         }
 
-        cpu.handle_interrupt();
+        if (num > 10)
+            cpu.handle_interrupt();
     }
     shutdown();
 }
@@ -270,11 +272,8 @@ void discovery::poll_keys(const SDL_Event &e)
         if (raise_interrupt)
         {
             std::cout << "Raising gamepad interrupt\n";
-            u16 old_irq = mem->read_u16_unprotected(REG_IF);
-            std::cout << (int) old_irq << "\n";
-            old_irq |= IRQ_KEYPAD;
-            std::cout << (int) old_irq << "\n";
-            mem->write_u16_unprotected(REG_IF, old_irq);
+            u16 reg_if = mem->read_u16_unprotected(REG_IF) | IRQ_KEYPAD;
+            mem->write_u16_unprotected(REG_IF, reg_if);
         }
     }
 

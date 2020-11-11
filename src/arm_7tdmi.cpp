@@ -911,6 +911,37 @@ void arm_7tdmi::cycle(u8 n, u8 s, u8 i)
 
 void arm_7tdmi::handle_interrupt()
 {
+    // exit interrupt
+    if (in_interrupt && get_register(15) == 0x13C)
+    {
+        std::cout << "Handled interrupt!\n";
+
+        // restore registers from stack
+        // ldmfd r13! r0-r3, r12, r14
+        u32 sp = get_register(13);
+        set_register(0,  mem->read_u32(sp)); sp += 4;
+        set_register(1,  mem->read_u32(sp)); sp += 4;
+        set_register(2,  mem->read_u32(sp)); sp += 4;
+        set_register(3,  mem->read_u32(sp)); sp += 4;
+        set_register(12, mem->read_u32(sp)); sp += 4;
+        set_register(14, mem->read_u32(sp)); sp += 4;
+
+        // return from IRQ
+        // subs r15, r14, 4
+        set_register(15, get_register(14) - 0x4);
+
+        // restore CPSR
+        set_register(16, get_register(17));
+
+        // re-enable interrupts
+        registers.cpsr.bits.i = 0;
+
+        pipeline_full = false;
+        in_interrupt  = false;
+        
+        return;
+    }
+
     // check if master interrupts are enabled
     if ((mem->read_u32_unprotected(REG_IME) & 1) && registers.cpsr.bits.i == 0) 
     {
@@ -952,6 +983,7 @@ void arm_7tdmi::handle_interrupt()
                 // add r14, r15, 0
                 set_register(15, get_register(0) - 0x4);
 
+                registers.cpsr.bits.i = 1; // disable interrupts
                 set_mode(ARM);
                 pipeline_full = false;
                 in_interrupt  = true;

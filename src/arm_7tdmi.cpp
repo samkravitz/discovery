@@ -348,7 +348,7 @@ void arm_7tdmi::execute(u32 instruction)
             if (get_condition_code_flag(V))
                 std::cout << "V";
             std::cout << "\n";
-            std:: cout << std::dec << ii << " instructions\n";
+            //std:: cout << std::dec << ii << " instructions\n";
     #endif
 }
 

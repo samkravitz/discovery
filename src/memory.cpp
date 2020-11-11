@@ -75,78 +75,74 @@ u16 Memory::read_u16(u32 address)
 
 u8 Memory::read_u8(u32 address)
 {
+    // get memory region for mirrors
+    switch (address >> 24)
+    {
+        case 0x0:
+        case 0x1:
+        case 0x4:
+        case 0x8:
+        case 0x9:
+            break;
+        
+        // EWRAM
+        case 0x2:
+            address &= MEM_EWRAM_END;
+            break;
+
+        // IWRAM
+        case 0x3:
+            address &= MEM_IWRAM_END;
+            break;
+        
+        // Palette RAM
+        case 0x5:
+            address &= MEM_PALETTE_RAM_END;
+            break;
+        
+        // VRAM
+        case 0x6:
+            // 0x6010000 - 0x6017FFF is mirrored from 0x6018000 - 0x601FFFF.
+            if (address >= 0x6018000 && address <= 0x601FFFF)
+                address -= 0x8000;
+            
+            address &= 0x601FFFF;
+            break;
+
+        // OAM
+        case 0x7:
+            address &= MEM_OAM_END;
+            break;
+        
+        // ROM image 1
+        case 0xA:
+        case 0xB:
+            address -= 0x2000000;
+            break;
+        
+        // ROM image 2
+        case 0xC:
+        case 0xD:
+            address -= 0x4000000;
+            break;
+        
+        // SRAM
+        case 0xE:
+        case 0xF:
+            std::cout << "SRAM\n";
+            address &= 0xF007FFF;
+            break;
+        
+        default:
+            std::cerr << "Invalid address to read: 0x" << std::hex << address << "\n";
+            return 0;
+    }
+
+
     // game rom
     if (address >= MEM_SIZE)
-    {
-        // while ((address - MEM_SIZE) >= rom_size)
-        // {
-        //     address -= 0x2000000;
-        // }
-
-        // SRAM
-        if (address >= 0xE000000)
-        {
-            std::cout << "SRAM\n";
-            address -= 0x6000000;
-        }
-
-        // rom image 2
-        else if (address >= 0xC000000)
-        {
-            address -= 0x4000000;
-        }
-
-        // rom image 1
-        else if (address >= 0xA000000)
-        {
-            address -= 0x2000000;
-        }
-
         return game_rom[address - MEM_SIZE];
-    }
 
-    // memory mirrors
-    // EWRAM
-    if (address > MEM_EWRAM_END && address < MEM_IWRAM_START)
-    {   
-        address &= ~MEM_EWRAM_SIZE;
-    }
-
-    // IWRAM
-    else if (address > MEM_IWRAM_END && address < MEM_IO_REG_START)
-    {   
-        address &= ~MEM_IWRAM_SIZE;
-    }
-
-    // Palette RAM
-    else if (address > MEM_PALETTE_RAM_END && address < MEM_VRAM_START)
-    {
-           address &= ~MEM_PALETTE_RAM_SIZE;
-    }
-
-    // VRAM
-    else if (address > MEM_VRAM_END && address < MEM_OAM_START)
-    {
-        //x06010000 - 0x06017FFF is mirrored from 0x06018000 - 0x0601FFFF.
-        if (address <= 0x601FFFF)
-        {
-            address -= 0x8000;
-        }
-
-        // otherwise mirrors every 0x20000
-        else
-        {
-            while (address > MEM_VRAM_END)
-                address -= MEM_VRAM_SIZE;   
-        }
-    }
-
-    // OAM
-    else if (address > MEM_OAM_END && address < MEM_SIZE)
-    {   
-        while (address > MEM_OAM_END)
-            address -= MEM_OAM_SIZE;
-    }
 
     u8 result = 0;
     switch (address)
@@ -212,78 +208,76 @@ void Memory::write_u16(u32 address, u16 value)
 
 void Memory::write_u8(u32 address, u8 value)
 {
-    // game rom
+
+    switch (address >> 24)
+    {
+        case 0x0:
+        case 0x1:
+        case 0x4:
+        case 0x8:
+        case 0x9:
+            break;
+        
+        // EWRAM
+        case 0x2:
+            address &= MEM_EWRAM_END;
+            break;
+
+        // IWRAM
+        case 0x3:
+            address &= MEM_IWRAM_END;
+            break;
+        
+        // Palette RAM
+        case 0x5:
+            address &= MEM_PALETTE_RAM_END;
+            break;
+        
+        // VRAM
+        case 0x6:
+            // 0x6010000 - 0x6017FFF is mirrored from 0x6018000 - 0x601FFFF.
+            if (address >= 0x6018000 && address <= 0x601FFFF)
+                address -= 0x8000;
+            
+            address &= 0x601FFFF;
+            break;
+
+        // OAM
+        case 0x7:
+            address &= MEM_OAM_END;
+            break;
+        
+        // ROM image 1
+        case 0xA:
+        case 0xB:
+            address -= 0x2000000;
+            break;
+        
+        // ROM image 2
+        case 0xC:
+        case 0xD:
+            address -= 0x4000000;
+            break;
+        
+        // SRAM
+        case 0xE:
+        case 0xF:
+            std::cout << "SRAM\n";
+            address &= 0xF007FFF;
+            break;
+        
+        default:
+            std::cerr << "Invalid address to write: 0x" << std::hex << address << "\n";
+            return;
+    }
+
+    //game rom
     if (address >= MEM_SIZE)
     {
-        // SRAM
-        if (address >= 0xE000000)
-        {
-            address -= 0x6000000;
-        }
-        
-        // rom image 2
-        if (address >= 0xC000000)
-        {
-            address -= 0x4000000;
-        }
-
-        // rom image 1
-        else if (address >= 0xA000000)
-        {
-            address -= 0x2000000;
-        }
-
         std::cerr << "Warning: writing to game rom\n";
-
         game_rom[address - MEM_SIZE] = value;
         std::cerr << "Done\n";
         return;
-    }
-
-    // memory mirrors
-    // EWRAM
-    if (address > MEM_EWRAM_END && address < MEM_IWRAM_START)
-    {
-        while (address > MEM_EWRAM_END)
-            address -= MEM_EWRAM_SIZE;
-    }
-
-    // IWRAM
-    else if (address > MEM_IWRAM_END && address < MEM_IO_REG_START)
-    {   
-        while (address > MEM_IWRAM_END)
-            address -= MEM_IWRAM_SIZE;
-    }
-
-    // Palette RAM
-    else if (address > MEM_PALETTE_RAM_END && address < MEM_VRAM_START)
-    {   
-        while (address > MEM_PALETTE_RAM_END)
-            address -= MEM_PALETTE_RAM_SIZE;
-    }
-
-    // VRAM
-    else if (address > MEM_VRAM_END && address < MEM_OAM_START)
-    {
-        //x06010000 - 0x06017FFF is mirrored from 0x06018000 - 0x0601FFFF.
-        if (address <= 0x601FFFF)
-        {
-            address -= 0x8000;
-        }
-
-        // otherwise mirrors every 0x20000
-        else
-        {
-            while (address > MEM_VRAM_END)
-                address -= MEM_VRAM_SIZE;   
-        }
-    }
-
-    // OAM
-    else if (address > MEM_OAM_END && address < MEM_GAMEPAK_ROM_START)
-    {   
-        while (address > MEM_OAM_END)
-            address -= MEM_OAM_SIZE;
     }
 
     switch (address)

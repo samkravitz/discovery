@@ -141,17 +141,13 @@ void arm_7tdmi::fetch()
         switch (get_mode())
         {
             case ARM:
-                pipeline[0] = read_u32(registers.r15, false);
-                registers.r15 += 4;
-                pipeline[1] = read_u32(registers.r15, false);
-                registers.r15 += 4;
+                pipeline[0] = read_u32(registers.r15, false); registers.r15 += 4;
+                pipeline[1] = read_u32(registers.r15, false); registers.r15 += 4;
                 pipeline[2] = read_u32(registers.r15, false);
                 break;
             case THUMB:
-                pipeline[0] = read_u16(registers.r15, false);
-                registers.r15 += 2;
-                pipeline[1] = read_u16(registers.r15, false);
-                registers.r15 += 2;
+                pipeline[0] = read_u16(registers.r15, false); registers.r15 += 2;
+                pipeline[1] = read_u16(registers.r15, false); registers.r15 += 2;
                 pipeline[2] = read_u16(registers.r15, false);
                 break;
         }
@@ -995,6 +991,7 @@ void arm_7tdmi::handle_interrupt()
                 // mov r0, 0x4000000
                 set_register(0, 0x4000000);
 
+                // address where BIOS returns from IRQ handler
                 set_register(14, 0x138);
 
                 // ldr r15, [r0, -0x4]

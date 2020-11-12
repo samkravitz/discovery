@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iostream>
 #include <experimental/filesystem>
+#include <string.h>
 
 #include "memory.h"
 
@@ -17,7 +18,8 @@ namespace fs = std::experimental::filesystem;
 
 Memory::Memory()
 {
-    game_rom  = NULL;
+    //cart_rom  = NULL;
+    cart_ram  = NULL;
     stat      = NULL;
     timers[0] = NULL;
     timers[1] = NULL;
@@ -35,10 +37,14 @@ void Memory::reset()
     s_cycles = 2;
 
     rom_size = 0;
+    ram_size = 0;
 
     // zero memory
     for (int i = 0; i < MEM_SIZE; ++i)
         memory[i] = 0;
+    
+    for (int i = 0; i < 0x2000000; ++i)
+        cart_rom[i] = 0;
     
     // zero dma
     for (int i = 0; i < 4; ++i)
@@ -55,9 +61,110 @@ void Memory::reset()
         dma[i].src_address      = 0;
         dma[i].dest_address     = 0;
     }
-    
+
+    // write all 1s to keypad (all keys cleared)
+    //write_u32_unprotected(REG_IF, 0x1000);
+
     // write all 1s to keypad (all keys cleared)
     write_u32_unprotected(REG_KEYINPUT, 0b1111111111);
+}
+
+bool Memory::load_rom(char *name)
+{
+    std::ifstream rom(name, std::ios::in | std::ios::binary);
+
+    if (!rom)
+        return false;
+
+    rom_size = fs::file_size(name);
+
+    if (!rom.good())
+    {
+        std::cerr << "Bad rom!" << "\n";
+        return false;
+    }
+
+    //cart_rom = new u8[rom_size]();
+    rom.read((char *) cart_rom, rom_size);
+    rom.close();
+
+    // get cart RAM type
+    char *rom_temp = (char *) cart_rom;
+    for (int i = 0; i < rom_size; ++i, ++rom_temp)
+    {
+        // FLASH RAM
+        if (*rom_temp == 'F')
+        {
+            if (strncmp(rom_temp, "FLASH512_V", 10) == 0)
+            {
+                std::cout << "Cart RAM FLASH512 detected\n";
+
+                ram_size = 0x10000;
+                cart_ram = new u8[ram_size]();
+            }
+
+            if (strncmp(rom_temp, "FLASH1M_V", 8) == 0)
+            {
+                std::cout << "Cart RAM FLASH128 detected\n";
+
+                ram_size = 0x20000;
+                cart_ram = new u8[ram_size]();
+            }
+
+            if (strncmp(rom_temp, "FLASH_V", 7) == 0)
+            {
+                std::cout << "Cart RAM FLASH detected\n";
+
+                ram_size = 0x10000;
+                cart_ram = new u8[ram_size]();
+            }
+        }
+
+        // SRAM
+        if (*rom_temp == 'S')
+        {
+            if (strncmp(rom_temp, "SRAM_V", 6) == 0)
+            {
+                std::cout << "Cart RAM SRAM detected\n";
+
+                ram_size = 0x8000;
+                cart_ram = new u8[ram_size]();
+            }
+        }
+
+        // EEPROM
+        if (*rom_temp == 'E')
+        {
+            if (strncmp(rom_temp, "EEPROM_V", 8) == 0)
+            {
+                std::cout << "Cart RAM EEPROM detected\n";
+            }
+        }
+    }
+
+    // no cart RAM detected
+    if (ram_size == 0)
+        std::cout << "No cart RAM detected!\n";
+
+    return true;
+}
+
+bool Memory::load_bios()
+{
+    // bios must be called gba_bios.bin
+    std::ifstream bios("gba_bios.bin", std::ios::in | std::ios::binary);
+    if (!bios)
+        return false;
+
+    if (!bios.good())
+    {
+        std::cerr << "Bad bios!" << "\n";
+        return false;
+    }
+
+    bios.read((char *) memory, MEM_BIOS_SIZE);
+    bios.close();
+    return true;
 }
 
 u32 Memory::read_u32(u32 address)
@@ -75,78 +182,80 @@ u16 Memory::read_u16(u32 address)
 
 u8 Memory::read_u8(u32 address)
 {
+    // get memory region for mirrors
+    switch (address >> 24)
+    {
+        case 0x0:
+        case 0x1:
+        case 0x4:
+        case 0x8:
+        case 0x9:
+            break;
+        
+        // EWRAM
+        case 0x2:
+            address &= MEM_EWRAM_END;
+            break;
+
+        // IWRAM
+        case 0x3:
+            address &= MEM_IWRAM_END;
+            break;
+        
+        // Palette RAM
+        case 0x5:
+            address &= MEM_PALETTE_RAM_END;
+            break;
+        
+        // VRAM
+        case 0x6:
+            // 0x6010000 - 0x6017FFF is mirrored from 0x6018000 - 0x601FFFF.
+            if (address >= 0x6018000 && address <= 0x601FFFF)
+                address -= 0x8000;
+            
+            address &= 0x601FFFF;
+            break;
+
+        // OAM
+        case 0x7:
+            address &= MEM_OAM_END;
+            break;
+        
+        // ROM image 1
+        case 0xA:
+        case 0xB:
+            address -= 0x2000000;
+            break;
+        
+        // ROM image 2
+        case 0xC:
+        case 0xD:
+            address -= 0x4000000;
+            break;
+        
+        // Cart RAM
+        case 0xF:
+            address -= 0x1000000;
+        case 0xE:
+            //std::cout << "Reading from cart RAM\n";
+            address &= ~ram_size; // RAM Mirror
+            return cart_ram[address - 0xE000000];
+        
+        default:
+            std::cerr << "Invalid address to read: 0x" << std::hex << address << "\n";
+            return 0;
+    }
+
+
     // game rom
     if (address >= MEM_SIZE)
     {
-        // while ((address - MEM_SIZE) >= rom_size)
-        // {
-        //     address -= 0x2000000;
-        // }
+        //if (address - MEM_SIZE > rom_size)
+            //std::cout << "Caution: reading outside known cart length\n";
 
-        // SRAM
-        if (address >= 0xE000000)
-        {
-            std::cout << "SRAM\n";
-            address -= 0x6000000;
-        }
-
-        // rom image 2
-        else if (address >= 0xC000000)
-        {
-            address -= 0x4000000;
-        }
-
-        // rom image 1
-        else if (address >= 0xA000000)
-        {
-            address -= 0x2000000;
-        }
-
-        return game_rom[address - MEM_SIZE];
+        return cart_rom[address - MEM_SIZE];
     }
 
-    // memory mirrors
-    // EWRAM
-    if (address > MEM_EWRAM_END && address < MEM_IWRAM_START)
-    {   
-        address &= ~MEM_EWRAM_SIZE;
-    }
-
-    // IWRAM
-    else if (address > MEM_IWRAM_END && address < MEM_IO_REG_START)
-    {   
-        address &= ~MEM_IWRAM_SIZE;
-    }
-
-    // Palette RAM
-    else if (address > MEM_PALETTE_RAM_END && address < MEM_VRAM_START)
-    {
-           address &= ~MEM_PALETTE_RAM_SIZE;
-    }
-
-    // VRAM
-    else if (address > MEM_VRAM_END && address < MEM_OAM_START)
-    {
-        //x06010000 - 0x06017FFF is mirrored from 0x06018000 - 0x0601FFFF.
-        if (address <= 0x601FFFF)
-        {
-            address -= 0x8000;
-        }
-
-        // otherwise mirrors every 0x20000
-        else
-        {
-            while (address > MEM_VRAM_END)
-                address -= MEM_VRAM_SIZE;   
-        }
-    }
-
-    // OAM
-    else if (address > MEM_OAM_END && address < MEM_SIZE)
-    {   
-        while (address > MEM_OAM_END)
-            address -= MEM_OAM_SIZE;
-    }
 
     u8 result = 0;
     switch (address)
@@ -212,78 +321,78 @@ void Memory::write_u16(u32 address, u16 value)
 
 void Memory::write_u8(u32 address, u8 value)
 {
-    // game rom
+
+    switch (address >> 24)
+    {
+        case 0x0:
+        case 0x1:
+        case 0x4:
+        case 0x8:
+        case 0x9:
+            break;
+        
+        // EWRAM
+        case 0x2:
+            address &= MEM_EWRAM_END;
+            break;
+
+        // IWRAM
+        case 0x3:
+            address &= MEM_IWRAM_END;
+            break;
+        
+        // Palette RAM
+        case 0x5:
+            address &= MEM_PALETTE_RAM_END;
+            break;
+        
+        // VRAM
+        case 0x6:
+            // 0x6010000 - 0x6017FFF is mirrored from 0x6018000 - 0x601FFFF.
+            if (address >= 0x6018000 && address <= 0x601FFFF)
+                address -= 0x8000;
+            
+            address &= 0x601FFFF;
+            break;
+
+        // OAM
+        case 0x7:
+            address &= MEM_OAM_END;
+            break;
+        
+        // ROM image 1
+        case 0xA:
+        case 0xB:
+            address -= 0x2000000;
+            break;
+        
+        // ROM image 2
+        case 0xC:
+        case 0xD:
+            address -= 0x4000000;
+            break;
+        
+        // Cart RAM
+        case 0xF:
+            address -= 0x1000000;
+        case 0xE:
+            std::cout << "Writing to cart RAM\n";
+            address &= ~ram_size; // RAM Mirror
+            cart_ram[address - 0xE000000] = value;
+            return;
+        
+        default:
+            std::cerr << "Invalid address to write: 0x" << std::hex << address << "\n";
+            return;
+    }
+
+    //game rom
     if (address >= MEM_SIZE)
     {
-        // SRAM
-        if (address >= 0xE000000)
-        {
-            address -= 0x6000000;
-        }
-        
-        // rom image 2
-        if (address >= 0xC000000)
-        {
-            address -= 0x4000000;
-        }
-
-        // rom image 1
-        else if (address >= 0xA000000)
-        {
-            address -= 0x2000000;
-        }
-
         std::cerr << "Warning: writing to game rom\n";
-
-        game_rom[address - MEM_SIZE] = value;
+        cart_rom[address - MEM_SIZE] = value;
         std::cerr << "Done\n";
         return;
-    }
-
-    // memory mirrors
-    // EWRAM
-    if (address > MEM_EWRAM_END && address < MEM_IWRAM_START)
-    {
-        while (address > MEM_EWRAM_END)
-            address -= MEM_EWRAM_SIZE;
-    }
-
-    // IWRAM
-    else if (address > MEM_IWRAM_END && address < MEM_IO_REG_START)
-    {   
-        while (address > MEM_IWRAM_END)
-            address -= MEM_IWRAM_SIZE;
-    }
-
-    // Palette RAM
-    else if (address > MEM_PALETTE_RAM_END && address < MEM_VRAM_START)
-    {   
-        while (address > MEM_PALETTE_RAM_END)
-            address -= MEM_PALETTE_RAM_SIZE;
-    }
-
-    // VRAM
-    else if (address > MEM_VRAM_END && address < MEM_OAM_START)
-    {
-        //x06010000 - 0x06017FFF is mirrored from 0x06018000 - 0x0601FFFF.
-        if (address <= 0x601FFFF)
-        {
-            address -= 0x8000;
-        }
-
-        // otherwise mirrors every 0x20000
-        else
-        {
-            while (address > MEM_VRAM_END)
-                address -= MEM_VRAM_SIZE;   
-        }
-    }
-
-    // OAM
-    else if (address > MEM_OAM_END && address < MEM_GAMEPAK_ROM_START)
-    {   
-        while (address > MEM_OAM_END)
-            address -= MEM_OAM_SIZE;
     }
 
     switch (address)
@@ -423,7 +532,7 @@ void Memory::write_u8(u32 address, u8 value)
                 _dma(0);
 
                 // disable DMA after immediate transfer
-                dma[0].enable == 0;
+                //dma[0].enable = 0;
             }
 
         break;
@@ -456,7 +565,7 @@ void Memory::write_u8(u32 address, u8 value)
                 _dma(1);
 
                 // disable DMA after immediate transfer
-                dma[1].enable == 0;
+                //dma[1].enable = 0;
             }
 
         break;
@@ -489,7 +598,7 @@ void Memory::write_u8(u32 address, u8 value)
                 _dma(2);
 
                 // disable DMA after immediate transfer
-                dma[2].enable == 0;
+                //dma[2].enable = 0;
             }
 
         break;
@@ -522,7 +631,7 @@ void Memory::write_u8(u32 address, u8 value)
                 _dma(3);
 
                 // disable DMA after immediate transfer
-                dma[3].enable == 0;
+                //dma[3].enable = 0;
             }
 
         break;
@@ -687,45 +796,6 @@ void Memory::write_u8_unprotected(u32 address, u8 value)
     memory[address] = value;
 }
 
-bool Memory::load_rom(char *name)
-{
-    std::ifstream rom(name, std::ios::in | std::ios::binary);
-
-    if (!rom)
-        return false;
-
-    rom_size = fs::file_size(name);
-
-    if (!rom.good())
-    {
-        std::cerr << "Bad rom!" << "\n";
-        return false;
-    }
-
-    game_rom = new u8[rom_size]();
-    rom.read((char *) game_rom, rom_size);
-    rom.close();
-    return true;
-}
-
-bool Memory::load_bios()
-{
-    // bios must be called gba_bios.bin
-    std::ifstream bios("gba_bios.bin", std::ios::in | std::ios::binary);
-    if (!bios)
-        return false;
-
-    if (!bios.good())
-    {
-        std::cerr << "Bad bios!" << "\n";
-        return false;
-    }
-
-    bios.read((char *) memory, MEM_BIOS_SIZE);
-    bios.close();
-    return true;
-}
-
 void Memory::_dma(int n)
 {
     switch (n)
@@ -753,45 +823,24 @@ void Memory::dma0()
     // get increment mode for destination
     switch (dma[0].dest_adjust)
     {
-        case 0:
-            dest_inc = 1;  // increment after each copy
-        break;
-
-        case 1:
-            dest_inc = -1; // decrement after each copy
-        break;
-
-        case 2:
-            dest_inc = 0;  // leave unchanged
-        break;
-
-        case 3:
-            dest_inc = 1;  // increment after each copy, reset after transfer
-        break;
-        
+        case 0: dest_inc =  1; break;  // increment after each copy
+        case 1: dest_inc = -1; break;  // decrement after each copy
+        case 2: dest_inc =  0; break;  // leave unchanged
+        case 3: dest_inc =  1; break;  // increment after each copy, reset after transfer
         default: // should never happen
             std::cout << "Error: Illegal option for DMA 0 destination adjust " << dma[0].dest_adjust << "\n";
-        break;
+            break;
     }
     
     // get increment mode for destination
     switch (dma[0].src_adjust)
     {
-        case 0:
-            src_inc = 1;  // increment after each copy
-        break;
-
-        case 1:
-            src_inc = -1; // decrement after each copy
-        break;
-
-        case 2:
-            src_inc = 0;  // leave unchanged
-        break;
-        
+        case 0: src_inc =  1; break; // increment after each copy
+        case 1: src_inc = -1; break; // decrement after each copy
+        case 2: src_inc =  0; break; // leave unchanged
         default: // should never happen
             std::cout << "Error: Illegal option for DMA 0 src adjust " << dma[0].src_adjust << "\n";
-        break;
+            break;
     }
     
     // 32 bit copy
@@ -835,7 +884,7 @@ void Memory::dma0()
 
     // turn off this transfer if repeat bit is not set
     if (dma[0].repeat == 0)
-        dma[0].enable == 0;
+        dma[0].enable = 0;
     
     // IRQ request
     if (dma[0].irq)
@@ -849,7 +898,7 @@ void Memory::dma1()
     std::cout << "DMA 1\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = read_u32_unprotected(REG_DMA3SAD) & 0xFFFFFFF; // 28 bit
-    dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD) & 0x7FFFFFF; // 27 bit;
+    dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD) & 0x7FFFFFF; // 27 bit
 
     // increment for destination, src
     int dest_inc, src_inc;
@@ -857,22 +906,10 @@ void Memory::dma1()
     // get increment mode for destination
     switch (dma[1].dest_adjust)
     {
-        case 0:
-            dest_inc = 1;  // increment after each copy
-        break;
-
-        case 1:
-            dest_inc = -1; // decrement after each copy
-        break;
-
-        case 2:
-            dest_inc = 0;  // leave unchanged
-        break;
-
-        case 3:
-            dest_inc = 1;  // increment after each copy, reset after transfer
-        break;
-        
+        case 0: dest_inc =  1; break;  // increment after each copy
+        case 1: dest_inc = -1; break;  // decrement after each copy
+        case 2: dest_inc =  0; break;  // leave unchanged
+        case 3: dest_inc =  1; break;  // increment after each copy, reset after transfer
         default: // should never happen
             std::cout << "Error: Illegal option for DMA 1 destination adjust " << dma[1].dest_adjust << "\n";
         break;
@@ -881,21 +918,12 @@ void Memory::dma1()
     // get increment mode for destination
     switch (dma[1].src_adjust)
     {
-        case 0:
-            src_inc = 1;  // increment after each copy
-        break;
-
-        case 1:
-            src_inc = -1; // decrement after each copy
-        break;
-
-        case 2:
-            src_inc = 0;  // leave unchanged
-        break;
-        
+        case 0: src_inc =  1; break; // increment after each copy
+        case 1: src_inc = -1; break; // decrement after each copy
+        case 2: src_inc =  0; break; // leave unchanged
         default: // should never happen
             std::cout << "Error: Illegal option for DMA 1 src adjust " << dma[1].src_adjust << "\n";
-        break;
+            break;
     }
     
     // 32 bit copy
@@ -939,7 +967,7 @@ void Memory::dma1()
 
     // turn off this transfer if repeat bit is not set
     if (dma[1].repeat == 0)
-        dma[1].enable == 0;
+        dma[1].enable = 0;
     
     // IRQ request
     if (dma[1].irq)
@@ -961,45 +989,24 @@ void Memory::dma2()
     // get increment mode for destination
     switch (dma[2].dest_adjust)
     {
-        case 0:
-            dest_inc = 1;  // increment after each copy
-        break;
-
-        case 1:
-            dest_inc = -1; // decrement after each copy
-        break;
-
-        case 2:
-            dest_inc = 0;  // leave unchanged
-        break;
-
-        case 3:
-            dest_inc = 1;  // increment after each copy, reset after transfer
-        break;
-        
+        case 0: dest_inc =  1; break;  // increment after each copy
+        case 1: dest_inc = -1; break;  // decrement after each copy
+        case 2: dest_inc =  0; break;  // leave unchanged
+        case 3: dest_inc =  1; break;  // increment after each copy, reset after transfer
         default: // should never happen
             std::cout << "Error: Illegal option for DMA 2 destination adjust " << dma[2].dest_adjust << "\n";
-        break;
+            break;
     }
     
     // get increment mode for destination
     switch (dma[2].src_adjust)
     {
-        case 0:
-            src_inc = 1;  // increment after each copy
-        break;
-
-        case 1:
-            src_inc = -1; // decrement after each copy
-        break;
-
-        case 2:
-            src_inc = 0;  // leave unchanged
-        break;
-        
+        case 0: src_inc =  1; break; // increment after each copy
+        case 1: src_inc = -1; break; // decrement after each copy
+        case 2: src_inc =  0; break; // leave unchanged
         default: // should never happen
             std::cout << "Error: Illegal option for DMA 2 src adjust " << dma[2].src_adjust << "\n";
-        break;
+            break;
     }
     
     // 32 bit copy
@@ -1043,7 +1050,7 @@ void Memory::dma2()
 
     // turn off this transfer if repeat bit is not set
     if (dma[2].repeat == 0)
-        dma[2].enable == 0;
+        dma[2].enable = 0;
     
     // IRQ request
     if (dma[2].irq)
@@ -1054,7 +1061,7 @@ void Memory::dma2()
 
 void Memory::dma3()
 {
-    std::cout << "DMA 3\n";
+    //std::cout << "DMA 3\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = read_u32_unprotected(REG_DMA3SAD) & 0xFFFFFFF; // 28 bit
     dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD) & 0xFFFFFFF; // 28 bit;
@@ -1065,45 +1072,24 @@ void Memory::dma3()
     // get increment mode for destination
     switch (dma[3].dest_adjust)
     {
-        case 0:
-            dest_inc = 1;  // increment after each copy
-        break;
-
-        case 1:
-            dest_inc = -1; // decrement after each copy
-        break;
-
-        case 2:
-            dest_inc = 0;  // leave unchanged
-        break;
-
-        case 3:
-            dest_inc = 1;  // increment after each copy, reset after transfer
-        break;
-        
+        case 0: dest_inc =  1; break;  // increment after each copy
+        case 1: dest_inc = -1; break;  // decrement after each copy
+        case 2: dest_inc =  0; break;  // leave unchanged
+        case 3: dest_inc =  1; break;  // increment after each copy, reset after transfer
         default: // should never happen
             std::cout << "Error: Illegal option for DMA 3 destination adjust " << dma[3].dest_adjust << "\n";
-        break;
+            break;
     }
     
     // get increment mode for destination
     switch (dma[3].src_adjust)
     {
-        case 0:
-            src_inc = 1;  // increment after each copy
-        break;
-
-        case 1:
-            src_inc = -1; // decrement after each copy
-        break;
-
-        case 2:
-            src_inc = 0;  // leave unchanged
-        break;
-        
+        case 0: src_inc =  1; break; // increment after each copy
+        case 1: src_inc = -1; break; // decrement after each copy
+        case 2: src_inc =  0; break; // leave unchanged
         default: // should never happen
             std::cout << "Error: Illegal option for DMA 3 src adjust " << dma[3].src_adjust << "\n";
-        break;
+            break;
     }
     
     // 32 bit copy
@@ -1147,11 +1133,11 @@ void Memory::dma3()
 
     // turn off this transfer if repeat bit is not set
     if (dma[3].repeat == 0)
-        dma[3].enable == 0;
+        dma[3].enable = 0;
     
     // IRQ request
     if (dma[3].irq)
         std::cout << "DMA3 IRQ request\n";   
     
-    std::cout << "DMA 3 Done\n";
+    //std::cout << "DMA 3 Done\n";
 }

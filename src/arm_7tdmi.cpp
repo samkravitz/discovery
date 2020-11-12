@@ -32,8 +32,10 @@ arm_7tdmi::arm_7tdmi()
     // initialize cpsr
     registers.cpsr.bits.f = 1;
 
+    in_interrupt  = false;
     pipeline_full = false;
     cycles = 0;
+    current_interrupt = 0;
 
     mem = NULL;
     
@@ -139,17 +141,13 @@ void arm_7tdmi::fetch()
         switch (get_mode())
         {
             case ARM:
-                pipeline[0] = read_u32(registers.r15, false);
-                registers.r15 += 4;
-                pipeline[1] = read_u32(registers.r15, false);
-                registers.r15 += 4;
+                pipeline[0] = read_u32(registers.r15, false); registers.r15 += 4;
+                pipeline[1] = read_u32(registers.r15, false); registers.r15 += 4;
                 pipeline[2] = read_u32(registers.r15, false);
                 break;
             case THUMB:
-                pipeline[0] = read_u16(registers.r15, false);
-                registers.r15 += 2;
-                pipeline[1] = read_u16(registers.r15, false);
-                registers.r15 += 2;
+                pipeline[0] = read_u16(registers.r15, false); registers.r15 += 2;
+                pipeline[1] = read_u16(registers.r15, false); registers.r15 += 2;
                 pipeline[2] = read_u16(registers.r15, false);
                 break;
         }
@@ -189,132 +187,54 @@ void arm_7tdmi::execute(u32 instruction)
             
             switch(util::get_instruction_format(instruction))
             {
-                case BEX:
-                    branch_exchange(instruction);
-                    break;
-                case B:
-                    branch_link(instruction);
-                    break;
-                case DP:
-                    data_processing(instruction);
-                    increment_pc();
-                    break;
-                case MUL:
-                    multiply(instruction);
-                    increment_pc();
-                    break;
-                case MULL:
-                    multiply_long(instruction);
-                    increment_pc();
-                    break;
-                case PSR:
-                    psr_transfer(instruction);
-                    increment_pc();
-                    break;
-                case SDT:
-                    single_data_transfer(instruction);
-                    increment_pc();
-                    break;
-                case HDT:
-                    halfword_data_transfer(instruction);
-                    increment_pc();
-                    break;
-                case BDT:
-                    block_data_transfer(instruction);
-                    break;
-                case SWP:
-                    single_data_swap(instruction);
-                    increment_pc();
-                    break;
-                case INT:
-                    software_interrupt(instruction);
-                    increment_pc();
-                    break;
+                case BEX:  branch_exchange(instruction);        break;
+                case B:    branch_link(instruction);            break;
+                case DP:   data_processing(instruction);        break;
+                case MUL:  multiply(instruction);               break;
+                case MULL: multiply_long(instruction);          break;
+                case PSR:  psr_transfer(instruction);           break;
+                case SDT:  single_data_transfer(instruction);   break;
+                case HDT:  halfword_data_transfer(instruction); break;
+                case BDT:  block_data_transfer(instruction);    break;
+                case SWP:  single_data_swap(instruction);       break;
+                case INT:  software_interrupt(instruction);     break;
                 default:
                     std::cerr << "Cannot execute instruction: " << instruction << "\n";
             }
             break;
 
         case THUMB:
+            u16 instr = (u16) instruction;
             switch(util::get_instruction_format((u16) instruction))
             {
-                case MSR_T:
-                    move_shifted_register((u16) instruction);
-                    increment_pc();
-                    break;
-                case ADDSUB_T:
-                    add_sub((u16) instruction);
-                    increment_pc();
-                    break;
-                case IMM_T:
-                    move_immediate((u16) instruction);
-                    increment_pc();
-                    break;
-                case ALU_T:
-                    alu_thumb((u16) instruction);
-                    increment_pc();
-                    break;
-                case HI_T:
-                    hi_reg_ops((u16) instruction);
-                    break;
-                case PC_T:
-                    pc_rel_load((u16) instruction);
-                    increment_pc();
-                    break;
-                case MOV_T:
-                    load_store_reg((u16) instruction);
-                    increment_pc();
-                    break;
-                case MOVS_T:
-                    load_store_signed_halfword((u16) instruction);
-                    increment_pc();
-                    break;
-                case MOVI_T:
-                    load_store_immediate((u16) instruction);
-                    increment_pc();
-                    break;
-                case MOVH_T:
-                    load_store_halfword((u16) instruction);
-                    increment_pc();
-                    break;
-                case SP_T:
-                    sp_load_store((u16) instruction);
-                    increment_pc();
-                    break;
-                case LDA_T:
-                    load_address((u16) instruction);
-                    increment_pc();
-                    break;
-                case ADDSP_T:
-                    add_offset_to_sp((u16) instruction);
-                    increment_pc();
-                    break;
-                case POP_T:
-                    push_pop((u16) instruction);
-                    break;
-                case MOVM_T:
-                    multiple_load_store((u16) instruction);
-                    increment_pc();
-                    break;
-                case B_T:
-                    conditional_branch((u16) instruction);
-                    break;
-                case SWI_T:
-                    software_interrupt_thumb((u16) instruction);
-                    increment_pc();
-                    break;
-                case BAL_T:
-                    unconditional_branch((u16) instruction);
-                    break;
-                case BL_T:
-                    long_branch_link((u16) instruction);
-                    break;
+                case MSR_T:    move_shifted_register(instr);            break;
+                case ADDSUB_T: add_sub(instr);                          break;
+                case IMM_T:    move_immediate(instr);                   break;
+                case ALU_T:    alu_thumb(instr);                        break;
+                case HI_T:     hi_reg_ops(instr);                       break;
+                case PC_T:     pc_rel_load(instr);                      break;
+                case MOV_T:    load_store_reg(instr);                   break;
+                case MOVS_T:   load_store_signed_halfword(instr);       break;
+                case MOVI_T:   load_store_immediate(instr);             break;
+                case MOVH_T:   load_store_halfword(instr);              break;
+                case SP_T:     sp_load_store(instr);                    break;
+                case LDA_T:    load_address(instr);                     break;
+                case ADDSP_T:  add_offset_to_sp(instr);                 break;
+                case POP_T:    push_pop(instr);                         break;
+                case MOVM_T:   multiple_load_store(instr);              break;
+                case B_T:      conditional_branch(instr);               break;
+                case SWI_T:    software_interrupt_thumb(instr);         break;
+                case BAL_T:    unconditional_branch(instr);             break;
+                case BL_T:     long_branch_link(instr);                 break;
                 default:
-                    std::cerr << "Cannot execute thumb instruction: " << (u16) instruction << "\n";
-                    break;
+                    std::cerr << "Cannot execute thumb instruction: " << (u16) instruction << " " << std::hex << registers.r15 << "\n";
             }
-        break;
+            break;
     }
+
+    // increment pc if there was no branch
+    if (pipeline_full)
+        increment_pc();
 
     #ifdef PRINT
     std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << get_register(0) << 
@@ -348,7 +268,7 @@ void arm_7tdmi::execute(u32 instruction)
             if (get_condition_code_flag(V))
                 std::cout << "V";
             std::cout << "\n";
-            std:: cout << std::dec << ii << " instructions\n";
+            //std:: cout << std::dec << ii << " instructions\n";
     #endif
 }
 
@@ -356,47 +276,47 @@ u32 arm_7tdmi::get_register(u32 reg)
 {
     switch (reg)
     {
-        case 0: return registers.r0;
-        case 1: return registers.r1;
-        case 2: return registers.r2;
-        case 3: return registers.r3;
-        case 4: return registers.r4;
-        case 5: return registers.r5;
-        case 6: return registers.r6;
-        case 7: return registers.r7;
+        case r0: return registers.r0;
+        case r1: return registers.r1;
+        case r2: return registers.r2;
+        case r3: return registers.r3;
+        case r4: return registers.r4;
+        case r5: return registers.r5;
+        case r6: return registers.r6;
+        case r7: return registers.r7;
 
-        case 8:
+        case r8:
             switch (get_state())
             {
                 case FIQ: return registers.r8_fiq;
                 default: return registers.r8;
             }
-        case 9:
+        case r9:
             switch (get_state())
             {
                 case FIQ: return registers.r9_fiq;
                 default: return registers.r9;
             }
-        case 10:
+        case r10:
             switch (get_state())
             {
                 case FIQ: return registers.r10_fiq;
                 default: return registers.r10;
             }
-        case 11:
+        case r11:
             switch (get_state())
             {
                 case FIQ: return registers.r11_fiq;
                 default: return registers.r11;
             }
-        case 12:
+        case r12:
             switch (get_state())
             {
                 case FIQ: return registers.r12_fiq;
                 default: return registers.r12;
             }
 
-        case 13:
+        case r13:
             switch(get_state())
             {
                 case USR:
@@ -408,7 +328,7 @@ u32 arm_7tdmi::get_register(u32 reg)
                 case UND: return registers.r13_und;
             }
 
-        case 14:
+        case r14:
             switch(get_state())
             {
                 case USR:
@@ -420,11 +340,11 @@ u32 arm_7tdmi::get_register(u32 reg)
                 case UND: return registers.r14_und;
             }
 
-        case 15:
+        case r15:
             return registers.r15; // all banks share r15
-        case 16:
+        case cpsr:
             return registers.cpsr.full; // all banks share cpsr
-        case 17:
+        case spsr:
             switch(get_state())
             {
                 case FIQ: return registers.spsr_fiq.full;
@@ -447,17 +367,17 @@ void arm_7tdmi::set_register(u32 reg, u32 val)
     switch (reg)
     {
         // all banks share r0 - r7
-        case 0: registers.r0 = val; break;
-        case 1: registers.r1 = val; break;
-        case 2: registers.r2 = val; break;
-        case 3: registers.r3 = val; break;
-        case 4: registers.r4 = val; break;
-        case 5: registers.r5 = val; break;
-        case 6: registers.r6 = val; break;
-        case 7: registers.r7 = val; break;
+        case r0: registers.r0 = val; break;
+        case r1: registers.r1 = val; break;
+        case r2: registers.r2 = val; break;
+        case r3: registers.r3 = val; break;
+        case r4: registers.r4 = val; break;
+        case r5: registers.r5 = val; break;
+        case r6: registers.r6 = val; break;
+        case r7: registers.r7 = val; break;
 
         // banked registers
-        case 8:
+        case r8:
             switch (get_state())
             {
                 case FIQ:
@@ -468,7 +388,7 @@ void arm_7tdmi::set_register(u32 reg, u32 val)
                     break;
             }
             break;
-        case 9:
+        case r9:
             switch (get_state())
             {
                 case FIQ:
@@ -479,7 +399,7 @@ void arm_7tdmi::set_register(u32 reg, u32 val)
                     break;
             }
             break;
-        case 10:
+        case r10:
             switch (get_state())
             {
                 case FIQ:
@@ -490,7 +410,7 @@ void arm_7tdmi::set_register(u32 reg, u32 val)
                     break;
             }
             break;
-        case 11:
+        case r11:
             switch (get_state())
             {
                 case FIQ:
@@ -501,7 +421,7 @@ void arm_7tdmi::set_register(u32 reg, u32 val)
                     break;
             }
             break;
-        case 12:
+        case r12:
             switch (get_state())
             {
                 case FIQ:
@@ -513,7 +433,7 @@ void arm_7tdmi::set_register(u32 reg, u32 val)
             }
             break;
 
-        case 13:
+        case r13:
             switch(get_state())
             {
                 case USR:
@@ -538,7 +458,7 @@ void arm_7tdmi::set_register(u32 reg, u32 val)
             }
             break;
 
-        case 14:
+        case r14:
             switch(get_state())
             {
                 case USR:
@@ -564,8 +484,8 @@ void arm_7tdmi::set_register(u32 reg, u32 val)
             break;
 
 
-        case 15: registers.r15 = val; break; // all banks share r15
-        case 16: registers.cpsr.full = val; break; // all banks share cpsr
+        case r15: registers.r15 = val; break; // all banks share r15
+        case cpsr: registers.cpsr.full = val; break; // all banks share cpsr
         default:
             std::cerr << "Unknown register: " << reg << "\n";
             break;
@@ -910,31 +830,105 @@ void arm_7tdmi::cycle(u8 n, u8 s, u8 i)
 
 void arm_7tdmi::handle_interrupt()
 {
+    // exit interrupt
+    if (in_interrupt && get_register(r15) == 0x138)
+    {
+        //std::cout << "Handled interrupt!\n";
+
+        // restore registers from stack
+        // ldmfd r13! r0-r3, r12, r14
+        u32 sp = get_register(r13);
+        set_register(r0,  mem->read_u32(sp)); sp += 4;
+        set_register(r1,  mem->read_u32(sp)); sp += 4;
+        set_register(r2,  mem->read_u32(sp)); sp += 4;
+        set_register(r3,  mem->read_u32(sp)); sp += 4;
+        set_register(r12, mem->read_u32(sp)); sp += 4;
+        set_register(r14, mem->read_u32(sp)); sp += 4;
+
+        // return from IRQ
+        // subs r15, r14, 4
+        set_register(r15, get_register(r14) - 4);
+
+        // restore CPSR
+        set_register(cpsr, get_register(spsr));
+
+        // re-enable interrupts
+        registers.cpsr.bits.i = 0;
+        mem->write_u32_unprotected(REG_IME, 1);
+
+        pipeline_full = false;
+        in_interrupt  = false;
+        
+        set_state(SYS);
+
+        // clear bit from REG_IF to show that interrupt has been serviced
+        u32 reg_if = mem->read_u32_unprotected(REG_IF) & ~current_interrupt;
+        mem->write_u32_unprotected(REG_IF, reg_if);
+
+        return;
+    }
+
     // check if master interrupts are enabled
     if ((mem->read_u32_unprotected(REG_IME) & 1) && registers.cpsr.bits.i == 0) 
     {
         //std::cout << "Interupts enabled\n";
 
         // get enabled interrupts and requested interrupts
-        u16 interrupts_enabled   = mem->read_u16_unprotected(REG_IF);
-        u16 interrupts_requested = mem->read_u16_unprotected(REG_IE);
+        u16 interrupts_enabled   = mem->read_u16_unprotected(REG_IE);
+        u16 interrupts_requested = mem->read_u16_unprotected(REG_IF);
 
         // get first identical set bit in enabled/requested interrupts
         for (int i = 0; i < 14; ++i) // 14 interrupts available
         {
+            // handle interrupt at position i
             if (interrupts_enabled & (1 << i) && interrupts_requested & (1 << i))
             {
-                // handle interrupt at position i
-        
-                registers.cpsr.bits.state = IRQ;
+                //std::cout << "interrupt handling!\n";
+
+                // emulate how BIOS handles interrupts
+
+                // switch to IRQ
                 set_state(IRQ);
 
-                registers.cpsr.bits.t = 1;
+                // save CPSR to SPSR
+                update_spsr(get_register(cpsr), false);
+                
+                if (!pipeline_full)
+                    std::cout << "Caution: interrupt after a branch\n";
+
+                // add r14, r15, 0
+                set_register(r14, get_register(r15));
+
+                // save registers to SP_irq
+                // stmfd  r13!, r0-r3, r12, r14
+                u32 sp = get_register(r13);
+                sp -= 4; mem->write_u32(sp, get_register(r14)); 
+                sp -= 4; mem->write_u32(sp, get_register(r12));
+                sp -= 4; mem->write_u32(sp, get_register(r3));
+                sp -= 4; mem->write_u32(sp, get_register(r2));
+                sp -= 4; mem->write_u32(sp, get_register(r1));
+                sp -= 4; mem->write_u32(sp, get_register(r0));
+                set_register(r13, sp);
+
+                // mov r0, 0x4000000
+                set_register(r0, 0x4000000);
+
+                // address where BIOS returns from IRQ handler
+                set_register(r14, 0x138);
+
+                // ldr r15, [r0, -0x4]
+                set_register(r15, mem->read_u32(get_register(r0) - 0x4) & ~0x3);
+
+                registers.cpsr.bits.i = 1; // disable interrupts
                 set_mode(ARM);
+                pipeline_full = false;
+                in_interrupt  = true;
+                mem->write_u32_unprotected(REG_IME, 0);
 
-                set_register(15, 0x18);
-
-                std::cout << "interrupt handling!\n";
+                // save the current interrupt so we can clear it after it's been serviced
+                current_interrupt = interrupts_requested & (1 << i);
+                
+                return;
             }
         }
     }

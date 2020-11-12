@@ -70,15 +70,16 @@ void GPU::cycle()
 
         // fire HBlank interrupt if necessary
         if (stat->dispstat.hbi)
-            std::cout << "Firing HBlank interrupt\n";
+            mem->memory[REG_IF] |= IRQ_HBLANK;
 
         // check for DMA HBlank requests
+        // TODO - Don't fire DMA Hblank in VBlank
         for (int i = 0; i < 4; ++i)
         {
             if (mem->dma[i].enable && mem->dma[i].mode == 2) // start at HBLANK
             {
                 mem->_dma(i);
-                //std::cout << "DMA" << i << " HBLANK\n";
+                std::cout << "DMA" << i << " HBLANK\n";
             }
         }
         
@@ -96,7 +97,10 @@ void GPU::cycle()
             for (int i = 0; i < 4; ++i)
             {
                 if (mem->dma[i].enable && mem->dma[i].mode == 1) // start at VBLANK
+                {
                     mem->_dma(i);
+                    std::cout << "DMA" << i << " VBLANK\n";
+                }
             }
         }
     }
@@ -176,13 +180,12 @@ void GPU::draw()
         SDL_UnlockSurface(final_screen);
 
     SDL_Rect d;
-    d.w = 480;
-    d.h = 320;
+    d.w = SCREEN_WIDTH * 2;
+    d.h = SCREEN_HEIGHT * 2;
     d.x = 0;
     d.y = 0;
     SDL_BlitScaled(original_screen, NULL, final_screen, &d);
     
-
     // draw final_screen pixels on screen
     SDL_UpdateWindowSurface(window);
 
@@ -290,8 +293,8 @@ void GPU::draw_mode5()
     if (stat->dispcnt.ps)
         pal_ptr += 0xA000;
 
-    //std::cout << (int) stat->dispcnt.ps << "\n";
     int i = 0;
+    // mode 5 has resolution of 128 x 160
     for (int y = 0; y < 128; ++y)
     {
         for (int x = 0; x < 160; ++x)

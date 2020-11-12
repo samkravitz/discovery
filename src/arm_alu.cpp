@@ -18,7 +18,7 @@ void arm_7tdmi::branch_exchange(u32 instruction)
 {
     u32 Rn = util::get_instruction_subset(instruction, 3, 0);
 
-    if (Rn == 15)
+    if (Rn == r15)
     {
         std::cerr << "Undefined behavior: r15 as operand\n";
         std::cerr << std::hex << registers.r15 << "\n";
@@ -29,7 +29,7 @@ void arm_7tdmi::branch_exchange(u32 instruction)
     
     u32 branch_address = get_register(Rn);
 
-    set_register(15, branch_address); 
+    set_register(r15, branch_address); 
 
     // swith to THUMB mode if necessary
     if ((branch_address & 1) == 1)
@@ -63,13 +63,13 @@ void arm_7tdmi::branch_link(u32 instruction)
         // write the old PC into the link register of the current bank
         // The PC value written into r14 is adjusted to allow for the prefetch, and contains the
         // address of the instruction following the branch and link instruction
-        new_address = get_register(15) - 4; // instruction following this BL
+        new_address = get_register(r15) - 4; // instruction following this BL
         new_address &= ~3; // clear bits 0-1
-        set_register(14, new_address);
+        set_register(r14, new_address);
     }
 
-    new_address = get_register(15) + offset;
-    set_register(15, new_address);
+    new_address = get_register(r15) + offset;
+    set_register(r15, new_address);
 
     // flush pipeline for refill
     pipeline_full = false;
@@ -94,7 +94,7 @@ void arm_7tdmi::branch_link(u32 instruction)
     bool immediate = util::get_instruction_subset(instruction, 25, 25) == 0x1;
     bool set_condition_code = util::get_instruction_subset(instruction, 20, 20) == 0x1;
     
-    if (Rd == 15)
+    if (Rd == r15)
     {
         // +1 N and +1 S cycles if Rd is r15
         ++n;
@@ -134,7 +134,7 @@ void arm_7tdmi::branch_link(u32 instruction)
             shift_amount = get_register(Rs) & 0xFF;
 
             // must add 4 bytes to r15 to account for prefetch
-            if (Rn == 15 || Rm == 15 || Rs == 15)
+            if (Rn == r15 || Rm == r15 || Rs == r15)
                 prefetch = true;
         }
         
@@ -251,13 +251,12 @@ void arm_7tdmi::branch_link(u32 instruction)
     }
 
     // if writing new value to PC, don't increment PC
-    if (Rd == 15)
+    if (Rd == r15)
     {
-        registers.r15 -= 4;
         pipeline_full = false;
         // if S bit is set, move SPSR into CPSR
         if (set_condition_code)
-            set_register(16, get_register(17));
+            set_register(cpsr, get_register(spsr));
     }
 
     // cycles: (1+p)S + rI + pN
@@ -281,7 +280,8 @@ void arm_7tdmi::multiply(u32 instruction)
     //     return;
     // }
     
-    if (Rd == 15 || Rm == 15) {
+    if (Rd == r15 || Rm == r15)
+    {
         std::cerr << "Register 15 may not be used as destination nor operand register" << std::endl;
         return;
     }
@@ -335,7 +335,7 @@ void arm_7tdmi::multiply_long(u32 instruction)
     bool accumulate         = util::get_instruction_subset(instruction, 21, 21) == 1;
     bool sign               = util::get_instruction_subset(instruction, 22, 22) == 1;
 
-    if (RdHi == 15 || RdLo == 15 || Rm == 15 || Rs == 15)
+    if (RdHi == r15 || RdLo == r15 || Rm == r15 || Rs == r15)
     {
         std::cerr << "Register 15 may not be used as destination nor operand register" << std::endl;
         return;
@@ -467,22 +467,23 @@ void arm_7tdmi::multiply_long(u32 instruction)
 // allow access to CPSR and SPSR registers
  void arm_7tdmi::psr_transfer(u32 instruction)
  {
-    bool spsr = util::get_instruction_subset(instruction, 22, 22) == 1;
+    bool use_spsr = util::get_instruction_subset(instruction, 22, 22) == 1;
     u32 opcode = util::get_instruction_subset(instruction, 21, 21);
 
     // MRS (transfer PSR contents to register)
     if (opcode == 0)
     {
         u32 Rd = util::get_instruction_subset(instruction, 15, 12);
-        if (Rd == 15) {
+        if (Rd == r15) 
+        {
             std::cerr << "Can't use r15 as an MRS destination register" << "\n";
             return;
         }
 
-        if (spsr)
-            set_register(Rd, get_register(17)); // Rd <- spsr_<mode>
+        if (use_spsr)
+            set_register(Rd, get_register(spsr)); // Rd <- spsr_<mode>
         else
-            set_register(Rd, get_register(16)); // Rd <- cpsr
+            set_register(Rd, get_register(cpsr)); // Rd <- cpsr
     }
 
     // MSR (transfer register contents to PSR)
@@ -507,7 +508,7 @@ void arm_7tdmi::multiply_long(u32 instruction)
         else
         {
             u32 Rm = util::get_instruction_subset(instruction, 3, 0);
-            if (Rm == 15)
+            if (Rm == r15)
             {
                 std::cerr << "Can't use r15 as a MSR source register" << "\n";
                 return;
@@ -516,7 +517,7 @@ void arm_7tdmi::multiply_long(u32 instruction)
             new_value = get_register(Rm);
         }
 
-        if (spsr)
+        if (use_spsr)
             update_spsr(new_value, flags_only);
         else
             update_cpsr(new_value, flags_only);
@@ -553,7 +554,7 @@ void arm_7tdmi::single_data_transfer(u32 instruction)
         u32 shift_amount = util::get_instruction_subset(instruction, 11, 7);
         u32 offset_register = util::get_instruction_subset(instruction, 3, 0);
 
-        if (offset_register == 15)
+        if (offset_register == r15)
         {
             std::cerr << "r15 may not be used as the offset register of SDT." << "\n";
             return;
@@ -605,12 +606,10 @@ void arm_7tdmi::single_data_transfer(u32 instruction)
         ++n;
 
         // LDR PC takes an additional 1S + 1N cycles
-        if (Rd == 15)
+        if (Rd == r15)
         {
             ++s;
             ++n;
-            // compensate for incrementing PC after this instruction
-            registers.r15 -= 4;
             pipeline_full = false;
         }
 
@@ -622,7 +621,7 @@ void arm_7tdmi::single_data_transfer(u32 instruction)
         u32 value = get_register(Rd);
 
         // if Rd is r15, the stored address will be the address of the current instruction plus 12
-        if (Rd == 15)
+        if (Rd == r15)
             value += 4;
 
         if (byte) // store one byte to memory
@@ -667,7 +666,7 @@ void arm_7tdmi::halfword_data_transfer(u32 instruction)
     u8 i = 0;
     u8 s = 0;
 
-    if (Rm == 15)
+    if (Rm == r15)
     {
         std::cerr << "r15 cannot be used as offset register for HDT" << "\n";
         return;
@@ -752,7 +751,7 @@ void arm_7tdmi::halfword_data_transfer(u32 instruction)
     // calculate cycles
     if (load)
     {
-        if (Rd == 15)
+        if (Rd == r15)
         {
             ++s;
             ++n;
@@ -794,7 +793,7 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
     u8 i = 0;
     u8 s = 0;
 
-    if (Rb == 15)
+    if (Rb == r15)
     {
         std::cerr << "r15 cannot be used as base register in BDT!" << "\n";
         return;
@@ -805,14 +804,13 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
     {
         if (load) // load r15
         { 
-            set_register(15, read_u32(base, false));
+            set_register(r15, read_u32(base, false));
             pipeline_full = false;
         }
 
         else // store r15
         {
             write_u32(base, registers.r15 + 4);
-            increment_pc();
         }
 
         // store Rb = Rb +/- 0x40
@@ -862,7 +860,7 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
                     base += 4;
 
                 set_register(set_registers[i], read_u32(base, false));
-                if (set_registers[i] == 15) // loading into r15
+                if (set_registers[i] == r15) // loading into r15
                 {
                     pipeline_full = false; 
                     // +1 S, +1 N cycles for LDM PC
@@ -885,7 +883,7 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
                     base -= 4;
 
                 set_register(set_registers[i], read_u32(base, false));
-                if (set_registers[i] == 15) // loading into r15
+                if (set_registers[i] == r15) // loading into r15
                 {
                     pipeline_full = false; 
                     // +1 S, +1 N cycles for LDM PC
@@ -914,7 +912,7 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
                     
                 u32 value = get_register(set_registers[i]);
                 // if Rd is r15, the stored address will be the address of the current instruction plus 12
-                if (set_registers[i] == 15)
+                if (set_registers[i] == r15)
                     value += 4;
                 write_u32(base, value);
 
@@ -935,7 +933,7 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
                     
                 u32 value = get_register(set_registers[i]);
                 // if Rd is r15, the stored address will be the address of the current instruction plus 12
-                if (set_registers[i] == 15)
+                if (set_registers[i] == r15)
                     value += 4;
                 write_u32(base, value);
 
@@ -948,8 +946,8 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
         }
     }
     
-    if (!(r15_in_register_list && load))
-        increment_pc(); // increment pc if flush is not necessary
+    // if (!(r15_in_register_list && load))
+    //     increment_pc(); // increment pc if flush is not necessary
 
     if (write_back)
     {
@@ -986,7 +984,7 @@ void arm_7tdmi::single_data_swap(u32 instruction)
     u32 Rd = util::get_instruction_subset(instruction, 15, 12); // destination register
     u32 Rm = util::get_instruction_subset(instruction, 3, 0);   // source register
 
-    if (Rn == 15 || Rd == 15 || Rm == 15)
+    if (Rn == r15 || Rd == r15 || Rm == r15)
     {
         std::cerr << "r15 can't be used as an operand in SWP!" << "\n";
         return;
@@ -1023,9 +1021,9 @@ void arm_7tdmi::software_interrupt(u32 instruction)
     // TODO - handle swi through BIOS ?
 
     // set_state(SVC);
-    // set_register(14, get_register(15) - 4);
-    // update_spsr(get_register(16), false);
-    // set_register(15, 0x08);
+    // set_register(r14, get_register(r15) - 4);
+    // update_spsr(get_register(cpsr), false);
+    // set_register(r15, 0x08);
     // pipeline_full = false;
     // return;
 

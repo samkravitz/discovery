@@ -263,13 +263,13 @@ void arm_7tdmi::hi_reg_ops(u16 instruction)
             }
 
             // clear bit 0 when destination is r15
-            if (Rd == 15)
+            if (Rd == r15)
                 op1 &= ~0x1;
 
             result = op1 + op2;
             set_register(Rd, result);
 
-            if (Rd == 15)
+            if (Rd == r15)
             {
                 pipeline_full = false;
 
@@ -277,9 +277,6 @@ void arm_7tdmi::hi_reg_ops(u16 instruction)
                 ++s;
                 ++n;
             }
-            
-            else
-                increment_pc();
         
             break;
 
@@ -292,7 +289,6 @@ void arm_7tdmi::hi_reg_ops(u16 instruction)
 
             result = op2 - op1;
             update_flags_subtraction(op2, op1, result);
-            increment_pc();
             break;
         case 0b10: // MOV
             if (!H1 && !H2)
@@ -302,13 +298,13 @@ void arm_7tdmi::hi_reg_ops(u16 instruction)
             }
 
             // clear bit 0 when destination is r15
-            if (Rd == 15)
+            if (Rd == r15)
                 op1 &= ~0x1;
 
             result = op1;
             set_register(Rd, result);
 
-            if (Rd == 15)
+            if (Rd == r15)
             {
                 pipeline_full = false;
 
@@ -316,9 +312,6 @@ void arm_7tdmi::hi_reg_ops(u16 instruction)
                 ++s;
                 ++n;
             }
-            
-            else
-                increment_pc();
 
             break;
         case 0b11: // BX
@@ -333,7 +326,7 @@ void arm_7tdmi::hi_reg_ops(u16 instruction)
             {
                 // align to word boundary
                 op1 &= ~3;
-                set_register(15, op1);
+                set_register(r15, op1);
                 set_mode(ARM);
             }
 
@@ -343,7 +336,7 @@ void arm_7tdmi::hi_reg_ops(u16 instruction)
                 op1 &= ~1;
             }
 
-            set_register(15, op1);
+            set_register(r15, op1);
 
             // flush pipeline for refill
             pipeline_full = false;
@@ -363,7 +356,7 @@ void arm_7tdmi::pc_rel_load(u16 instruction)
 {
     u16 Rd = util::get_instruction_subset(instruction, 10, 8); 
     u16 word8 = util::get_instruction_subset(instruction, 7, 0);
-    u32 base = get_register(15);
+    u32 base = get_register(r15);
     base &= ~2; // clear bit 1 for word alignment
 
     word8 <<= 2; // assembler places #imm >> 2 in word8
@@ -591,7 +584,7 @@ void arm_7tdmi::sp_load_store(u16 instruction)
 
     word8 <<= 2; // assembler places #imm >> 2 in word8 to ensure word alignment
 
-    u32 base = get_register(13); // current stack pointer is base address
+    u32 base = get_register(r13); // current stack pointer is base address
     base += word8; // add offset to base
 
     if (load)
@@ -626,12 +619,12 @@ void arm_7tdmi::load_address(u16 instruction)
 
     if (sp)
     {
-        base = get_register(13);
+        base = get_register(r13);
     }
     
     else
     { // pc
-        base = get_register(15);
+        base = get_register(r15);
         base &= ~2; // force bit 1 of PC to 0
     }
 
@@ -650,14 +643,14 @@ void arm_7tdmi::add_offset_to_sp(u16 instruction)
 
     sword8 <<= 2; // assembler places #imm >> 2 in word8 to ensure word alignment
 
-    u32 base = get_register(13); // base address at SP
+    u32 base = get_register(r13); // base address at SP
 
     if (positive)
         base += sword8;
     else
         base -= sword8;
 
-    set_register(13, base);
+    set_register(r13, base);
     
     // cycles: 1S
     cycle(0, 1, 0);
@@ -667,7 +660,7 @@ void arm_7tdmi::push_pop(u16 instruction)
 {
     bool load = util::get_instruction_subset(instruction, 11, 11) == 1;
     bool R = util::get_instruction_subset(instruction, 8, 8) == 1; // PC/LR bit
-    u32 base = get_register(13); // base address at SP
+    u32 base = get_register(r13); // base address at SP
 
     int num_registers = 0; // number of set bits in the register list, should be between 0-8
     int set_registers[8];
@@ -692,7 +685,7 @@ void arm_7tdmi::push_pop(u16 instruction)
     // {
     //     if (load) // load r15
     //     { 
-    //         set_register(15, read_u32(base, false));
+    //         set_register(r15, read_u32(base, false));
     //         pipeline_full = false;
     //     }
 
@@ -703,7 +696,7 @@ void arm_7tdmi::push_pop(u16 instruction)
     //     }
 
     //     // store Rb = Rb +/- 0x40
-    //     set_register(13, base + 0x4);
+    //     set_register(r13, base + 0x4);
 
     //     return;
     // }
@@ -717,7 +710,7 @@ void arm_7tdmi::push_pop(u16 instruction)
             base -= 4;
 
         // write base back into sp
-        set_register(13, base);
+        set_register(r13, base);
         
         // push registers
         for (int i = 0; i < num_registers; ++i)
@@ -729,12 +722,10 @@ void arm_7tdmi::push_pop(u16 instruction)
 
         if (R) // push LR
         {
-            write_u32(base, get_register(14));
+            write_u32(base, get_register(r14));
             // base -= 4; // increment stack pointer (4 bytes for word alignment)
             ++s;
         }
-
-        increment_pc();
     }
     
     else // POP Rlist
@@ -750,19 +741,15 @@ void arm_7tdmi::push_pop(u16 instruction)
 
         if (R) // pop pc
         {
-            set_register(15, read_u32(base, false) & ~1); // guaruntee halfword alignment
+            set_register(r15, read_u32(base, false) & ~1); // guaruntee halfword alignment
+            pipeline_full = false;
             base += 4; // decrement stack pointer (4 bytes for word alignment)
             ++s;
             ++n;
         }
-        
-        else
-        {
-            increment_pc();
-        }
 
         // write base back into sp
-        set_register(13, base);
+        set_register(r13, base);
     }
 
     // cycles:
@@ -801,14 +788,13 @@ void arm_7tdmi::multiple_load_store(u16 instruction)
     {
         if (load) // load r15
         { 
-            set_register(15, read_u32(base, false));
+            set_register(r15, read_u32(base, false));
             pipeline_full = false;
         }
 
         else // store r15
         {
             write_u32(base, registers.r15 + 4);
-            increment_pc();
         }
 
         // store Rb = Rb +/- 0x40
@@ -855,13 +841,12 @@ void arm_7tdmi::conditional_branch(u16 instruction)
 {
     u16 soffset8 = util::get_instruction_subset(instruction, 7, 0); // signed 8 bit offset
     condition_t condition = (condition_t) util::get_instruction_subset(instruction, 11, 8);
-    u32 base = get_register(15);
+    u32 base = get_register(r15);
     u32 jump_address;
     if (!condition_met(condition))
     {
         // 1S
         cycle(0, 1, 0);
-        increment_pc();
         return;
     }
 
@@ -881,7 +866,7 @@ void arm_7tdmi::conditional_branch(u16 instruction)
         jump_address = base + soffset8;
     }
 
-    set_register(15, jump_address);
+    set_register(r15, jump_address);
 
     // flush pipeline for refill
     pipeline_full = false;
@@ -927,10 +912,10 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction)
 
     // TODO - handle swi through bios ?
     // set_state(SVC);
-    // set_register(14, get_register(15) - 2);
+    // set_register(r14, get_register(r15) - 2);
     // update_spsr(get_register(16), false);
     // set_mode(ARM);
-    // set_register(15, 0x08);
+    // set_register(r15, 0x08);
     // pipeline_full = false;
     // return;
 
@@ -941,7 +926,7 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction)
 void arm_7tdmi::unconditional_branch(u16 instruction)
 {
     u16 offset11 = util::get_instruction_subset(instruction, 10, 0); // signed 11 bit offset
-    u32 base = get_register(15);
+    u32 base = get_register(r15);
     u32 jump_address;
 
     offset11 <<= 1; // assembler places #imm >> 1 in offset11 to ensure halfword alignment
@@ -965,7 +950,7 @@ void arm_7tdmi::unconditional_branch(u16 instruction)
         jump_address = base + offset11;
     }
 
-    set_register(15, jump_address);
+    set_register(r15, jump_address);
 
     // flush pipeline for refill
     pipeline_full = false;
@@ -982,16 +967,16 @@ void arm_7tdmi::long_branch_link(u16 instruction)
 
     if (H) // instruction 2
     {
-        base = get_register(14); // LR
+        base = get_register(r14); // LR
         offset <<= 1;
         base += offset;
 
         // get address of next instruction and set bit 0
-        u32 next_instruction_address = get_register(15) - 2;
+        u32 next_instruction_address = get_register(r15) - 2;
         next_instruction_address |= 0x1;
 
-        set_register(15, base);
-        set_register(14, next_instruction_address); // next instruction in link register
+        set_register(r15, base);
+        set_register(r14, next_instruction_address); // next instruction in link register
 
         // flush pipeline for refill
         pipeline_full = false;
@@ -1002,7 +987,7 @@ void arm_7tdmi::long_branch_link(u16 instruction)
     
     else // instruction 1
     {
-        base = get_register(15); // PC
+        base = get_register(r15); // PC
         offset <<= 12;
 
         if (offset >> 22)
@@ -1023,8 +1008,7 @@ void arm_7tdmi::long_branch_link(u16 instruction)
             base += offset;
         }
 
-        set_register(14, base); // resulting address stored in LR
-        increment_pc();
+        set_register(r14, base); // resulting address stored in LR
     }
 }
 

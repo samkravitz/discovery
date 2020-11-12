@@ -6,18 +6,17 @@
 void print_keys(u16);
 int debug = 0;
 
-
 int main(int argc, char **argv)
 {
     std::cout << "Gameboy emulator!" << "\n";
     discovery emulator;
 
     // load bios
-    if (!emulator.mem->load_bios())
-    {
-        std::cerr << "Error loading BIOS\n";
-        return 1;
-    }
+    // if (!emulator.mem->load_bios())
+    // {
+    //     std::cerr << "Error loading BIOS\n";
+    //     return 1;
+    // }
 
     std::string deb = "";
 
@@ -147,13 +146,16 @@ void discovery::game_loop()
         // poll for key presses at start of vblank
         if (gpu.stat->scanline == 160 && SDL_PollEvent(&e))
         {
+            num++;
             if (e.type == SDL_QUIT)
                 break;
             if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)
                 poll_keys(e);
         }
 
+        // if (num > 5)
         cpu.handle_interrupt();
+
     }
     shutdown();
 }
@@ -267,8 +269,13 @@ void discovery::poll_keys(const SDL_Event &e)
             }
         }
 
+        // raise keypad interrupt
         if (raise_interrupt)
+        {
             std::cout << "Raising gamepad interrupt\n";
+            u16 reg_if = mem->read_u16_unprotected(REG_IF) | IRQ_KEYPAD;
+            mem->write_u16_unprotected(REG_IF, reg_if);
+        }
     }
 
     // store gamepad result back into the KEYINPUT address

@@ -91,7 +91,7 @@ void GPU::cycle()
 
             // fire Vblank interrupt if necessary
             if (stat->dispstat.vbi)
-                std::cout << "Firing VBlank interrupt\n";
+                mem->memory[REG_IF] |= IRQ_VBLANK;
 
             // check for DMA VBLANK requests
             for (int i = 0; i < 4; ++i)
@@ -130,7 +130,7 @@ void GPU::cycle()
             
             // interrupt is triggered if requested
             if (stat->dispstat.vci)
-                std::cout << "Firing VCount interrupt\n";
+                mem->memory[REG_IF] |= IRQ_VCOUNT;
         }
         
         // scanline is not equal to trigger value, reset this bit
@@ -139,7 +139,6 @@ void GPU::cycle()
             stat->dispstat.vcs = 0;
         }
         
-
         cycles = 0;
         stat->dispstat.in_hBlank = false;
     }

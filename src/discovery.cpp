@@ -146,14 +146,12 @@ void discovery::game_loop()
         // poll for key presses at start of vblank
         if (gpu.stat->scanline == 160 && SDL_PollEvent(&e))
         {
-            num++;
             if (e.type == SDL_QUIT)
                 break;
             if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)
                 poll_keys(e);
         }
 
-        // if (num > 5)
         cpu.handle_interrupt();
 
     }

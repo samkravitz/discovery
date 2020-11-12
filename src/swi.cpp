@@ -105,12 +105,21 @@ void arm_7tdmi::swi_registerRamReset()
  */
 void arm_7tdmi::swi_VBlankIntrWait()
 {
+    // force interrupts to be enabled
+    mem->write_u32_unprotected(REG_IME, 0x1);
+    registers.cpsr.bits.i = 0;
+
+    // write 1 to r0, r1
+    set_register(r0, 0x1);
+    set_register(r1, 0x1);
     // std::cout << "a" << ((int) mem->read_u32_unprotected(REG_IF)) << "\n";
     // std::cout << "b" << ((int) mem->read_u32_unprotected(REG_IE)) << "\n";
     // std::cout << ((int) mem->read_u32_unprotected(REG_IME)) << "\n";
     //exit(0);
-    //registers.r15 -= get_mode() == ARM ? 4 : 2;
-    pipeline_full = false;
+    registers.r15 -= get_mode() == ARM ? 4 : 2;
+    pipeline[1] = pipeline[0];
+    pipeline[2] = pipeline[0];
+    swi_vblank_intr = true;
 }
 
 /*
@@ -276,6 +285,7 @@ void arm_7tdmi::swi_cpuSet()
  */
 void arm_7tdmi::swi_objAffineSet()
 {
+    //return;
     u32 src_ptr          = get_register(r0);
     u32 dest_ptr         = get_register(r1);
     u32 num_calculations = get_register(r2);
@@ -306,10 +316,10 @@ void arm_7tdmi::swi_objAffineSet()
         pd *=  sy; // sy *  cos(α)
 
         // convert back to range [0x0 - 0xFFFF]
-        mem->write_u16(dest_ptr, pa * 256); dest_ptr += offset;
-        mem->write_u16(dest_ptr, pb * 256); dest_ptr += offset;
-        mem->write_u16(dest_ptr, pc * 256); dest_ptr += offset;
-        mem->write_u16(dest_ptr, pd * 256); dest_ptr += offset;
+        // mem->write_u16(dest_ptr, pa * 256); dest_ptr += offset;
+        // mem->write_u16(dest_ptr, pb * 256); dest_ptr += offset;
+        // mem->write_u16(dest_ptr, pc * 256); dest_ptr += offset;
+        // mem->write_u16(dest_ptr, pd * 256); dest_ptr += offset;
 
         src_ptr  += offset;
     }

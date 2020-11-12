@@ -85,6 +85,8 @@ void discovery::game_loop()
         cpu.decode(cpu.pipeline[0]);
         cpu.execute(cpu.pipeline[0]);
 
+        cpu.handle_interrupt();
+
         // update pipeline
         cpu.pipeline[0] = cpu.pipeline[1];
         cpu.pipeline[1] = cpu.pipeline[2];
@@ -152,9 +154,8 @@ void discovery::game_loop()
                 poll_keys(e);
         }
 
-        cpu.handle_interrupt();
-
     }
+    
     shutdown();
 }
 

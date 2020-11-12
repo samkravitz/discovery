@@ -376,7 +376,7 @@ void Memory::write_u8(u32 address, u8 value)
         case 0xF:
             address -= 0x1000000;
         case 0xE:
-            std::cout << "Writing to cart RAM\n";
+            //std::cout << "Writing to cart RAM\n";
             address &= ~ram_size; // RAM Mirror
             cart_ram[address - 0xE000000] = value;
             return;

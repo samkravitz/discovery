@@ -32,10 +32,11 @@ arm_7tdmi::arm_7tdmi()
     // initialize cpsr
     registers.cpsr.bits.f = 1;
 
-    in_interrupt  = false;
     pipeline_full = false;
     cycles = 0;
     current_interrupt = 0;
+    in_interrupt  = false;
+    swi_vblank_intr = false;
 
     mem = NULL;
     
@@ -884,9 +885,13 @@ void arm_7tdmi::handle_interrupt()
             // handle interrupt at position i
             if (interrupts_enabled & (1 << i) && interrupts_requested & (1 << i))
             {
-                //std::cout << "interrupt handling! " << (int) get_mode() << "\n";
-
                 // emulate how BIOS handles interrupts
+                //std::cout << "interrupt handling! " << i << "\n";
+                if ((swi_vblank_intr) && (i == 0))
+                {
+                    registers.r15 += get_mode() == ARM ? 4 : 2;
+                    swi_vblank_intr = false;
+                }
 
                 // switch to IRQ
                 set_state(IRQ);
@@ -904,12 +909,9 @@ void arm_7tdmi::handle_interrupt()
 
                 else
                 {
-                   // std::cout << "Caution: interrupt after a branch\n";
+                    std::cout << "Caution: interrupt after a branch\n";
                     set_register(r14, get_register(r15) + 0x4);
                 }
-                
-                // add r14, r15, 0
-                
 
                 // save registers to SP_irq
                 // stmfd  r13!, r0-r3, r12, r14

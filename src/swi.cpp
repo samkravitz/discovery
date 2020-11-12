@@ -99,6 +99,20 @@ void arm_7tdmi::swi_registerRamReset()
 }
 
 /*
+ * VBlank interrupt wait
+ * 
+ * Halts execution until a VBlank interrupt arises
+ */
+void arm_7tdmi::swi_VBlankIntrWait()
+{
+    std::cout << "a" << ((int) mem->read_u32_unprotected(REG_IF)) << "\n";
+    std::cout << "b" << ((int) mem->read_u32_unprotected(REG_IE)) << "\n";
+    std::cout << ((int) mem->read_u32_unprotected(REG_IME)) << "\n";
+    //exit(0);
+    registers.r15 -= get_mode() == ARM ? 4 : 2;
+}
+
+/*
  * Signed division, r0 / r1
  * r0 - signed 32 bit number
  * r1 - signed 32 bit denom

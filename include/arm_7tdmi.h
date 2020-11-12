@@ -157,6 +157,7 @@ class arm_7tdmi
         // software interrupts (swi)
         void swi_softReset();
         void swi_registerRamReset();
+        void swi_VBlankIntrWait();
         void swi_division();
         void swi_sqrt();
         void swi_arctan2();

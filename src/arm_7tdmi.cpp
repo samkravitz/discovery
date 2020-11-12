@@ -866,7 +866,7 @@ void arm_7tdmi::handle_interrupt()
         u32 reg_if = mem->read_u32_unprotected(REG_IF) & ~current_interrupt;
         mem->write_u32_unprotected(REG_IF, reg_if);
 
-        //std::cout << "interrupt handled! " << (int) get_mode() << "\n";
+        //std::cout << "interrupt handled! " << std::hex << registers.r15 << "\n";
         return;
     }
 
@@ -899,14 +899,20 @@ void arm_7tdmi::handle_interrupt()
                 // save CPSR to SPSR
                 update_spsr(get_register(cpsr), false);
                 
+                // no branch
                 if (pipeline_full)
                 {
-                    if (get_mode() == ARM)
-                        set_register(r14, get_register(r15));
-                    else
-                        set_register(r14, get_register(r15) + 0x2);
+                    if (get_mode() == ARM) {
+                        std::cout << "asdf\n";
+                        set_register(r14, get_register(r15) + 4);
+                    }
+                    else {
+                        std::cout << "asdf\n";
+                        set_register(r14, get_register(r15) + 4);
+                    }
                 }
 
+                // branch
                 else
                 {
                     std::cout << "Caution: interrupt after a branch\n";

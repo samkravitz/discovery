@@ -316,10 +316,10 @@ void arm_7tdmi::swi_objAffineSet()
         pd *=  sy; // sy *  cos(α)
 
         // convert back to range [0x0 - 0xFFFF]
-        // mem->write_u16(dest_ptr, pa * 256); dest_ptr += offset;
-        // mem->write_u16(dest_ptr, pb * 256); dest_ptr += offset;
-        // mem->write_u16(dest_ptr, pc * 256); dest_ptr += offset;
-        // mem->write_u16(dest_ptr, pd * 256); dest_ptr += offset;
+        mem->write_u16(dest_ptr, pa * 256); dest_ptr += offset;
+        mem->write_u16(dest_ptr, pb * 256); dest_ptr += offset;
+        mem->write_u16(dest_ptr, pc * 256); dest_ptr += offset;
+        mem->write_u16(dest_ptr, pd * 256); dest_ptr += offset;
 
         src_ptr  += offset;
     }

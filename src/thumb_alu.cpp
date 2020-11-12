@@ -877,7 +877,7 @@ void arm_7tdmi::conditional_branch(u16 instruction)
 
 void arm_7tdmi::software_interrupt_thumb(u16 instruction)
 {
-    //std::cout << "thumb SWI:  " << (instruction & 0xFF) << "\n";
+    std::cout << "thumb SWI:  " << (instruction & 0xFF) << "\n";
 
     // bits 7 - 0 determine which interrupt
     switch (instruction & 0xFF)

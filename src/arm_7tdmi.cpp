@@ -894,11 +894,22 @@ void arm_7tdmi::handle_interrupt()
                 // save CPSR to SPSR
                 update_spsr(get_register(cpsr), false);
                 
-                if (!pipeline_full)
-                    std::cout << "Caution: interrupt after a branch\n";
+                if (pipeline_full)
+                {
+                    if (get_mode() == ARM)
+                        set_register(r14, get_register(r15));
+                    else
+                        set_register(r14, get_register(r15) + 0x2);
+                }
 
+                else
+                {
+                   // std::cout << "Caution: interrupt after a branch\n";
+                    set_register(r14, get_register(r15) + 0x4);
+                }
+                
                 // add r14, r15, 0
-                set_register(r14, get_register(r15));
+                
 
                 // save registers to SP_irq
                 // stmfd  r13!, r0-r3, r12, r14

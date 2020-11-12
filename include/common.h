@@ -22,6 +22,26 @@ typedef int16_t s16;
 typedef int32_t s32;
 typedef int64_t s64;
 
+// register mnemonics
+const u32 r0   = 0;
+const u32 r1   = 1;
+const u32 r2   = 2;
+const u32 r3   = 3;
+const u32 r4   = 4;
+const u32 r5   = 5;
+const u32 r6   = 6;
+const u32 r7   = 7;
+const u32 r8   = 8;
+const u32 r9   = 9;
+const u32 r10  = 10;
+const u32 r11  = 11;
+const u32 r12  = 12;
+const u32 r13  = 13;
+const u32 r14  = 14;
+const u32 r15  = 15;
+const u32 cpsr = 16;
+const u32 spsr = 17;
+
 // IRQ bits
 const u32 IRQ_VBLANK  = 1 << 0;
 const u32 IRQ_HBLANK  = 1 << 1;

@@ -39,7 +39,7 @@ void arm_7tdmi::swi_softReset()
  */
 void arm_7tdmi::swi_registerRamReset()
 {
-    u8 flags = get_register(0) & 0xFF;
+    u8 flags = get_register(r0) & 0xFF;
 
     // bit 0
     if (flags & (1 << 0))
@@ -110,8 +110,8 @@ void arm_7tdmi::swi_registerRamReset()
  */
 void arm_7tdmi::swi_division()
 {
-    s32 num   = (s32) get_register(0);
-    s32 denom = (s32) get_register(1);
+    s32 num   = (s32) get_register(r0);
+    s32 denom = (s32) get_register(r1);
 
     // divide by 0
     if (denom == 0)
@@ -120,9 +120,9 @@ void arm_7tdmi::swi_division()
         return;
     }
 
-    set_register(0, (u32) (num / denom));
-    set_register(1, (u32) (num % denom));
-    set_register(3, abs(num / denom));
+    set_register(r0, (u32) (num / denom));
+    set_register(r1, (u32) (num % denom));
+    set_register(r3, abs(num / denom));
 }
 
 /*
@@ -134,10 +134,10 @@ void arm_7tdmi::swi_division()
  */
 void arm_7tdmi::swi_sqrt()
 {
-    u32 num    = get_register(0);
+    u32 num    = get_register(r0);
     u16 result = (u16) sqrt(num);
 
-    set_register(0, result);
+    set_register(r0, result);
 }
 
 /*
@@ -150,8 +150,8 @@ void arm_7tdmi::swi_sqrt()
  */
 void arm_7tdmi::swi_arctan2()
 {
-    s16 x = get_register(0);
-    s16 y = get_register(1);
+    s16 x = get_register(r0);
+    s16 y = get_register(r1);
 
     // TODO - handle case for negative x ?
     float result = atan2f(y, x);
@@ -160,14 +160,14 @@ void arm_7tdmi::swi_arctan2()
     // result in range [0x0, 0xFFFF]
     result *= (0xFFFF / (2 * M_PI));
 
-    set_register(0, (u16) result);
+    set_register(r0, (u16) result);
 }
 
 void arm_7tdmi::swi_cpuSet()
 {
-    u32 src_ptr  = get_register(0);
-    u32 dest_ptr = get_register(1);
-    u32 mode     = get_register(2);
+    u32 src_ptr  = get_register(r0);
+    u32 dest_ptr = get_register(r1);
+    u32 mode     = get_register(r2);
 
     u32 wordcount = mode & 0x1FFFFF; // bits 0-20
     u8 fill       = mode >> 24 & 1; // bit 24 (1 == fill, 0 == copy)
@@ -261,10 +261,10 @@ void arm_7tdmi::swi_cpuSet()
  */
 void arm_7tdmi::swi_objAffineSet()
 {
-    u32 src_ptr          = get_register(0);
-    u32 dest_ptr         = get_register(1);
-    u32 num_calculations = get_register(2);
-    u32 offset           = get_register(3);
+    u32 src_ptr          = get_register(r0);
+    u32 dest_ptr         = get_register(r1);
+    u32 num_calculations = get_register(r2);
+    u32 offset           = get_register(r3);
 
     float sx, sy;         // scale x, y
 	float alpha;          // angle of rotation
@@ -318,15 +318,15 @@ void arm_7tdmi::swi_objAffineSet()
  */
 void arm_7tdmi::swi_bitUnpack()
 {
-    u32 src_ptr     = get_register(0);
-    u32 dest_ptr    = get_register(1) & ~0x3;
-    u32 info_ptr    = get_register(2);
+    u32 src_ptr     = get_register(r0);
+    u32 dest_ptr    = get_register(r1) & ~0x3;
+    u32 info_ptr    = get_register(r2);
 
     u32 info_lower  = mem->read_u32(info_ptr);
     u32 data_offset = mem->read_u32(info_ptr + 4);
 
     bool zero_flag = (data_offset >> 31) == 1;
-    data_offset &= 0x7FFFFFFF; // clear MSB6+2
+    data_offset &= 0x7FFFFFFF; // clear MSB
 
     u16 len         = info_lower & 0xFFFF;
     u8 src_width    = (info_lower >> 16) & 0xFF; // in bits

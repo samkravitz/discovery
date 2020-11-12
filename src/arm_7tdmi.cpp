@@ -354,47 +354,47 @@ u32 arm_7tdmi::get_register(u32 reg)
 {
     switch (reg)
     {
-        case 0: return registers.r0;
-        case 1: return registers.r1;
-        case 2: return registers.r2;
-        case 3: return registers.r3;
-        case 4: return registers.r4;
-        case 5: return registers.r5;
-        case 6: return registers.r6;
-        case 7: return registers.r7;
+        case r0: return registers.r0;
+        case r1: return registers.r1;
+        case r2: return registers.r2;
+        case r3: return registers.r3;
+        case r4: return registers.r4;
+        case r5: return registers.r5;
+        case r6: return registers.r6;
+        case r7: return registers.r7;
 
-        case 8:
+        case r8:
             switch (get_state())
             {
                 case FIQ: return registers.r8_fiq;
                 default: return registers.r8;
             }
-        case 9:
+        case r9:
             switch (get_state())
             {
                 case FIQ: return registers.r9_fiq;
                 default: return registers.r9;
             }
-        case 10:
+        case r10:
             switch (get_state())
             {
                 case FIQ: return registers.r10_fiq;
                 default: return registers.r10;
             }
-        case 11:
+        case r11:
             switch (get_state())
             {
                 case FIQ: return registers.r11_fiq;
                 default: return registers.r11;
             }
-        case 12:
+        case r12:
             switch (get_state())
             {
                 case FIQ: return registers.r12_fiq;
                 default: return registers.r12;
             }
 
-        case 13:
+        case r13:
             switch(get_state())
             {
                 case USR:
@@ -406,7 +406,7 @@ u32 arm_7tdmi::get_register(u32 reg)
                 case UND: return registers.r13_und;
             }
 
-        case 14:
+        case r14:
             switch(get_state())
             {
                 case USR:
@@ -418,11 +418,11 @@ u32 arm_7tdmi::get_register(u32 reg)
                 case UND: return registers.r14_und;
             }
 
-        case 15:
+        case r15:
             return registers.r15; // all banks share r15
-        case 16:
+        case cpsr:
             return registers.cpsr.full; // all banks share cpsr
-        case 17:
+        case spsr:
             switch(get_state())
             {
                 case FIQ: return registers.spsr_fiq.full;
@@ -445,17 +445,17 @@ void arm_7tdmi::set_register(u32 reg, u32 val)
     switch (reg)
     {
         // all banks share r0 - r7
-        case 0: registers.r0 = val; break;
-        case 1: registers.r1 = val; break;
-        case 2: registers.r2 = val; break;
-        case 3: registers.r3 = val; break;
-        case 4: registers.r4 = val; break;
-        case 5: registers.r5 = val; break;
-        case 6: registers.r6 = val; break;
-        case 7: registers.r7 = val; break;
+        case r0: registers.r0 = val; break;
+        case r1: registers.r1 = val; break;
+        case r2: registers.r2 = val; break;
+        case r3: registers.r3 = val; break;
+        case r4: registers.r4 = val; break;
+        case r5: registers.r5 = val; break;
+        case r6: registers.r6 = val; break;
+        case r7: registers.r7 = val; break;
 
         // banked registers
-        case 8:
+        case r8:
             switch (get_state())
             {
                 case FIQ:
@@ -466,7 +466,7 @@ void arm_7tdmi::set_register(u32 reg, u32 val)
                     break;
             }
             break;
-        case 9:
+        case r9:
             switch (get_state())
             {
                 case FIQ:
@@ -477,7 +477,7 @@ void arm_7tdmi::set_register(u32 reg, u32 val)
                     break;
             }
             break;
-        case 10:
+        case r10:
             switch (get_state())
             {
                 case FIQ:
@@ -488,7 +488,7 @@ void arm_7tdmi::set_register(u32 reg, u32 val)
                     break;
             }
             break;
-        case 11:
+        case r11:
             switch (get_state())
             {
                 case FIQ:
@@ -499,7 +499,7 @@ void arm_7tdmi::set_register(u32 reg, u32 val)
                     break;
             }
             break;
-        case 12:
+        case r12:
             switch (get_state())
             {
                 case FIQ:
@@ -511,7 +511,7 @@ void arm_7tdmi::set_register(u32 reg, u32 val)
             }
             break;
 
-        case 13:
+        case r13:
             switch(get_state())
             {
                 case USR:
@@ -536,7 +536,7 @@ void arm_7tdmi::set_register(u32 reg, u32 val)
             }
             break;
 
-        case 14:
+        case r14:
             switch(get_state())
             {
                 case USR:
@@ -562,8 +562,8 @@ void arm_7tdmi::set_register(u32 reg, u32 val)
             break;
 
 
-        case 15: registers.r15 = val; break; // all banks share r15
-        case 16: registers.cpsr.full = val; break; // all banks share cpsr
+        case r15: registers.r15 = val; break; // all banks share r15
+        case cpsr: registers.cpsr.full = val; break; // all banks share cpsr
         default:
             std::cerr << "Unknown register: " << reg << "\n";
             break;
@@ -909,26 +909,26 @@ void arm_7tdmi::cycle(u8 n, u8 s, u8 i)
 void arm_7tdmi::handle_interrupt()
 {
     // exit interrupt
-    if (in_interrupt && get_register(15) == 0x138)
+    if (in_interrupt && get_register(r15) == 0x138)
     {
-        std::cout << "Handled interrupt!\n";
+        //std::cout << "Handled interrupt!\n";
 
         // restore registers from stack
         // ldmfd r13! r0-r3, r12, r14
-        u32 sp = get_register(13);
-        set_register(0,  mem->read_u32(sp)); sp += 4;
-        set_register(1,  mem->read_u32(sp)); sp += 4;
-        set_register(2,  mem->read_u32(sp)); sp += 4;
-        set_register(3,  mem->read_u32(sp)); sp += 4;
-        set_register(12, mem->read_u32(sp)); sp += 4;
-        set_register(14, mem->read_u32(sp)); sp += 4;
+        u32 sp = get_register(r13);
+        set_register(r0,  mem->read_u32(sp)); sp += 4;
+        set_register(r1,  mem->read_u32(sp)); sp += 4;
+        set_register(r2,  mem->read_u32(sp)); sp += 4;
+        set_register(r3,  mem->read_u32(sp)); sp += 4;
+        set_register(r12, mem->read_u32(sp)); sp += 4;
+        set_register(r14, mem->read_u32(sp)); sp += 4;
 
         // return from IRQ
         // subs r15, r14, 4
-        set_register(15, get_register(14) - 4);
+        set_register(r15, get_register(r14) - 4);
 
         // restore CPSR
-        set_register(16, get_register(17));
+        set_register(cpsr, get_register(spsr));
 
         // re-enable interrupts
         registers.cpsr.bits.i = 0;
@@ -969,33 +969,33 @@ void arm_7tdmi::handle_interrupt()
                 set_state(IRQ);
 
                 // save CPSR to SPSR
-                update_spsr(get_register(16), false);
+                update_spsr(get_register(cpsr), false);
                 
                 if (!pipeline_full)
                     std::cout << "Caution: interrupt after a branch\n";
 
                 // add r14, r15, 0
-                set_register(14, get_register(15));
+                set_register(r14, get_register(r15));
 
                 // save registers to SP_irq
                 // stmfd  r13!, r0-r3, r12, r14
-                u32 sp = get_register(13);
-                sp -= 4; mem->write_u32(sp, get_register(14)); 
-                sp -= 4; mem->write_u32(sp, get_register(12));
-                sp -= 4; mem->write_u32(sp, get_register(3));
-                sp -= 4; mem->write_u32(sp, get_register(2));
-                sp -= 4; mem->write_u32(sp, get_register(1));
-                sp -= 4; mem->write_u32(sp, get_register(0));
-                set_register(13, sp);
+                u32 sp = get_register(r13);
+                sp -= 4; mem->write_u32(sp, get_register(r14)); 
+                sp -= 4; mem->write_u32(sp, get_register(r12));
+                sp -= 4; mem->write_u32(sp, get_register(r3));
+                sp -= 4; mem->write_u32(sp, get_register(r2));
+                sp -= 4; mem->write_u32(sp, get_register(r1));
+                sp -= 4; mem->write_u32(sp, get_register(r0));
+                set_register(r13, sp);
 
                 // mov r0, 0x4000000
-                set_register(0, 0x4000000);
+                set_register(r0, 0x4000000);
 
                 // address where BIOS returns from IRQ handler
-                set_register(14, 0x138);
+                set_register(r14, 0x138);
 
                 // ldr r15, [r0, -0x4]
-                set_register(15, mem->read_u32(get_register(0) - 0x4) & ~0x3);
+                set_register(r15, mem->read_u32(get_register(r0) - 0x4) & ~0x3);
 
                 registers.cpsr.bits.i = 1; // disable interrupts
                 set_mode(ARM);

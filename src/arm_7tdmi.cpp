@@ -865,6 +865,7 @@ void arm_7tdmi::handle_interrupt()
         u32 reg_if = mem->read_u32_unprotected(REG_IF) & ~current_interrupt;
         mem->write_u32_unprotected(REG_IF, reg_if);
 
+        //std::cout << "interrupt handled! " << (int) get_mode() << "\n";
         return;
     }
 
@@ -883,7 +884,7 @@ void arm_7tdmi::handle_interrupt()
             // handle interrupt at position i
             if (interrupts_enabled & (1 << i) && interrupts_requested & (1 << i))
             {
-                //std::cout << "interrupt handling!\n";
+                //std::cout << "interrupt handling! " << (int) get_mode() << "\n";
 
                 // emulate how BIOS handles interrupts
 
@@ -927,7 +928,6 @@ void arm_7tdmi::handle_interrupt()
 
                 // save the current interrupt so we can clear it after it's been serviced
                 current_interrupt = interrupts_requested & (1 << i);
-                
                 return;
             }
         }

@@ -105,11 +105,12 @@ void arm_7tdmi::swi_registerRamReset()
  */
 void arm_7tdmi::swi_VBlankIntrWait()
 {
-    std::cout << "a" << ((int) mem->read_u32_unprotected(REG_IF)) << "\n";
-    std::cout << "b" << ((int) mem->read_u32_unprotected(REG_IE)) << "\n";
-    std::cout << ((int) mem->read_u32_unprotected(REG_IME)) << "\n";
+    // std::cout << "a" << ((int) mem->read_u32_unprotected(REG_IF)) << "\n";
+    // std::cout << "b" << ((int) mem->read_u32_unprotected(REG_IE)) << "\n";
+    // std::cout << ((int) mem->read_u32_unprotected(REG_IME)) << "\n";
     //exit(0);
-    registers.r15 -= get_mode() == ARM ? 4 : 2;
+    //registers.r15 -= get_mode() == ARM ? 4 : 2;
+    pipeline_full = false;
 }
 
 /*
@@ -284,12 +285,9 @@ void arm_7tdmi::swi_objAffineSet()
 	float alpha;          // angle of rotation
 	float pa, pb, pc, pd; // calculated P matrix
 
-    // // TODO - these more complex cases that I don't feel like doing now
+    // TODO - are src. dest ptrs updated correctly for multiple calculations
     if (num_calculations != 1)
         std::cout << "SWI ObjAffineSet > 1 calculations\n";
-    
-    if (offset != 2) // for OAM, not bg
-        std::cout << "SWI ObjAffineSet for OAM\n";
 
     for (int i = 0; i < num_calculations; ++i)
     {
@@ -308,15 +306,13 @@ void arm_7tdmi::swi_objAffineSet()
         pd *=  sy; // sy *  cos(α)
 
         // convert back to range [0x0 - 0xFFFF]
-        mem->write_u16(dest_ptr    , pa * 256);
-        mem->write_u16(dest_ptr + 2, pb * 256);
-        mem->write_u16(dest_ptr + 4, pc * 256);
-        mem->write_u16(dest_ptr + 6, pd * 256);
+        mem->write_u16(dest_ptr, pa * 256); dest_ptr += offset;
+        mem->write_u16(dest_ptr, pb * 256); dest_ptr += offset;
+        mem->write_u16(dest_ptr, pc * 256); dest_ptr += offset;
+        mem->write_u16(dest_ptr, pd * 256); dest_ptr += offset;
 
         src_ptr  += offset;
-        dest_ptr += 8;
     }
-    
 }
 
 /*

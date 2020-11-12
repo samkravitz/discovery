@@ -35,6 +35,7 @@ arm_7tdmi::arm_7tdmi()
     in_interrupt  = false;
     pipeline_full = false;
     cycles = 0;
+    current_interrupt = 0;
 
     mem = NULL;
     
@@ -928,7 +929,7 @@ void arm_7tdmi::handle_interrupt()
 
         // return from IRQ
         // subs r15, r14, 4
-        set_register(15, get_register(14) - 0x4);
+        set_register(15, get_register(14) - 4);
 
         // restore CPSR
         set_register(16, get_register(17));
@@ -940,6 +941,12 @@ void arm_7tdmi::handle_interrupt()
         pipeline_full = false;
         in_interrupt  = false;
         
+        set_state(SYS);
+
+        // clear bit from REG_IF to show that interrupt has been serviced
+        u32 reg_if = mem->read_u32_unprotected(REG_IF) & ~current_interrupt;
+        mem->write_u32_unprotected(REG_IF, reg_if);
+
         return;
     }
 
@@ -952,26 +959,27 @@ void arm_7tdmi::handle_interrupt()
         u16 interrupts_enabled   = mem->read_u16_unprotected(REG_IE);
         u16 interrupts_requested = mem->read_u16_unprotected(REG_IF);
 
-        //std::cout << std::hex << (int) interrupts_requested << "\n";
         // get first identical set bit in enabled/requested interrupts
         for (int i = 0; i < 14; ++i) // 14 interrupts available
         {
             // handle interrupt at position i
             if (interrupts_enabled & (1 << i) && interrupts_requested & (1 << i))
             {
+                //std::cout << "interrupt handling!\n";
+
                 // emulate how BIOS handles interrupts
 
                 // switch to IRQ
                 set_state(IRQ);
+
+                // save CPSR to SPSR
+                update_spsr(get_register(16), false);
                 
                 if (!pipeline_full)
                     std::cout << "Caution: interrupt after a branch\n";
 
                 // add r14, r15, 0
-                set_register(14, get_register(15) - 4);
-
-                // save CPSR to SPSR
-                update_spsr(get_register(16), false);
+                set_register(14, get_register(15));
 
                 // save registers to SP_irq
                 // stmfd  r13!, r0-r3, r12, r14
@@ -998,7 +1006,10 @@ void arm_7tdmi::handle_interrupt()
                 in_interrupt  = true;
                 mem->write_u32_unprotected(REG_IME, 0);
 
-                std::cout << "interrupt handling!\n";
+                // save the current interrupt so we can clear it after it's been serviced
+                current_interrupt = interrupts_requested & (1 << i);
+                
+                return;
             }
         }
     }

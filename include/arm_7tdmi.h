@@ -41,11 +41,11 @@ class arm_7tdmi
         
         Memory *mem;
 
-        u32 pipeline[3];
+        u32  pipeline[3];
         bool pipeline_full;
         bool in_interrupt;
-        
-        u32 cycles;
+        u32  current_interrupt;
+        u32  cycles;
 
         struct registers
         {

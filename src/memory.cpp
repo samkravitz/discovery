@@ -63,7 +63,7 @@ void Memory::reset()
     }
 
     // write all 1s to keypad (all keys cleared)
-    write_u32_unprotected(REG_IF, 0x1000);
+    //write_u32_unprotected(REG_IF, 0x1000);
 
     // write all 1s to keypad (all keys cleared)
     write_u32_unprotected(REG_KEYINPUT, 0b1111111111);
@@ -250,8 +250,8 @@ u8 Memory::read_u8(u32 address)
     // game rom
     if (address >= MEM_SIZE)
     {
-        if (address - MEM_SIZE > rom_size)
-            std::cout << "Caution: reading outside known cart length\n";
+        //if (address - MEM_SIZE > rom_size)
+            //std::cout << "Caution: reading outside known cart length\n";
 
         return cart_rom[address - MEM_SIZE];
     }

@@ -85,6 +85,10 @@ void discovery::game_loop()
         cpu.decode(cpu.pipeline[0]);
         cpu.execute(cpu.pipeline[0]);
 
+        // update pipeline
+        cpu.pipeline[0] = cpu.pipeline[1];
+        cpu.pipeline[1] = cpu.pipeline[2];
+
         // run gpu and timers for as many clock cycles as cpu used
         system_cycles = cpu.cycles;
         for (int i = system_cycles - old_cycles; i > 0; --i)
@@ -149,12 +153,9 @@ void discovery::game_loop()
                 poll_keys(e);
         }
 
-        if (num > 5)
-            cpu.handle_interrupt();
+        // if (num > 5)
+        cpu.handle_interrupt();
 
-        // update pipeline
-        cpu.pipeline[0] = cpu.pipeline[1];
-        cpu.pipeline[1] = cpu.pipeline[2];
     }
     shutdown();
 }

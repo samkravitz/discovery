@@ -12,11 +12,11 @@ int main(int argc, char **argv)
     discovery emulator;
 
     // load bios
-    // if (!emulator.mem->load_bios())
-    // {
-    //     std::cerr << "Error loading BIOS\n";
-    //     return 1;
-    // }
+    if (!emulator.mem->load_bios())
+    {
+        std::cerr << "Error loading BIOS\n";
+        return 1;
+    }
 
     std::string deb = "";
 

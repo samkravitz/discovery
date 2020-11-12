@@ -845,10 +845,11 @@ void arm_7tdmi::handle_interrupt()
         set_register(r3,  mem->read_u32(sp)); sp += 4;
         set_register(r12, mem->read_u32(sp)); sp += 4;
         set_register(r14, mem->read_u32(sp)); sp += 4;
+        set_register(r13, sp);
 
         // return from IRQ
         // subs r15, r14, 4
-        set_register(r15, get_register(r14));
+        set_register(r15, get_register(r14) - 4);
 
         // restore CPSR
         set_register(cpsr, get_register(spsr));
@@ -886,11 +887,11 @@ void arm_7tdmi::handle_interrupt()
             if (interrupts_enabled & (1 << i) && interrupts_requested & (1 << i))
             {
                 // emulate how BIOS handles interrupts
-                //std::cout << "interrupt handling! " << i << "\n";
+                std::cout << "interrupt handling! " << i << "\n";
                 if ((swi_vblank_intr) && (i == 0))
                 {
                     std::cout << "swi vblank\n";
-                    registers.r15 += get_mode() == ARM ? 4 : 2;
+                    //registers.r15 += get_mode() == ARM ? 4 : 2;
                     swi_vblank_intr = false;
                 }
 
@@ -905,11 +906,11 @@ void arm_7tdmi::handle_interrupt()
                 {
                     if (get_mode() == ARM) {
                         std::cout << "arm interrupt\n";
-                        set_register(r14, get_register(r15) - 4);
+                        set_register(r14, get_register(r15));
                     }
                     else {
                         std::cout << "thumb interrupt\n";
-                        set_register(r14, get_register(r15) - 2);
+                        set_register(r14, get_register(r15) + 4);
                     }
                 }
 
@@ -917,7 +918,7 @@ void arm_7tdmi::handle_interrupt()
                 else
                 {
                     std::cout << "Caution: interrupt after a branch\n";
-                    set_register(r14, get_register(r15));
+                    set_register(r14, get_register(r15) + 4);
                 }
 
                 // save registers to SP_irq

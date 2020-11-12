@@ -277,9 +277,6 @@ void arm_7tdmi::hi_reg_ops(u16 instruction)
                 ++s;
                 ++n;
             }
-            
-            else
-                increment_pc();
         
             break;
 
@@ -292,7 +289,6 @@ void arm_7tdmi::hi_reg_ops(u16 instruction)
 
             result = op2 - op1;
             update_flags_subtraction(op2, op1, result);
-            increment_pc();
             break;
         case 0b10: // MOV
             if (!H1 && !H2)
@@ -316,9 +312,6 @@ void arm_7tdmi::hi_reg_ops(u16 instruction)
                 ++s;
                 ++n;
             }
-            
-            else
-                increment_pc();
 
             break;
         case 0b11: // BX
@@ -733,8 +726,6 @@ void arm_7tdmi::push_pop(u16 instruction)
             // base -= 4; // increment stack pointer (4 bytes for word alignment)
             ++s;
         }
-
-        increment_pc();
     }
     
     else // POP Rlist
@@ -751,14 +742,10 @@ void arm_7tdmi::push_pop(u16 instruction)
         if (R) // pop pc
         {
             set_register(r15, read_u32(base, false) & ~1); // guaruntee halfword alignment
+            pipeline_full = false;
             base += 4; // decrement stack pointer (4 bytes for word alignment)
             ++s;
             ++n;
-        }
-        
-        else
-        {
-            increment_pc();
         }
 
         // write base back into sp
@@ -808,7 +795,6 @@ void arm_7tdmi::multiple_load_store(u16 instruction)
         else // store r15
         {
             write_u32(base, registers.r15 + 4);
-            increment_pc();
         }
 
         // store Rb = Rb +/- 0x40
@@ -861,7 +847,6 @@ void arm_7tdmi::conditional_branch(u16 instruction)
     {
         // 1S
         cycle(0, 1, 0);
-        increment_pc();
         return;
     }
 
@@ -1024,7 +1009,6 @@ void arm_7tdmi::long_branch_link(u16 instruction)
         }
 
         set_register(r14, base); // resulting address stored in LR
-        increment_pc();
     }
 }
 

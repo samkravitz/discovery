@@ -187,132 +187,54 @@ void arm_7tdmi::execute(u32 instruction)
             
             switch(util::get_instruction_format(instruction))
             {
-                case BEX:
-                    branch_exchange(instruction);
-                    break;
-                case B:
-                    branch_link(instruction);
-                    break;
-                case DP:
-                    data_processing(instruction);
-                    increment_pc();
-                    break;
-                case MUL:
-                    multiply(instruction);
-                    increment_pc();
-                    break;
-                case MULL:
-                    multiply_long(instruction);
-                    increment_pc();
-                    break;
-                case PSR:
-                    psr_transfer(instruction);
-                    increment_pc();
-                    break;
-                case SDT:
-                    single_data_transfer(instruction);
-                    increment_pc();
-                    break;
-                case HDT:
-                    halfword_data_transfer(instruction);
-                    increment_pc();
-                    break;
-                case BDT:
-                    block_data_transfer(instruction);
-                    break;
-                case SWP:
-                    single_data_swap(instruction);
-                    increment_pc();
-                    break;
-                case INT:
-                    software_interrupt(instruction);
-                    increment_pc();
-                    break;
+                case BEX:  branch_exchange(instruction);        break;
+                case B:    branch_link(instruction);            break;
+                case DP:   data_processing(instruction);        break;
+                case MUL:  multiply(instruction);               break;
+                case MULL: multiply_long(instruction);          break;
+                case PSR:  psr_transfer(instruction);           break;
+                case SDT:  single_data_transfer(instruction);   break;
+                case HDT:  halfword_data_transfer(instruction); break;
+                case BDT:  block_data_transfer(instruction);    break;
+                case SWP:  single_data_swap(instruction);       break;
+                case INT:  software_interrupt(instruction);     break;
                 default:
                     std::cerr << "Cannot execute instruction: " << instruction << "\n";
             }
             break;
 
         case THUMB:
+            u16 instr = (u16) instruction;
             switch(util::get_instruction_format((u16) instruction))
             {
-                case MSR_T:
-                    move_shifted_register((u16) instruction);
-                    increment_pc();
-                    break;
-                case ADDSUB_T:
-                    add_sub((u16) instruction);
-                    increment_pc();
-                    break;
-                case IMM_T:
-                    move_immediate((u16) instruction);
-                    increment_pc();
-                    break;
-                case ALU_T:
-                    alu_thumb((u16) instruction);
-                    increment_pc();
-                    break;
-                case HI_T:
-                    hi_reg_ops((u16) instruction);
-                    break;
-                case PC_T:
-                    pc_rel_load((u16) instruction);
-                    increment_pc();
-                    break;
-                case MOV_T:
-                    load_store_reg((u16) instruction);
-                    increment_pc();
-                    break;
-                case MOVS_T:
-                    load_store_signed_halfword((u16) instruction);
-                    increment_pc();
-                    break;
-                case MOVI_T:
-                    load_store_immediate((u16) instruction);
-                    increment_pc();
-                    break;
-                case MOVH_T:
-                    load_store_halfword((u16) instruction);
-                    increment_pc();
-                    break;
-                case SP_T:
-                    sp_load_store((u16) instruction);
-                    increment_pc();
-                    break;
-                case LDA_T:
-                    load_address((u16) instruction);
-                    increment_pc();
-                    break;
-                case ADDSP_T:
-                    add_offset_to_sp((u16) instruction);
-                    increment_pc();
-                    break;
-                case POP_T:
-                    push_pop((u16) instruction);
-                    break;
-                case MOVM_T:
-                    multiple_load_store((u16) instruction);
-                    increment_pc();
-                    break;
-                case B_T:
-                    conditional_branch((u16) instruction);
-                    break;
-                case SWI_T:
-                    software_interrupt_thumb((u16) instruction);
-                    increment_pc();
-                    break;
-                case BAL_T:
-                    unconditional_branch((u16) instruction);
-                    break;
-                case BL_T:
-                    long_branch_link((u16) instruction);
-                    break;
+                case MSR_T:    move_shifted_register(instr);            break;
+                case ADDSUB_T: add_sub(instr);                          break;
+                case IMM_T:    move_immediate(instr);                   break;
+                case ALU_T:    alu_thumb(instr);                        break;
+                case HI_T:     hi_reg_ops(instr);                       break;
+                case PC_T:     pc_rel_load(instr);                      break;
+                case MOV_T:    load_store_reg(instr);                   break;
+                case MOVS_T:   load_store_signed_halfword(instr);       break;
+                case MOVI_T:   load_store_immediate(instr);             break;
+                case MOVH_T:   load_store_halfword(instr);              break;
+                case SP_T:     sp_load_store(instr);                    break;
+                case LDA_T:    load_address(instr);                     break;
+                case ADDSP_T:  add_offset_to_sp(instr);                 break;
+                case POP_T:    push_pop(instr);                         break;
+                case MOVM_T:   multiple_load_store(instr);              break;
+                case B_T:      conditional_branch(instr);               break;
+                case SWI_T:    software_interrupt_thumb(instr);         break;
+                case BAL_T:    unconditional_branch(instr);             break;
+                case BL_T:     long_branch_link(instr);                 break;
                 default:
                     std::cerr << "Cannot execute thumb instruction: " << (u16) instruction << " " << std::hex << registers.r15 << "\n";
-                    break;
             }
-        break;
+            break;
     }
+
+    // increment pc if there was no branch
+    if (pipeline_full)
+        increment_pc();
 
     #ifdef PRINT
     std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << get_register(0) << 

@@ -253,7 +253,6 @@ void arm_7tdmi::branch_link(u32 instruction)
     // if writing new value to PC, don't increment PC
     if (Rd == r15)
     {
-        registers.r15 -= 4;
         pipeline_full = false;
         // if S bit is set, move SPSR into CPSR
         if (set_condition_code)
@@ -611,8 +610,6 @@ void arm_7tdmi::single_data_transfer(u32 instruction)
         {
             ++s;
             ++n;
-            // compensate for incrementing PC after this instruction
-            registers.r15 -= 4;
             pipeline_full = false;
         }
 
@@ -814,7 +811,6 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
         else // store r15
         {
             write_u32(base, registers.r15 + 4);
-            increment_pc();
         }
 
         // store Rb = Rb +/- 0x40
@@ -950,8 +946,8 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
         }
     }
     
-    if (!(r15_in_register_list && load))
-        increment_pc(); // increment pc if flush is not necessary
+    // if (!(r15_in_register_list && load))
+    //     increment_pc(); // increment pc if flush is not necessary
 
     if (write_back)
     {

@@ -286,6 +286,8 @@ void arm_7tdmi::multiply(u32 instruction)
         return;
     }
 
+    //std::cout << "Multiplication\n";
+
     u8 m; // # of m cycles
     
     u32 op1 = get_register(Rm);
@@ -952,19 +954,19 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
     if (write_back)
     {
         // edge case - Rb included in Rlist
-        if (Rb_in_Rlist)
-        {
-            // store OLD base if Rb is FIRST entry in Rlist
-            if (Rb_first_in_list)
-                set_register(Rb, old_base);
+        // if (Rb_in_Rlist)
+        // {
+        //     // store OLD base if Rb is FIRST entry in Rlist
+        //     if (Rb_first_in_list)
+        //         set_register(Rb, old_base);
         
-            // otherwise store NEW base
-            else
-                set_register(Rb, base);
+        //     // otherwise store NEW base
+        //     else
+        //         set_register(Rb, base);
                        
-        }
+        //}
 
-        else
+        //else
             set_register(Rb, base); // write back final address if LDM or Rb is NOT in Rlist 
     }
 

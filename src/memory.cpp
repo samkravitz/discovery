@@ -390,8 +390,8 @@ void Memory::write_u8(u32 address, u8 value)
     if (address >= MEM_SIZE)
     {
         std::cerr << "Warning: writing to game rom\n";
-        cart_rom[address - MEM_SIZE] = value;
-        std::cerr << "Done\n";
+        // cart_rom[address - MEM_SIZE] = value;
+        // std::cerr << "Done\n";
         return;
     }
 

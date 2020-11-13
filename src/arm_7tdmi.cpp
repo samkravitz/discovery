@@ -887,11 +887,11 @@ void arm_7tdmi::handle_interrupt()
             if (interrupts_enabled & (1 << i) && interrupts_requested & (1 << i))
             {
                 // emulate how BIOS handles interrupts
-                std::cout << "interrupt handling! " << i << "\n";
+                //std::cout << "interrupt handling! " << i << "\n";
                 if ((swi_vblank_intr) && (i == 0))
                 {
-                    std::cout << "swi vblank\n";
-                    //registers.r15 += get_mode() == ARM ? 4 : 2;
+                    //std::cout << "swi vblank\n";
+                    registers.r15 += get_mode() == ARM ? 4 : 2;
                     swi_vblank_intr = false;
                 }
 
@@ -905,12 +905,12 @@ void arm_7tdmi::handle_interrupt()
                 if (pipeline_full)
                 {
                     if (get_mode() == ARM) {
-                        std::cout << "arm interrupt\n";
+                        //std::cout << "arm interrupt\n";
                         set_register(r14, get_register(r15));
                     }
                     else {
-                        std::cout << "thumb interrupt\n";
-                        set_register(r14, get_register(r15) + 4);
+                        //std::cout << "thumb interrupt\n";
+                        set_register(r14, get_register(r15) + 2);
                     }
                 }
 

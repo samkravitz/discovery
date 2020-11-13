@@ -9,7 +9,7 @@
 
 #include <iostream>
 #include <bitset>
-#include "util.h"
+#include "/.x/c.xsutil.h"
 
 /* get subset of instruction for purposes like destination register, opcode, shifts
  * All instructions have data hidden within their codes;

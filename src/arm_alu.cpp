@@ -355,20 +355,21 @@ void arm_7tdmi::multiply_long(u32 instruction)
     // signed multiply long
     if (sign)
     {
-        s32 op1 = (s32) get_register(Rm);
-        s32 op2 = (s32) get_register(Rs);
-        s64 result, temp;
-        temp = result = op1 * op2; // 64 bit result
+        s64 op1 = (s32) get_register(Rm);
+        s64 op2 = (s32) get_register(Rs);
+        s64 result = 1, temp = 1;
+        temp = result *= op1 * op2; // 64 bit result
 
         // Add contents of RdHi, RdLo to result
         if (accumulate)
         {
-            s64 acc = (s32) get_register(RdHi);
+            u64 acc = get_register(RdHi);
             acc <<= 16;
             acc <<= 16;
-            acc |= (s32) get_register(RdLo);
-            result += acc;
-
+            acc |= get_register(RdLo);
+            result += (s64) acc; // C++ casting...
+            temp = result;
+            
             // +1 m cycles for accumulate
             m++;
         }
@@ -385,7 +386,7 @@ void arm_7tdmi::multiply_long(u32 instruction)
 
         if (set_condition_code)
         {
-            u8 new_n_flag = result < 0 ? 1 : 0; // negative of result
+            u8 new_n_flag = result & 0x8000000000000000 ? 1 : 0; // bit 63 of result
             set_condition_code_flag(N, new_n_flag);
 
             u8 new_z_flag = result == 0 ? 1 : 0;

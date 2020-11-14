@@ -357,8 +357,8 @@ void arm_7tdmi::multiply_long(u32 instruction)
     {
         s64 op1 = (s32) get_register(Rm);
         s64 op2 = (s32) get_register(Rs);
-        s64 result = 1, temp = 1;
-        temp = result *= op1 * op2; // 64 bit result
+        s64 result, temp;
+        temp = result = op1 * op2; // 64 bit result
 
         // Add contents of RdHi, RdLo to result
         if (accumulate)
@@ -949,9 +949,6 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
         }
     }
     
-    // if (!(r15_in_register_list && load))
-    //     increment_pc(); // increment pc if flush is not necessary
-
     if (write_back)
     {
         // edge case - Rb included in Rlist
@@ -968,7 +965,7 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
         //}
 
         //else
-            set_register(Rb, base); // write back final address if LDM or Rb is NOT in Rlist 
+        set_register(Rb, base); // write back final address if LDM or Rb is NOT in Rlist 
     }
 
     if (load_psr)

@@ -422,3 +422,8 @@ void arm_7tdmi::swi_bitUnpack()
     // std::cout << "src_width: " << (int) src_width << "\n";
     // std::cout << "dest_width: " << (int) dest_width << "\n";
 }
+
+void arm_7tdmi::swi_RLUnCompVRAM()
+{
+    
+}

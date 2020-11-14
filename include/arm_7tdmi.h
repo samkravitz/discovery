@@ -165,6 +165,7 @@ class arm_7tdmi
         void swi_cpuSet();
         void swi_objAffineSet();
         void swi_bitUnpack();
+        void swi_RLUnCompVRAM();
 
         // handle hardware interrupts
         void handle_interrupt();

@@ -834,10 +834,11 @@ void arm_7tdmi::cycle(u8 n, u8 s, u8 i)
 void arm_7tdmi::handle_interrupt()
 {
     // exit swi
-    if (in_swi && get_register(r15) == swi_ret_addr)
+    if (in_swi && get_register(r15) == 0x188)
     {
 
         in_swi = false;
+        pipeline_full = false;
 
         // restore CPSR
         set_register(cpsr, get_register(spsr));

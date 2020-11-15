@@ -37,6 +37,8 @@ arm_7tdmi::arm_7tdmi()
     current_interrupt = 0;
     in_interrupt  = false;
     swi_vblank_intr = false;
+    in_swi = false;
+    swi_ret_addr = 0;
 
     mem = NULL;
     
@@ -831,6 +833,22 @@ void arm_7tdmi::cycle(u8 n, u8 s, u8 i)
 
 void arm_7tdmi::handle_interrupt()
 {
+    // exit swi
+    if (in_swi && get_register(r15) == swi_ret_addr)
+    {
+
+        in_swi = false;
+
+        // restore CPSR
+        set_register(cpsr, get_register(spsr));
+
+        // re-enable interrupts
+        registers.cpsr.bits.i = 0;
+
+        set_state(SYS);
+        return;
+    }
+
     // exit interrupt
     if (in_interrupt && get_register(r15) == 0x138)
     {

@@ -880,50 +880,53 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction)
     //std::cout << "thumb SWI:  " << (instruction & 0xFF) << "\n";
 
     // bits 7 - 0 determine which interrupt
-    switch (instruction & 0xFF)
-    {
-        case 0x0:
-            swi_softReset();
-            break;
-        case 0x1:
-            swi_registerRamReset();
-            break;
-        case 0x5:
-            swi_VBlankIntrWait();
-            break;
-        case 0x6:
-            swi_division();
-            break;
-        case 0x8:
-            swi_sqrt();
-            break;
-        case 0xA:
-            swi_arctan2();
-            break;
-        case 0xB:
-            swi_cpuSet();
-            break;
-        case 0xF:
-            swi_objAffineSet();
-            break;
-        case 0x10:
-            swi_bitUnpack();
-            break;
-        case 0x15:
-            //swi_RLUnCompVRAM();
-            break;
-        default:
-            std::cout << "Unknown SWI code: " << std::hex << (instruction & 0xFF) << "\n";
-    }
+    // switch (instruction & 0xFF)
+    // {
+    //     case 0x0:
+    //         swi_softReset();
+    //         break;
+    //     case 0x1:
+    //         swi_registerRamReset();
+    //         break;
+    //     case 0x5:
+    //         swi_VBlankIntrWait();
+    //         break;
+    //     case 0x6:
+    //         swi_division();
+    //         break;
+    //     case 0x8:
+    //         swi_sqrt();
+    //         break;
+    //     case 0xA:
+    //         swi_arctan2();
+    //         break;
+    //     case 0xB:
+    //         swi_cpuSet();
+    //         break;
+    //     case 0xF:
+    //         swi_objAffineSet();
+    //         break;
+    //     case 0x10:
+    //         swi_bitUnpack();
+    //         break;
+    //     case 0x15:
+    //         //swi_RLUnCompVRAM();
+    //         break;
+    //     default:
+    //         std::cout << "Unknown SWI code: " << std::hex << (instruction & 0xFF) << "\n";
+    // }
 
     // TODO - handle swi through bios ?
-    // set_state(SVC);
-    // set_register(r14, get_register(r15) - 2);
-    // update_spsr(get_register(16), false);
-    // set_mode(ARM);
-    // set_register(r15, 0x08);
-    // pipeline_full = false;
-    // return;
+    set_state(SVC);
+    set_register(r14, get_register(r15) - 2);
+    registers.cpsr.bits.i = 1;
+    update_spsr(get_register(cpsr), false);
+    set_mode(ARM);
+    set_register(r15, 0x08);
+    pipeline_full = false;
+    in_swi = true;
+    swi_ret_addr = get_register(r15) - 2;
+    return;
 
     // cycles: 2S + 1N
     cycle(1, 2, 0);

@@ -425,5 +425,59 @@ void arm_7tdmi::swi_bitUnpack()
 
 void arm_7tdmi::swi_RLUnCompVRAM()
 {
+    u32 src_ptr, dest_ptr;
+    src_ptr  = get_register(r0) & ~0x3; // word aligned
+    dest_ptr = get_register(r1) & ~0x1; // halword aligned
+
+    // bits 0-3 reserved, 4-7 compressed type (3), 8-31 size of compressed data
+    u32 data_header = mem->read_u32(src_ptr);
+    u32 decomp_len = data_header >> 8;
+
+    src_ptr += 4;
+
+    while (decomp_len > 0)
+    {
+        u8 flags = mem->read_u8(src_ptr++);
+        u8 expand_len = flags & 0x7F;
+
+        if ((flags >> 7) == 0) // uncompressed
+        {
+            expand_len++;
+            decomp_len -= expand_len;
+
+            while (decomp_len > 0)
+            {
+                u16 data = mem->read_u16(src_ptr);
+                mem->write_u16(dest_ptr, data);
+
+                src_ptr  += 2;
+                dest_ptr += 2;
+                decomp_len--;
+            }
+        }
+
+        else
+        {
+            expand_len += 3;
+            decomp_len -= expand_len;
+
+            u16 data = mem->read_u16(src_ptr);
+            while (decomp_len > 0)
+            {
+                mem->write_u16(dest_ptr, data);
+
+                dest_ptr += 2;
+                decomp_len--;
+            }
+        }
+        
+    }
+    // bits 0-6 expanded data length (uncompressed n - 1, compressed n - 3), bit 7 flag (0 = uncompresed, 1 = compressed)
+
+
     
+    // std::cout << "SWI 0x10 - Bit unpack\n";
+    // std::cout << "len: " << std::hex << (int) len << "\n";
+    // std::cout << "src_width: " << (int) src_width << "\n";
+    // std::cout << "dest_width: " << (int) dest_width << "\n";
 }

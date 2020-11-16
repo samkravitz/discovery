@@ -814,8 +814,8 @@ void Memory::dma0()
 {
     std::cout << "DMA 0\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
-    src_ptr  = original_src  = read_u32_unprotected(REG_DMA3SAD) & 0x7FFFFFF; // 27 bit
-    dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD) & 0x7FFFFFF; // 27 bit;
+    src_ptr  = original_src  = read_u32_unprotected(REG_DMA0SAD) & 0x7FFFFFF; // 27 bit
+    dest_ptr = original_dest = read_u32_unprotected(REG_DMA0DAD) & 0x7FFFFFF; // 27 bit;
 
     // increment for destination, src
     int dest_inc, src_inc;
@@ -876,10 +876,10 @@ void Memory::dma0()
         dest_ptr = original_dest;
 
     // write back dest
-    write_u32_unprotected(REG_DMA3DAD, dest_ptr);
+    write_u32_unprotected(REG_DMA0DAD, dest_ptr);
 
     // write back src
-    write_u32_unprotected(REG_DMA3SAD, src_ptr);
+    write_u32_unprotected(REG_DMA0SAD, src_ptr);
     
 
     // turn off this transfer if repeat bit is not set
@@ -897,8 +897,8 @@ void Memory::dma1()
 {
     std::cout << "DMA 1\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
-    src_ptr  = original_src  = read_u32_unprotected(REG_DMA3SAD) & 0xFFFFFFF; // 28 bit
-    dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD) & 0x7FFFFFF; // 27 bit
+    src_ptr  = original_src  = read_u32_unprotected(REG_DMA1SAD) & 0xFFFFFFF; // 28 bit
+    dest_ptr = original_dest = read_u32_unprotected(REG_DMA1DAD) & 0x7FFFFFF; // 27 bit
 
     // increment for destination, src
     int dest_inc, src_inc;
@@ -959,10 +959,10 @@ void Memory::dma1()
         dest_ptr = original_dest;
 
     // write back dest
-    write_u32_unprotected(REG_DMA3DAD, dest_ptr);
+    write_u32_unprotected(REG_DMA1DAD, dest_ptr);
 
     // write back src
-    write_u32_unprotected(REG_DMA3SAD, src_ptr);
+    write_u32_unprotected(REG_DMA1SAD, src_ptr);
     
 
     // turn off this transfer if repeat bit is not set
@@ -980,8 +980,8 @@ void Memory::dma2()
 {
     std::cout << "DMA 2\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
-    src_ptr  = original_src  = read_u32_unprotected(REG_DMA3SAD) & 0xFFFFFFF; // 28 bit
-    dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD) & 0x7FFFFFF; // 27 bit;
+    src_ptr  = original_src  = read_u32_unprotected(REG_DMA2SAD) & 0xFFFFFFF; // 28 bit
+    dest_ptr = original_dest = read_u32_unprotected(REG_DMA2DAD) & 0x7FFFFFF; // 27 bit;
 
     // increment for destination, src
     int dest_inc, src_inc;
@@ -1042,10 +1042,10 @@ void Memory::dma2()
         dest_ptr = original_dest;
 
     // write back dest
-    write_u32_unprotected(REG_DMA3DAD, dest_ptr);
+    write_u32_unprotected(REG_DMA2DAD, dest_ptr);
 
     // write back src
-    write_u32_unprotected(REG_DMA3SAD, src_ptr);
+    write_u32_unprotected(REG_DMA2SAD, src_ptr);
     
 
     // turn off this transfer if repeat bit is not set

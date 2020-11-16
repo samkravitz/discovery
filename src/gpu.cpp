@@ -830,7 +830,7 @@ void GPU::draw_regular_sprite(obj_attr attr)
         }
     }
 
-    exit(0);
+    //exit(0);
 
     // horizontal flip
     if (attr.attr_1.attr.h)
@@ -922,8 +922,8 @@ void GPU::draw_regular_sprite(obj_attr attr)
             if (x > SCREEN_WIDTH || y > SCREEN_HEIGHT)
                 continue;
 
-            if (sprite[h][w] == 0)
-                continue;
+            // if (sprite[h][w] == 0)
+            //     continue;
 
             screen_buffer[y][x] = sprite[h][w];
         }

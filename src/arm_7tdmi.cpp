@@ -861,7 +861,7 @@ void arm_7tdmi::handle_interrupt()
         pipeline_full = false;
         in_interrupt  = false;
         
-        set_state(SYS);
+        //set_state(SYS);
 
         // clear bit from REG_IF to show that interrupt has been serviced
         u32 reg_if = mem->read_u32_unprotected(REG_IF) & ~current_interrupt;
@@ -888,36 +888,37 @@ void arm_7tdmi::handle_interrupt()
             {
                 // emulate how BIOS handles interrupts
                 //std::cout << "interrupt handling! " << i << "\n";
-                if ((swi_vblank_intr) && (i == 0))
-                {
-                    //std::cout << "swi vblank\n";
-                    registers.r15 += get_mode() == ARM ? 4 : 2;
-                    swi_vblank_intr = false;
-                }
+                // if ((swi_vblank_intr) && (i == 0))
+                // {
+                //     //std::cout << "swi vblank\n";
+                //     registers.r15 += get_mode() == ARM ? 4 : 2;
+                //     swi_vblank_intr = false;
+                // }
 
+                u32 old_cpsr = get_register(cpsr);
                 // switch to IRQ
                 set_state(IRQ);
 
                 // save CPSR to SPSR
-                update_spsr(get_register(cpsr), false);
+                update_spsr(old_cpsr, false);
                 
                 // no branch
                 if (pipeline_full)
                 {
                     if (get_mode() == ARM) {
                         //std::cout << "arm interrupt\n";
-                        set_register(r14, get_register(r15));
+                        set_register(r14, get_register(r15) - 4);
                     }
                     else {
                         //std::cout << "thumb interrupt\n";
-                        set_register(r14, get_register(r15) + 2);
+                        set_register(r14, get_register(r15));
                     }
                 }
 
                 // branch
                 else
                 {
-                    std::cout << "Caution: interrupt after a branch\n";
+                    //std::cout << "Caution: interrupt after a branch\n";
                     set_register(r14, get_register(r15) + 4);
                 }
 

@@ -1139,5 +1139,5 @@ void Memory::dma3()
     if (dma[3].irq)
         std::cout << "DMA3 IRQ request\n";   
     
-    //std::cout << "DMA 3 Done\n";
+    std::cout << "DMA 3 Done\n";
 }

@@ -187,7 +187,7 @@ void GPU::draw()
     
     // draw final_screen pixels on screen
     SDL_UpdateWindowSurface(window);
-
+    //std::cout << sizeof(screen_buffer) << "\n";
     // zero screen buffer for next frame
     memset(screen_buffer, 0, sizeof(screen_buffer));
 
@@ -746,6 +746,7 @@ void GPU::draw_regular_sprite(obj_attr attr)
     u8 palbank = attr.attr_2.attr.l;
     u16 x;
     u8 y;
+    bool 2d = stat->dispcnt.obj_map_mode == 0;
 
     //draw sprite tile by tile
     for (int h = 0; h < height; ++h)

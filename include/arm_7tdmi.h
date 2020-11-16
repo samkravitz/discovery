@@ -44,9 +44,7 @@ class arm_7tdmi
         u32  pipeline[3];
         bool pipeline_full;
         bool in_interrupt;
-        bool in_swi;
         bool swi_vblank_intr;
-        u32  swi_ret_addr;
         u32  current_interrupt;
         u32  cycles;
 

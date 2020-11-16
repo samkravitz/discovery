@@ -879,6 +879,7 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction)
 {
     //std::cout << "thumb SWI:  " << (instruction & 0xFF) << "\n";
 
+    // HLE BIOS calls
     // bits 7 - 0 determine which interrupt
     // switch (instruction & 0xFF)
     // {
@@ -916,17 +917,15 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction)
     //         std::cout << "Unknown SWI code: " << std::hex << (instruction & 0xFF) << "\n";
     // }
 
-    // TODO - handle swi through bios ?
+    // LLE BIOS calls - handle thru BIOS
+    u32 old_cpsr = get_register(cpsr);
     set_state(SVC);
     set_register(r14, get_register(r15) - 2);
     registers.cpsr.bits.i = 1;
-    update_spsr(get_register(cpsr), false);
+    update_spsr(old_cpsr, false); // move up
     set_mode(ARM);
     set_register(r15, 0x08);
     pipeline_full = false;
-    in_swi = true;
-    swi_ret_addr = get_register(r15) - 2;
-    return;
 
     // cycles: 2S + 1N
     cycle(1, 2, 0);

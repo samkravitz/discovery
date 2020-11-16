@@ -1017,6 +1017,7 @@ void arm_7tdmi::single_data_swap(u32 instruction)
 void arm_7tdmi::software_interrupt(u32 instruction)
 {
     std::cout << "software interrupt arm " << (instruction >> 16 & 0xFF) << "\n";
+    exit(0);
 
     // TODO - handle swi through BIOS ?
 

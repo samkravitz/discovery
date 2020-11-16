@@ -390,7 +390,7 @@ void Memory::write_u8(u32 address, u8 value)
     if (address >= MEM_SIZE)
     {
         std::cerr << "Warning: writing to game rom\n";
-        // cart_rom[address - MEM_SIZE] = value;
+         cart_rom[address - MEM_SIZE] = value;
         // std::cerr << "Done\n";
         return;
     }
@@ -532,7 +532,7 @@ void Memory::write_u8(u32 address, u8 value)
                 _dma(0);
 
                 // disable DMA after immediate transfer
-                //dma[0].enable = 0;
+                dma[0].enable = 0;
             }
 
         break;
@@ -565,7 +565,7 @@ void Memory::write_u8(u32 address, u8 value)
                 _dma(1);
 
                 // disable DMA after immediate transfer
-                //dma[1].enable = 0;
+                dma[1].enable = 0;
             }
 
         break;
@@ -598,7 +598,7 @@ void Memory::write_u8(u32 address, u8 value)
                 _dma(2);
 
                 // disable DMA after immediate transfer
-                //dma[2].enable = 0;
+                dma[2].enable = 0;
             }
 
         break;
@@ -631,7 +631,7 @@ void Memory::write_u8(u32 address, u8 value)
                 _dma(3);
 
                 // disable DMA after immediate transfer
-                //dma[3].enable = 0;
+                dma[3].enable = 0;
             }
 
         break;

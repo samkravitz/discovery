@@ -201,6 +201,8 @@ void arm_7tdmi::execute(u32 instruction)
                 case INT:  software_interrupt(instruction);     break;
                 default:
                     std::cerr << "Cannot execute instruction: " << instruction << "\n";
+                    std::cout << registers.r15 << "\n";
+                    registers.r15 &= ~0x3;
             }
             break;
 
@@ -229,6 +231,7 @@ void arm_7tdmi::execute(u32 instruction)
                 case BL_T:     long_branch_link(instr);                 break;
                 default:
                     std::cerr << "Cannot execute thumb instruction: " << (u16) instruction << " " << std::hex << registers.r15 << "\n";
+                    registers.r15 &= ~0x1;
             }
             break;
     }

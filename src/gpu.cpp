@@ -191,11 +191,11 @@ void GPU::draw()
     // zero screen buffer for next frame
     memset(screen_buffer, 0, sizeof(screen_buffer));
 
-    // double duration;
-    // clock_t new_time = std::clock();
-    // duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
-    // std::cout << "Refresh took: " << duration << "\n";
-    // old_clock = new_time;
+    double duration;
+    clock_t new_time = std::clock();
+    duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
+    std::cout << "Refresh took: " << duration << "\n";
+    old_clock = new_time;
 }
 
 // video mode 0 - tile mode
@@ -861,8 +861,8 @@ void GPU::draw_regular_sprite(obj_attr attr)
             {
                 temp = sprite[h][w];
                 
-                if (temp != 0)
-                    std::cout << (int) temp << "\n";
+                // if (temp != 0)
+                //     std::cout << (int) temp << "\n";
 
                 //sprite[h][w] = sprite[(height * 8) - h][w];
                 sprite[(height * 8) - h][w] = temp;

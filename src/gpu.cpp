@@ -742,7 +742,8 @@ void GPU::draw_regular_sprite(obj_attr attr)
     }
 
     // temporary buffer to hold texture
-    u32 sprite[height * PX_IN_TILE_COL][width * PX_IN_TILE_ROW] = {0};
+    u32 sprite[height * PX_IN_TILE_COL][width * PX_IN_TILE_ROW];
+    memset(sprite, 0, sizeof(sprite));
 
     u16 color;
     u8 palette_index; // nth entry in palram
@@ -760,12 +761,10 @@ void GPU::draw_regular_sprite(obj_attr attr)
             {
                 for (int i = 0; i < S_TILE_LEN; ++i)
                 {
-                    palette_index = mem->read_u8_unprotected(base_tile_addr + i);
+                    palette_index = mem->read_u8_unprotected(base_tile_addr++);
 
-                    // mask to keep x, y in 9, 8 bit range, respectively
-                    x = (w * PX_IN_TILE_ROW + 2 * (i % 4)); // s-tiles get left/right px in one read 
-                    y = (h * PX_IN_TILE_COL +     (i / 4));
-                    //std::cout << (int) x << " " << (int) y << "\n";
+                    x = w * PX_IN_TILE_ROW + 2 * (i % 4); // s-tiles get left/right px in one read 
+                    y = h * PX_IN_TILE_COL +     (i / 4);
 
                     u8 left_pixel = palette_index & 0xF;
                     u8 right_pixel = (palette_index >> 4) & 0xF;
@@ -789,7 +788,7 @@ void GPU::draw_regular_sprite(obj_attr attr)
                 }
 
                 // increment start address for tile
-                base_tile_addr += S_TILE_LEN;
+                //base_tile_addr += S_TILE_LEN;
             }
             
             // 8 bits / pixel - d-tile
@@ -798,7 +797,7 @@ void GPU::draw_regular_sprite(obj_attr attr)
                 std::cout << "D-tile";
                 for (int i = 0; i < D_TILE_LEN; i++)
                 {
-                    palette_index = mem->read_u8_unprotected(base_tile_addr + i);
+                    palette_index = mem->read_u8_unprotected(base_tile_addr++);
 
                     // pixel value 0 is transparent, so only draw if not 0
                     if (palette_index == 0)
@@ -814,7 +813,7 @@ void GPU::draw_regular_sprite(obj_attr attr)
                 }
 
                 // increment start address for tile
-                base_tile_addr += D_TILE_LEN;
+                //base_tile_addr += D_TILE_LEN;
             }
 
             
@@ -832,7 +831,7 @@ void GPU::draw_regular_sprite(obj_attr attr)
 
     //exit(0);
 
-    // horizontal flip
+    //horizontal flip
     if (attr.attr_1.attr.h)
     {
         //std::cout << "h flip\n";
@@ -842,8 +841,8 @@ void GPU::draw_regular_sprite(obj_attr attr)
             for (int w = 0; w < width * 4; ++w) 
             {
                 temp = sprite[h][w];
-                // if (temp == 0)
-                //     continue;
+                // if (temp != 0)
+                //     std::cout << (int) temp << "\n";
 
                 sprite[h][w] = sprite[h][(width * 8) - w];
                 sprite[h][(width * 8) - w] = temp;
@@ -861,13 +860,31 @@ void GPU::draw_regular_sprite(obj_attr attr)
             for (int w = 0; w < width * 8; ++w)
             {
                 temp = sprite[h][w];
-                // if (temp == 0)
-                //     continue;
+                
+                if (temp != 0)
+                    std::cout << (int) temp << "\n";
 
-                sprite[h][w] = sprite[(height * 8) - h][w];
+                //sprite[h][w] = sprite[(height * 8) - h][w];
                 sprite[(height * 8) - h][w] = temp;
             }
         }
+
+
+
+
+        // u32 temp;
+        // for (int h = 0; h < height * 8; ++h)
+        // {
+        //     for (int w = 0; w < width * 4; ++w) 
+        //     {
+        //         temp = sprite[h][w];
+        //         // if (temp == 0)
+        //         //     continue;
+
+        //         sprite[h][w] = sprite[h][(width * 8) - w];
+        //         sprite[h][(width * 8) - w] = temp;
+        //     }
+        // }
     }
 
     // mosaic
@@ -916,14 +933,15 @@ void GPU::draw_regular_sprite(obj_attr attr)
     {
         for (int w = 0; w < width * 8; ++w)
         {
-            x = (x0 + w) & 0x1FF; // s-tiles get left/right px in one read 
+            // mask to keep x, y in 9, 8 bit range, respectively
+            x = (x0 + w) & 0x1FF;
             y = (y0 + h) & 0xFF;
 
             if (x > SCREEN_WIDTH || y > SCREEN_HEIGHT)
                 continue;
 
-            // if (sprite[h][w] == 0)
-            //     continue;
+            if (sprite[h][w] == 0)
+                continue;
 
             screen_buffer[y][x] = sprite[h][w];
         }
@@ -1012,7 +1030,8 @@ void GPU::draw_affine_sprite(obj_attr attr)
     u8  top_y    = attr.attr_0.attr.y;
 
     // temporary buffer to hold texture
-    u32 sprite[height * PX_IN_TILE_COL][width * PX_IN_TILE_ROW] = {0};
+    u32 sprite[height * PX_IN_TILE_COL][width * PX_IN_TILE_ROW];
+    memset(sprite, 0, sizeof(sprite));
 
     u16 color;
     u8 palette_index; // nth entry in palram

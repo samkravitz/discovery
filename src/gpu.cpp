@@ -746,7 +746,7 @@ void GPU::draw_regular_sprite(obj_attr attr)
     u8 palbank = attr.attr_2.attr.l;
     u16 x;
     u8 y;
-    bool 2d = stat->dispcnt.obj_map_mode == 0;
+    bool _2d = stat->dispcnt.obj_map_mode == 0;
 
     //draw sprite tile by tile
     for (int h = 0; h < height; ++h)
@@ -758,8 +758,11 @@ void GPU::draw_regular_sprite(obj_attr attr)
                 for (int i = 0; i < S_TILE_LEN; ++i)
                 {
                     palette_index = mem->read_u8_unprotected(base_tile_addr + i);
-                    x = x0 + w * PX_IN_TILE_ROW + 2 * (i % 4); // s-tiles get left/right px in one read 
-                    y = y0 + h * PX_IN_TILE_COL + (i / 4);
+                    x = (x0 + w * PX_IN_TILE_ROW + 2 * (i % 4)) & 0x1FF; // s-tiles get left/right px in one read 
+                    y = (y0 + h * PX_IN_TILE_COL + (i / 4)) & 0xFF;
+
+                    if (x > SCREEN_WIDTH || y > SCREEN_HEIGHT)
+                        continue;
 
                     u8 left_pixel = palette_index & 0xF;
                     u8 right_pixel = (palette_index >> 4) & 0xF;
@@ -782,7 +785,8 @@ void GPU::draw_regular_sprite(obj_attr attr)
                     }
                 }
 
-
+                // increment start address for tile
+                base_tile_addr += S_TILE_LEN;
             }
             
             // 8 bits / pixel - d-tile
@@ -790,7 +794,6 @@ void GPU::draw_regular_sprite(obj_attr attr)
             {
                 for (int i = 0; i < D_TILE_LEN; i++)
                 {
-
                     palette_index = mem->read_u8_unprotected(base_tile_addr + i);
 
                     // pixel value 0 is transparent, so only draw if not 0
@@ -805,16 +808,28 @@ void GPU::draw_regular_sprite(obj_attr attr)
 
                     screen_buffer[y][x] = u16_to_u32_color(color);
                 }
+
+                // increment start address for tile
+                base_tile_addr += D_TILE_LEN;
             }
 
-            // increment start address for tile
-            base_tile_addr += s_tile ? S_TILE_LEN : D_TILE_LEN;
+            
+        }
+
+        // 2d sprite mapping
+        if (_2d)
+        {
+            if (s_tile)
+                base_tile_addr += (32 - width) * S_TILE_LEN;
+            else
+                base_tile_addr += (32 - width) * D_TILE_LEN;
         }
     }
 
     // horizontal flip
     if (attr.attr_1.attr.h)
     {
+        std::cout << "h flip\n";
         u32 temp;
         for (int h = 0; h < height * 8; ++h)
         {
@@ -830,6 +845,7 @@ void GPU::draw_regular_sprite(obj_attr attr)
     // vertical flip
     if (attr.attr_1.attr.v) 
     {
+        std::cout << "v flip\n";
         u32 temp;
         for (int h = 0; h < height * 4; ++h)
         {
@@ -845,6 +861,7 @@ void GPU::draw_regular_sprite(obj_attr attr)
     // mosaic
     if (attr.attr_0.attr.m)
     {
+        std::cout << "Mosaic\n";
         u16 mosaic = mem->read_u16_unprotected(REG_MOSAIC);
         
         // horizontal / vertical stretch
@@ -887,6 +904,7 @@ void GPU::draw_regular_sprite(obj_attr attr)
 
 void GPU::draw_affine_sprite(obj_attr attr)
 {
+    //std::cout << "Affine!\n";
     // get affine matrix
     u8 aff_index = (attr.attr_1.attr.v << 4) | (attr.attr_1.attr.h << 3) | (attr.attr_1.attr.f);
     u32 oam_addr = MEM_OAM_START + aff_index * 32; // each affine entry is 32 bytes across

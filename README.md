@@ -1,4 +1,6 @@
-# discovery - A Gameboy Advance emulator written in C++
+# discovery 
+A Gameboy Advance emulator written in C++
+
 ![discovery](assets/discovery.png)
 
 ## Preamble

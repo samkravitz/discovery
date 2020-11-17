@@ -12,7 +12,9 @@ When I was 10 years old, I vividly remember watching people on YouTube play Game
 This emulator is a work in progress. It probably won't work very well in its current state. There are currently many unresolved bugs. Please contact me with any questions.
 
 ## Usage
-Discovery currently requires a GBA BIOS ROM to operate (I am currently working on implementing all of the BIOS calls using high level emulation to cease this requirement). I cannot provide a BIOS ROM for you. DuckDuckGo is your friend here. To use discovery from the command line:
+Discovery currently requires a GBA BIOS ROM to operate (I am currently working on implementing all of the BIOS calls using high level emulation to cease this requirement). I cannot provide a BIOS ROM for you. DuckDuckGo is your friend here.
+
+To use discovery from the command line:
 
 `./discovery path/to/rom`
 
@@ -43,7 +45,7 @@ As with all GBA homebrew projects, the following documents were indispensible:
 
 I also referenced other open source emulators for particularly tricky sections:
 
-Shonumi's [GBE +](https://github.com/shonumi/gbe-plus/)
+Shonumi's [GBE+](https://github.com/shonumi/gbe-plus/)
 
 [mGBA](https://github.com/mgba-emu/mgba)
 

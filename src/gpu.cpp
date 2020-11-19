@@ -985,10 +985,6 @@ void GPU::draw_affine_sprite(obj_attr attr)
             return;
     }
 
-    // coordinates of corners of sprite
-    u16 left_x   = attr.attr_1.attr.x;
-    u8  top_y    = attr.attr_0.attr.y;
-
     // temporary buffer to hold texture
     u32 sprite[height * PX_IN_TILE_COL][width * PX_IN_TILE_ROW];
     memset(sprite, 0, sizeof(sprite));
@@ -1000,9 +996,9 @@ void GPU::draw_affine_sprite(obj_attr attr)
     u8 right_pixel;
     bool _2d = stat->dispcnt.obj_map_mode == 0;
 
-    // x, y coordinate of sprite before rot/scale (1) and after (2)
-    u16 x1, x2;
-    u8  y1, y2;
+    // x, y coordinate of sprite texture before rot/scale
+    u16 x;
+    u8  y;
 
     // draw sprite tile by tile
     for (int h = 0; h < height; ++h)
@@ -1014,8 +1010,8 @@ void GPU::draw_affine_sprite(obj_attr attr)
                 for (int i = 0; i < S_TILE_LEN; ++i)
                 {
                     palette_index = mem->read_u8_unprotected(tile_ptr++);
-                    x1 = w * PX_IN_TILE_ROW + 2 * (i % 4); // s-tiles get left/right px in one read 
-                    y1 = h * PX_IN_TILE_COL + (i / 4);
+                    x = w * PX_IN_TILE_ROW + 2 * (i % 4); // s-tiles get left/right px in one read 
+                    y = h * PX_IN_TILE_COL +     (i / 4);
                     
                     left_pixel  = (palette_index >> 0) & 0xF;
                     right_pixel = (palette_index >> 4) & 0xF;
@@ -1026,7 +1022,7 @@ void GPU::draw_affine_sprite(obj_attr attr)
                     {
                         // multiply by sizeof(u16) because each entry in palram is 2 bytes
                         color = mem->read_u16_unprotected(SPRITE_PALETTE + left_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
-                        sprite[y1][x1] = u16_to_u32_color(color);
+                        sprite[y][x] = u16_to_u32_color(color);
                     }
 
                     // pixel value 0 is transparent, so only draw if not 0
@@ -1034,7 +1030,7 @@ void GPU::draw_affine_sprite(obj_attr attr)
                     {
                         // multiply by sizeof(u16) because each entry in palram is 2 bytes
                         color = mem->read_u16_unprotected(SPRITE_PALETTE + right_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
-                        sprite[y1][x1 + 1] = u16_to_u32_color(color);
+                        sprite[y][x + 1] = u16_to_u32_color(color);
                     }
                 }
             }
@@ -1050,13 +1046,13 @@ void GPU::draw_affine_sprite(obj_attr attr)
                     if (palette_index == 0)
                         continue; 
 
-                    x1 = w * PX_IN_TILE_ROW + (i % 8);
-                    y1 = h * PX_IN_TILE_COL + (i / 8);
+                    x = w * PX_IN_TILE_ROW + (i % 8);
+                    y = h * PX_IN_TILE_COL + (i / 8);
 
                     // multiply by sizeof(u16) because each entry in palram is 2 bytes
                     color = mem->read_u32_unprotected(SPRITE_PALETTE + palette_index * sizeof(u16));
 
-                    sprite[y1][x1] = u16_to_u32_color(color);
+                    sprite[y][x] = u16_to_u32_color(color);
                 }
             }
 
@@ -1071,45 +1067,57 @@ void GPU::draw_affine_sprite(obj_attr attr)
         }
     }
 
-    // x, y coordinate of rot / scale center of texture (center of sprite)
-    u16 x0 = width * 4;
-    u8  y0 = height * 4;
-    
-    // max value sprite can have in screen space
-    u16 max_screen_x = width  * PX_IN_TILE_ROW; 
-    u8 max_screen_y = height * PX_IN_TILE_COL;
+    // half width, height (in pixels) of object screen canvas
+    int hwidth  = width  * 4; 
+    int hheight = height * 4; 
 
-    int hwidth  = width  * PX_IN_TILE_ROW; 
-    int hheight = width  * PX_IN_TILE_ROW; 
+    // coordinate of center of screen space (q) and texture space (p)
+    u16 qx0, px0;
+    u8  qy0, py0;
+    
+    px0 = hwidth;
+    py0 = hheight;
 
     // double flag set
     if (attr.attr_0.attr.om == 3)
     {
-        hwidth *= 2;
+        // double available canvas space
+        hwidth  *= 2;
         hheight *= 2;
+
+        qx0 = attr.attr_1.attr.x + width  * 8;
+        qy0 = attr.attr_0.attr.y + height * 8;
     }
 
-    //std::cout << hwidth << " " << hheight << "\n";
-    // map texture from texture space to screen space using P
-    for (int yy = 0; yy < hheight; ++yy)
+    // double flag not set
+    else
     {
-        for (int xx = 0; xx < hwidth; ++xx)
-        {
-            //std::cout << xx << " " << yy << "\n";
-            y1 = yy + top_y;
-            x1 = xx + left_x;
+        qx0 = attr.attr_1.attr.x + width  * 4;
+        qy0 = attr.attr_0.attr.y + height * 4;
+    }
+    
+    // coordinate of texture pixel after rot/scale
+    int px, py;
 
+    // loop through canvas space
+    for (int iy = -hheight; iy < hheight; ++iy)
+    {
+        for (int ix = -hwidth; ix < hwidth; ++ix)
+        {
             // get new position of pixel after rot / scale
-            x2 = pa * (xx - x0) + pb * (yy - y0) + x0;
-            y2 = pc * (xx - x0) + pd * (yy - y0) + y0;
+            px = (pa * ix + pb * iy);
+            py = (pc * ix + pd * iy);
 
             // transfomation put pixel out of bounds
-            if ((x2 >= hwidth) || (y2 >= hheight))
+            if ((px0 + px >= width * PX_IN_TILE_ROW) || (py0 + py >= height * PX_IN_TILE_COL))
+                continue;
+            
+            if (px0 + px < 0 || py0 + py < 0)
                 continue;
             
             // skip 0 pixel value (transparent)
-            if (sprite[y2][x2] != 0)
-                screen_buffer[y1][x1] = sprite[y2][x2];
+            if (sprite[py0 + py][px0 + px] != 0)
+                screen_buffer[qy0 + iy][qx0 + ix] = sprite[py0 + py][px0 + px];
         }
     }
 }

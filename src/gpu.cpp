@@ -37,11 +37,23 @@ GPU::GPU()
     }
 
     window = SDL_CreateWindow("discovery", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2, 0);
+
     if (window == NULL)
     {
         std::cerr << "Could not create window" << "\n";
         exit(2);
     }
+
+    // discovery icon logo
+    SDL_Surface *logo = SDL_LoadBMP("assets/discovery.bmp");
+
+    if (logo == NULL)
+    {
+        std::cerr << "Could not load discovery logo!\n";
+        exit(2);
+    }
+    
+    SDL_SetWindowIcon(window, logo);
 
     final_screen = SDL_GetWindowSurface(window);
     original_screen = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32, 0, 0, 0, 0);

@@ -565,7 +565,6 @@ void GPU::draw_reg_background(int bg)
                     else // d-tile (8bpp)
                     {
                         cur_screenblock_ptr = tileset_address + D_SCREENENTRY_DEPTH * tilemap_index;
-
                         for (int i = 0; i < D_TILE_LEN; i++)
                         {
 
@@ -580,7 +579,7 @@ void GPU::draw_reg_background(int bg)
                             y = ssy * 256 + h * PX_IN_TILE_COL + (i / 8);
 
                             // multiply by sizeof(u16) because each entry in palram is 2 bytes
-                            color = mem->read_u32_unprotected(SPRITE_PALETTE + palette_index * sizeof(u16));
+                            color = mem->read_u32_unprotected(MEM_PALETTE_RAM_START + palette_index * sizeof(u16));
 
                             map[y][x] = u16_to_u32_color(color);
                         }

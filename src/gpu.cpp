@@ -78,14 +78,14 @@ void GPU::reset()
     scanline  = 0;
     frame     = 0;
     fps       = 0;
-    win0xmax  = 0xFFFF;
-    win1xmax  = 0xFFFF;
-    win0ymax  = 0xFF;
-    win1ymax  = 0xFF;
-    win0xmin  = 0;
-    win0ymin  = 0;
-    win1xmin  = 0;
-    win1ymin  = 0;
+    win0rr    = 0xFFFF;
+    win1rr    = 0xFFFF;
+    win0bb    = 0xFF;
+    win1bb    = 0xFF;
+    win0ll    = 0;
+    win0ll    = 0;
+    win1ll    = 0;
+    win1ll    = 0;
     old_time  = clock();
     memset(screen_buffer, 0, sizeof(screen_buffer));
 }
@@ -198,6 +198,68 @@ void GPU::cycle()
 void GPU::draw()
 {
     //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
+    
+    // update window boundaries
+
+    // win0 enabled
+    if (stat->dispcnt.win_enabled & 0x1)
+    {
+        std::cout << "WIN0 EN\n";
+        u16 win0h, win0v;
+        win0h = mem->read_u16_unprotected(REG_WIN0H);
+        win0v = mem->read_u16_unprotected(REG_WIN0V);
+
+        win0rr = (win0h >> 0) & 0xFF;
+        win0ll = (win0h >> 8) & 0xFF;
+        win0bb = (win0v >> 0) & 0xFF;
+        win0tt = (win0v >> 8) & 0xFF;
+
+        std::cout << (int) win0ll << "\n";
+        std::cout << (int) win0tt << "\n";
+        std::cout << (int) win0rr << "\n";
+        std::cout << (int) win0bb << "\n";
+    }
+
+    // win0 disabled
+    else
+    {
+        std::cout << "WIN0\n";
+        win0rr = 0xFFFF;
+        win0ll = 0;
+        win0bb = 0xFF;
+        win0tt = 0;
+    }
+
+    // win1 enabled
+    if (stat->dispcnt.win_enabled & 0x2)
+    {
+        std::cout << "WIN1 EN\n";
+        u16 win1h, win1v;
+        win1h = mem->read_u16_unprotected(REG_WIN1H);
+        win1v = mem->read_u16_unprotected(REG_WIN1V);
+
+        win1rr = (win1h >> 0) & 0xFF;
+        win1ll = (win1h >> 8) & 0xFF;
+        win1bb = (win1v >> 0) & 0xFF;
+        win1tt = (win1v >> 8) & 0xFF;
+
+        std::cout << (int) win1ll << "\n";
+        std::cout << (int) win1tt << "\n";
+        std::cout << (int) win1rr << "\n";
+        std::cout << (int) win1bb << "\n";
+    }
+
+    // win1 disabled
+    else
+    {
+        std::cout << "WIN0\n";
+        win1rr = 0xFFFF;
+        win1ll = 0;
+        win1bb = 0xFF;
+        win1tt = 0;
+    }
+    
+    // draw background
     switch (stat->dispcnt.mode)
     {
         case 0: draw_mode0(); break;
@@ -209,6 +271,7 @@ void GPU::draw()
             std::cerr << "Error: unknown video mode" << "\n";
             break;
     }
+    //draw_reg_background(1);
 
     // sprites enabled
     if (stat->dispcnt.obj_enabled)
@@ -257,7 +320,9 @@ void GPU::draw_mode0()
 void GPU::draw_mode1()
 {
     for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
+    {
         for (int i = 2; i >= 0; --i) // bg0 - bg2
+        {
             if (stat->bg_cnt[i].enabled && stat->bg_cnt[i].priority == priority)
             {
                 switch (i)
@@ -275,6 +340,8 @@ void GPU::draw_mode1()
                         std::cerr << "Error: trying to draw invalid background in mode 1: " << i << "\n";
                 }
             }
+        }
+    }
 }
 
 // video mode 3 - bitmap mode
@@ -359,27 +426,21 @@ void GPU::draw_reg_background(int bg)
     // win0 enabled & bg is in content of win0
     if ((stat->dispcnt.win_enabled & 0x1) && ((mem->read_u16_unprotected(REG_WININ) >> bg) & 1))
     {
-        u16 win0h, win0v;
-        win0h = mem->read_u16_unprotected(REG_WIN0H);
-        win0v = mem->read_u16_unprotected(REG_WIN0V);
-
-        xmax = (win0h >> 0) & 0xFF;
-        xmin = (win0h >> 8) & 0xFF;
-        ymax = (win0v >> 0) & 0xFF;
-        ymin = (win0v >> 8) & 0xFF;
+        std::cout << "WIN0\n";
+        xmax = win0rr;
+        xmin = win0ll;
+        ymax = win0tt;
+        ymin = win0bb;
     }
 
     // win1 enabled & bg is in content of win1
     if ((stat->dispcnt.win_enabled & 0x2) && ((mem->read_u16_unprotected(REG_WININ) >> bg + 8) & 1))
     {
-        u16 win1h, win1v;
-        win1h = mem->read_u16_unprotected(REG_WIN1H);
-        win1v = mem->read_u16_unprotected(REG_WIN1V);
-
-        xmax = (win1h >> 0) & 0xFF;
-        xmin = (win1h >> 8) & 0xFF;
-        ymax = (win1v >> 0) & 0xFF;
-        ymin = (win1v >> 8) & 0xFF;
+        std::cout << "WIN1\n";
+        xmax = win1rr;
+        xmin = win1ll;
+        ymax = win1tt;
+        ymin = win1bb;
     }
 
     //std::cout << (int) stat->dispcnt.win_enabled << "\n"; 
@@ -563,38 +624,21 @@ void GPU::draw_reg_background(int bg)
         {
             if ((stat->dispcnt.win_enabled & 0x3) && ((mem->read_u16_unprotected(REG_WINOUT) >> bg) & 1))
             {
-                u16 win0h, win0v;
-                u16 win1h, win1v;
-
-                u8 win0xmax, win0xmin, win0ymax, win0ymin, win1xmax, win1xmin, win1ymax, win1ymin;
-                win1h = mem->read_u16_unprotected(REG_WIN1H);
-                win1v = mem->read_u16_unprotected(REG_WIN1V);
-                win0h = mem->read_u16_unprotected(REG_WIN0H);
-                win0v = mem->read_u16_unprotected(REG_WIN0V);
-
-                win0xmax = (win0h >> 0) & 0xFF;
-                win0xmin = (win0h >> 8) & 0xFF;
-                win0ymax = (win0v >> 0) & 0xFF;
-                win0ymin = (win0v >> 8) & 0xFF;
-                
-                win1xmax = (win1h >> 0) & 0xFF;
-                win1xmin = (win1h >> 8) & 0xFF;
-                win1ymax = (win1v >> 0) & 0xFF;
-                win1ymin = (win1v >> 8) & 0xFF;
-
+                //std::cout << "WINOUT\n";
                 // out of window bounds
-                if (x > win0xmax || y > win0ymax)
-                    continue;
-                
-                if (x < win0xmin || y < win0ymin)
-                    continue;
+                if (x < win0rr && x > win0ll) continue;
+                if (x < win1rr && x > win1ll) continue;
+                if (y < win0bb && x > win0tt) continue;
+                if (x < win1bb && x > win1tt) continue;
+                // if (y < win0ymax && y > win0ymin) continue;
+                // if (x < win1xmax && x > win1xmin) continue;
+                // if (y < win1ymax && y > win1ymin) continue;
 
-                // out of window bounds
-                if (x > win0xmax || y > win0ymax)
-                    continue;
-                
-                if (x < win0xmin || y < win0ymin)
-                    continue;
+
+
+                // if (x > win0xmin || y > win0ymin) continue;
+                // if (x < win1xmax || y < win1ymax) continue;
+                // if (x > win1xmin || y > win1ymin) continue;
             }
 
             // out of window bounds

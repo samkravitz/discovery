@@ -69,8 +69,8 @@ class GPU
         obj_attr objs[NUM_OBJS]; // can support 128 normal objects
 
         // window boundaries
-        u16 win0xmax, win0xmin, win1xmax, win1xmin; 
-        u8  win0ymax, win0ymin, win1ymax, win1ymin;
+        u16 win0rr, win0ll, win1rr, win1ll; 
+        u8  win0tt, win0bb, win1tt, win1bb;
 
         // video mode draws
         void draw_mode0();

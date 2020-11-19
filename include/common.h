@@ -94,8 +94,8 @@ const u32 REG_BG3PC    = 0x4000034;
 const u32 REG_BG3PD    = 0x4000036;
 
 const u32 REG_WIN0H    = 0x4000040;
-const u32 REG_WIN0V    = 0x4000042;
-const u32 REG_WIN1H    = 0x4000044;
+const u32 REG_WIN1H    = 0x4000042;
+const u32 REG_WIN0V    = 0x4000044;
 const u32 REG_WIN1V    = 0x4000046;
 const u32 REG_WININ    = 0x4000048;
 const u32 REG_WINOUT   = 0x400004A;

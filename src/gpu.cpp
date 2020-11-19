@@ -189,7 +189,7 @@ void GPU::draw()
     SDL_UpdateWindowSurface(window);
     //std::cout << sizeof(screen_buffer) << "\n";
     // zero screen buffer for next frame
-    memset(screen_buffer, 0, sizeof(screen_buffer));
+    //memset(screen_buffer, 0, sizeof(screen_buffer));
 
     double duration;
     clock_t new_time = std::clock();

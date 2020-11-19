@@ -1,4 +1,6 @@
 #include <ctime>
+#include <sstream>
+#include <iomanip>
 
 #include "gpu.h"
 
@@ -60,10 +62,12 @@ GPU::~GPU()
 
 void GPU::reset()
 {
-    cycles = 0;
-    scanline = 0;
+    cycles    = 0;
+    scanline  = 0;
+    frame     = 0;
+    fps       = 0;
+    old_time  = clock();
     memset(screen_buffer, 0, sizeof(screen_buffer));
-    old_clock = clock();
 }
 
 // 1 clock cycle of the gpu
@@ -109,6 +113,25 @@ void GPU::cycle()
                     mem->_dma(i);
                     std::cout << "DMA" << i << " VBLANK\n";
                 }
+            }
+
+            // calculate fps
+            if (++frame == 60)
+            {
+                frame = 0;
+
+                double duration;
+                clock_t new_time = std::clock();
+                duration = (new_time - old_time) / (double) CLOCKS_PER_SEC;
+                old_time = new_time;
+
+                std::stringstream stream;
+                stream << std::fixed << std::setprecision(1) << (60 / duration);
+                std::string title("");
+                title += "discovery - ";
+                title += stream.str();
+                title += " fps";
+                SDL_SetWindowTitle(window, title.c_str());
             }
         }
     }
@@ -194,12 +217,6 @@ void GPU::draw()
     
     // zero screen buffer for next frame
     memset(screen_buffer, 0, sizeof(screen_buffer));
-
-    // double duration;
-    // clock_t new_time = std::clock();
-    // duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
-    // std::cout << "Refresh took: " << duration << "\n";
-    // old_clock = new_time;
 }
 
 // video mode 0 - tile mode

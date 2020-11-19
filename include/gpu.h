@@ -53,13 +53,15 @@ class GPU
         void reset();
         void draw();
 
-        clock_t old_clock;
-
     private:
         SDL_Window  *window;
         SDL_Surface *final_screen;
         SDL_Surface *original_screen;
         SDL_Rect     scale_rect;
+
+        u8 frame; // counts 0 - 60
+        u8 fps;
+        clock_t old_time;
 
         u32 screen_buffer[MAX_X][MAX_Y];
 

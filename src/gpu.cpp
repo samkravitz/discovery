@@ -78,6 +78,14 @@ void GPU::reset()
     scanline  = 0;
     frame     = 0;
     fps       = 0;
+    win0xmax  = 0xFFFF;
+    win1xmax  = 0xFFFF;
+    win0ymax  = 0xFF;
+    win1ymax  = 0xFF;
+    win0xmin  = 0;
+    win0ymin  = 0;
+    win1xmin  = 0;
+    win1ymin  = 0;
     old_time  = clock();
     memset(screen_buffer, 0, sizeof(screen_buffer));
 }
@@ -362,17 +370,24 @@ void GPU::draw_reg_background(int bg)
     }
 
     // win1 enabled & bg is in content of win1
-    if (stat->dispcnt.win_enabled & 0x2)
+    if ((stat->dispcnt.win_enabled & 0x2) && ((mem->read_u16_unprotected(REG_WININ) >> bg + 8) & 1))
     {
+        u16 win1h, win1v;
+        win1h = mem->read_u16_unprotected(REG_WIN1H);
+        win1v = mem->read_u16_unprotected(REG_WIN1V);
 
+        xmax = (win1h >> 0) & 0xFF;
+        xmin = (win1h >> 8) & 0xFF;
+        ymax = (win1v >> 0) & 0xFF;
+        ymin = (win1v >> 8) & 0xFF;
     }
 
-    std::cout << (int) stat->dispcnt.win_enabled << "\n"; 
+    //std::cout << (int) stat->dispcnt.win_enabled << "\n"; 
     // winout enabled & bg is in content of winout
-    if ((stat->dispcnt.win_enabled & 0x4) && ((mem->read_u16_unprotected(REG_WINOUT) >> bg) & 1))
-    {
-        std::cout << "WINOUT\n";
-    }
+    // if ((stat->dispcnt.win_enabled & 0x4) && ((mem->read_u16_unprotected(REG_WINOUT) >> bg) & 1))
+    // {
+    //     std::cout << "WINOUT\n";
+    // }
 
     // initial address of background tileset
     u32 tileset_address = MEM_VRAM_START + CHARBLOCK_LEN * stat->bg_cnt[bg].cbb;
@@ -546,6 +561,42 @@ void GPU::draw_reg_background(int bg)
     {
         for (int x = 0; x < SCREEN_WIDTH; ++x)
         {
+            if ((stat->dispcnt.win_enabled & 0x3) && ((mem->read_u16_unprotected(REG_WINOUT) >> bg) & 1))
+            {
+                u16 win0h, win0v;
+                u16 win1h, win1v;
+
+                u8 win0xmax, win0xmin, win0ymax, win0ymin, win1xmax, win1xmin, win1ymax, win1ymin;
+                win1h = mem->read_u16_unprotected(REG_WIN1H);
+                win1v = mem->read_u16_unprotected(REG_WIN1V);
+                win0h = mem->read_u16_unprotected(REG_WIN0H);
+                win0v = mem->read_u16_unprotected(REG_WIN0V);
+
+                win0xmax = (win0h >> 0) & 0xFF;
+                win0xmin = (win0h >> 8) & 0xFF;
+                win0ymax = (win0v >> 0) & 0xFF;
+                win0ymin = (win0v >> 8) & 0xFF;
+                
+                win1xmax = (win1h >> 0) & 0xFF;
+                win1xmin = (win1h >> 8) & 0xFF;
+                win1ymax = (win1v >> 0) & 0xFF;
+                win1ymin = (win1v >> 8) & 0xFF;
+
+                // out of window bounds
+                if (x > win0xmax || y > win0ymax)
+                    continue;
+                
+                if (x < win0xmin || y < win0ymin)
+                    continue;
+
+                // out of window bounds
+                if (x > win0xmax || y > win0ymax)
+                    continue;
+                
+                if (x < win0xmin || y < win0ymin)
+                    continue;
+            }
+
             // out of window bounds
             if (x > xmax || y > ymax)
                 continue;

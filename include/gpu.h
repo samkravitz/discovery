@@ -68,6 +68,10 @@ class GPU
         // oam data structure
         obj_attr objs[NUM_OBJS]; // can support 128 normal objects
 
+        // window boundaries
+        u16 win0xmax, win0xmin, win1xmax, win1xmin; 
+        u8  win0ymax, win0ymin, win1ymax, win1ymin;
+
         // video mode draws
         void draw_mode0();
         void draw_mode1();

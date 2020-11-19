@@ -248,9 +248,8 @@ void GPU::draw_mode3()
     {
         for (int x = 0; x < SCREEN_WIDTH; ++x)
         {
-            current_pixel = mem->read_u16_unprotected(MEM_VRAM_START + (2 * i)); // multiply i * 2 b/c each pixel is 2 bytes
+            current_pixel = mem->read_u16_unprotected(MEM_VRAM_START + (i++ * sizeof(u16))); // multiply i * 2 b/c each pixel is 2 bytes
             screen_buffer[y][x] = u16_to_u32_color(current_pixel);
-            ++i;
         }
     }
 }
@@ -266,18 +265,15 @@ void GPU::draw_mode4()
     if (stat->dispcnt.ps)
         pal_ptr += 0xA000;
 
-    //std::cout << (int) stat->dispcnt.ps << "\n";
-    int i = 0;
     for (int y = 0; y < SCREEN_HEIGHT; ++y)
     {
         for (int x = 0; x < SCREEN_WIDTH; ++x)
         {
-            palette_index = mem->read_u8_unprotected(pal_ptr + i);
+            palette_index = mem->read_u8_unprotected(pal_ptr++);
             // multiply by sizeof(u16) because each entry in palram is 2 bytes
             color = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
             // add current pixel in argb format to pixel array
             screen_buffer[y][x] = u16_to_u32_color(color);
-            ++i;
         }
     }
 }
@@ -293,18 +289,16 @@ void GPU::draw_mode5()
     if (stat->dispcnt.ps)
         pal_ptr += 0xA000;
 
-    int i = 0;
     // mode 5 has resolution of 128 x 160
     for (int y = 0; y < 128; ++y)
     {
         for (int x = 0; x < 160; ++x)
         {
-            palette_index = mem->read_u8_unprotected(pal_ptr + i);
+            palette_index = mem->read_u8_unprotected(pal_ptr++);
             // multiply by sizeof(u16) because each entry in palram is 2 bytes
             color = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
             // add current pixel in argb format to pixel array
             screen_buffer[y][x] = u16_to_u32_color(color);
-            ++i;
         }
     }
 }

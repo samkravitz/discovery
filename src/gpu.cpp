@@ -327,6 +327,41 @@ void GPU::draw_mode5()
 // bg - background index (0-3)
 void GPU::draw_reg_background(int bg)
 {
+    // boundaries for window
+    u16 xmax, xmin;
+    u8  ymax, ymin;
+
+    // initially all values are in bounds
+    xmin = ymin = 0;
+    xmax = 0xFFFF;
+    ymax = 0xFF;
+
+    // win0 enabled & bg is in content of win0
+    if ((stat->dispcnt.win_enabled & 0x1) && ((mem->read_u16_unprotected(REG_WININ) >> bg) & 1))
+    {
+        u16 win0h, win0v;
+        win0h = mem->read_u16_unprotected(REG_WIN0H);
+        win0v = mem->read_u16_unprotected(REG_WIN0V);
+
+        xmax = (win0h >> 0) & 0xFF;
+        xmin = (win0h >> 8) & 0xFF;
+        ymax = (win0v >> 0) & 0xFF;
+        ymin = (win0v >> 8) & 0xFF;
+    }
+
+    // win1 enabled & bg is in content of win1
+    if (stat->dispcnt.win_enabled & 0x2)
+    {
+
+    }
+
+    std::cout << (int) stat->dispcnt.win_enabled << "\n"; 
+    // winout enabled & bg is in content of winout
+    if ((stat->dispcnt.win_enabled & 0x4) && ((mem->read_u16_unprotected(REG_WINOUT) >> bg) & 1))
+    {
+        std::cout << "WINOUT\n";
+    }
+
     // initial address of background tileset
     u32 tileset_address = MEM_VRAM_START + CHARBLOCK_LEN * stat->bg_cnt[bg].cbb;
 
@@ -499,6 +534,13 @@ void GPU::draw_reg_background(int bg)
     {
         for (int x = 0; x < SCREEN_WIDTH; ++x)
         {
+            // out of window bounds
+            if (x > xmax || y > ymax)
+                continue;
+            
+            if (x < xmin || y < ymin)
+                continue;
+
             // modulo mapsize to allow wrapping
             if (map[(y + voff) % (height * PX_IN_TILE_COL)][(x + hoff) % (width * PX_IN_TILE_ROW)] != TRANSPARENT)
                 screen_buffer[y][x] = map[(y + voff) % (height * PX_IN_TILE_COL)][(x + hoff) % (width * PX_IN_TILE_ROW)];

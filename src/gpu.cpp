@@ -189,7 +189,7 @@ void GPU::draw()
     SDL_UpdateWindowSurface(window);
     //std::cout << sizeof(screen_buffer) << "\n";
     // zero screen buffer for next frame
-    //memset(screen_buffer, 0, sizeof(screen_buffer));
+    memset(screen_buffer, 0, sizeof(screen_buffer));
 
     double duration;
     clock_t new_time = std::clock();
@@ -646,10 +646,6 @@ void GPU::draw_affine_background(int bg)
 
 void GPU::draw_sprites()
 {
-    // make sure sprites are 1D mode, I haven't added 2D mode compatibility yet
-    // if (stat->dispcnt.obj_map_mode == 0)
-    //     std::cout << "Caution: sprite mode is 2D\n";
-
     obj_attr attr;
     // TODO - priority
     for (int i = NUM_OBJS - 1; i >= 0; --i)
@@ -786,15 +782,11 @@ void GPU::draw_regular_sprite(obj_attr attr)
                         sprite[y][x + 1] = u16_to_u32_color(color);
                     }
                 }
-
-                // increment start address for tile
-                //base_tile_addr += S_TILE_LEN;
             }
             
             // 8 bits / pixel - d-tile
             else
             {
-                std::cout << "D-tile";
                 for (int i = 0; i < D_TILE_LEN; i++)
                 {
                     palette_index = mem->read_u8_unprotected(base_tile_addr++);
@@ -811,41 +803,31 @@ void GPU::draw_regular_sprite(obj_attr attr)
 
                     screen_buffer[y][x] = u16_to_u32_color(color);
                 }
-
-                // increment start address for tile
-                //base_tile_addr += D_TILE_LEN;
             }
-
-            
         }
 
         // 2d sprite mapping
         if (_2d)
         {
             if (s_tile)
-                base_tile_addr += (32 - width) * S_TILE_LEN;
+                base_tile_addr += (TILES_PER_SCREENBLOCK - width) * S_TILE_LEN;
             else
-                base_tile_addr += (32 - width) * D_TILE_LEN;
+                base_tile_addr += (TILES_PER_SCREENBLOCK - width) * D_TILE_LEN;
         }
     }
-
-    //exit(0);
 
     //horizontal flip
     if (attr.attr_1.attr.h)
     {
-        //std::cout << "h flip\n";
         u32 temp;
-        for (int h = 0; h < height * 8; ++h)
+        for (int h = 0; h < height * PX_IN_TILE_COL; ++h)
         {
             for (int w = 0; w < width * 4; ++w) 
             {
                 temp = sprite[h][w];
-                // if (temp != 0)
-                //     std::cout << (int) temp << "\n";
 
-                sprite[h][w] = sprite[h][(width * 8) - w];
-                sprite[h][(width * 8) - w] = temp;
+                sprite[h][w] = sprite[h][(width * PX_IN_TILE_ROW) - w - 1];
+                sprite[h][(width * PX_IN_TILE_ROW) - w - 1] = temp;
             }
         }
     }
@@ -853,38 +835,17 @@ void GPU::draw_regular_sprite(obj_attr attr)
     // vertical flip
     if (attr.attr_1.attr.v) 
     {
-        //std::cout << "v flip\n";
         u32 temp;
         for (int h = 0; h < height * 4; ++h)
         {
-            for (int w = 0; w < width * 8; ++w)
+            for (int w = 0; w < width * PX_IN_TILE_ROW; ++w)
             {
                 temp = sprite[h][w];
-                
-                // if (temp != 0)
-                //     std::cout << (int) temp << "\n";
 
-                //sprite[h][w] = sprite[(height * 8) - h][w];
-                sprite[(height * 8) - h][w] = temp;
+                sprite[h][w] = sprite[(height * PX_IN_TILE_COL) - h - 1][w];
+                sprite[(height * PX_IN_TILE_COL) - h - 1][w] = temp;
             }
         }
-
-
-
-
-        // u32 temp;
-        // for (int h = 0; h < height * 8; ++h)
-        // {
-        //     for (int w = 0; w < width * 4; ++w) 
-        //     {
-        //         temp = sprite[h][w];
-        //         // if (temp == 0)
-        //         //     continue;
-
-        //         sprite[h][w] = sprite[h][(width * 8) - w];
-        //         sprite[h][(width * 8) - w] = temp;
-        //     }
-        // }
     }
 
     // mosaic

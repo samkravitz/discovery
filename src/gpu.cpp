@@ -41,6 +41,11 @@ GPU::GPU()
     final_screen = SDL_GetWindowSurface(window);
     original_screen = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32, 0, 0, 0, 0);
 
+    scale_rect.w = SCREEN_WIDTH * 2;
+    scale_rect.h = SCREEN_HEIGHT * 2;
+    scale_rect.x = 0;
+    scale_rect.y = 0;
+
     reset();
 }
 
@@ -178,24 +183,20 @@ void GPU::draw()
     if (SDL_MUSTLOCK(final_screen))
         SDL_UnlockSurface(final_screen);
 
-    SDL_Rect d;
-    d.w = SCREEN_WIDTH * 2;
-    d.h = SCREEN_HEIGHT * 2;
-    d.x = 0;
-    d.y = 0;
-    SDL_BlitScaled(original_screen, NULL, final_screen, &d);
+    // scale screen buffer 
+    SDL_BlitScaled(original_screen, NULL, final_screen, &scale_rect);
     
     // draw final_screen pixels on screen
     SDL_UpdateWindowSurface(window);
-    //std::cout << sizeof(screen_buffer) << "\n";
+    
     // zero screen buffer for next frame
     memset(screen_buffer, 0, sizeof(screen_buffer));
 
-    double duration;
-    clock_t new_time = std::clock();
-    duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
-    std::cout << "Refresh took: " << duration << "\n";
-    old_clock = new_time;
+    // double duration;
+    // clock_t new_time = std::clock();
+    // duration = ( new_time - old_clock ) / (double) CLOCKS_PER_SEC;
+    // std::cout << "Refresh took: " << duration << "\n";
+    // old_clock = new_time;
 }
 
 // video mode 0 - tile mode

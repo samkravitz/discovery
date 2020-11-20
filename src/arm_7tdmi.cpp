@@ -37,7 +37,7 @@ arm_7tdmi::arm_7tdmi()
     current_interrupt = 0;
     in_interrupt  = false;
     swi_vblank_intr = false;
-
+    last_read_bios = 0xE129F000;
     mem = NULL;
     
     // different initialization for the testing environment
@@ -963,12 +963,44 @@ void arm_7tdmi::handle_interrupt()
 
 u8 arm_7tdmi::read_u8(u32 address)
 {
-    if (!mem_check_read(address))
+    // reading from BIOS memory
+    if (address <= 0x3FFF && registers.r15 > 0x3FFF)
     {
-        std::cout << "mem check u8 failed " << std::hex << address << "\n";
-        // exit(0);
-        // return last_read_bios & 0xFF;
+        //std::cout << "Invalid read from BIOS u8: " << std::hex << last_read_bios << "\n";
+        u32 value = last_read_bios;
+        
+        switch (address & 0x3)
+        {
+            case 0: value >>= 0;  break;
+            case 1: value >>= 8;  break;
+            case 2: value >>= 16; break;
+            case 3: value >>= 24; break;
+        }
+
+        return value & 0xFF;
     }
+
+    if ((address >= 0x4000 && address <= 0x1FFFFFF) || address >= 0x10000000)
+    {
+        std::cout << "UNUSED U8\n";
+        switch (get_state())
+        {
+            case ARM: return mem->read_u32(registers.r15);
+            case THUMB:
+                exit(0);
+                break;
+        }
+    }
+
+
+    // if (!mem_check_read(address))
+    // {
+    //     std::cout << "mem check u8 failed " << std::hex << address << "\n";
+    //     // exit(0);
+    //     // return last_read_bios & 0xFF;
+    // }
+
+    //if ()
 
     return mem->read_u8(address);
 }
@@ -980,11 +1012,91 @@ u8 arm_7tdmi::read_u8(u32 address)
  */
 u32 arm_7tdmi::read_u16(u32 address, bool sign)
 {
-    if (!mem_check_read(address))
+    // reading from BIOS memory
+    if (address <= 0x3FFF && registers.r15 > 0x3FFF)
     {
-        std::cout << "mem check u16 failed " << std::hex << address << "\n";
-        //return last_read_bios & 0xFFFFFF;
+        std::cout << "Invalid read from BIOS u16: " << std::hex << last_read_bios << "\n";
+        //exit(0);
+        u32 value = last_read_bios;
+        switch (address & 0x1)
+        {
+            case 0: value >>= 0;  break;
+            case 1: value >>= 16;  break;
+        }
+
+        return value & 0xFFFF;
     }
+
+    bool valid = true;
+
+    switch (address)
+    {
+        case REG_BG0HOFS:
+        case REG_BG1HOFS:
+        case REG_BG2HOFS:
+        case REG_BG3HOFS:
+        case REG_BG0VOFS:
+        case REG_BG1VOFS:
+        case REG_BG2VOFS:
+        case REG_BG3VOFS:
+        case REG_BG2X:
+        case REG_BG2Y:
+        case REG_BG2X + 2:
+        case REG_BG2Y + 2:
+        case REG_BG2PA:
+        case REG_BG2PB:
+        case REG_BG2PC:
+        case REG_BG2PD:
+        case REG_BG3X:
+        case REG_BG3Y:
+        case REG_BG3X + 2:
+        case REG_BG3Y + 2:
+        case REG_BG3PA:
+        case REG_BG3PB:
+        case REG_BG3PC:
+        case REG_BG3PD:
+        case REG_WIN0H:
+        case REG_WIN1H:
+        case REG_WIN0V:
+        case REG_WIN1V:
+        case REG_WININ:
+        case REG_WINOUT:
+        case REG_MOSAIC:
+        case REG_MOSAIC + 2:
+        case REG_DMA0SAD:
+        case REG_DMA0DAD:
+        case REG_DMA0CNT:
+        case REG_DMA1SAD:
+        case REG_DMA1DAD:
+        case REG_DMA1CNT:
+        case REG_DMA2SAD:
+        case REG_DMA2DAD:
+        case REG_DMA2CNT:
+        case REG_DMA3SAD:
+        case REG_DMA3DAD:
+        case REG_DMA3CNT:
+            std::cout << "u16 sadkjflsadfkjsdaflkj\n";
+            return 0;
+    }
+
+    if ((address >= 0x4000 && address <= 0x1FFFFFF) || address >= 0x10000000)
+    {
+        std::cout << "UNUSED U16\n";
+        
+        switch (get_state())
+        {
+            case ARM: return mem->read_u32(registers.r15);
+            case THUMB:
+                exit(0);
+                break;
+        }
+    }
+
+    // if (!mem_check_read(address))
+    // {
+    //     std::cout << "mem check u16 failed " << std::hex << address << "\n";
+    //     //return last_read_bios & 0xFFFFFF;
+    // }
 
     u32 data;
 
@@ -1026,11 +1138,81 @@ u32 arm_7tdmi::read_u16(u32 address, bool sign)
  */
 u32 arm_7tdmi::read_u32(u32 address, bool ldr)
 {
-    if (!mem_check_read(address))
+    // reading from BIOS memory
+    if (address <= 0x3FFF)
     {
-        std::cout << "mem check u32 failed " << std::hex << address << "\n";
+
+        if (registers.r15 < 0x3FFF)
+            last_read_bios = mem->read_u32_unprotected(address);
+        
         return last_read_bios;
     }
+
+    switch (address)
+    {
+        // case REG_BG0HOFS:
+        // case REG_BG1HOFS:
+        // case REG_BG2HOFS:
+        // case REG_BG3HOFS:
+        // case REG_BG0VOFS:
+        // case REG_BG1VOFS:
+        // case REG_BG2VOFS:
+        // case REG_BG3VOFS:
+        // case REG_BG2X:
+        // case REG_BG2Y:
+        // case REG_BG2PA:
+        // case REG_BG2PB:
+        // case REG_BG2PC:
+        // case REG_BG2PD:
+        // case REG_BG3X:
+        // case REG_BG3Y:
+        // case REG_BG3PA:
+        // case REG_BG3PB:
+        // case REG_BG3PC:
+        // case REG_BG3PD:
+        // case REG_WIN0H:
+        // case REG_WIN1H:
+        // case REG_WIN0V:
+        // case REG_WIN1V:
+        // case REG_WININ:
+        // case REG_WINOUT:
+        // case REG_MOSAIC:
+        // case REG_DMA0SAD:
+        // case REG_DMA0DAD:
+        case REG_DMA0CNT:
+        // case REG_DMA1SAD:
+        // case REG_DMA1DAD:
+        case REG_DMA1CNT:
+        // case REG_DMA2SAD:
+        // case REG_DMA2DAD:
+        case REG_DMA2CNT:
+        // case REG_DMA3SAD:
+        // case REG_DMA3DAD:
+        case REG_DMA3CNT:
+            std::cout << "u32 sadkjflsadfkjsdaflkj\n";
+            return 0;
+        default:
+            break;
+    }
+
+    if ((address >= 0x4000 && address <= 0x1FFFFFF) || address >= 0x10000000)
+    {
+        std::cout << "UNUSED U32\n";
+        switch (get_state())
+        {
+            
+            case ARM: return mem->read_u32(registers.r15);
+            case THUMB:
+                exit(0);
+                break;
+        }
+    }
+
+    // if (!mem_check_read(address))
+    // {
+    //     std::cout << "mem check u32 failed " << std::hex << address << "\n";
+    //     return last_read_bios;
+    // }
     
     // read from forcibly aligned address
     u32 data = mem->read_u32(address & ~3);
@@ -1130,39 +1312,38 @@ void arm_7tdmi::write_u32(u32 address, u32 value)
 // determine if a read at the specified address is allowed
 inline bool arm_7tdmi::mem_check_read(u32 &address)
 {
-    // upper 4 bits of address bus are unused, so mirror it if trying to access
-    if (address >= 0x10000000)
-        address &= 0x0FFFFFFF;
+    // upper 4 bits of address bus are unused
+    // if (address >= 0x10000000)
+    //     return false;
 
-    // add cycles for expensive memory accesses
+    // // add cycles for expensive memory accesses
 
-    // +1 cycles for VRAM accress while not in v-blank
-    if (address >= MEM_PALETTE_RAM_START && address <= MEM_OAM_END && !mem->stat->dispstat.in_vBlank)
-        cycles++;
+    // // +1 cycles for VRAM accress while not in v-blank
+    // if (address >= MEM_PALETTE_RAM_START && address <= MEM_OAM_END && !mem->stat->dispstat.in_vBlank)
+    //     cycles++;
     
-    // bios read
-    if (address <= 0x3FFF)
-    {
-        if (registers.r15 >= 0x3FFF)
-            return false;
+    // // bios read
+    // if (address <= 0x3FFF)
+    // {
+    //     if (registers.r15 >= 0x3FFF)
+    //         return false;
         
-        last_read_bios = mem->read_u32_unprotected(address);
-    }
+    //     last_read_bios = mem->read_u32_unprotected(address);
+    // }
 
-    // Reading from Unused or Write-Only I/O Ports
-    // Works like above Unused Memory when the entire 32bit memory fragment is Unused (eg. 0E0h)
-    // and/or Write-Only (eg. DMA0SAD). And otherwise, returns zero if the lower 16bit fragment is readable (eg. 04Ch=MOSAIC, 04Eh=NOTUSED/ZERO).
-    switch (address)
-    {
-        case REG_DMA0CNT:
-        case REG_DMA1CNT:
-        case REG_DMA2CNT:
-        case REG_DMA3CNT:
-            std::cout << "READING FROM DMACNT\n";
-            exit(5);
-        default:
-            break;
-    }
+    // // Reading from Unused or Write-Only I/O Ports
+    // // Works like above Unused Memory when the entire 32bit memory fragment is Unused (eg. 0E0h)
+    // // and/or Write-Only (eg. DMA0SAD). And otherwise, returns zero if the lower 16bit fragment is readable (eg. 04Ch=MOSAIC, 04Eh=NOTUSED/ZERO).
+    // switch (address)
+    // {
+    //     case REG_DMA0CNT:
+    //     case REG_DMA1CNT:
+    //     case REG_DMA2CNT:
+    //     case REG_DMA3CNT:
+    //         return false;
+    //     default:
+    //         break;
+    // }
     
     return true;
 }

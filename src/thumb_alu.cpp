@@ -877,7 +877,7 @@ void arm_7tdmi::conditional_branch(u16 instruction)
 
 void arm_7tdmi::software_interrupt_thumb(u16 instruction)
 {
-    //std::cout << "thumb SWI:  " << (instruction & 0xFF) << "\n";
+    std::cout << "thumb SWI:  " << (instruction & 0xFF) << "\n";
 
     // HLE BIOS calls
     // bits 7 - 0 determine which interrupt
@@ -922,7 +922,7 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction)
     set_state(SVC);
     set_register(r14, get_register(r15) - 2);
     registers.cpsr.bits.i = 1;
-    update_spsr(old_cpsr, false); // move up
+    update_spsr(old_cpsr, false);
     set_mode(ARM);
     set_register(r15, 0x08);
     pipeline_full = false;

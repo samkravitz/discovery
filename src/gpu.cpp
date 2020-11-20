@@ -271,7 +271,7 @@ void GPU::draw()
             std::cerr << "Error: unknown video mode" << "\n";
             break;
     }
-    //draw_reg_background(2);
+    //draw_reg_background(1);
 
     // sprites enabled
     if (stat->dispcnt.obj_enabled)
@@ -624,7 +624,7 @@ void GPU::draw_reg_background(int bg)
             else
             {
                 // out of window bounds
-                if (x > xmax || y > ymax) continue;
+                if (x  > xmax || y  > ymax) continue;
                 if (x <= xmin || y <= ymin) continue;
             }
 
@@ -833,6 +833,33 @@ void GPU::draw_sprites()
 
 void GPU::draw_regular_sprite(obj_attr attr)
 {
+    // boundaries for window
+    u16 xmax, xmin;
+    u8  ymax, ymin;
+
+    // initially all values are in bounds
+    xmin = ymin = 0;
+    xmax = 0xFFFF;
+    ymax = 0xFF;
+
+    // win0 enabled & obj is in content of win0
+    if ((stat->dispcnt.win_enabled & 0x1) && ((mem->read_u16_unprotected(REG_WININ) >> 4) & 1))
+    {
+        xmax = win0rr; // right
+        xmin = win0ll; // left
+        ymax = win0bb; // bottom
+        ymin = win0tt; // top
+    }
+
+    // win1 enabled & obj is in content of win1
+    if ((stat->dispcnt.win_enabled & 0x2) && ((mem->read_u16_unprotected(REG_WININ) >> 4 + 8) & 1))
+    {
+        xmax = win1rr; // right
+        xmin = win1ll; // left
+        ymax = win1bb; // bottom
+        ymin = win1tt; // top
+    }
+
     // x, y coordinate of top left of sprite
     u16 x0 = attr.attr_1.attr.x;
     u8  y0 = attr.attr_0.attr.y;
@@ -1067,6 +1094,22 @@ void GPU::draw_regular_sprite(obj_attr attr)
 
             if (x > SCREEN_WIDTH || y > SCREEN_HEIGHT)
                 continue;
+            
+            // belongs to winout
+            if ((stat->dispcnt.win_enabled & 0x3) && ((mem->read_u16_unprotected(REG_WINOUT) >> 4) & 1))
+            {
+                // lies within bounds of other window(s)
+                if ((x < win0rr && x >= win0ll) && (y >= win0tt && y < win0bb)) continue;
+                if ((x < win1rr && x >= win1ll) && (y >= win1tt && y < win1bb)) continue;
+            }
+
+            // does not belong to winout
+            else
+            {
+                // out of window bounds
+                if (x >  xmax || y  > ymax) continue;
+                if (x <= xmin || y <= ymin) continue;
+            }
 
             if (sprite[h][w] == TRANSPARENT)
                 continue;

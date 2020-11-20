@@ -179,6 +179,8 @@ class arm_7tdmi
         void write_u16(u32, u16);
         void write_u32(u32, u32);
 
+        u32 last_read_bios;
+
         // misc
         void update_flags_logical(u32, u8);
         void update_flags_addition(u32, u32, u32);
@@ -187,7 +189,8 @@ class arm_7tdmi
         void update_cpsr(u32, bool);
         void update_spsr(u32, bool);
         bool condition_met(condition_t);
-        bool mem_check(u32 &);
+        bool mem_check_read(u32 &);
+        bool mem_check_write(u32 &);
         u8   barrel_shift(u32, u32 &, u8);
         bool check_state();
 }; 

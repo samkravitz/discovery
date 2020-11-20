@@ -250,8 +250,8 @@ u8 Memory::read_u8(u32 address)
     // game rom
     if (address >= MEM_SIZE)
     {
-        //if (address - MEM_SIZE > rom_size)
-            //std::cout << "Caution: reading outside known cart length\n";
+        // if (address - MEM_SIZE > rom_size)
+        //     std::cout << "Caution: reading outside known cart length\n";
 
         return cart_rom[address - MEM_SIZE];
     }
@@ -386,11 +386,18 @@ void Memory::write_u8(u32 address, u8 value)
             return;
     }
 
+    // BIOS
+    if (address <= 0x3FFF)
+    {
+        std::cout << "Error: Writing to BIOS\n";
+        return;
+    }
+
     //game rom
     if (address >= MEM_SIZE)
     {
         std::cerr << "Warning: writing to game rom\n";
-         cart_rom[address - MEM_SIZE] = value;
+        cart_rom[address - MEM_SIZE] = value;
         // std::cerr << "Done\n";
         return;
     }
@@ -1072,6 +1079,8 @@ void Memory::dma3()
     // increment for destination, src
     int dest_inc, src_inc;
 
+    std::cout << "DMA 3 start addr: " << std::hex << src_ptr << "\n";
+    std::cout << "DMA 3 dest addr: " << std::hex << dest_ptr << "\n";
     // get increment mode for destination
     switch (dma[3].dest_adjust)
     {
@@ -1098,6 +1107,8 @@ void Memory::dma3()
     // 32 bit copy
     if (dma[3].chunk_size == 1)
     {
+        src_ptr  &= ~0x3; original_src  = src_ptr;
+        dest_ptr &= ~0x3; original_dest = dest_ptr; 
         for (int i = 0; i < dma[3].num_transfers; ++i)
         {
             // copy memory from src address to dest address
@@ -1112,6 +1123,9 @@ void Memory::dma3()
     // 16 bit copy
     else
     {
+        src_ptr  &= ~0x1; original_src  = src_ptr;
+        dest_ptr &= ~0x1; original_dest = dest_ptr;
+
         for (int i = 0; i < dma[3].num_transfers; ++i)
         {
             // copy memory from src address to dest address
@@ -1142,5 +1156,5 @@ void Memory::dma3()
     if (dma[3].irq)
         std::cout << "DMA3 IRQ request\n";   
     
-    //std::cout << "DMA 3 Done\n";
+    std::cout << "DMA 3 Done\n";
 }

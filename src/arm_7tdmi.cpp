@@ -174,6 +174,8 @@ void arm_7tdmi::execute(u32 instruction)
 {  
     #ifdef PRINT
     std::cout << "Executing: " << std::hex << instruction << "\n";
+    if (instruction == 0)
+        exit(5);
     #endif
     
     switch (get_mode())
@@ -961,7 +963,13 @@ void arm_7tdmi::handle_interrupt()
 
 u8 arm_7tdmi::read_u8(u32 address)
 {
-    if (!mem_check(address)) return 0;
+    if (!mem_check_read(address))
+    {
+        std::cout << "mem check u8 failed " << std::hex << address << "\n";
+        // exit(0);
+        // return last_read_bios & 0xFF;
+    }
+
     return mem->read_u8(address);
 }
 
@@ -972,7 +980,11 @@ u8 arm_7tdmi::read_u8(u32 address)
  */
 u32 arm_7tdmi::read_u16(u32 address, bool sign)
 {
-    if (!mem_check(address)) return 0;
+    if (!mem_check_read(address))
+    {
+        std::cout << "mem check u16 failed " << std::hex << address << "\n";
+        //return last_read_bios & 0xFFFFFF;
+    }
 
     u32 data;
 
@@ -1014,7 +1026,11 @@ u32 arm_7tdmi::read_u16(u32 address, bool sign)
  */
 u32 arm_7tdmi::read_u32(u32 address, bool ldr)
 {
-    if (!mem_check(address)) return 0;
+    if (!mem_check_read(address))
+    {
+        std::cout << "mem check u32 failed " << std::hex << address << "\n";
+        return last_read_bios;
+    }
     
     // read from forcibly aligned address
     u32 data = mem->read_u32(address & ~3);
@@ -1034,7 +1050,7 @@ u32 arm_7tdmi::read_u32(u32 address, bool ldr)
 
 void arm_7tdmi::write_u8(u32 address, u8 value)
 {
-    if (!mem_check(address)) return;
+    if (!mem_check_write(address)) return;
 
     // byte write to Palette RAM is written in both upper and lower 8 bytes of halfword at address
     if (address >= MEM_PALETTE_RAM_START && address <= MEM_PALETTE_RAM_END)
@@ -1094,7 +1110,7 @@ void arm_7tdmi::write_u16(u32 address, u16 value)
     // align address to halfword
     address &= ~0x1;
 
-    if (!mem_check(address)) return;
+    if (!mem_check_write(address)) return;
     mem->write_u16(address, value);
 }
 
@@ -1103,7 +1119,7 @@ void arm_7tdmi::write_u32(u32 address, u32 value)
     // align address to word
     address &= ~0x3;
 
-    if (!mem_check(address)) return;
+    if (!mem_check_write(address)) return;
 
     // 8 cycles for gamepak rom access, 5 from mem_check and 3 here
     // if (address >= MEM_GAMEPAK_ROM_START && address <= MEM_GAMEPAK_ROM_END)
@@ -1111,8 +1127,8 @@ void arm_7tdmi::write_u32(u32 address, u32 value)
     mem->write_u32(address, value);
 }
 
-// determine if an access at the specified address is allowed
-inline bool arm_7tdmi::mem_check(u32 &address)
+// determine if a read at the specified address is allowed
+inline bool arm_7tdmi::mem_check_read(u32 &address)
 {
     // upper 4 bits of address bus are unused, so mirror it if trying to access
     if (address >= 0x10000000)
@@ -1123,6 +1139,50 @@ inline bool arm_7tdmi::mem_check(u32 &address)
     // +1 cycles for VRAM accress while not in v-blank
     if (address >= MEM_PALETTE_RAM_START && address <= MEM_OAM_END && !mem->stat->dispstat.in_vBlank)
         cycles++;
+    
+    // bios read
+    if (address <= 0x3FFF)
+    {
+        if (registers.r15 >= 0x3FFF)
+            return false;
+        
+        last_read_bios = mem->read_u32_unprotected(address);
+    }
+
+    // Reading from Unused or Write-Only I/O Ports
+    // Works like above Unused Memory when the entire 32bit memory fragment is Unused (eg. 0E0h)
+    // and/or Write-Only (eg. DMA0SAD). And otherwise, returns zero if the lower 16bit fragment is readable (eg. 04Ch=MOSAIC, 04Eh=NOTUSED/ZERO).
+    switch (address)
+    {
+        case REG_DMA0CNT:
+        case REG_DMA1CNT:
+        case REG_DMA2CNT:
+        case REG_DMA3CNT:
+            std::cout << "READING FROM DMACNT\n";
+            exit(5);
+        default:
+            break;
+    }
+    
+    return true;
+}
+
+// determine if a write at the specified address is allowed
+inline bool arm_7tdmi::mem_check_write(u32 &address)
+{
+    // upper 4 bits of address bus are unused, so mirror it if trying to access
+    if (address >= 0x10000000)
+        address &= 0x0FFFFFFF;
+
+    // add cycles for expensive memory accesses
+
+    // +1 cycles for VRAM accress while not in v-blank
+    if (address >= MEM_PALETTE_RAM_START && address <= MEM_OAM_END && !mem->stat->dispstat.in_vBlank)
+        cycles++;
+    
+    // bios write
+    if (address <= 0x3FFF)
+        return false;
     
     return true;
 }

@@ -111,7 +111,7 @@ void GPU::cycle()
             if (mem->dma[i].enable && mem->dma[i].mode == 2) // start at HBLANK
             {
                 mem->_dma(i);
-                std::cout << "DMA" << i << " HBLANK\n";
+                //std::cout << "DMA" << i << " HBLANK\n";
             }
         }
         
@@ -214,10 +214,10 @@ void GPU::draw()
         win0bb = (win0v >> 0) & 0xFF;
         win0tt = (win0v >> 8) & 0xFF;
 
-        std::cout << (int) win0ll << "\n";
-        std::cout << (int) win0tt << "\n";
-        std::cout << (int) win0rr << "\n";
-        std::cout << (int) win0bb << "\n";
+        // std::cout << (int) win0ll << "\n";
+        // std::cout << (int) win0tt << "\n";
+        // std::cout << (int) win0rr << "\n";
+        // std::cout << (int) win0bb << "\n";
     }
 
     // win0 disabled
@@ -243,16 +243,16 @@ void GPU::draw()
         win1bb = (win1v >> 0) & 0xFF;
         win1tt = (win1v >> 8) & 0xFF;
 
-        std::cout << (int) win1ll << "\n";
-        std::cout << (int) win1tt << "\n";
-        std::cout << (int) win1rr << "\n";
-        std::cout << (int) win1bb << "\n";
+        // std::cout << (int) win1ll << "\n";
+        // std::cout << (int) win1tt << "\n";
+        // std::cout << (int) win1rr << "\n";
+        // std::cout << (int) win1bb << "\n";
     }
 
     // win1 disabled
     else
     {
-        //std::cout << "WIN0\n";
+        //std::cout << "WIN1\n";
         win1rr = 0xFFFF;
         win1ll = 0;
         win1bb = 0xFF;
@@ -271,7 +271,7 @@ void GPU::draw()
             std::cerr << "Error: unknown video mode" << "\n";
             break;
     }
-    //draw_reg_background(1);
+    //draw_reg_background(2);
 
     // sprites enabled
     if (stat->dispcnt.obj_enabled)
@@ -426,7 +426,6 @@ void GPU::draw_reg_background(int bg)
     // win0 enabled & bg is in content of win0
     if ((stat->dispcnt.win_enabled & 0x1) && ((mem->read_u16_unprotected(REG_WININ) >> bg) & 1))
     {
-        std::cout << "WIN0\n";
         xmax = win0rr; // right
         xmin = win0ll; // left
         ymax = win0bb; // bottom
@@ -436,19 +435,11 @@ void GPU::draw_reg_background(int bg)
     // win1 enabled & bg is in content of win1
     if ((stat->dispcnt.win_enabled & 0x2) && ((mem->read_u16_unprotected(REG_WININ) >> bg + 8) & 1))
     {
-        std::cout << "WIN1\n";
         xmax = win1rr; // right
         xmin = win1ll; // left
         ymax = win1bb; // bottom
         ymin = win1tt; // top
     }
-
-    //std::cout << (int) stat->dispcnt.win_enabled << "\n"; 
-    // winout enabled & bg is in content of winout
-    // if ((stat->dispcnt.win_enabled & 0x4) && ((mem->read_u16_unprotected(REG_WINOUT) >> bg) & 1))
-    // {
-    //     std::cout << "WINOUT\n";
-    // }
 
     // initial address of background tileset
     u32 tileset_address = MEM_VRAM_START + CHARBLOCK_LEN * stat->bg_cnt[bg].cbb;
@@ -621,21 +612,20 @@ void GPU::draw_reg_background(int bg)
     {
         for (int x = 0; x < SCREEN_WIDTH; ++x)
         {
+            // belongs to winout
             if ((stat->dispcnt.win_enabled & 0x3) && ((mem->read_u16_unprotected(REG_WINOUT) >> bg) & 1))
             {
-                //std::cout << "WINOUT\n";
                 // lies within bounds of other window(s)
-                if (x < win0rr && x > win0ll) continue;
-                if (x < win1rr && x > win1ll) continue;
-                if (y > win0tt && y < win0bb) continue;
-                if (y > win1tt && y < win1bb) continue;
+                if ((x < win0rr && x >= win0ll) && (y >= win0tt && y < win0bb)) continue;
+                if ((x < win1rr && x >= win1ll) && (y >= win1tt && y < win1bb)) continue;
             }
 
+            // does not belong to winout
             else
             {
                 // out of window bounds
                 if (x > xmax || y > ymax) continue;
-                if (x < xmin || y < ymin) continue;
+                if (x <= xmin || y <= ymin) continue;
             }
 
             // modulo mapsize to allow wrapping

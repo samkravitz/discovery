@@ -273,6 +273,30 @@ void GPU::draw()
     }
     //draw_reg_background(1);
 
+    // win0 enabled & obj is only content of win0
+    if ((stat->dispcnt.win_enabled & 0x1) && ((mem->read_u16_unprotected(REG_WININ) & 0x3F) == 0x10))
+    {
+        for (int y = win0tt; y < win0bb; ++y)
+        {
+            for (int x = win0ll; x < win0rr; ++x)
+            {
+                screen_buffer[y][x] = 0;
+            }
+        }
+    }
+
+    // win1 enabled & obj is only content of win1
+    if ((stat->dispcnt.win_enabled & 0x2) && ((mem->read_u16_unprotected(REG_WININ) >> 8 & 0x3F) == 0x10))
+    {
+        for (int y = win1tt; y < win1bb; ++y)
+        {
+            for (int x = win1ll; x < win1rr; ++x)
+            {
+                screen_buffer[y][x] = 0;
+            }
+        }
+    }
+
     // sprites enabled
     if (stat->dispcnt.obj_enabled)
     {

@@ -812,6 +812,7 @@ void Memory::_dma(int n)
 
 void Memory::dma0()
 {
+    //return;
     std::cout << "DMA 0\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = read_u32_unprotected(REG_DMA0SAD) & 0x7FFFFFF; // 27 bit
@@ -895,6 +896,7 @@ void Memory::dma0()
 
 void Memory::dma1()
 {
+    //return;
     std::cout << "DMA 1\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = read_u32_unprotected(REG_DMA1SAD) & 0xFFFFFFF; // 28 bit
@@ -978,6 +980,7 @@ void Memory::dma1()
 
 void Memory::dma2()
 {
+    //return;
     std::cout << "DMA 2\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = read_u32_unprotected(REG_DMA2SAD) & 0xFFFFFFF; // 28 bit

@@ -966,18 +966,18 @@ u8 arm_7tdmi::read_u8(u32 address)
     // reading from BIOS memory
     if (address <= 0x3FFF && registers.r15 > 0x3FFF)
     {
-        //std::cout << "Invalid read from BIOS u8: " << std::hex << last_read_bios << "\n";
-        u32 value = last_read_bios;
+        std::cout << "Invalid read from BIOS u8: " << std::hex << last_read_bios << "\n";
+        // u32 value = last_read_bios;
         
-        switch (address & 0x3)
-        {
-            case 0: value >>= 0;  break;
-            case 1: value >>= 8;  break;
-            case 2: value >>= 16; break;
-            case 3: value >>= 24; break;
-        }
+        // switch (address & 0x3)
+        // {
+        //     case 0: value >>= 0;  break;
+        //     case 1: value >>= 8;  break;
+        //     case 2: value >>= 16; break;
+        //     case 3: value >>= 24; break;
+        // }
 
-        return value & 0xFF;
+        // return value & 0xFF;
     }
 
     if ((address >= 0x4000 && address <= 0x1FFFFFF) || address >= 0x10000000)

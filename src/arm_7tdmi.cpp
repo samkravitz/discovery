@@ -726,89 +726,52 @@ void arm_7tdmi::update_spsr(u32 value, bool flags_only)
     // get spsr_<mode>
     switch (get_state())
     {
-        case USR:
-            // spsr doesn't exist in user mode
-            std::cerr << "Error: SPSR does not exist in user mode" << "\n";
-            return;
-        case FIQ:
-            old_spsr = registers.spsr_fiq;
-            break;
-        case SVC:
-            old_spsr = registers.spsr_svc;
-            break;
-        case ABT:
-            old_spsr = registers.spsr_abt;
-            break;
-        case IRQ:
-            old_spsr = registers.spsr_irq;
-            break;
-        case SYS:
-            old_spsr = registers.cpsr;
-            break;
-        case UND:
-            old_spsr = registers.spsr_und;
-            break;
+        // spsr doesn't exist in user mode
+        case USR: std::cerr << "Error: SPSR does not exist in user mode" << "\n"; exit(6);
+        case FIQ: old_spsr = registers.spsr_fiq; break;
+        case SVC: old_spsr = registers.spsr_svc; break;
+        case ABT: old_spsr = registers.spsr_abt; break;
+        case IRQ: old_spsr = registers.spsr_irq; break;
+        case SYS: old_spsr = registers.cpsr;     break;
+        case UND: old_spsr = registers.spsr_und; break;
     }
 
     // new spsr
-    status_register sr;
-    sr.full = value;
+    status_register new_spsr;
+    new_spsr.full = value;
 
     // don't have to check for USR mode b/c that was done above
     if (flags_only)
     {
-        old_spsr.bits.n = sr.bits.n;
-        old_spsr.bits.z = sr.bits.z;
-        old_spsr.bits.c = sr.bits.c;
-        old_spsr.bits.v = sr.bits.v;
+        old_spsr.bits.n = new_spsr.bits.n;
+        old_spsr.bits.z = new_spsr.bits.z;
+        old_spsr.bits.c = new_spsr.bits.c;
+        old_spsr.bits.v = new_spsr.bits.v;
 
         // set updated spsr_<mode>
         switch (get_state())
         {
-            case FIQ:
-                registers.spsr_fiq = old_spsr;
-                break;
-            case SVC:
-                registers.spsr_svc = old_spsr;
-                break;
-            case ABT:
-                registers.spsr_abt = old_spsr;
-                break;
-            case IRQ:
-                registers.spsr_irq = old_spsr;
-                break;
-            case UND:
-                registers.spsr_und = old_spsr;
-                break;
+            case FIQ: registers.spsr_fiq = old_spsr; break;
+            case SVC: registers.spsr_svc = old_spsr; break;
+            case ABT: registers.spsr_abt = old_spsr; break;
+            case IRQ: registers.spsr_irq = old_spsr; break;
+            case UND: registers.spsr_und = old_spsr; break;
+            case SYS: std::cout << "SYS in SPSR flags\n";  break;
         }
         
         return;
     }
 
-    old_spsr.full = value;
-
     // set updated spsr_<mode>
     switch (get_state())
     {
-        case FIQ:
-            registers.spsr_fiq = old_spsr;
-            break;
-        case SVC:
-            registers.spsr_svc = old_spsr;
-            break;
-        case ABT:
-            registers.spsr_abt = old_spsr;
-            break;
-        case IRQ:
-            registers.spsr_irq = old_spsr;
-            break;
-        case UND:
-            registers.spsr_und = old_spsr;
-            break;
+        case FIQ: registers.spsr_fiq = new_spsr; break;
+        case SVC: registers.spsr_svc = new_spsr; break;
+        case ABT: registers.spsr_abt = new_spsr; break;
+        case IRQ: registers.spsr_irq = new_spsr; break;
+        case UND: registers.spsr_und = new_spsr; break;
+        case SYS: std::cout << "SYS in SPSR\n";  break;
     }
-
-    // if (sr.bits.state == IRQ && registers.cpsr.bits.i == 1) return; // irq disabled bit set
-    // if (sr.bits.state == FIQ && registers.cpsr.bits.f == 1) return; // fiq disabled bit set
 }
 
 // advances the cpu clock

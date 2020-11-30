@@ -402,6 +402,9 @@ void Memory::write_u8(u32 address, u8 value)
         return;
     }
 
+    // write value at memory location
+    memory[address] = value;
+
     switch (address)
     {
         // REG_DISPCNT
@@ -647,51 +650,35 @@ void Memory::write_u8(u32 address, u8 value)
 
         // REG_TM0D
         case REG_TM0D:
-            timers[0]->data       |= value;
-            timers[0]->start_data |= value;
-        break;
-
         case REG_TM0D + 1:
-            timers[0]->data       |= (value << 8);
-            timers[0]->start_data |= (value << 8);
-        break;
+            timers[0]->data       = (memory[REG_TM0D + 1] << 8) | (memory[REG_TM0D]);
+            timers[0]->start_data = (memory[REG_TM0D + 1] << 8) | (memory[REG_TM0D]);
+            break;
         
         // REG_TM1D
         case REG_TM1D:
-            timers[1]->data       |= value;
-            timers[1]->start_data |= value;
-        break;
-
         case REG_TM1D + 1:
-            timers[1]->data       |= (value << 8);
-            timers[1]->start_data |= (value << 8);
-        break;
+            timers[1]->data       = (memory[REG_TM1D + 1] << 8) | (memory[REG_TM1D]);
+            timers[1]->start_data = (memory[REG_TM1D + 1] << 8) | (memory[REG_TM1D]);
+            break;
 
         // REG_TM2D
         case REG_TM2D:
-            timers[2]->data       |= value;
-            timers[2]->start_data |= value;
-        break;
-
         case REG_TM2D + 1:
-            timers[2]->data       |= (value << 8);
-            timers[2]->start_data |= (value << 8);
-        break;
+            timers[2]->data       = (memory[REG_TM2D + 1] << 8) | (memory[REG_TM2D]);
+            timers[2]->start_data = (memory[REG_TM2D + 1] << 8) | (memory[REG_TM2D]);
+            break;
 
         // REG_TM3D
         case REG_TM3D:
-            timers[3]->data       |= value;
-            timers[3]->start_data |= value;
-        break;
-
         case REG_TM3D + 1:
-            timers[3]->data       |= (value << 8);
-            timers[3]->start_data |= (value << 8);
-        break;
+            timers[3]->data       = (memory[REG_TM3D + 1] << 8) | (memory[REG_TM3D]);
+            timers[3]->start_data = (memory[REG_TM3D + 1] << 8) | (memory[REG_TM3D]);
+            break;
         
         // REG_TM0CNT
         case REG_TM0CNT:
-            timers[0]->freq      |= value      & 0x3;
+            timers[0]->freq       = value      & 0x3;
             timers[0]->cascade    = value >> 2 & 0x1;
             timers[0]->irq        = value >> 6 & 0x1;
             timers[0]->enable     = value >> 7 & 0x1;
@@ -703,13 +690,12 @@ void Memory::write_u8(u32 address, u8 value)
                 case 1: timers[0]->actual_freq = 64;   break;
                 case 2: timers[0]->actual_freq = 256;  break;
                 case 3: timers[0]->actual_freq = 1024; break;
-                
             }
         break;
 
         // REG_TM1CNT
         case REG_TM1CNT:
-            timers[1]->freq      |= value      & 0x3;
+            timers[1]->freq       = value      & 0x3;
             timers[1]->cascade    = value >> 2 & 0x1;
             timers[1]->irq        = value >> 6 & 0x1;
             timers[1]->enable     = value >> 7 & 0x1;
@@ -721,13 +707,12 @@ void Memory::write_u8(u32 address, u8 value)
                 case 1: timers[1]->actual_freq = 64;   break;
                 case 2: timers[1]->actual_freq = 256;  break;
                 case 3: timers[1]->actual_freq = 1024; break;
-                
             }
         break;
         
         // REG_TM2CNT
         case REG_TM2CNT:
-            timers[2]->freq      |= value      & 0x3;
+            timers[2]->freq       = value      & 0x3;
             timers[2]->cascade    = value >> 2 & 0x1;
             timers[2]->irq        = value >> 6 & 0x1;
             timers[2]->enable     = value >> 7 & 0x1;
@@ -739,13 +724,12 @@ void Memory::write_u8(u32 address, u8 value)
                 case 1: timers[2]->actual_freq = 64;   break;
                 case 2: timers[2]->actual_freq = 256;  break;
                 case 3: timers[2]->actual_freq = 1024; break;
-                
             }
         break;
 
         // REG_TM3CNT
         case REG_TM3CNT:
-            timers[3]->freq      |= value      & 0x3;
+            timers[3]->freq       = value      & 0x3;
             timers[3]->cascade    = value >> 2 & 0x1;
             timers[3]->irq        = value >> 6 & 0x1;
             timers[3]->enable     = value >> 7 & 0x1;
@@ -761,9 +745,6 @@ void Memory::write_u8(u32 address, u8 value)
         break;
                 
     }
-
-    // write value at memory location
-    memory[address] = value;
 }
 
 u32 Memory::read_u32_unprotected(u32 address)

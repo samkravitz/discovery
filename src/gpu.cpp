@@ -102,7 +102,11 @@ void GPU::cycle()
 
         // fire HBlank interrupt if necessary
         if (stat->dispstat.hbi)
+        {
             mem->memory[REG_IF] |= IRQ_HBLANK;
+            std::cout << "HBlank interrupt\n";
+        }
+            
 
         // check for DMA HBlank requests
         // TODO - Don't fire DMA Hblank in VBlank
@@ -111,7 +115,7 @@ void GPU::cycle()
             if (mem->dma[i].enable && mem->dma[i].mode == 2) // start at HBLANK
             {
                 mem->_dma(i);
-                //std::cout << "DMA" << i << " HBLANK\n";
+                std::cout << "DMA" << i << " HBLANK\n";
             }
         }
         
@@ -123,8 +127,11 @@ void GPU::cycle()
 
             // fire Vblank interrupt if necessary
             if (stat->dispstat.vbi)
+            {
+                std::cout << "VBlank interrupt\n";
                 mem->memory[REG_IF] |= IRQ_VBLANK;
-
+            }
+                
             // check for DMA VBLANK requests
             for (int i = 0; i < 4; ++i)
             {
@@ -181,7 +188,11 @@ void GPU::cycle()
             
             // interrupt is triggered if requested
             if (stat->dispstat.vci)
+            {
                 mem->memory[REG_IF] |= IRQ_VCOUNT;
+                std::cout << "Scanline interrupt\n";
+            }
+                
         }
         
         // scanline is not equal to trigger value, reset this bit

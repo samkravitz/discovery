@@ -856,13 +856,7 @@ void arm_7tdmi::handle_interrupt()
             if (interrupts_enabled & (1 << i) && interrupts_requested & (1 << i))
             {
                 // emulate how BIOS handles interrupts
-                //std::cout << "interrupt handling! " << i << "\n";
-                // if ((swi_vblank_intr) && (i == 0))
-                // {
-                //     //std::cout << "swi vblank\n";
-                //     registers.r15 += get_mode() == ARM ? 4 : 2;
-                //     swi_vblank_intr = false;
-                // }
+                std::cout << "interrupt handling! " << i << "\n";
 
                 u32 old_cpsr = get_register(cpsr);
                 // switch to IRQ

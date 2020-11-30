@@ -79,6 +79,8 @@ void discovery::game_loop()
     SDL_Event e;
     u32 old_cycles = 0;
     int num = 0;
+    bool valid;
+
     while (true)
     {
         cpu.fetch();
@@ -153,6 +155,23 @@ void discovery::game_loop()
             if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)
                 poll_keys(e);
         }
+
+        valid = false;
+        // check for valid cpsr
+        switch (cpu.get_state())
+        {
+            case USR:
+            case FIQ:
+            case IRQ:
+            case SVC:
+            case ABT:
+            case SYS:
+            case UND:
+                valid = true;
+        }
+
+        if (!valid)
+            std::cerr << "Invalid state in cpsr: " << (int) cpu.registers.cpsr.full << "\n";
 
     }
     

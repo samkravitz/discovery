@@ -104,7 +104,7 @@ void GPU::cycle()
         if (stat->dispstat.hbi)
         {
             mem->memory[REG_IF] |= IRQ_HBLANK;
-            std::cout << "HBlank interrupt\n";
+            //std::cout << "HBlank interrupt\n";
         }
             
 
@@ -128,7 +128,7 @@ void GPU::cycle()
             // fire Vblank interrupt if necessary
             if (stat->dispstat.vbi)
             {
-                std::cout << "VBlank interrupt\n";
+                //std::cout << "VBlank interrupt\n";
                 mem->memory[REG_IF] |= IRQ_VBLANK;
             }
                 
@@ -186,11 +186,11 @@ void GPU::cycle()
             // set trigger status
             stat->dispstat.vcs = 1;
             
-            // interrupt is triggered if requested
+            // scanline interrupt is triggered if requested
             if (stat->dispstat.vci)
             {
                 mem->memory[REG_IF] |= IRQ_VCOUNT;
-                std::cout << "Scanline interrupt\n";
+                //std::cout << "Scanline interrupt\n";
             }
                 
         }

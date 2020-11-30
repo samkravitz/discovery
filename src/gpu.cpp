@@ -275,6 +275,7 @@ void GPU::draw()
     {
         case 0: draw_mode0(); break;
         case 1: draw_mode1(); break;
+        case 2: draw_mode2(); break;
         case 3: draw_mode3(); break;
         case 4: draw_mode4(); break;
         case 5: draw_mode5(); break;
@@ -282,7 +283,6 @@ void GPU::draw()
             std::cerr << "Error: unknown video mode" << "\n";
             break;
     }
-    //draw_reg_background(1);
 
     // win0 enabled & obj is only content of win0
     if ((stat->dispcnt.win_enabled & 0x1) && ((mem->read_u16_unprotected(REG_WININ) & 0x3F) == 0x10))
@@ -342,12 +342,15 @@ void GPU::draw()
 void GPU::draw_mode0()
 {
     for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
+    {
         for (int i = 3; i >= 0; --i) // bg0 - bg3
+        {
             if (stat->bg_cnt[i].enabled && stat->bg_cnt[i].priority == priority)
             {
-                //std::cout << "drawing bg: " << i << "\n";
                 draw_reg_background(i);
             }
+        }
+    }
 }
 
 // video mode 1 - tile mode
@@ -364,11 +367,9 @@ void GPU::draw_mode1()
                 {
                     case 0:
                     case 1:
-                        //std::cout << "drawing reg " << i << "\n";
                         draw_reg_background(i);
                         break;
                     case 2:
-                        //std::cout << "drawing aff " << i << "\n";
                         draw_affine_background(i);
                         break;
                     default: // should never happen
@@ -378,6 +379,23 @@ void GPU::draw_mode1()
         }
     }
 }
+
+// video mode 2 - tile mode
+// can draw bg2 & bg3 affine
+void GPU::draw_mode2()
+{
+    for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
+    {
+        for (int i = 3; i >= 2; --i) // bg3 - bg2
+        {
+            if (stat->bg_cnt[i].enabled && stat->bg_cnt[i].priority == priority)
+            {
+                draw_affine_background(i);
+            }
+        }
+    }
+}
+
 
 // video mode 3 - bitmap mode
 // mode 3 straight up uses 2 bytes to represent each pixel in aRBG format, no palette used

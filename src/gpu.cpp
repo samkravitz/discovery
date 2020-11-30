@@ -27,7 +27,7 @@ u32 u16_to_u32_color(u16);
 
 GPU::GPU()
 {
-    mem = NULL;
+    mem  = NULL;
     stat = NULL;
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -89,25 +89,26 @@ void GPU::reset()
     old_time  = clock();
     memset(screen_buffer, 0, sizeof(screen_buffer));
 
-    // make all oam sprites hidden
+    // zero oam data structure
     for (int i = 0; i < NUM_OBJS; ++i)
     {
-        objs[i].attr_0.attr.om = 2;
-        // switch (attr.attr_0.attr.om)
-        // {
-        //     case 0x0: // normal rendering
-        //         draw_regular_sprite(attr);
-        //         break;
-        //     case 0x1: // affine & affine double
-        //     case 0x3:
-        //         std::cout << window << i << "\n";
-        //         draw_affine_sprite(attr);
-        //         std::cout << window << i << "\n";
-                
-        //         break;
-        //     case 0x2: // hidden
-        //         continue;
-        // }
+        objs[i].obj_mode = 2; // hidden
+
+        objs[i].y            = 0;
+        objs[i].gfx_mode     = 0;
+        objs[i].mosaic       = 0;
+        objs[i].color_mode   = 0;
+        objs[i].size         = 0;
+        objs[i].x            = 0;
+        objs[i].affine_index = 0;
+        objs[i].h_flip       = 0;
+        objs[i].v_flip       = 0;
+        objs[i].shape        = 0;
+        objs[i].tileno       = 0;
+        objs[i].priority     = 0;
+        objs[i].palbank      = 0;
+        objs[i].width        = 0;
+        objs[i].height       = 0;
     }
 }
 

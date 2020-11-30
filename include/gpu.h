@@ -108,7 +108,6 @@ class GPU
         void draw_affine_background(int);
 
         // misc
-        obj_attr get_attr(int);
         void draw_sprites();
         void draw_regular_sprite(obj_attr);
         void draw_affine_sprite(obj_attr);

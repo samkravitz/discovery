@@ -20,10 +20,11 @@ class discovery
     public:
         discovery();
 
-        arm_7tdmi cpu;
-        GPU gpu;
-        Memory *mem;
-        timer *timers[4];
+        arm_7tdmi *cpu;
+        GPU       *gpu;
+        Memory    *mem;
+        lcd_stat  *stat;
+        timer     *timers[4];
 
         struct gamepad
         {

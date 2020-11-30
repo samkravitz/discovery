@@ -33,9 +33,12 @@ int main(int argc, char **argv)
 
 discovery::discovery()
 {
+    cpu = new arm_7tdmi();
     mem = new Memory();
-    cpu.mem = mem;
-    gpu.mem = mem;
+    gpu = new GPU();
+    
+    cpu->mem = mem;
+    gpu->mem = mem;
 
     // initialize gamepad buttons to 1 (released)
     gamepad.a = 1;
@@ -52,9 +55,9 @@ discovery::discovery()
 
     system_cycles = 0;
 
-    lcd_stat *stat = new lcd_stat();
+    stat = new lcd_stat();
     mem->stat = stat;
-    gpu.stat = stat;
+    gpu->stat = stat;
 
     // initialize timers
     timer *t0 = new timer();
@@ -83,23 +86,23 @@ void discovery::game_loop()
 
     while (true)
     {
-        cpu.fetch();
-        cpu.decode(cpu.pipeline[0]);
-        cpu.execute(cpu.pipeline[0]);
+        cpu->fetch();
+        cpu->decode(cpu->pipeline[0]);
+        cpu->execute(cpu->pipeline[0]);
 
-        cpu.handle_interrupt();
+        cpu->handle_interrupt();
 
         // update pipeline
-        cpu.pipeline[0] = cpu.pipeline[1];
-        cpu.pipeline[1] = cpu.pipeline[2];
+        cpu->pipeline[0] = cpu->pipeline[1];
+        cpu->pipeline[1] = cpu->pipeline[2];
 
         // run gpu and timers for as many clock cycles as cpu used
-        system_cycles = cpu.cycles;
+        system_cycles = cpu->cycles;
         for (int i = system_cycles - old_cycles; i > 0; --i)
         {
             ++old_cycles;
 
-            gpu.cycle();
+            gpu->cycle();
 
             // clock timers
             for (int j = 0; j < 4; ++j)
@@ -148,7 +151,7 @@ void discovery::game_loop()
         }
 
         // poll for key presses at start of vblank
-        if (gpu.stat->scanline == 160 && SDL_PollEvent(&e))
+        if (stat->scanline == VDRAW && SDL_PollEvent(&e))
         {
             if (e.type == SDL_QUIT)
                 break;
@@ -158,7 +161,7 @@ void discovery::game_loop()
 
         valid = false;
         // check for valid cpsr
-        switch (cpu.get_state())
+        switch (cpu->get_state())
         {
             case USR:
             case FIQ:
@@ -171,7 +174,7 @@ void discovery::game_loop()
         }
 
         if (!valid)
-            std::cerr << "Invalid state in cpsr: " << (int) cpu.registers.cpsr.full << "\n";
+            std::cerr << "Invalid state in cpsr: " << (int) cpu->registers.cpsr.full << "\n";
 
     }
     
@@ -323,8 +326,8 @@ void discovery::shutdown()
     for (int i = 0; i < 4; ++i)
         delete timers[i];
         
-    cpu.~arm_7tdmi();
-    gpu.~GPU();
+    cpu->~arm_7tdmi();
+    gpu->~GPU();
 }
 
 void discovery::game_loop_debug()
@@ -342,9 +345,9 @@ void discovery::game_loop_debug()
         switch (input.at(0))
         {
             case 'n':
-                cpu.fetch();
-                cpu.decode(cpu.pipeline[0]);
-                cpu.execute(cpu.pipeline[0]);
+                cpu->fetch();
+                cpu->decode(cpu->pipeline[0]);
+                cpu->execute(cpu->pipeline[0]);
                 print_debug_info();
                 break;
 
@@ -354,23 +357,23 @@ void discovery::game_loop_debug()
                 break;
             
             case 'c':
-                while (cpu.registers.r15 != breakpoint)
+                while (cpu->registers.r15 != breakpoint)
                 {
-                    cpu.fetch();
-                    cpu.decode(cpu.pipeline[0]);
-                    cpu.execute(cpu.pipeline[0]);
+                    cpu->fetch();
+                    cpu->decode(cpu->pipeline[0]);
+                    cpu->execute(cpu->pipeline[0]);
 
-                    cpu.pipeline[0] = cpu.pipeline[1];
-                    cpu.pipeline[1] = cpu.pipeline[2];
+                    cpu->pipeline[0] = cpu->pipeline[1];
+                    cpu->pipeline[1] = cpu->pipeline[2];
 
                     // run gpu for as many clock cycles as cpu used
-                    system_cycles = cpu.cycles;
+                    system_cycles = cpu->cycles;
                     for (int i = system_cycles - old_cycles; i > 0; --i)
-                        gpu.cycle();
+                        gpu->cycle();
                     old_cycles = system_cycles;
                 
                     // poll for key presses at start of vblank
-                    if (gpu.stat->scanline == 160 && SDL_PollEvent(&e))
+                    if (stat->scanline == 160 && SDL_PollEvent(&e))
                     {
                         if (e.type == SDL_QUIT)
                             break;
@@ -382,62 +385,62 @@ void discovery::game_loop_debug()
         
 
         // update pipeline
-        cpu.pipeline[0] = cpu.pipeline[1];
-        cpu.pipeline[1] = cpu.pipeline[2];
+        cpu->pipeline[0] = cpu->pipeline[1];
+        cpu->pipeline[1] = cpu->pipeline[2];
 
         // run gpu for as many clock cycles as cpu used
-        system_cycles = cpu.cycles;
+        system_cycles = cpu->cycles;
         for (int i = system_cycles - old_cycles; i > 0; --i)
-            gpu.cycle();
+            gpu->cycle();
         old_cycles = system_cycles;
     
         // poll for key presses at start of vblank
-        if (gpu.stat->scanline == 160 && SDL_PollEvent(&e))
+        if (gpu->stat->scanline == 160 && SDL_PollEvent(&e))
         {
             if (e.type == SDL_QUIT)
                 break;
         }
 
-        cpu.handle_interrupt();
+        cpu->handle_interrupt();
     }
     shutdown();
 }
 
 void discovery::print_debug_info()
 {
-    std::cout << "Executed: " << std::hex << cpu.pipeline[0] << "\n";
+    std::cout << "Executed: " << std::hex << cpu->pipeline[0] << "\n";
 
     //print registers
-    std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(0) << 
-				" -- R4  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(4) << 
-				" -- R8  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(8) << 
-				" -- R12 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(12) << "\n";
+    std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << cpu->get_register(0) << 
+				" -- R4  : 0x" << std::setw(8) << std::setfill('0') << cpu->get_register(4) << 
+				" -- R8  : 0x" << std::setw(8) << std::setfill('0') << cpu->get_register(8) << 
+				" -- R12 : 0x" << std::setw(8) << std::setfill('0') << cpu->get_register(12) << "\n";
 
-			std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(1) << 
-				" -- R5  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(5) << 
-				" -- R9  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(9) << 
-				" -- R13 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(13) << "\n";
+			std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << cpu->get_register(1) << 
+				" -- R5  : 0x" << std::setw(8) << std::setfill('0') << cpu->get_register(5) << 
+				" -- R9  : 0x" << std::setw(8) << std::setfill('0') << cpu->get_register(9) << 
+				" -- R13 : 0x" << std::setw(8) << std::setfill('0') << cpu->get_register(13) << "\n";
 
-			std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(2) << 
-				" -- R6  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(6) << 
-				" -- R10 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(10) << 
-				" -- R14 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(14) << "\n";
+			std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << cpu->get_register(2) << 
+				" -- R6  : 0x" << std::setw(8) << std::setfill('0') << cpu->get_register(6) << 
+				" -- R10 : 0x" << std::setw(8) << std::setfill('0') << cpu->get_register(10) << 
+				" -- R14 : 0x" << std::setw(8) << std::setfill('0') << cpu->get_register(14) << "\n";
 
-			std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(3) << 
-				" -- R7  : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(7) << 
-				" -- R11 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(11) << 
-				" -- R15 : 0x" << std::setw(8) << std::setfill('0') << cpu.get_register(15) << "\n";
+			std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << cpu->get_register(3) << 
+				" -- R7  : 0x" << std::setw(8) << std::setfill('0') << cpu->get_register(7) << 
+				" -- R11 : 0x" << std::setw(8) << std::setfill('0') << cpu->get_register(11) << 
+				" -- R15 : 0x" << std::setw(8) << std::setfill('0') << cpu->get_register(15) << "\n";
 
 	
-			std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << cpu.registers.cpsr.full << "\t";
-            if (cpu.get_condition_code_flag(N))
+			std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << cpu->registers.cpsr.full << "\t";
+            if (cpu->get_condition_code_flag(N))
                 std::cout << "N";
-            if (cpu.get_condition_code_flag(Z))
+            if (cpu->get_condition_code_flag(Z))
                 std::cout << "Z";
-            if (cpu.get_condition_code_flag(C))
+            if (cpu->get_condition_code_flag(C))
                 std::cout << "C";
-            if (cpu.get_condition_code_flag(V))
+            if (cpu->get_condition_code_flag(V))
                 std::cout << "V";
             std::cout << "\n";
-            std::cout << "Cycles: " << std::dec << cpu.cycles << "\n";
+            std::cout << "Cycles: " << std::dec << cpu->cycles << "\n";
 }

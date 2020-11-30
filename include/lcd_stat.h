@@ -11,6 +11,7 @@
 #ifndef LCD_STAT_H
 #define LCD_STAT_H
 
+#include <queue>
 #include "common.h"
 
 struct lcd_stat
@@ -98,7 +99,7 @@ struct lcd_stat
             bg_cnt[i].enabled     = 0;
         }
 
-        oam_update = new std::queue<u8>
+        oam_update = new std::queue<u8>;
     }
 
     ~lcd_stat() { }

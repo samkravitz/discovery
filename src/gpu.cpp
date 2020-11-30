@@ -1414,15 +1414,75 @@ void GPU::draw_affine_sprite(obj_attr attr)
 // fills the objs data structure every frame an object needs to be drawn
 void GPU::update_attr()
 {
-    u32 oam_ptr = MEM_OAM_START;
-    // loop through all 128 objects
-    for (int i = 0; i < NUM_OBJS; ++i)
+    u32 oam_ptr;
+    u16 attr0, attr1, attr2;
+    u8 i;
+
+    // loop through all oam indices that are ready to be updated
+    while (!stat->oam_update->empty())
     {
-        objs[i].attr_0._zero = mem->read_u16(oam_ptr); oam_ptr += sizeof(u16); // attr 0
-        objs[i].attr_1._one  = mem->read_u16(oam_ptr); oam_ptr += sizeof(u16); // attr 1
-        objs[i].attr_2._two  = mem->read_u16(oam_ptr); oam_ptr += sizeof(u16); // attr 2
-        objs[i].fill         = mem->read_u16(oam_ptr); oam_ptr += sizeof(u16); // fill
+        i = stat->oam_update->front();
+
+        // get start address of dequeued oam entry
+        oam_ptr = MEM_OAM_START + i * 8; // each entry is 8 bytes long
+
+        attr0 = mem->read_u16_unprotected(oam_ptr + 0);
+        attr1 = mem->read_u16_unprotected(oam_ptr + 2);
+        attr2 = mem->read_u16_unprotected(oam_ptr + 4);
+
+        objs[i].y            = attr0 >>  0 & 0xFF;
+        objs[i].obj_mode     = attr0 >>  8 & 0x3;
+        objs[i].gfx_mode     = attr0 >> 10 & 0x3;
+        objs[i].mosaic       = attr0 >> 12 & 0x1;
+        objs[i].color_mode   = attr0 >> 13 & 0x1;
+        objs[i].size         = attr0 >> 14 & 0x3;
+
+        objs[i].x            = attr1 >>  0 & 0x1FF;
+        objs[i].affine_index = attr1 >>  9 & 0x1F;
+        objs[i].h_flip       = attr1 >> 12 & 0x1;
+        objs[i].v_flip       = attr1 >> 13 & 0x1;
+        objs[i].shape        = attr1 >> 14 & 0x3;
+
+        objs[i].tileno       = attr2 >>  0 & 0x3FF;
+        objs[i].priority     = attr2 >> 10 & 0x3;
+        objs[i].palbank      = attr2 >> 12 & 0xF;
+
+        // get actual dimensions of sprite
+        switch (objs[i].shape)
+        {
+            case 0:
+                switch (objs[i].size)
+                {
+                    case 0: objs[i].width =  8; objs[i].height =  8; break;
+                    case 1: objs[i].width = 16; objs[i].height = 16; break;
+                    case 2: objs[i].width = 32; objs[i].height = 32; break;
+                    case 3: objs[i].width = 64; objs[i].height = 64; break;
+                }
+                break;
+
+            case 1:
+                switch (objs[i].size)
+                {
+                    case 0: objs[i].width = 16; objs[i].height =  8; break;
+                    case 1: objs[i].width = 32; objs[i].height =  8; break;
+                    case 2: objs[i].width = 32; objs[i].height = 16; break;
+                    case 3: objs[i].width = 64; objs[i].height = 32; break;
+                }
+                break;
+
+            case 2:
+                switch (objs[i].size)
+                {
+                    case 0: objs[i].width =  8; objs[i].height = 16; break;
+                    case 1: objs[i].width =  8; objs[i].height = 32; break;
+                    case 2: objs[i].width = 16; objs[i].height = 32; break;
+                    case 3: objs[i].width = 32; objs[i].height = 64; break;
+                }
+                break;
+        }
     }
+
+    stat->oam_update->pop();
 }
 
 // given a 16 bit GBA color, make it a 32 bit SDL color

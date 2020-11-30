@@ -72,14 +72,18 @@ class GPU
             u8  y;
             u16 x;
 
-            u8 obj_mode;   // 0 - normal render, 1 - affine, 2 - hidden, 3 - double-wide affine
-            u8 gfx_mode;   // 0 - normal, 1 - semi-transparent, 2 - obj window, 3 - illegal
-            u8 color_mode; // 256 color if on, 16 color if off
+            u8 obj_mode;     // 0 - normal render, 1 - affine, 2 - hidden, 3 - double-wide affine
+            u8 gfx_mode;     // 0 - normal, 1 - semi-transparent, 2 - obj window, 3 - illegal
+            u8 color_mode;   // 256 color if on, 16 color if off
             bool mosaic;
 
             u8 affine_index; // P matrix index (0 - 31)
             bool h_flip;
             bool v_flip;
+
+            u16 tileno;      // base tile index of sprite
+            u8 priority;
+            u8 palbank;      // use in 16 color mode
 
             u8 size;
             u8 shape;

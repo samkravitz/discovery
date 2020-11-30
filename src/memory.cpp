@@ -516,20 +516,16 @@ void Memory::write_u8(u32 address, u8 value)
 
         // REG_DMA0CNT
         case REG_DMA0CNT:
-            dma[0].num_transfers |= value;
-        break;
-
         case REG_DMA0CNT + 1:
-            dma[0].num_transfers |= (value << 8);
-        break;
+            dma[0].num_transfers = (memory[REG_DMA0CNT + 1] << 8) | (memory[REG_DMA0CNT]);
+            break;
 
-        case REG_DMA0CNT + 2:
-            dma[0].dest_adjust    = value >> 5 & 0x3;
-            dma[0].src_adjust    |= value >> 6 & 0x1; 
-        break;
+       case REG_DMA0CNT + 2:
+            dma[0].dest_adjust   = value >> 5 & 0x3;
+            break;
 
         case REG_DMA0CNT + 3:
-            dma[0].src_adjust    |= ((value & 0x1) << 1);
+            dma[0].src_adjust     = ((memory[REG_DMA0CNT + 3] & 1) << 1) | (memory[REG_DMA0CNT + 2] >> 7);
             dma[0].repeat         = value >> 1 & 0x1;
             dma[0].chunk_size     = value >> 2 & 0x1;
             dma[0].mode           = value >> 4 & 0x3;
@@ -545,24 +541,20 @@ void Memory::write_u8(u32 address, u8 value)
                 dma[0].enable = 0;
             }
 
-        break;
+            break;
 
         // REG_DMA1CNT
         case REG_DMA1CNT:
-            dma[1].num_transfers |= value;
-        break;
-
         case REG_DMA1CNT + 1:
-            dma[1].num_transfers |= (value << 8);
-        break;
+            dma[1].num_transfers = (memory[REG_DMA1CNT + 1] << 8) | (memory[REG_DMA1CNT]);
+            break;
 
         case REG_DMA1CNT + 2:
-            dma[1].dest_adjust    = value >> 5 & 0x3;
-            dma[1].src_adjust    |= value >> 6 & 0x1; 
-        break;
+            dma[1].dest_adjust   = value >> 5 & 0x3;
+            break;
 
         case REG_DMA1CNT + 3:
-            dma[1].src_adjust    |= ((value & 0x1) << 1);
+            dma[1].src_adjust     = ((memory[REG_DMA1CNT + 3] & 1) << 1) | (memory[REG_DMA1CNT + 2] >> 7);
             dma[1].repeat         = value >> 1 & 0x1;
             dma[1].chunk_size     = value >> 2 & 0x1;
             dma[1].mode           = value >> 4 & 0x3;
@@ -578,24 +570,20 @@ void Memory::write_u8(u32 address, u8 value)
                 dma[1].enable = 0;
             }
 
-        break;
+            break;
 
         // REG_DMA2CNT
         case REG_DMA2CNT:
-            dma[2].num_transfers |= value;
-        break;
-
         case REG_DMA2CNT + 1:
-            dma[2].num_transfers |= (value << 8);
-        break;
+            dma[2].num_transfers = (memory[REG_DMA2CNT + 1] << 8) | (memory[REG_DMA2CNT]);
+            break;
 
         case REG_DMA2CNT + 2:
-            dma[2].dest_adjust    = value >> 5 & 0x3;
-            dma[2].src_adjust    |= value >> 6 & 0x1; 
-        break;
+            dma[2].dest_adjust   = value >> 5 & 0x3;
+            break;
 
         case REG_DMA2CNT + 3:
-            dma[2].src_adjust    |= ((value & 0x1) << 1);
+            dma[2].src_adjust     = ((memory[REG_DMA2CNT + 3] & 1) << 1) | (memory[REG_DMA2CNT + 2] >> 7);
             dma[2].repeat         = value >> 1 & 0x1;
             dma[2].chunk_size     = value >> 2 & 0x1;
             dma[2].mode           = value >> 4 & 0x3;
@@ -611,24 +599,20 @@ void Memory::write_u8(u32 address, u8 value)
                 dma[2].enable = 0;
             }
 
-        break;
+            break;
 
         // REG_DMA3CNT
         case REG_DMA3CNT:
-            dma[3].num_transfers |= value;
-        break;
-
         case REG_DMA3CNT + 1:
-            dma[3].num_transfers |= (value << 8);
-        break;
+            dma[3].num_transfers = (memory[REG_DMA3CNT + 1] << 8) | (memory[REG_DMA3CNT]);
+            break;
 
         case REG_DMA3CNT + 2:
-            dma[3].dest_adjust    = value >> 5 & 0x3;
-            dma[3].src_adjust    |= value >> 6 & 0x1; 
-        break;
+            dma[3].dest_adjust   = value >> 5 & 0x3;
+            break;
 
         case REG_DMA3CNT + 3:
-            dma[3].src_adjust    |= ((value & 0x1) << 1);
+            dma[3].src_adjust     = ((memory[REG_DMA3CNT + 3] & 1) << 1) | (memory[REG_DMA3CNT + 2] >> 7);
             dma[3].repeat         = value >> 1 & 0x1;
             dma[3].chunk_size     = value >> 2 & 0x1;
             dma[3].mode           = value >> 4 & 0x3;
@@ -691,7 +675,7 @@ void Memory::write_u8(u32 address, u8 value)
                 case 2: timers[0]->actual_freq = 256;  break;
                 case 3: timers[0]->actual_freq = 1024; break;
             }
-        break;
+            break;
 
         // REG_TM1CNT
         case REG_TM1CNT:
@@ -708,7 +692,7 @@ void Memory::write_u8(u32 address, u8 value)
                 case 2: timers[1]->actual_freq = 256;  break;
                 case 3: timers[1]->actual_freq = 1024; break;
             }
-        break;
+            break;
         
         // REG_TM2CNT
         case REG_TM2CNT:
@@ -725,7 +709,7 @@ void Memory::write_u8(u32 address, u8 value)
                 case 2: timers[2]->actual_freq = 256;  break;
                 case 3: timers[2]->actual_freq = 1024; break;
             }
-        break;
+            break;
 
         // REG_TM3CNT
         case REG_TM3CNT:
@@ -742,8 +726,7 @@ void Memory::write_u8(u32 address, u8 value)
                 case 2: timers[3]->actual_freq = 256;  break;
                 case 3: timers[3]->actual_freq = 1024; break;
             }
-        break;
-                
+            break;  
     }
 }
 

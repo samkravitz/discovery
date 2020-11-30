@@ -891,16 +891,14 @@ void GPU::draw_sprites()
     for (int i = NUM_OBJS - 1; i >= 0; --i)
     {
         attr = objs[i];
-        switch (attr.attr_0.attr.om)
+        switch (attr.obj_mode)
         {
             case 0x0: // normal rendering
                 draw_regular_sprite(attr);
                 break;
             case 0x1: // affine & affine double
             case 0x3:
-                std::cout << window << i << "\n";
                 draw_affine_sprite(attr);
-                std::cout << window << i << "\n";
                 
                 break;
             case 0x2: // hidden
@@ -939,80 +937,20 @@ void GPU::draw_regular_sprite(obj_attr attr)
     }
 
     // x, y coordinate of top left of sprite
-    u16 x0 = attr.attr_1.attr.x;
-    u8  y0 = attr.attr_0.attr.y;
-
-    bool s_tile = attr.attr_0.attr.a == 0;
-
+    u16 x0 = attr.x;
+    u8  y0 = attr.y;
+    
     // std::cout << "x: " << (int) x << "\n";
     // std::cout << "y: " <<  (int) y << "\n";
 
-    u32 tile_ptr = LOWER_SPRITE_BLOCK + (attr.attr_2.attr.tileno * S_TILE_LEN);
-
-    // get width, height in tiles of sprite
-    int width, height;
-    switch (attr.size())
-    {
-        case 0x0:
-            width = 1;
-            height = 1;
-            break;
-        case 0x1:
-            width = 2;
-            height = 2;
-            break;
-        case 0x2:
-            width = 4;
-            height = 4;
-            break;
-        case 0x3:
-            width = 8;
-            height = 8;
-            break;
-        case 0x4:
-            width = 2;
-            height = 1;
-            break;
-        case 0x5:
-            width = 4;
-            height = 1;
-            break;
-        case 0x6:
-            width = 4;
-            height = 2;
-            break;
-        case 0x7:
-            width = 8;
-            height = 4;
-            break;
-        case 0x8:
-            width = 1;
-            height = 2;
-            break;
-        case 0x9:
-            width = 1;
-            height = 4;
-            break;
-        case 0xA:
-            width = 2;
-            height = 4;
-            break;
-        case 0xB:
-            width = 4;
-            height = 8;
-            break;
-        default:
-            std::cerr << "Error: invalid size for object.\n";
-            return;
-    }
+    u32 tile_ptr = LOWER_SPRITE_BLOCK + (attr.tileno * S_TILE_LEN);
 
     // temporary buffer to hold texture
-    u32 sprite[height * PX_IN_TILE_COL][width * PX_IN_TILE_ROW];
+    u32 sprite[attr.height * PX_IN_TILE_COL][attr.width * PX_IN_TILE_ROW];
     memset(sprite, 0x1, sizeof(sprite));
 
     u16 color;
     u8 palette_index; // nth entry in palram
-    u8 palbank = attr.attr_2.attr.l;
     u16 x;
     u8 y;
     u8 left_pixel;
@@ -1021,11 +959,11 @@ void GPU::draw_regular_sprite(obj_attr attr)
     bool _2d = stat->dispcnt.obj_map_mode == 0;
 
     //draw sprite tile by tile
-    for (int h = 0; h < height; ++h)
+    for (int h = 0; h < attr.height; ++h)
     {
-        for (int w = 0; w < width; ++w)
+        for (int w = 0; w < attr.width; ++w)
         {
-            if (s_tile) // 4 bits / pixel - s-tile
+            if (attr.color_mode == 0) // 4 bits / pixel - s-tile
             {
                 for (int i = 0; i < S_TILE_LEN; ++i)
                 {
@@ -1042,7 +980,7 @@ void GPU::draw_regular_sprite(obj_attr attr)
                     if (left_pixel != 0)
                     {
                         // multiply by sizeof(u16) because each entry in palram is 2 bytes
-                        color = mem->read_u16_unprotected(SPRITE_PALETTE + left_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
+                        color = mem->read_u16_unprotected(SPRITE_PALETTE + left_pixel * sizeof(u16) + (attr.palbank * PALBANK_LEN));
                         sprite[y][x] = u16_to_u32_color(color);
                     }
 
@@ -1050,7 +988,7 @@ void GPU::draw_regular_sprite(obj_attr attr)
                     if (right_pixel != 0)
                     {
                         // multiply by sizeof(u16) because each entry in palram is 2 bytes
-                        color = mem->read_u16_unprotected(SPRITE_PALETTE + right_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
+                        color = mem->read_u16_unprotected(SPRITE_PALETTE + right_pixel * sizeof(u16) + (attr.palbank * PALBANK_LEN));
                         sprite[y][x + 1] = u16_to_u32_color(color);
                     }
                 }
@@ -1081,47 +1019,47 @@ void GPU::draw_regular_sprite(obj_attr attr)
         // 2d sprite mapping
         if (_2d)
         {
-            if (s_tile)
-                tile_ptr += (TILES_PER_SCREENBLOCK - width) * S_TILE_LEN;
+            if (attr.color_mode == 0)
+                tile_ptr += (TILES_PER_SCREENBLOCK - attr.width) * S_TILE_LEN;
             else
-                tile_ptr += (TILES_PER_SCREENBLOCK - width) * D_TILE_LEN;
+                tile_ptr += (TILES_PER_SCREENBLOCK - attr.width) * D_TILE_LEN;
         }
     }
 
     //horizontal flip
-    if (attr.attr_1.attr.h)
+    if (attr.h_flip)
     {
         u32 temp;
-        for (int h = 0; h < height * PX_IN_TILE_COL; ++h)
+        for (int h = 0; h < attr.height * PX_IN_TILE_COL; ++h)
         {
-            for (int w = 0; w < width * 4; ++w) 
+            for (int w = 0; w < attr.width * 4; ++w) 
             {
                 temp = sprite[h][w];
 
-                sprite[h][w] = sprite[h][(width * PX_IN_TILE_ROW) - w - 1];
-                sprite[h][(width * PX_IN_TILE_ROW) - w - 1] = temp;
+                sprite[h][w] = sprite[h][(attr.width * PX_IN_TILE_ROW) - w - 1];
+                sprite[h][(attr.width * PX_IN_TILE_ROW) - w - 1] = temp;
             }
         }
     }
 
-    // // vertical flip
-    if (attr.attr_1.attr.v) 
+    // vertical flip
+    if (attr.v_flip) 
     {
         u32 temp;
-        for (int h = 0; h < height * 4; ++h)
+        for (int h = 0; h < attr.height * 4; ++h)
         {
-            for (int w = 0; w < width * PX_IN_TILE_ROW; ++w)
+            for (int w = 0; w < attr.width * PX_IN_TILE_ROW; ++w)
             {
                 temp = sprite[h][w];
 
-                sprite[h][w] = sprite[(height * PX_IN_TILE_COL) - h - 1][w];
-                sprite[(height * PX_IN_TILE_COL) - h - 1][w] = temp;
+                sprite[h][w] = sprite[(attr.height * PX_IN_TILE_COL) - h - 1][w];
+                sprite[(attr.height * PX_IN_TILE_COL) - h - 1][w] = temp;
             }
         }
     }
 
     // mosaic
-    if (attr.attr_0.attr.m)
+    if (attr.mosaic)
     {
         //std::cout << "Mosaic\n";
         // u16 mosaic = mem->read_u16_unprotected(REG_MOSAIC);
@@ -1162,9 +1100,9 @@ void GPU::draw_regular_sprite(obj_attr attr)
     }
 
     // copy sprite to screen buffer
-    for (int h = 0; h < height * 8; ++h)
+    for (int h = 0; h < attr.height * 8; ++h)
     {
-        for (int w = 0; w < width * 8; ++w)
+        for (int w = 0; w < attr.width * 8; ++w)
         {
             // mask to keep x, y in 9, 8 bit range, respectively
             x = (x0 + w) & 0x1FF;
@@ -1195,16 +1133,12 @@ void GPU::draw_regular_sprite(obj_attr attr)
             screen_buffer[y][x] = sprite[h][w];
         }
     }
-
-    //std::cout << "\n\n";
 }
 
 void GPU::draw_affine_sprite(obj_attr attr)
 {
-    //std::cout << "Affine!\n";
     // get affine matrix
-    u8 aff_index = (attr.attr_1.attr.v << 4) | (attr.attr_1.attr.h << 3) | (attr.attr_1.attr.f);
-    u32 oam_addr = MEM_OAM_START + aff_index * 32; // each affine entry is 32 bytes across
+    u32 oam_addr = MEM_OAM_START + attr.affine_index * 32; // each affine entry is 32 bytes across
 
     // transform P matrix from 8.8f to float
     // P = [pa pb]
@@ -1214,75 +1148,16 @@ void GPU::draw_affine_sprite(obj_attr attr)
     float pc = (s16) mem->read_u16(oam_addr + 0x16) / 256.0;
     float pd = (s16) mem->read_u16(oam_addr + 0x1E) / 256.0;
 
-    u32 tile_ptr = LOWER_SPRITE_BLOCK + (attr.attr_2.attr.tileno * S_TILE_LEN);
-    bool s_tile = attr.attr_0.attr.a == 0;
-
-    // get width, height in tiles of sprite
-    int width, height;
-    switch (attr.size())
-    {
-        case 0x0:
-            width = 1;
-            height = 1;
-            break;
-        case 0x1:
-            width = 2;
-            height = 2;
-            break;
-        case 0x2:
-            width = 4;
-            height = 4;
-            break;
-        case 0x3:
-            width = 8;
-            height = 8;
-            break;
-        case 0x4:
-            width = 2;
-            height = 1;
-            break;
-        case 0x5:
-            width = 4;
-            height = 1;
-            break;
-        case 0x6:
-            width = 4;
-            height = 2;
-            break;
-        case 0x7:
-            width = 8;
-            height = 4;
-            break;
-        case 0x8:
-            width = 1;
-            height = 2;
-            break;
-        case 0x9:
-            width = 1;
-            height = 4;
-            break;
-        case 0xA:
-            width = 2;
-            height = 4;
-            break;
-        case 0xB:
-            width = 4;
-            height = 8;
-            break;
-        default:
-            std::cerr << "Error: invalid size for object.\n";
-            return;
-    }
+    u32 tile_ptr = LOWER_SPRITE_BLOCK + (attr.tileno * S_TILE_LEN);
 
     // temporary buffer to hold texture
-    u32 sprite[height * PX_IN_TILE_COL][width * PX_IN_TILE_ROW];
+    u32 sprite[attr.height * PX_IN_TILE_COL][attr.width * PX_IN_TILE_ROW];
     memset(sprite, 1, sizeof(sprite));
 
     u16 color;
     u8 palette_index; // nth entry in palram
-    u8 palbank = attr.attr_2.attr.l;
-    u8 left_pixel;
-    u8 right_pixel;
+    u8 left_pixel, right_pixel;
+
     bool _2d = stat->dispcnt.obj_map_mode == 0;
 
     // x, y coordinate of sprite texture before rot/scale
@@ -1290,11 +1165,11 @@ void GPU::draw_affine_sprite(obj_attr attr)
     u8  y;
 
     // draw sprite tile by tile
-    for (int h = 0; h < height; ++h)
+    for (int h = 0; h < attr.height; ++h)
     {
-        for (int w = 0; w < width; ++w)
+        for (int w = 0; w < attr.width; ++w)
         {
-            if (s_tile) // 4 bits / pixel - s-tile
+            if (attr.color_mode == 0) // 4 bits / pixel - s-tile
             {
                 for (int i = 0; i < S_TILE_LEN; ++i)
                 {
@@ -1310,7 +1185,7 @@ void GPU::draw_affine_sprite(obj_attr attr)
                     if (left_pixel != 0)
                     {
                         // multiply by sizeof(u16) because each entry in palram is 2 bytes
-                        color = mem->read_u16_unprotected(SPRITE_PALETTE + left_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
+                        color = mem->read_u16_unprotected(SPRITE_PALETTE + left_pixel * sizeof(u16) + (attr.palbank * PALBANK_LEN));
                         sprite[y][x] = u16_to_u32_color(color);
                     }
 
@@ -1318,7 +1193,7 @@ void GPU::draw_affine_sprite(obj_attr attr)
                     if (right_pixel != 0)
                     {
                         // multiply by sizeof(u16) because each entry in palram is 2 bytes
-                        color = mem->read_u16_unprotected(SPRITE_PALETTE + right_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
+                        color = mem->read_u16_unprotected(SPRITE_PALETTE + right_pixel * sizeof(u16) + (attr.palbank * PALBANK_LEN));
                         sprite[y][x + 1] = u16_to_u32_color(color);
                     }
                 }
@@ -1348,17 +1223,17 @@ void GPU::draw_affine_sprite(obj_attr attr)
             // 2d sprite mapping
             if (_2d)
             {
-                if (s_tile)
-                    tile_ptr += (TILES_PER_SCREENBLOCK - width) * S_TILE_LEN;
+                if (attr.color_mode == 0)
+                    tile_ptr += (TILES_PER_SCREENBLOCK - attr.width) * S_TILE_LEN;
                 else
-                    tile_ptr += (TILES_PER_SCREENBLOCK - width) * D_TILE_LEN;
+                    tile_ptr += (TILES_PER_SCREENBLOCK - attr.width) * D_TILE_LEN;
             }
         }
     }
 
     // half width, height (in pixels) of object screen canvas
-    int hwidth  = width  * 4; 
-    int hheight = height * 4; 
+    int hwidth  = attr.width  * 4; 
+    int hheight = attr.height * 4; 
 
     // coordinate of center of screen space (q) and texture space (p)
     u16 qx0, px0;
@@ -1368,21 +1243,21 @@ void GPU::draw_affine_sprite(obj_attr attr)
     py0 = hheight;
 
     // double flag set
-    if (attr.attr_0.attr.om == 3)
+    if (attr.obj_mode == 3)
     {
         // double available canvas space
         hwidth  *= 2;
         hheight *= 2;
 
-        qx0 = attr.attr_1.attr.x + width  * 8;
-        qy0 = attr.attr_0.attr.y + height * 8;
+        qx0 = attr.x + attr.width  * 8;
+        qy0 = attr.y + attr.height * 8;
     }
 
     // double flag not set
     else
     {
-        qx0 = attr.attr_1.attr.x + width  * 4;
-        qy0 = attr.attr_0.attr.y + height * 4;
+        qx0 = attr.x + attr.width  * 4;
+        qy0 = attr.y + attr.height * 4;
     }
     
     // coordinate of texture pixel after rot/scale
@@ -1398,7 +1273,7 @@ void GPU::draw_affine_sprite(obj_attr attr)
             py = (pc * ix + pd * iy);
 
             // transfomation put pixel out of bounds
-            if ((px0 + px >= width * PX_IN_TILE_ROW) || (py0 + py >= height * PX_IN_TILE_COL))
+            if ((px0 + px >= attr.width * PX_IN_TILE_ROW) || (py0 + py >= attr.height * PX_IN_TILE_COL))
                 continue;
             
             if (px0 + px < 0 || py0 + py < 0)

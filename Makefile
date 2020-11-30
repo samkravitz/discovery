@@ -4,7 +4,7 @@ CPPFLAGS = -g -I $(INCLUDEDIR) #-O2
 BIN = bin/
 SOURCEDIR = src/
 INCLUDEDIR = include/
-OBJECTS = arm_7tdmi.o util.o memory.o gpu.o obj_attr.o arm_alu.o thumb_alu.o swi.o
+OBJECTS = arm_7tdmi.o util.o memory.o gpu.o arm_alu.o thumb_alu.o swi.o
 VPATH = $(SOURCEDIR)
 TESTS = $(SOURCEDIR)tests/tests.cpp $(SOURCEDIR)tests/instruction_tests.cpp $(SOURCEDIR)tests/data_processing_tests.cpp
 

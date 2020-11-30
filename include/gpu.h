@@ -14,10 +14,8 @@
 #include <iostream>
 #include <ctime>
 
-#include "gpu.h"
 #include "memory.h"
 #include "common.h"
-#include "obj_attr.h"
 
 #define SCREEN_WIDTH  240
 #define SCREEN_HEIGHT 160

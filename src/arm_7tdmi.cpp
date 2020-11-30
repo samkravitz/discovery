@@ -15,22 +15,23 @@
 // uncomment this if running tests
 //#define TEST
 
-//#define PRINT
+#define PRINT
 
 arm_7tdmi::arm_7tdmi()
 {
     registers = {0}; // zero out registers
-    registers.r15 = 0x8000000; // starting address of gamepak flash rom
+    registers.r15 = 0x0;//0x8000000; // starting address of gamepak flash rom
 
-    registers.r13     = 0x3007F00; // starting address of user stack
-    registers.r13_svc = 0x3007FE0; // starting address of swi stack
-    registers.r13_irq = 0x3007FA0; // starting address of interrupt stack
+    // registers.r13     = 0x3007F00; // starting address of user stack
+    // registers.r13_svc = 0x3007FE0; // starting address of swi stack
+    // registers.r13_irq = 0x3007FA0; // starting address of interrupt stack
 
-    set_state(SYS);
+    set_state(SVC);
     set_mode(ARM);
 
     // initialize cpsr
     registers.cpsr.bits.f = 1;
+    registers.cpsr.bits.i = 1;
 
     pipeline_full = false;
     cycles = 0;

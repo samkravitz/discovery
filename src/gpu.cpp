@@ -88,6 +88,27 @@ void GPU::reset()
     win1ll    = 0;
     old_time  = clock();
     memset(screen_buffer, 0, sizeof(screen_buffer));
+
+    // make all oam sprites hidden
+    for (int i = 0; i < NUM_OBJS; ++i)
+    {
+        objs[i].attr_0.attr.om = 2;
+        // switch (attr.attr_0.attr.om)
+        // {
+        //     case 0x0: // normal rendering
+        //         draw_regular_sprite(attr);
+        //         break;
+        //     case 0x1: // affine & affine double
+        //     case 0x3:
+        //         std::cout << window << i << "\n";
+        //         draw_affine_sprite(attr);
+        //         std::cout << window << i << "\n";
+                
+        //         break;
+        //     case 0x2: // hidden
+        //         continue;
+        // }
+    }
 }
 
 // 1 clock cycle of the gpu
@@ -877,7 +898,11 @@ void GPU::draw_sprites()
                 break;
             case 0x1: // affine & affine double
             case 0x3:
+                std::cout << window << i << "\n";
                 draw_affine_sprite(attr);
+                std::cout << window << i << "\n";
+                
+                break;
             case 0x2: // hidden
                 continue;
         }

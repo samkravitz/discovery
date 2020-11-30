@@ -66,7 +66,29 @@ class GPU
         u32 screen_buffer[MAX_X][MAX_Y];
 
         // oam data structure
-        obj_attr objs[NUM_OBJS]; // can support 128 normal objects
+        struct obj_attr
+        {
+            // coordinates
+            u8  y;
+            u16 x;
+
+            u8 obj_mode;   // 0 - normal render, 1 - affine, 2 - hidden, 3 - double-wide affine
+            u8 gfx_mode;   // 0 - normal, 1 - semi-transparent, 2 - obj window, 3 - illegal
+            u8 color_mode; // 256 color if on, 16 color if off
+            bool mosaic;
+
+            u8 affine_index; // P matrix index (0 - 31)
+            bool h_flip;
+            bool v_flip;
+
+            u8 size;
+            u8 shape;
+            
+            // width, height of sprite in tiles
+            u8 width;
+            u8 height;
+
+        } objs[NUM_OBJS]; // can support 128 objects
 
         // window boundaries
         u16 win0rr, win0ll, win1rr, win1ll; 

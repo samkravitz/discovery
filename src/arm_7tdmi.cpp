@@ -15,7 +15,7 @@
 // uncomment this if running tests
 //#define TEST
 
-//#define PRINT
+#define PRINT
 
 arm_7tdmi::arm_7tdmi()
 {
@@ -114,20 +114,20 @@ bool arm_7tdmi::condition_met(condition_t condition_field)
 {
     switch (condition_field)
     {
-        case EQ: return get_condition_code_flag(Z); // Z set
+        case EQ: return get_condition_code_flag(Z);  // Z set
         case NE: return !get_condition_code_flag(Z); // Z clear
-        case CS: return get_condition_code_flag(C); // C set
+        case CS: return get_condition_code_flag(C);  // C set
         case CC: return !get_condition_code_flag(C); // C clear
-        case MI: return get_condition_code_flag(N); // N set
+        case MI: return get_condition_code_flag(N);  // N set
         case PL: return !get_condition_code_flag(N); // N Clear
-        case VS: return get_condition_code_flag(V); // V set
+        case VS: return get_condition_code_flag(V);  // V set
         case VC: return !get_condition_code_flag(V); // V clear
         case HI: return get_condition_code_flag(C) && !get_condition_code_flag(Z); // C set and Z clear
         case LS: return !get_condition_code_flag(C) || get_condition_code_flag(Z); // C clear or Z set
-        case GE: return get_condition_code_flag(N) == get_condition_code_flag(V); // N equals V
-        case LT: return get_condition_code_flag(N) != get_condition_code_flag(V); // N not equal V
+        case GE: return get_condition_code_flag(N) == get_condition_code_flag(V);  // N equals V
+        case LT: return get_condition_code_flag(N) != get_condition_code_flag(V);  // N not equal V
         case GT: return !get_condition_code_flag(Z) && (get_condition_code_flag(N) == get_condition_code_flag(V)); // Z clear AND (N equals V)
-        case LE: return get_condition_code_flag(Z) || (get_condition_code_flag(N) != get_condition_code_flag(V)); // Z set OR (N not equal to V)
+        case LE: return get_condition_code_flag(Z) || (get_condition_code_flag(N) != get_condition_code_flag(V));  // Z set OR (N not equal to V)
         case AL: return true; // always
         default: // should never happen
             std::cerr << "Unrecognized condition field: " << condition_field << "\n";
@@ -1146,7 +1146,7 @@ u32 arm_7tdmi::read_u32(u32 address, bool ldr)
         // case REG_DMA3DAD:
         case REG_DMA3CNT:
             std::cout << "u32 sadkjflsadfkjsdaflkj\n";
-            return 0;
+            //return 0;
         default:
             break;
     }

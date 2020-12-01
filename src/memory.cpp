@@ -624,7 +624,7 @@ void Memory::write_u8(u32 address, u8 value)
             dma[3].mode           = value >> 4 & 0x3;
             dma[3].irq            = value >> 6 & 0x1;
             dma[3].enable         = value >> 7 & 0x1; 
-
+            
             if (dma[3].enable && dma[3].mode == 0) // immediate mode
             {
                 std::cout << "DMA3 immediate\n";
@@ -789,11 +789,13 @@ void Memory::_dma(int n)
 
 void Memory::dma0()
 {
-    //return;
     std::cout << "DMA 0\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = read_u32_unprotected(REG_DMA0SAD) & 0x7FFFFFF; // 27 bit
     dest_ptr = original_dest = read_u32_unprotected(REG_DMA0DAD) & 0x7FFFFFF; // 27 bit;
+
+    std::cout << "DMA 0 start addr: " << std::hex << src_ptr << "\n";
+    std::cout << "DMA 0 dest addr: " << std::hex << dest_ptr << "\n";
 
     // increment for destination, src
     int dest_inc, src_inc;
@@ -873,11 +875,14 @@ void Memory::dma0()
 
 void Memory::dma1()
 {
-    //return;
     std::cout << "DMA 1\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = read_u32_unprotected(REG_DMA1SAD) & 0xFFFFFFF; // 28 bit
     dest_ptr = original_dest = read_u32_unprotected(REG_DMA1DAD) & 0x7FFFFFF; // 27 bit
+
+    std::cout << "DMA 1 start addr: " << std::hex << src_ptr << "\n";
+    std::cout << "DMA 1 dest addr: " << std::hex << dest_ptr << "\n";
+    std::cout << "DMA 1 num transfers: " << std::hex << dma[1].num_transfers << "\n";
 
     // increment for destination, src
     int dest_inc, src_inc;
@@ -957,11 +962,14 @@ void Memory::dma1()
 
 void Memory::dma2()
 {
-    //return;
     std::cout << "DMA 2\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = read_u32_unprotected(REG_DMA2SAD) & 0xFFFFFFF; // 28 bit
     dest_ptr = original_dest = read_u32_unprotected(REG_DMA2DAD) & 0x7FFFFFF; // 27 bit;
+
+    std::cout << "DMA 2 start addr: " << std::hex << src_ptr << "\n";
+    std::cout << "DMA 2 dest addr: " << std::hex << dest_ptr << "\n";
+    std::cout << "DMA 2 num transfers: " << std::hex << dma[2].num_transfers << "\n";
 
     // increment for destination, src
     int dest_inc, src_inc;
@@ -1051,6 +1059,7 @@ void Memory::dma3()
 
     std::cout << "DMA 3 start addr: " << std::hex << src_ptr << "\n";
     std::cout << "DMA 3 dest addr: " << std::hex << dest_ptr << "\n";
+    std::cout << "DMA 3 num transfers: " << std::hex << dma[3].num_transfers << "\n";
     // get increment mode for destination
     switch (dma[3].dest_adjust)
     {

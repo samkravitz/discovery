@@ -492,7 +492,6 @@ void GPU::draw_mode5()
 // bg - background index (0-3)
 void GPU::draw_reg_background(int bg)
 {
-    return;
     // boundaries for window
     u16 xmax, xmin;
     u8  ymax, ymin;
@@ -716,8 +715,6 @@ void GPU::draw_reg_background(int bg)
 
 void GPU::draw_affine_background(int bg)
 {
-    return;
-    std::cout << "aff bg\n";
     // initial address of background tileset
     u32 start_tileset_ptr = MEM_VRAM_START + CHARBLOCK_LEN * stat->bg_cnt[bg].cbb;
 
@@ -1028,7 +1025,7 @@ void GPU::draw_regular_sprite(obj_attr attr)
         // 2d sprite mapping
         if (stat->dispcnt.obj_map_mode == 0) // 2d
         {
-            std::cout << (int) attr.width << "\n";
+            //std::cout << (int) attr.width << "\n";
             tileno += TILES_PER_SCREENBLOCK - attr.width;
             //std::cout << "2\n";
             // if (attr.color_mode == 0)
@@ -1149,8 +1146,6 @@ void GPU::draw_regular_sprite(obj_attr attr)
 
 void GPU::draw_affine_sprite(obj_attr attr)
 {
-    return;
-    std::cout << "aff sprite\n";
     // get affine matrix
     u32 oam_addr = MEM_OAM_START + attr.affine_index * 32; // each affine entry is 32 bytes across
 

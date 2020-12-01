@@ -358,6 +358,9 @@ void Memory::write_u8(u32 address, u8 value)
         // OAM
         case 0x7:
             address &= MEM_OAM_END;
+            
+            // push index onto oam update queue
+            stat->oam_update.push((address - MEM_OAM_START) / 8);
             break;
         
         // ROM image 1

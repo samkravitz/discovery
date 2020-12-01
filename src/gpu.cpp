@@ -941,9 +941,6 @@ void GPU::draw_regular_sprite(obj_attr attr)
     u16 x0 = attr.x;
     u8  y0 = attr.y;
     
-    // std::cout << "x: " << (int) x << "\n";
-    // std::cout << "y: " <<  (int) y << "\n";
-
     u32 tile_ptr = LOWER_SPRITE_BLOCK + (attr.tileno * S_TILE_LEN);
 
     // temporary buffer to hold texture
@@ -1295,10 +1292,10 @@ void GPU::update_attr()
     u8 i;
 
     // loop through all oam indices that are ready to be updated
-    while (!stat->oam_update->empty())
+    while (!stat->oam_update.empty())
     {
-        i = stat->oam_update->front();
-
+        i = stat->oam_update.front();
+        //std::cout << (int) i << "\n";
         // get start address of dequeued oam entry
         oam_ptr = MEM_OAM_START + i * 8; // each entry is 8 bytes long
 
@@ -1324,7 +1321,7 @@ void GPU::update_attr()
         objs[i].palbank      = attr2 >> 12 & 0xF;
 
         // get actual dimensions of sprite
-        switch (objs[i].shape)
+        switch (objs[i].size)
         {
             case 0:
                 switch (objs[i].size)
@@ -1356,9 +1353,9 @@ void GPU::update_attr()
                 }
                 break;
         }
-    }
 
-    stat->oam_update->pop();
+        stat->oam_update.pop();
+    }
 }
 
 // given a 16 bit GBA color, make it a 32 bit SDL color

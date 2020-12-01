@@ -70,7 +70,7 @@ struct lcd_stat
         dispcnt.gb           = 0; 
         dispcnt.ps           = 0; 
         dispcnt.hb           = 0;
-        dispcnt.obj_map_mode = 0; 
+        dispcnt.obj_map_mode = 1; // default is 1d 
         dispcnt.fb           = 0; 
         dispcnt.bg_enabled   = 0; 
         dispcnt.obj_enabled  = 0; 

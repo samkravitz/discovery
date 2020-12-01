@@ -356,7 +356,10 @@ void GPU::draw()
     SDL_UpdateWindowSurface(window);
     
     // zero screen buffer for next frame
-    memset(screen_buffer, 0, sizeof(screen_buffer));
+    if (!stat->dispcnt.fb)
+        memset(screen_buffer, 0xFF, sizeof(screen_buffer)); // white
+    else
+        memset(screen_buffer, 0, sizeof(screen_buffer));   // black
 }
 
 // video mode 0 - tile mode
@@ -489,6 +492,7 @@ void GPU::draw_mode5()
 // bg - background index (0-3)
 void GPU::draw_reg_background(int bg)
 {
+    return;
     // boundaries for window
     u16 xmax, xmin;
     u8  ymax, ymin;
@@ -712,8 +716,8 @@ void GPU::draw_reg_background(int bg)
 
 void GPU::draw_affine_background(int bg)
 {
-    //std::cout << (int) stat->bg_cnt[bg].cbb << " " << (int) stat->bg_cnt[bg].sbb << "\n";
-
+    return;
+    std::cout << "aff bg\n";
     // initial address of background tileset
     u32 start_tileset_ptr = MEM_VRAM_START + CHARBLOCK_LEN * stat->bg_cnt[bg].cbb;
 
@@ -910,6 +914,7 @@ void GPU::draw_sprites()
 
 void GPU::draw_regular_sprite(obj_attr attr)
 {
+    //std::cout << "reg sprite\n";
     // boundaries for window
     u16 xmax, xmin;
     u8  ymax, ymin;
@@ -940,6 +945,9 @@ void GPU::draw_regular_sprite(obj_attr attr)
     // x, y coordinate of top left of sprite
     u16 x0 = attr.x;
     u8  y0 = attr.y;
+
+    // std::cout << "x: " << (int) x0 << " " << "y: " << (int) y0 << "\n";
+    // std::cout << "w: " << (int) attr.width << " " << "h: " << (int) attr.height << "\n";
     
     u32 tile_ptr = LOWER_SPRITE_BLOCK + (attr.tileno * S_TILE_LEN);
 
@@ -953,8 +961,6 @@ void GPU::draw_regular_sprite(obj_attr attr)
     u8 y;
     u8 left_pixel;
     u8 right_pixel;
-
-    bool _2d = stat->dispcnt.obj_map_mode == 0;
 
     //draw sprite tile by tile
     for (int h = 0; h < attr.height; ++h)
@@ -1015,7 +1021,7 @@ void GPU::draw_regular_sprite(obj_attr attr)
         }
 
         // 2d sprite mapping
-        if (_2d)
+        if (stat->dispcnt.obj_map_mode == 0) // 2d
         {
             if (attr.color_mode == 0)
                 tile_ptr += (TILES_PER_SCREENBLOCK - attr.width) * S_TILE_LEN;
@@ -1025,36 +1031,36 @@ void GPU::draw_regular_sprite(obj_attr attr)
     }
 
     //horizontal flip
-    if (attr.h_flip)
-    {
-        u32 temp;
-        for (int h = 0; h < attr.height * PX_IN_TILE_COL; ++h)
-        {
-            for (int w = 0; w < attr.width * 4; ++w) 
-            {
-                temp = sprite[h][w];
+    // if (attr.h_flip)
+    // {
+    //     u32 temp;
+    //     for (int h = 0; h < attr.height * PX_IN_TILE_COL; ++h)
+    //     {
+    //         for (int w = 0; w < attr.width * 4; ++w) 
+    //         {
+    //             temp = sprite[h][w];
 
-                sprite[h][w] = sprite[h][(attr.width * PX_IN_TILE_ROW) - w - 1];
-                sprite[h][(attr.width * PX_IN_TILE_ROW) - w - 1] = temp;
-            }
-        }
-    }
+    //             sprite[h][w] = sprite[h][(attr.width * PX_IN_TILE_ROW) - w - 1];
+    //             sprite[h][(attr.width * PX_IN_TILE_ROW) - w - 1] = temp;
+    //         }
+    //     }
+    // }
 
-    // vertical flip
-    if (attr.v_flip) 
-    {
-        u32 temp;
-        for (int h = 0; h < attr.height * 4; ++h)
-        {
-            for (int w = 0; w < attr.width * PX_IN_TILE_ROW; ++w)
-            {
-                temp = sprite[h][w];
+    // // vertical flip
+    // if (attr.v_flip) 
+    // {
+    //     u32 temp;
+    //     for (int h = 0; h < attr.height * 4; ++h)
+    //     {
+    //         for (int w = 0; w < attr.width * PX_IN_TILE_ROW; ++w)
+    //         {
+    //             temp = sprite[h][w];
 
-                sprite[h][w] = sprite[(attr.height * PX_IN_TILE_COL) - h - 1][w];
-                sprite[(attr.height * PX_IN_TILE_COL) - h - 1][w] = temp;
-            }
-        }
-    }
+    //             sprite[h][w] = sprite[(attr.height * PX_IN_TILE_COL) - h - 1][w];
+    //             sprite[(attr.height * PX_IN_TILE_COL) - h - 1][w] = temp;
+    //         }
+    //     }
+    // }
 
     // mosaic
     if (attr.mosaic)
@@ -1135,6 +1141,8 @@ void GPU::draw_regular_sprite(obj_attr attr)
 
 void GPU::draw_affine_sprite(obj_attr attr)
 {
+    return;
+    std::cout << "aff sprite\n";
     // get affine matrix
     u32 oam_addr = MEM_OAM_START + attr.affine_index * 32; // each affine entry is 32 bytes across
 
@@ -1155,8 +1163,6 @@ void GPU::draw_affine_sprite(obj_attr attr)
     u16 color;
     u8 palette_index; // nth entry in palram
     u8 left_pixel, right_pixel;
-
-    bool _2d = stat->dispcnt.obj_map_mode == 0;
 
     // x, y coordinate of sprite texture before rot/scale
     u16 x;
@@ -1219,7 +1225,7 @@ void GPU::draw_affine_sprite(obj_attr attr)
             }
 
             // 2d sprite mapping
-            if (_2d)
+            if (stat->dispcnt.obj_map_mode) // 2d
             {
                 if (attr.color_mode == 0)
                     tile_ptr += (TILES_PER_SCREENBLOCK - attr.width) * S_TILE_LEN;

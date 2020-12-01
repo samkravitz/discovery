@@ -173,8 +173,10 @@ void discovery::game_loop()
                 valid = true;
         }
 
-        if (!valid)
+        if (!valid)  {
             std::cerr << "Invalid state in cpsr: " << (int) cpu->registers.cpsr.full << "\n";
+            exit(270);
+        }
 
     }
     

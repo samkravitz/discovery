@@ -251,7 +251,7 @@ u8 Memory::read_u8(u32 address)
     if (address >= MEM_SIZE)
     {
         // if (address - MEM_SIZE > rom_size)
-        //     std::cout << "Caution: reading outside known cart length\n";
+        //std::cout << "Caution: reading outside known cart length\n";
 
         return cart_rom[address - MEM_SIZE];
     }

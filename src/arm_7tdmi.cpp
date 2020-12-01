@@ -20,11 +20,11 @@
 arm_7tdmi::arm_7tdmi()
 {
     registers = {0}; // zero out registers
-    registers.r15 = 0;//0x8000000; // starting address of gamepak flash rom
+    registers.r15 = 0x8000000; // starting address of gamepak flash rom
 
-    // registers.r13     = 0x3007F00; // starting address of user stack
-    // registers.r13_svc = 0x3007FE0; // starting address of swi stack
-    // registers.r13_irq = 0x3007FA0; // starting address of interrupt stack
+    registers.r13     = 0x3007F00; // starting address of user stack
+    registers.r13_svc = 0x3007FE0; // starting address of swi stack
+    registers.r13_irq = 0x3007FA0; // starting address of interrupt stack
 
     set_state(SVC);
     set_mode(ARM);
@@ -843,8 +843,6 @@ void arm_7tdmi::handle_interrupt()
     // check if master interrupts are enabled
     if ((mem->read_u32_unprotected(REG_IME) & 1) && registers.cpsr.bits.i == 0) 
     {
-        //std::cout << "Interupts enabled\n";
-
         // get enabled interrupts and requested interrupts
         u16 interrupts_enabled   = mem->read_u16_unprotected(REG_IE);
         u16 interrupts_requested = mem->read_u16_unprotected(REG_IF);
@@ -856,7 +854,7 @@ void arm_7tdmi::handle_interrupt()
             if (interrupts_enabled & (1 << i) && interrupts_requested & (1 << i))
             {
                 // emulate how BIOS handles interrupts
-                std::cout << "interrupt handling! " << i << "\n";
+                //std::cout << "interrupt handling! " << i << "\n";
 
                 u32 old_cpsr = get_register(cpsr);
                 // switch to IRQ

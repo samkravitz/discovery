@@ -230,7 +230,7 @@ void GPU::cycle()
 
 void GPU::draw()
 {
-    std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
+    //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
     
     // update window boundaries
 
@@ -948,8 +948,8 @@ void GPU::draw_regular_sprite(obj_attr attr)
 
     // std::cout << "x: " << (int) x0 << " " << "y: " << (int) y0 << "\n";
     // std::cout << "w: " << (int) attr.width << " " << "h: " << (int) attr.height << "\n";
-    
-    u32 tile_ptr = LOWER_SPRITE_BLOCK + (attr.tileno * S_TILE_LEN);
+    u32 tile_ptr;
+    u16 tileno = attr.tileno; // tile number
 
     // temporary buffer to hold texture
     u32 sprite[attr.height * PX_IN_TILE_COL][attr.width * PX_IN_TILE_ROW];
@@ -967,6 +967,8 @@ void GPU::draw_regular_sprite(obj_attr attr)
     {
         for (int w = 0; w < attr.width; ++w)
         {
+            tile_ptr = LOWER_SPRITE_BLOCK + tileno * S_TILE_LEN;
+
             if (attr.color_mode == 0) // 4 bits / pixel - s-tile
             {
                 for (int i = 0; i < S_TILE_LEN; ++i)
@@ -1001,6 +1003,7 @@ void GPU::draw_regular_sprite(obj_attr attr)
             // 8 bits / pixel - d-tile
             else
             {
+                //std::cout << "d\n";
                 for (int i = 0; i < D_TILE_LEN; i++)
                 {
                     palette_index = mem->read_u8_unprotected(tile_ptr++);
@@ -1018,49 +1021,54 @@ void GPU::draw_regular_sprite(obj_attr attr)
                     screen_buffer[y][x] = u16_to_u32_color(color);
                 }
             }
+
+            tileno++;
         }
 
         // 2d sprite mapping
         if (stat->dispcnt.obj_map_mode == 0) // 2d
         {
-            if (attr.color_mode == 0)
-                tile_ptr += (TILES_PER_SCREENBLOCK - attr.width) * S_TILE_LEN;
-            else
-                tile_ptr += (TILES_PER_SCREENBLOCK - attr.width) * D_TILE_LEN;
+            std::cout << (int) attr.width << "\n";
+            tileno += TILES_PER_SCREENBLOCK - attr.width;
+            //std::cout << "2\n";
+            // if (attr.color_mode == 0)
+            //     tile_ptr += (TILES_PER_SCREENBLOCK - attr.width - 1) ;
+            // else
+            //     tile_ptr += (33 - attr.width) * D_TILE_LEN;
         }
     }
 
     //horizontal flip
-    // if (attr.h_flip)
-    // {
-    //     u32 temp;
-    //     for (int h = 0; h < attr.height * PX_IN_TILE_COL; ++h)
-    //     {
-    //         for (int w = 0; w < attr.width * 4; ++w) 
-    //         {
-    //             temp = sprite[h][w];
+    if (attr.h_flip)
+    {
+        u32 temp;
+        for (int h = 0; h < attr.height * PX_IN_TILE_COL; ++h)
+        {
+            for (int w = 0; w < attr.width * 4; ++w) 
+            {
+                temp = sprite[h][w];
 
-    //             sprite[h][w] = sprite[h][(attr.width * PX_IN_TILE_ROW) - w - 1];
-    //             sprite[h][(attr.width * PX_IN_TILE_ROW) - w - 1] = temp;
-    //         }
-    //     }
-    // }
+                sprite[h][w] = sprite[h][(attr.width * PX_IN_TILE_ROW) - w - 1];
+                sprite[h][(attr.width * PX_IN_TILE_ROW) - w - 1] = temp;
+            }
+        }
+    }
 
-    // // vertical flip
-    // if (attr.v_flip) 
-    // {
-    //     u32 temp;
-    //     for (int h = 0; h < attr.height * 4; ++h)
-    //     {
-    //         for (int w = 0; w < attr.width * PX_IN_TILE_ROW; ++w)
-    //         {
-    //             temp = sprite[h][w];
+    // vertical flip
+    if (attr.v_flip) 
+    {
+        u32 temp;
+        for (int h = 0; h < attr.height * 4; ++h)
+        {
+            for (int w = 0; w < attr.width * PX_IN_TILE_ROW; ++w)
+            {
+                temp = sprite[h][w];
 
-    //             sprite[h][w] = sprite[(attr.height * PX_IN_TILE_COL) - h - 1][w];
-    //             sprite[(attr.height * PX_IN_TILE_COL) - h - 1][w] = temp;
-    //         }
-    //     }
-    // }
+                sprite[h][w] = sprite[(attr.height * PX_IN_TILE_COL) - h - 1][w];
+                sprite[(attr.height * PX_IN_TILE_COL) - h - 1][w] = temp;
+            }
+        }
+    }
 
     // mosaic
     if (attr.mosaic)

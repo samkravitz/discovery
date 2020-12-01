@@ -1277,6 +1277,12 @@ void GPU::draw_affine_sprite(obj_attr attr)
             if (px0 + px < 0 || py0 + py < 0)
                 continue;
             
+            if (qy0 + iy < 0 || qx0 + ix < 0)
+                continue;
+            
+            if (qy0 + iy >= SCREEN_HEIGHT || qx0 + ix >= SCREEN_WIDTH)
+                continue;
+            
             // skip 0 pixel value (transparent)
             if (sprite[py0 + py][px0 + px] != TRANSPARENT)
                 screen_buffer[qy0 + iy][qx0 + ix] = sprite[py0 + py][px0 + px];

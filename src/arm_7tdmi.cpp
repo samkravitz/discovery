@@ -15,7 +15,7 @@
 // uncomment this if running tests
 //#define TEST
 
-#define PRINT
+//#define PRINT
 
 arm_7tdmi::arm_7tdmi()
 {

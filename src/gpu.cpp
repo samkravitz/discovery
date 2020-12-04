@@ -230,7 +230,7 @@ void GPU::cycle()
 
 void GPU::draw()
 {
-    //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
+    std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
     
     // update window boundaries
 
@@ -356,8 +356,10 @@ void GPU::draw()
     SDL_UpdateWindowSurface(window);
     
     // zero screen buffer for next frame
-    if (!stat->dispcnt.fb)
+    if (!stat->dispcnt.fb) {
         memset(screen_buffer, 0xFF, sizeof(screen_buffer)); // white
+        std::cout << "YEEEEESSSSS\n";
+    }
     else
         memset(screen_buffer, 0, sizeof(screen_buffer));   // black
 }
@@ -1228,7 +1230,7 @@ void GPU::draw_affine_sprite(obj_attr attr)
             }
 
             // 2d sprite mapping
-            if (stat->dispcnt.obj_map_mode) // 2d
+            if (stat->dispcnt.obj_map_mode == 0) // 2d
             {
                 if (attr.color_mode == 0)
                     tile_ptr += (TILES_PER_SCREENBLOCK - attr.width) * S_TILE_LEN;
@@ -1310,7 +1312,7 @@ void GPU::update_attr()
     while (!stat->oam_update.empty())
     {
         i = stat->oam_update.front();
-        //std::cout << (int) i << "\n";
+
         // get start address of dequeued oam entry
         oam_ptr = MEM_OAM_START + i * 8; // each entry is 8 bytes long
 

@@ -61,7 +61,8 @@ class GPU
         u8 fps;
         clock_t old_time;
 
-        u32 screen_buffer[MAX_X][MAX_Y];
+        u32 scanline_buffer[SCREEN_WIDTH];
+        u32 screen_buffer[SCREEN_HEIGHT * SCREEN_WIDTH];
 
         // oam data structure
         struct obj_attr
@@ -108,6 +109,7 @@ class GPU
         void draw_affine_background(int);
 
         // misc
+        void render_scanline();
         void draw_sprites();
         void draw_regular_sprite(obj_attr);
         void draw_affine_sprite(obj_attr);

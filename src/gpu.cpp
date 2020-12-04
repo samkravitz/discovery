@@ -356,12 +356,10 @@ void GPU::draw()
     SDL_UpdateWindowSurface(window);
     
     // zero screen buffer for next frame
-    if (!stat->dispcnt.fb) {
+    if (stat->dispcnt.fb)
         memset(screen_buffer, 0xFF, sizeof(screen_buffer)); // white
-        std::cout << "YEEEEESSSSS\n";
-    }
     else
-        memset(screen_buffer, 0, sizeof(screen_buffer));   // black
+        memset(screen_buffer, 0, sizeof(screen_buffer));    // black
 }
 
 // video mode 0 - tile mode
@@ -1312,7 +1310,7 @@ void GPU::update_attr()
     while (!stat->oam_update.empty())
     {
         i = stat->oam_update.front();
-
+        
         // get start address of dequeued oam entry
         oam_ptr = MEM_OAM_START + i * 8; // each entry is 8 bytes long
 

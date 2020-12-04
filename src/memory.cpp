@@ -63,9 +63,6 @@ void Memory::reset()
     }
 
     // write all 1s to keypad (all keys cleared)
-    //write_u32_unprotected(REG_IF, 0x1000);
-
-    // write all 1s to keypad (all keys cleared)
     write_u32_unprotected(REG_KEYINPUT, 0b1111111111);
 }
 
@@ -359,6 +356,9 @@ void Memory::write_u8(u32 address, u8 value)
         case 0x7:
             address &= MEM_OAM_END;
             
+            if (!stat->dispcnt.hb && stat->dispstat.in_hBlank)
+                return;
+
             // push index onto oam update queue
             stat->oam_update.push((address - MEM_OAM_START) / 8);
             break;

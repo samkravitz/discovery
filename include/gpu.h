@@ -49,7 +49,6 @@ class GPU
         void cycle();
         
         void reset();
-        void draw();
 
     private:
         SDL_Window  *window;
@@ -98,12 +97,13 @@ class GPU
         u8  win0tt, win0bb, win1tt, win1bb;
 
         // video mode draws
-        void draw_mode0();
-        void draw_mode1();
-        void draw_mode2();
-        void draw_mode3();
-        void draw_mode4();
-        void draw_mode5();
+        void render();
+        void render_mode0();
+        void render_mode1();
+        void render_mode2();
+        void render_mode3();
+        void render_mode4();
+        void render_mode5();
 
         void draw_reg_background(int);
         void draw_affine_background(int);

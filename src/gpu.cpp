@@ -145,7 +145,7 @@ void GPU::cycle()
         // start VBlank
         if (scanline == VDRAW)
         {
-            draw();
+            render();
             stat->dispstat.in_vBlank = true;
 
             // fire Vblank interrupt if necessary
@@ -229,7 +229,7 @@ void GPU::cycle()
     }
 }
 
-void GPU::draw()
+void GPU::render()
 {
     //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
     
@@ -299,7 +299,7 @@ void GPU::draw()
     //     case 0: draw_mode0(); break;
     //     case 1: draw_mode1(); break;
     //     case 2: draw_mode2(); break;
-    //     case 3: draw_mode3(); break;
+    //     case 3: render_mode3()(); break;
     //     case 4: draw_mode4(); break;
     //     case 5: draw_mode5(); break;
     //     default: 
@@ -369,7 +369,8 @@ void GPU::render_scanline()
 
     switch (stat->dispcnt.mode)
     {
-        case 3: draw_mode3(); break;
+        case 3: render_mode3(); break;
+        case 4: render_mode4(); break;
     }
 
     std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], scanline_buffer, sizeof(scanline_buffer));
@@ -550,41 +551,37 @@ void GPU::render_scanline()
 
 // // video mode 3 - bitmap mode
 // // mode 3 straight up uses 2 bytes to represent each pixel in aRBG format, no palette used
-void GPU::draw_mode3()
+void GPU::render_mode3()
 {
     u16 current_pixel; // in mode 3 each pixel uses 2 bytes
-    u32 px_ptr = MEM_VRAM_START + (scanline * SCREEN_WIDTH * sizeof(u16));
+    u32 pal_ptr = MEM_VRAM_START + (scanline * SCREEN_WIDTH * sizeof(u16));
 
     for (int i = 0; i < SCREEN_WIDTH; ++i)
     {
-        current_pixel = mem->read_u16_unprotected(px_ptr); px_ptr += 2;
+        current_pixel = mem->read_u16_unprotected(pal_ptr); pal_ptr += 2;
         scanline_buffer[i] = u16_to_u32_color(current_pixel);
     }
 }
 
-// // video mode 4 - bitmap mode
-// void GPU::draw_mode4()
-// {
-//     u8 palette_index;                  // in mode 4 each pixel uses 1 byte 
-//     u16 color;                         // the color located at pallette_ram[palette_index]
-//     u32 pal_ptr = MEM_VRAM_START;      // address of current palette
+// video mode 4 - bitmap mode
+void GPU::render_mode4()
+{
+    u8 palette_index;                                         // in mode 4 each pixel uses 1 byte 
+    u16 color;                                                // the color located at pallette_ram[palette_index]
+    u32 pal_ptr = MEM_VRAM_START + (scanline * SCREEN_WIDTH); // address of current palette
 
-//     // page 2 starts at 0x600A000
-//     if (stat->dispcnt.ps)
-//         pal_ptr += 0xA000;
+    // page 2 starts at 0x600A000
+    if (stat->dispcnt.ps)
+        pal_ptr += 0xA000;
 
-//     for (int y = 0; y < SCREEN_HEIGHT; ++y)
-//     {
-//         for (int x = 0; x < SCREEN_WIDTH; ++x)
-//         {
-//             palette_index = mem->read_u8_unprotected(pal_ptr++);
-//             // multiply by sizeof(u16) because each entry in palram is 2 bytes
-//             color = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
-//             // add current pixel in argb format to pixel array
-//             screen_buffer[y][x] = u16_to_u32_color(color);
-//         }
-//     }
-// }
+    for (int i = 0; i < SCREEN_WIDTH; ++i)
+    {
+        palette_index = mem->read_u8_unprotected(pal_ptr++);
+        // multiply by sizeof(u16) because each entry in palram is 2 bytes
+        color = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
+        scanline_buffer[i] = u16_to_u32_color(color);
+    }
+}
 
 // // video mode 5 - bitmap mode
 // void GPU::draw_mode5()

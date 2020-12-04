@@ -230,7 +230,7 @@ void GPU::cycle()
 
 void GPU::draw()
 {
-    std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
+    //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
     
     // update window boundaries
 

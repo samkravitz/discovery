@@ -332,11 +332,11 @@ void GPU::render()
     // }
 
     // // sprites enabled
-    // if (stat->dispcnt.obj_enabled)
-    // {
-    //     update_attr();
-    //     draw_sprites();
-    // }
+    if (stat->dispcnt.obj_enabled)
+    {
+        update_attr();
+        draw_sprites();
+    }
 
     // copy pixel buffer over to surface pixels
     if (SDL_MUSTLOCK(final_screen))
@@ -371,6 +371,7 @@ void GPU::render_scanline()
     {
         case 3: render_mode3(); break;
         case 4: render_mode4(); break;
+        case 5: render_mode5(); break;
     }
 
     std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], scanline_buffer, sizeof(scanline_buffer));
@@ -583,30 +584,40 @@ void GPU::render_mode4()
     }
 }
 
-// // video mode 5 - bitmap mode
-// void GPU::draw_mode5()
-// {
-//     u8 palette_index;                  // in mode 4 each pixel uses 1 byte 
-//     u16 color;                         // the color located at pallette_ram[palette_index]
-//     u32 pal_ptr = MEM_VRAM_START;      // address of current palette
+// video mode 5 - bitmap mode
+void GPU::render_mode5()
+{
+    if (scanline >= 128) return;
 
-//     // page 2 starts at 0x600A000
-//     if (stat->dispcnt.ps)
-//         pal_ptr += 0xA000;
+    u8 palette_index;                                // in mode 4 each pixel uses 1 byte 
+    u16 color;                                       // the color located at pallette_ram[palette_index]
+    u32 pal_ptr = MEM_VRAM_START + (scanline * 160); // address of current palette
 
-//     // mode 5 has resolution of 128 x 160
-//     for (int y = 0; y < 128; ++y)
-//     {
-//         for (int x = 0; x < 160; ++x)
-//         {
-//             palette_index = mem->read_u8_unprotected(pal_ptr++);
-//             // multiply by sizeof(u16) because each entry in palram is 2 bytes
-//             color = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
-//             // add current pixel in argb format to pixel array
-//             screen_buffer[y][x] = u16_to_u32_color(color);
-//         }
-//     }
-// }
+    // page 2 starts at 0x600A000
+    if (stat->dispcnt.ps)
+        pal_ptr += 0xA000;
+
+    for (int i = 0; i < 160; ++i)
+    {
+        palette_index = mem->read_u8_unprotected(pal_ptr++);
+        // multiply by sizeof(u16) because each entry in palram is 2 bytes
+        color = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
+        scanline_buffer[i] = u16_to_u32_color(color);
+    }
+
+    // mode 5 has resolution of 128 x 160
+    // for (int y = 0; y < 128; ++y)
+    // {
+    //     for (int x = 0; x < 160; ++x)
+    //     {
+    //         palette_index = mem->read_u8_unprotected(pal_ptr++);
+    //         // multiply by sizeof(u16) because each entry in palram is 2 bytes
+    //         color = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
+    //         // add current pixel in argb format to pixel array
+    //         screen_buffer[y][x] = u16_to_u32_color(color);
+    //     }
+    // }
+}
 
 // // draws regular background
 // // bg - background index (0-3)
@@ -1006,492 +1017,492 @@ void GPU::render_mode4()
 //     //exit(0);
 // }
 
-// void GPU::draw_sprites()
-// {
-//     obj_attr attr;
-//     // TODO - priority
-//     for (int i = NUM_OBJS - 1; i >= 0; --i)
-//     {
-//         attr = objs[i];
-//         switch (attr.obj_mode)
-//         {
-//             case 0x0: // normal rendering
-//                 draw_regular_sprite(attr);
-//                 break;
-//             case 0x1: // affine & affine double
-//             case 0x3:
-//                 draw_affine_sprite(attr);
+void GPU::draw_sprites()
+{
+    obj_attr attr;
+    // TODO - priority
+    for (int i = NUM_OBJS - 1; i >= 0; --i)
+    {
+        attr = objs[i];
+        switch (attr.obj_mode)
+        {
+            case 0x0: // normal rendering
+                draw_regular_sprite(attr);
+                break;
+            case 0x1: // affine & affine double
+            case 0x3:
+                draw_affine_sprite(attr);
                 
-//                 break;
-//             case 0x2: // hidden
-//                 continue;
-//         }
-//     }
-// }
+                break;
+            case 0x2: // hidden
+                continue;
+        }
+    }
+}
 
-// void GPU::draw_regular_sprite(obj_attr attr)
-// {
-//     //std::cout << "reg sprite\n";
-//     // boundaries for window
-//     u16 xmax, xmin;
-//     u8  ymax, ymin;
+void GPU::draw_regular_sprite(obj_attr attr)
+{
+    //std::cout << "reg sprite\n";
+    // boundaries for window
+    u16 xmax, xmin;
+    u8  ymax, ymin;
 
-//     // initially all values are in bounds
-//     xmin = ymin = 0;
-//     xmax = 0xFFFF;
-//     ymax = 0xFF;
+    // initially all values are in bounds
+    xmin = ymin = 0;
+    xmax = 0xFFFF;
+    ymax = 0xFF;
 
-//     // win0 enabled & obj is in content of win0
-//     if ((stat->dispcnt.win_enabled & 0x1) && ((mem->read_u16_unprotected(REG_WININ) >> 4) & 1))
-//     {
-//         xmax = win0rr; // right
-//         xmin = win0ll; // left
-//         ymax = win0bb; // bottom
-//         ymin = win0tt; // top
-//     }
+    // win0 enabled & obj is in content of win0
+    if ((stat->dispcnt.win_enabled & 0x1) && ((mem->read_u16_unprotected(REG_WININ) >> 4) & 1))
+    {
+        xmax = win0rr; // right
+        xmin = win0ll; // left
+        ymax = win0bb; // bottom
+        ymin = win0tt; // top
+    }
 
-//     // win1 enabled & obj is in content of win1
-//     if ((stat->dispcnt.win_enabled & 0x2) && ((mem->read_u16_unprotected(REG_WININ) >> 4 + 8) & 1))
-//     {
-//         xmax = win1rr; // right
-//         xmin = win1ll; // left
-//         ymax = win1bb; // bottom
-//         ymin = win1tt; // top
-//     }
+    // win1 enabled & obj is in content of win1
+    if ((stat->dispcnt.win_enabled & 0x2) && ((mem->read_u16_unprotected(REG_WININ) >> 4 + 8) & 1))
+    {
+        xmax = win1rr; // right
+        xmin = win1ll; // left
+        ymax = win1bb; // bottom
+        ymin = win1tt; // top
+    }
 
-//     // x, y coordinate of top left of sprite
-//     u16 x0 = attr.x;
-//     u8  y0 = attr.y;
+    // x, y coordinate of top left of sprite
+    u16 x0 = attr.x;
+    u8  y0 = attr.y;
 
-//     // std::cout << "x: " << (int) x0 << " " << "y: " << (int) y0 << "\n";
-//     // std::cout << "w: " << (int) attr.width << " " << "h: " << (int) attr.height << "\n";
-//     u32 tile_ptr;
-//     u16 tileno = attr.tileno; // tile number
+    // std::cout << "x: " << (int) x0 << " " << "y: " << (int) y0 << "\n";
+    // std::cout << "w: " << (int) attr.width << " " << "h: " << (int) attr.height << "\n";
+    u32 tile_ptr;
+    u16 tileno = attr.tileno; // tile number
 
-//     // temporary buffer to hold texture
-//     u32 sprite[attr.height * PX_IN_TILE_COL][attr.width * PX_IN_TILE_ROW];
-//     memset(sprite, 0x1, sizeof(sprite));
+    // temporary buffer to hold texture
+    u32 sprite[attr.height * PX_IN_TILE_COL][attr.width * PX_IN_TILE_ROW];
+    memset(sprite, 0x1, sizeof(sprite));
 
-//     u16 color;
-//     u8 palette_index; // nth entry in palram
-//     u16 x;
-//     u8 y;
-//     u8 left_pixel;
-//     u8 right_pixel;
+    u16 color;
+    u8 palette_index; // nth entry in palram
+    u16 x;
+    u8 y;
+    u8 left_pixel;
+    u8 right_pixel;
 
-//     //draw sprite tile by tile
-//     for (int h = 0; h < attr.height; ++h)
-//     {
-//         for (int w = 0; w < attr.width; ++w)
-//         {
-//             tile_ptr = LOWER_SPRITE_BLOCK + tileno * S_TILE_LEN;
+    //draw sprite tile by tile
+    for (int h = 0; h < attr.height; ++h)
+    {
+        for (int w = 0; w < attr.width; ++w)
+        {
+            tile_ptr = LOWER_SPRITE_BLOCK + tileno * S_TILE_LEN;
 
-//             if (attr.color_mode == 0) // 4 bits / pixel - s-tile
-//             {
-//                 for (int i = 0; i < S_TILE_LEN; ++i)
-//                 {
-//                     palette_index = mem->read_u8_unprotected(tile_ptr++);
+            if (attr.color_mode == 0) // 4 bits / pixel - s-tile
+            {
+                for (int i = 0; i < S_TILE_LEN; ++i)
+                {
+                    palette_index = mem->read_u8_unprotected(tile_ptr++);
 
-//                     x = w * PX_IN_TILE_ROW + 2 * (i % 4); // s-tiles get left/right px in one read 
-//                     y = h * PX_IN_TILE_COL +     (i / 4);
+                    x = w * PX_IN_TILE_ROW + 2 * (i % 4); // s-tiles get left/right px in one read 
+                    y = h * PX_IN_TILE_COL +     (i / 4);
 
-//                     left_pixel  = (palette_index >> 0) & 0xF;
-//                     right_pixel = (palette_index >> 4) & 0xF;
+                    left_pixel  = (palette_index >> 0) & 0xF;
+                    right_pixel = (palette_index >> 4) & 0xF;
                     
-//                     // add left, right pixel to screen buffer
-//                     // pixel value 0 is transparent, so only draw if not 0
-//                     if (left_pixel != 0)
-//                     {
-//                         // multiply by sizeof(u16) because each entry in palram is 2 bytes
-//                         color = mem->read_u16_unprotected(SPRITE_PALETTE + left_pixel * sizeof(u16) + (attr.palbank * PALBANK_LEN));
-//                         sprite[y][x] = u16_to_u32_color(color);
-//                     }
+                    // add left, right pixel to screen buffer
+                    // pixel value 0 is transparent, so only draw if not 0
+                    if (left_pixel != 0)
+                    {
+                        // multiply by sizeof(u16) because each entry in palram is 2 bytes
+                        color = mem->read_u16_unprotected(SPRITE_PALETTE + left_pixel * sizeof(u16) + (attr.palbank * PALBANK_LEN));
+                        sprite[y][x] = u16_to_u32_color(color);
+                    }
 
-//                     // pixel value 0 is transparent, so only draw if not 0
-//                     if (right_pixel != 0)
-//                     {
-//                         // multiply by sizeof(u16) because each entry in palram is 2 bytes
-//                         color = mem->read_u16_unprotected(SPRITE_PALETTE + right_pixel * sizeof(u16) + (attr.palbank * PALBANK_LEN));
-//                         sprite[y][x + 1] = u16_to_u32_color(color);
-//                     }
-//                 }
-//             }
+                    // pixel value 0 is transparent, so only draw if not 0
+                    if (right_pixel != 0)
+                    {
+                        // multiply by sizeof(u16) because each entry in palram is 2 bytes
+                        color = mem->read_u16_unprotected(SPRITE_PALETTE + right_pixel * sizeof(u16) + (attr.palbank * PALBANK_LEN));
+                        sprite[y][x + 1] = u16_to_u32_color(color);
+                    }
+                }
+            }
             
-//             // 8 bits / pixel - d-tile
-//             else
-//             {
-//                 //std::cout << "d\n";
-//                 for (int i = 0; i < D_TILE_LEN; i++)
-//                 {
-//                     palette_index = mem->read_u8_unprotected(tile_ptr++);
+            // 8 bits / pixel - d-tile
+            else
+            {
+                //std::cout << "d\n";
+                for (int i = 0; i < D_TILE_LEN; i++)
+                {
+                    palette_index = mem->read_u8_unprotected(tile_ptr++);
 
-//                     // pixel value 0 is transparent, so only draw if not 0
-//                     if (palette_index == 0)
-//                         continue; 
+                    // pixel value 0 is transparent, so only draw if not 0
+                    if (palette_index == 0)
+                        continue; 
 
-//                     x = x0 + w * PX_IN_TILE_ROW + (i % 8);
-//                     y = y0 + h * PX_IN_TILE_COL + (i / 8);
+                    x = x0 + w * PX_IN_TILE_ROW + (i % 8);
+                    y = y0 + h * PX_IN_TILE_COL + (i / 8);
 
-//                     // multiply by sizeof(u16) because each entry in palram is 2 bytes
-//                     color = mem->read_u32_unprotected(SPRITE_PALETTE + palette_index * sizeof(u16));
+                    // multiply by sizeof(u16) because each entry in palram is 2 bytes
+                    color = mem->read_u32_unprotected(SPRITE_PALETTE + palette_index * sizeof(u16));
 
-//                     screen_buffer[y][x] = u16_to_u32_color(color);
-//                 }
-//             }
+                    screen_buffer[y][x] = u16_to_u32_color(color);
+                }
+            }
 
-//             tileno++;
-//         }
+            tileno++;
+        }
 
-//         // 2d sprite mapping
-//         if (stat->dispcnt.obj_map_mode == 0) // 2d
-//         {
-//             //std::cout << (int) attr.width << "\n";
-//             tileno += TILES_PER_SCREENBLOCK - attr.width;
-//             //std::cout << "2\n";
-//             // if (attr.color_mode == 0)
-//             //     tile_ptr += (TILES_PER_SCREENBLOCK - attr.width - 1) ;
-//             // else
-//             //     tile_ptr += (33 - attr.width) * D_TILE_LEN;
-//         }
-//     }
+        // 2d sprite mapping
+        if (stat->dispcnt.obj_map_mode == 0) // 2d
+        {
+            //std::cout << (int) attr.width << "\n";
+            tileno += TILES_PER_SCREENBLOCK - attr.width;
+            //std::cout << "2\n";
+            // if (attr.color_mode == 0)
+            //     tile_ptr += (TILES_PER_SCREENBLOCK - attr.width - 1) ;
+            // else
+            //     tile_ptr += (33 - attr.width) * D_TILE_LEN;
+        }
+    }
 
-//     //horizontal flip
-//     if (attr.h_flip)
-//     {
-//         u32 temp;
-//         for (int h = 0; h < attr.height * PX_IN_TILE_COL; ++h)
-//         {
-//             for (int w = 0; w < attr.width * 4; ++w) 
-//             {
-//                 temp = sprite[h][w];
+    //horizontal flip
+    if (attr.h_flip)
+    {
+        u32 temp;
+        for (int h = 0; h < attr.height * PX_IN_TILE_COL; ++h)
+        {
+            for (int w = 0; w < attr.width * 4; ++w) 
+            {
+                temp = sprite[h][w];
 
-//                 sprite[h][w] = sprite[h][(attr.width * PX_IN_TILE_ROW) - w - 1];
-//                 sprite[h][(attr.width * PX_IN_TILE_ROW) - w - 1] = temp;
-//             }
-//         }
-//     }
+                sprite[h][w] = sprite[h][(attr.width * PX_IN_TILE_ROW) - w - 1];
+                sprite[h][(attr.width * PX_IN_TILE_ROW) - w - 1] = temp;
+            }
+        }
+    }
 
-//     // vertical flip
-//     if (attr.v_flip) 
-//     {
-//         u32 temp;
-//         for (int h = 0; h < attr.height * 4; ++h)
-//         {
-//             for (int w = 0; w < attr.width * PX_IN_TILE_ROW; ++w)
-//             {
-//                 temp = sprite[h][w];
+    // vertical flip
+    if (attr.v_flip) 
+    {
+        u32 temp;
+        for (int h = 0; h < attr.height * 4; ++h)
+        {
+            for (int w = 0; w < attr.width * PX_IN_TILE_ROW; ++w)
+            {
+                temp = sprite[h][w];
 
-//                 sprite[h][w] = sprite[(attr.height * PX_IN_TILE_COL) - h - 1][w];
-//                 sprite[(attr.height * PX_IN_TILE_COL) - h - 1][w] = temp;
-//             }
-//         }
-//     }
+                sprite[h][w] = sprite[(attr.height * PX_IN_TILE_COL) - h - 1][w];
+                sprite[(attr.height * PX_IN_TILE_COL) - h - 1][w] = temp;
+            }
+        }
+    }
 
-//     // mosaic
-//     if (attr.mosaic)
-//     {
-//         //std::cout << "Mosaic\n";
-//         // u16 mosaic = mem->read_u16_unprotected(REG_MOSAIC);
+    // mosaic
+    if (attr.mosaic)
+    {
+        //std::cout << "Mosaic\n";
+        // u16 mosaic = mem->read_u16_unprotected(REG_MOSAIC);
         
-//         // // horizontal / vertical stretch
-//         // // add one to get range 1 - 16
-//         // u8 wm = ((mosaic >>  8) & 0xF) + 1; // bits 8 - B
-//         // u8 hm = ((mosaic >> 12) & 0xF) + 1; // bits C - F
+        // // horizontal / vertical stretch
+        // // add one to get range 1 - 16
+        // u8 wm = ((mosaic >>  8) & 0xF) + 1; // bits 8 - B
+        // u8 hm = ((mosaic >> 12) & 0xF) + 1; // bits C - F
 
-//         // u32 temp;
-//         // for (int y = 0; y < height * PX_IN_TILE_COL; y += hm)
-//         // {
-//         //     for (int x = 0; x < width * PX_IN_TILE_ROW; x += wm)
-//         //     {
-//         //         //std::cout << (int) x << "\n";
-//         //         temp = screen_buffer[y0 + y][x0 + x];
+        // u32 temp;
+        // for (int y = 0; y < height * PX_IN_TILE_COL; y += hm)
+        // {
+        //     for (int x = 0; x < width * PX_IN_TILE_ROW; x += wm)
+        //     {
+        //         //std::cout << (int) x << "\n";
+        //         temp = screen_buffer[y0 + y][x0 + x];
 
-//         //         // fill wm more x values with the top left
-//         //         for (int xi = 0; xi < wm; ++xi)
-//         //         {
-//         //             // make sure it doesn't go past sprite's bounds
-//         //             //if (x0 + x + xi < (x0 + width * PX_IN_TILE_ROW))
-//         //             //std::cout << (int) x0 + x + xi << "\n";
-//         //                 screen_buffer[y0 + y][x0 + x + xi] = temp;
-//         //         }
+        //         // fill wm more x values with the top left
+        //         for (int xi = 0; xi < wm; ++xi)
+        //         {
+        //             // make sure it doesn't go past sprite's bounds
+        //             //if (x0 + x + xi < (x0 + width * PX_IN_TILE_ROW))
+        //             //std::cout << (int) x0 + x + xi << "\n";
+        //                 screen_buffer[y0 + y][x0 + x + xi] = temp;
+        //         }
                     
 
-//         //         // fill hm more y values with the top left    
-//         //         for (int yi = 0; yi < hm; ++yi)
-//         //         {
-//         //             //std::cout << (int) y0 + y + yi << "\n";
-//         //            //if (y0 + y + yi < (y0 + height * PX_IN_TILE_COL))
-//         //                 screen_buffer[y0 + y + yi][x0 + x] = temp;
-//         //         }
-//         //     }
-//         //     //std::cout << "\n";
-//         // }
-//     }
+        //         // fill hm more y values with the top left    
+        //         for (int yi = 0; yi < hm; ++yi)
+        //         {
+        //             //std::cout << (int) y0 + y + yi << "\n";
+        //            //if (y0 + y + yi < (y0 + height * PX_IN_TILE_COL))
+        //                 screen_buffer[y0 + y + yi][x0 + x] = temp;
+        //         }
+        //     }
+        //     //std::cout << "\n";
+        // }
+    }
 
-//     // copy sprite to screen buffer
-//     for (int h = 0; h < attr.height * 8; ++h)
-//     {
-//         for (int w = 0; w < attr.width * 8; ++w)
-//         {
-//             // mask to keep x, y in 9, 8 bit range, respectively
-//             x = (x0 + w) & 0x1FF;
-//             y = (y0 + h) & 0xFF;
+    // copy sprite to screen buffer
+    for (int h = 0; h < attr.height * 8; ++h)
+    {
+        for (int w = 0; w < attr.width * 8; ++w)
+        {
+            // mask to keep x, y in 9, 8 bit range, respectively
+            x = (x0 + w) & 0x1FF;
+            y = (y0 + h) & 0xFF;
 
-//             if (x > SCREEN_WIDTH || y > SCREEN_HEIGHT)
-//                 continue;
+            if (x > SCREEN_WIDTH || y > SCREEN_HEIGHT)
+                continue;
             
-//             // belongs to winout
-//             if ((stat->dispcnt.win_enabled & 0x3) && ((mem->read_u16_unprotected(REG_WINOUT) >> 4) & 1))
-//             {
-//                 // lies within bounds of other window(s)
-//                 if ((x < win0rr && x >= win0ll) && (y >= win0tt && y < win0bb)) continue;
-//                 if ((x < win1rr && x >= win1ll) && (y >= win1tt && y < win1bb)) continue;
-//             }
+            // belongs to winout
+            if ((stat->dispcnt.win_enabled & 0x3) && ((mem->read_u16_unprotected(REG_WINOUT) >> 4) & 1))
+            {
+                // lies within bounds of other window(s)
+                if ((x < win0rr && x >= win0ll) && (y >= win0tt && y < win0bb)) continue;
+                if ((x < win1rr && x >= win1ll) && (y >= win1tt && y < win1bb)) continue;
+            }
 
-//             // does not belong to winout
-//             else
-//             {
-//                 // out of window bounds
-//                 if (x >  xmax || y  > ymax) continue;
-//                 if (x <= xmin || y <= ymin) continue;
-//             }
+            // does not belong to winout
+            else
+            {
+                // out of window bounds
+                if (x >  xmax || y  > ymax) continue;
+                if (x <= xmin || y <= ymin) continue;
+            }
 
-//             if (sprite[h][w] == TRANSPARENT)
-//                 continue;
+            if (sprite[h][w] == TRANSPARENT)
+                continue;
 
-//             screen_buffer[y][x] = sprite[h][w];
-//         }
-//     }
-// }
+            screen_buffer[y][x] = sprite[h][w];
+        }
+    }
+}
 
-// void GPU::draw_affine_sprite(obj_attr attr)
-// {
-//     // get affine matrix
-//     u32 oam_addr = MEM_OAM_START + attr.affine_index * 32; // each affine entry is 32 bytes across
+void GPU::draw_affine_sprite(obj_attr attr)
+{
+    // get affine matrix
+    u32 oam_addr = MEM_OAM_START + attr.affine_index * 32; // each affine entry is 32 bytes across
 
-//     // transform P matrix from 8.8f to float
-//     // P = [pa pb]
-//     //     [pc pd]
-//     float pa = (s16) mem->read_u16(oam_addr +  0x6) / 256.0; 
-//     float pb = (s16) mem->read_u16(oam_addr +  0xE) / 256.0;
-//     float pc = (s16) mem->read_u16(oam_addr + 0x16) / 256.0;
-//     float pd = (s16) mem->read_u16(oam_addr + 0x1E) / 256.0;
+    // transform P matrix from 8.8f to float
+    // P = [pa pb]
+    //     [pc pd]
+    float pa = (s16) mem->read_u16(oam_addr +  0x6) / 256.0; 
+    float pb = (s16) mem->read_u16(oam_addr +  0xE) / 256.0;
+    float pc = (s16) mem->read_u16(oam_addr + 0x16) / 256.0;
+    float pd = (s16) mem->read_u16(oam_addr + 0x1E) / 256.0;
 
-//     u32 tile_ptr = LOWER_SPRITE_BLOCK + (attr.tileno * S_TILE_LEN);
+    u32 tile_ptr = LOWER_SPRITE_BLOCK + (attr.tileno * S_TILE_LEN);
 
-//     // temporary buffer to hold texture
-//     u32 sprite[attr.height * PX_IN_TILE_COL][attr.width * PX_IN_TILE_ROW];
-//     memset(sprite, 1, sizeof(sprite));
+    // temporary buffer to hold texture
+    u32 sprite[attr.height * PX_IN_TILE_COL][attr.width * PX_IN_TILE_ROW];
+    memset(sprite, 1, sizeof(sprite));
 
-//     u16 color;
-//     u8 palette_index; // nth entry in palram
-//     u8 left_pixel, right_pixel;
+    u16 color;
+    u8 palette_index; // nth entry in palram
+    u8 left_pixel, right_pixel;
 
-//     // x, y coordinate of sprite texture before rot/scale
-//     u16 x;
-//     u8  y;
+    // x, y coordinate of sprite texture before rot/scale
+    u16 x;
+    u8  y;
 
-//     // draw sprite tile by tile
-//     for (int h = 0; h < attr.height; ++h)
-//     {
-//         for (int w = 0; w < attr.width; ++w)
-//         {
-//             if (attr.color_mode == 0) // 4 bits / pixel - s-tile
-//             {
-//                 for (int i = 0; i < S_TILE_LEN; ++i)
-//                 {
-//                     palette_index = mem->read_u8_unprotected(tile_ptr++);
-//                     x = w * PX_IN_TILE_ROW + 2 * (i % 4); // s-tiles get left/right px in one read 
-//                     y = h * PX_IN_TILE_COL +     (i / 4);
+    // draw sprite tile by tile
+    for (int h = 0; h < attr.height; ++h)
+    {
+        for (int w = 0; w < attr.width; ++w)
+        {
+            if (attr.color_mode == 0) // 4 bits / pixel - s-tile
+            {
+                for (int i = 0; i < S_TILE_LEN; ++i)
+                {
+                    palette_index = mem->read_u8_unprotected(tile_ptr++);
+                    x = w * PX_IN_TILE_ROW + 2 * (i % 4); // s-tiles get left/right px in one read 
+                    y = h * PX_IN_TILE_COL +     (i / 4);
                     
-//                     left_pixel  = (palette_index >> 0) & 0xF;
-//                     right_pixel = (palette_index >> 4) & 0xF;
+                    left_pixel  = (palette_index >> 0) & 0xF;
+                    right_pixel = (palette_index >> 4) & 0xF;
                     
-//                     // add left, right pixel to screen buffer
-//                     // pixel value 0 is transparent, so only draw if not 0
-//                     if (left_pixel != 0)
-//                     {
-//                         // multiply by sizeof(u16) because each entry in palram is 2 bytes
-//                         color = mem->read_u16_unprotected(SPRITE_PALETTE + left_pixel * sizeof(u16) + (attr.palbank * PALBANK_LEN));
-//                         sprite[y][x] = u16_to_u32_color(color);
-//                     }
+                    // add left, right pixel to screen buffer
+                    // pixel value 0 is transparent, so only draw if not 0
+                    if (left_pixel != 0)
+                    {
+                        // multiply by sizeof(u16) because each entry in palram is 2 bytes
+                        color = mem->read_u16_unprotected(SPRITE_PALETTE + left_pixel * sizeof(u16) + (attr.palbank * PALBANK_LEN));
+                        sprite[y][x] = u16_to_u32_color(color);
+                    }
 
-//                     // pixel value 0 is transparent, so only draw if not 0
-//                     if (right_pixel != 0)
-//                     {
-//                         // multiply by sizeof(u16) because each entry in palram is 2 bytes
-//                         color = mem->read_u16_unprotected(SPRITE_PALETTE + right_pixel * sizeof(u16) + (attr.palbank * PALBANK_LEN));
-//                         sprite[y][x + 1] = u16_to_u32_color(color);
-//                     }
-//                 }
-//             }
+                    // pixel value 0 is transparent, so only draw if not 0
+                    if (right_pixel != 0)
+                    {
+                        // multiply by sizeof(u16) because each entry in palram is 2 bytes
+                        color = mem->read_u16_unprotected(SPRITE_PALETTE + right_pixel * sizeof(u16) + (attr.palbank * PALBANK_LEN));
+                        sprite[y][x + 1] = u16_to_u32_color(color);
+                    }
+                }
+            }
             
-//             // 8 bits / pixel - d-tile
-//             else
-//             {
-//                 for (int i = 0; i < D_TILE_LEN; i++)
-//                 {
-//                     palette_index = mem->read_u8_unprotected(tile_ptr++);
+            // 8 bits / pixel - d-tile
+            else
+            {
+                for (int i = 0; i < D_TILE_LEN; i++)
+                {
+                    palette_index = mem->read_u8_unprotected(tile_ptr++);
 
-//                     // pixel value 0 is transparent, so only draw if not 0
-//                     if (palette_index == 0)
-//                         continue; 
+                    // pixel value 0 is transparent, so only draw if not 0
+                    if (palette_index == 0)
+                        continue; 
 
-//                     x = w * PX_IN_TILE_ROW + (i % 8);
-//                     y = h * PX_IN_TILE_COL + (i / 8);
+                    x = w * PX_IN_TILE_ROW + (i % 8);
+                    y = h * PX_IN_TILE_COL + (i / 8);
 
-//                     // multiply by sizeof(u16) because each entry in palram is 2 bytes
-//                     color = mem->read_u32_unprotected(SPRITE_PALETTE + palette_index * sizeof(u16));
+                    // multiply by sizeof(u16) because each entry in palram is 2 bytes
+                    color = mem->read_u32_unprotected(SPRITE_PALETTE + palette_index * sizeof(u16));
 
-//                     sprite[y][x] = u16_to_u32_color(color);
-//                 }
-//             }
+                    sprite[y][x] = u16_to_u32_color(color);
+                }
+            }
 
-//             // 2d sprite mapping
-//             if (stat->dispcnt.obj_map_mode == 0) // 2d
-//             {
-//                 if (attr.color_mode == 0)
-//                     tile_ptr += (TILES_PER_SCREENBLOCK - attr.width) * S_TILE_LEN;
-//                 else
-//                     tile_ptr += (TILES_PER_SCREENBLOCK - attr.width) * D_TILE_LEN;
-//             }
-//         }
-//     }
+            // 2d sprite mapping
+            if (stat->dispcnt.obj_map_mode == 0) // 2d
+            {
+                if (attr.color_mode == 0)
+                    tile_ptr += (TILES_PER_SCREENBLOCK - attr.width) * S_TILE_LEN;
+                else
+                    tile_ptr += (TILES_PER_SCREENBLOCK - attr.width) * D_TILE_LEN;
+            }
+        }
+    }
 
-//     // half width, height (in pixels) of object screen canvas
-//     int hwidth  = attr.width  * 4; 
-//     int hheight = attr.height * 4; 
+    // half width, height (in pixels) of object screen canvas
+    int hwidth  = attr.width  * 4; 
+    int hheight = attr.height * 4; 
 
-//     // coordinate of center of screen space (q) and texture space (p)
-//     u16 qx0, px0;
-//     u8  qy0, py0;
+    // coordinate of center of screen space (q) and texture space (p)
+    u16 qx0, px0;
+    u8  qy0, py0;
     
-//     px0 = hwidth;
-//     py0 = hheight;
+    px0 = hwidth;
+    py0 = hheight;
 
-//     // double flag set
-//     if (attr.obj_mode == 3)
-//     {
-//         // double available canvas space
-//         hwidth  *= 2;
-//         hheight *= 2;
+    // double flag set
+    if (attr.obj_mode == 3)
+    {
+        // double available canvas space
+        hwidth  *= 2;
+        hheight *= 2;
 
-//         qx0 = attr.x + attr.width  * 8;
-//         qy0 = attr.y + attr.height * 8;
-//     }
+        qx0 = attr.x + attr.width  * 8;
+        qy0 = attr.y + attr.height * 8;
+    }
 
-//     // double flag not set
-//     else
-//     {
-//         qx0 = attr.x + attr.width  * 4;
-//         qy0 = attr.y + attr.height * 4;
-//     }
+    // double flag not set
+    else
+    {
+        qx0 = attr.x + attr.width  * 4;
+        qy0 = attr.y + attr.height * 4;
+    }
     
-//     // coordinate of texture pixel after rot/scale
-//     int px, py;
+    // coordinate of texture pixel after rot/scale
+    int px, py;
 
-//     // loop through canvas space
-//     for (int iy = -hheight; iy < hheight; ++iy)
-//     {
-//         for (int ix = -hwidth; ix < hwidth; ++ix)
-//         {
-//             // get new position of pixel after rot / scale
-//             px = (pa * ix + pb * iy);
-//             py = (pc * ix + pd * iy);
+    // loop through canvas space
+    for (int iy = -hheight; iy < hheight; ++iy)
+    {
+        for (int ix = -hwidth; ix < hwidth; ++ix)
+        {
+            // get new position of pixel after rot / scale
+            px = (pa * ix + pb * iy);
+            py = (pc * ix + pd * iy);
 
-//             // transfomation put pixel out of bounds
-//             if ((px0 + px >= attr.width * PX_IN_TILE_ROW) || (py0 + py >= attr.height * PX_IN_TILE_COL))
-//                 continue;
+            // transfomation put pixel out of bounds
+            if ((px0 + px >= attr.width * PX_IN_TILE_ROW) || (py0 + py >= attr.height * PX_IN_TILE_COL))
+                continue;
             
-//             if (px0 + px < 0 || py0 + py < 0)
-//                 continue;
+            if (px0 + px < 0 || py0 + py < 0)
+                continue;
             
-//             if (qy0 + iy < 0 || qx0 + ix < 0)
-//                 continue;
+            if (qy0 + iy < 0 || qx0 + ix < 0)
+                continue;
             
-//             if (qy0 + iy >= SCREEN_HEIGHT || qx0 + ix >= SCREEN_WIDTH)
-//                 continue;
+            if (qy0 + iy >= SCREEN_HEIGHT || qx0 + ix >= SCREEN_WIDTH)
+                continue;
             
-//             // skip 0 pixel value (transparent)
-//             if (sprite[py0 + py][px0 + px] != TRANSPARENT)
-//                 screen_buffer[qy0 + iy][qx0 + ix] = sprite[py0 + py][px0 + px];
-//         }
-//     }
-// }
+            // skip 0 pixel value (transparent)
+            if (sprite[py0 + py][px0 + px] != TRANSPARENT)
+                screen_buffer[qy0 + iy][qx0 + ix] = sprite[py0 + py][px0 + px];
+        }
+    }
+}
 
 // // fills the objs data structure every frame an object needs to be drawn
-// void GPU::update_attr()
-// {
-//     u32 oam_ptr;
-//     u16 attr0, attr1, attr2;
-//     u8 i;
+void GPU::update_attr()
+{
+    u32 oam_ptr;
+    u16 attr0, attr1, attr2;
+    u8 i;
 
-//     // loop through all oam indices that are ready to be updated
-//     while (!stat->oam_update.empty())
-//     {
-//         i = stat->oam_update.front();
+    // loop through all oam indices that are ready to be updated
+    while (!stat->oam_update.empty())
+    {
+        i = stat->oam_update.front();
         
-//         // get start address of dequeued oam entry
-//         oam_ptr = MEM_OAM_START + i * 8; // each entry is 8 bytes long
+        // get start address of dequeued oam entry
+        oam_ptr = MEM_OAM_START + i * 8; // each entry is 8 bytes long
 
-//         attr0 = mem->read_u16_unprotected(oam_ptr + 0);
-//         attr1 = mem->read_u16_unprotected(oam_ptr + 2);
-//         attr2 = mem->read_u16_unprotected(oam_ptr + 4);
+        attr0 = mem->read_u16_unprotected(oam_ptr + 0);
+        attr1 = mem->read_u16_unprotected(oam_ptr + 2);
+        attr2 = mem->read_u16_unprotected(oam_ptr + 4);
 
-//         objs[i].y            = attr0 >>  0 & 0xFF;
-//         objs[i].obj_mode     = attr0 >>  8 & 0x3;
-//         objs[i].gfx_mode     = attr0 >> 10 & 0x3;
-//         objs[i].mosaic       = attr0 >> 12 & 0x1;
-//         objs[i].color_mode   = attr0 >> 13 & 0x1;
-//         objs[i].size         = attr0 >> 14 & 0x3;
+        objs[i].y            = attr0 >>  0 & 0xFF;
+        objs[i].obj_mode     = attr0 >>  8 & 0x3;
+        objs[i].gfx_mode     = attr0 >> 10 & 0x3;
+        objs[i].mosaic       = attr0 >> 12 & 0x1;
+        objs[i].color_mode   = attr0 >> 13 & 0x1;
+        objs[i].size         = attr0 >> 14 & 0x3;
 
-//         objs[i].x            = attr1 >>  0 & 0x1FF;
-//         objs[i].affine_index = attr1 >>  9 & 0x1F;
-//         objs[i].h_flip       = attr1 >> 12 & 0x1;
-//         objs[i].v_flip       = attr1 >> 13 & 0x1;
-//         objs[i].shape        = attr1 >> 14 & 0x3;
+        objs[i].x            = attr1 >>  0 & 0x1FF;
+        objs[i].affine_index = attr1 >>  9 & 0x1F;
+        objs[i].h_flip       = attr1 >> 12 & 0x1;
+        objs[i].v_flip       = attr1 >> 13 & 0x1;
+        objs[i].shape        = attr1 >> 14 & 0x3;
 
-//         objs[i].tileno       = attr2 >>  0 & 0x3FF;
-//         objs[i].priority     = attr2 >> 10 & 0x3;
-//         objs[i].palbank      = attr2 >> 12 & 0xF;
+        objs[i].tileno       = attr2 >>  0 & 0x3FF;
+        objs[i].priority     = attr2 >> 10 & 0x3;
+        objs[i].palbank      = attr2 >> 12 & 0xF;
 
-//         // get actual dimensions of sprite
-//         switch (objs[i].size)
-//         {
-//             case 0:
-//                 switch (objs[i].size)
-//                 {
-//                     case 0: objs[i].width =  8; objs[i].height =  8; break;
-//                     case 1: objs[i].width = 16; objs[i].height = 16; break;
-//                     case 2: objs[i].width = 32; objs[i].height = 32; break;
-//                     case 3: objs[i].width = 64; objs[i].height = 64; break;
-//                 }
-//                 break;
+        // get actual dimensions of sprite
+        switch (objs[i].size)
+        {
+            case 0:
+                switch (objs[i].size)
+                {
+                    case 0: objs[i].width =  8; objs[i].height =  8; break;
+                    case 1: objs[i].width = 16; objs[i].height = 16; break;
+                    case 2: objs[i].width = 32; objs[i].height = 32; break;
+                    case 3: objs[i].width = 64; objs[i].height = 64; break;
+                }
+                break;
 
-//             case 1:
-//                 switch (objs[i].size)
-//                 {
-//                     case 0: objs[i].width = 16; objs[i].height =  8; break;
-//                     case 1: objs[i].width = 32; objs[i].height =  8; break;
-//                     case 2: objs[i].width = 32; objs[i].height = 16; break;
-//                     case 3: objs[i].width = 64; objs[i].height = 32; break;
-//                 }
-//                 break;
+            case 1:
+                switch (objs[i].size)
+                {
+                    case 0: objs[i].width = 16; objs[i].height =  8; break;
+                    case 1: objs[i].width = 32; objs[i].height =  8; break;
+                    case 2: objs[i].width = 32; objs[i].height = 16; break;
+                    case 3: objs[i].width = 64; objs[i].height = 32; break;
+                }
+                break;
 
-//             case 2:
-//                 switch (objs[i].size)
-//                 {
-//                     case 0: objs[i].width =  8; objs[i].height = 16; break;
-//                     case 1: objs[i].width =  8; objs[i].height = 32; break;
-//                     case 2: objs[i].width = 16; objs[i].height = 32; break;
-//                     case 3: objs[i].width = 32; objs[i].height = 64; break;
-//                 }
-//                 break;
-//         }
+            case 2:
+                switch (objs[i].size)
+                {
+                    case 0: objs[i].width =  8; objs[i].height = 16; break;
+                    case 1: objs[i].width =  8; objs[i].height = 32; break;
+                    case 2: objs[i].width = 16; objs[i].height = 32; break;
+                    case 3: objs[i].width = 32; objs[i].height = 64; break;
+                }
+                break;
+        }
 
-//         stat->oam_update.pop();
-//     }
-// }
+        stat->oam_update.pop();
+    }
+}
 
 // // given a 16 bit GBA color, make it a 32 bit SDL color
 inline u32 u16_to_u32_color (u16 color_u16)

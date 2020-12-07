@@ -21,7 +21,7 @@
 #define TILES_PER_SCREENBLOCK     32
 
 // transparent pixel color
-#define TRANSPARENT 0x01010101
+#define TRANSPARENT 0x8000
 
 u32 u16_to_u32_color(u16);
 
@@ -78,15 +78,8 @@ void GPU::reset()
     scanline  = 0;
     frame     = 0;
     fps       = 0;
-    win0rr    = 0xFFFF;
-    win1rr    = 0xFFFF;
-    win0bb    = 0xFF;
-    win1bb    = 0xFF;
-    win0ll    = 0;
-    win0ll    = 0;
-    win1ll    = 0;
-    win1ll    = 0;
     old_time  = clock();
+
     memset(screen_buffer, 0, sizeof(screen_buffer));
 
     // zero oam data structure
@@ -293,14 +286,69 @@ void GPU::render_scanline()
 void GPU::render_obj_scanline()
 {
     obj_attr *attr;
+    u16 pixel;
 
     // loop through all objs
     for (int i = 0; i < NUM_OBJS; ++i)
     {
         attr = &objs[i];
 
+        // skip hidden object
+        if (attr->obj_mode == 2)
+            continue;
 
+        // obj exists outside current scanline
+        if (scanline < attr->y0 || scanline >= attr->y0 + attr->height)
+            continue;
+        
+        int x, y;
+        int px, py;
+
+        std::cout << attr->x0 << " " << attr->y0 << "\n";
+        // render obj
+        for (int ix = -attr->hwidth; ix < attr->hwidth; ++ix)
+        {
+            x = px = attr->x + ix;
+            y = py = scanline;
+
+            // transform affine & double wide affine
+            if (attr->obj_mode == 1 || attr->obj_mode == 3)
+            {
+                
+            }
+
+            // transformed coordinate is out of bounds
+            if (px >= attr->width || py >= attr->height) continue;
+            if (px < 0            || py < 0            ) continue;
+
+            int tile_x  = px % 8;
+            int tile_y  = py % 8;
+            int block_x = px / 8;
+            int block_y = py / 8;
+
+            int tileno = attr->tileno + block_y * (attr->width / 8);
+            tileno += block_x;
+
+            pixel = decode_obj_pixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
+            obj_scanline_buffer[x] = u16_to_u32_color(pixel);
+        }
     }
+}
+
+u16 GPU::decode_obj_pixel4BPP(u32 addr, int palbank, int x, int y)
+{
+    u32 offset = addr + (y * 4) + (x / 2);
+
+    u16 palette_index = mem->read_u8(offset);
+
+    if (x & 1) { palette_index >>= 4; }
+
+    palette_index &= 0xF;
+
+    if (palette_index == 0) 
+        return TRANSPARENT;
+
+    return mem->read_u16(SPRITE_PALETTE + palette_index * sizeof(u16));
 }
 
 
@@ -1424,12 +1472,12 @@ void GPU::update_attr()
         }
 
         // hwidth, hheight
-        objs[i].hwidth  = width / 2;
-        objs[i].hheight = height / 2;
+        objs[i].hwidth  = objs[i].width / 2;
+        objs[i].hheight = objs[i].height / 2;
 
         // x, y of sprite origin
-        objs[i].x = objs[i].x0 + objs[i].hwidth * 4;
-        objs[i].y = objs[i].y0 + objs[i].hheight * 4;
+        objs[i].x = objs[i].x0 + objs[i].hwidth;
+        objs[i].y = objs[i].y0 + objs[i].hheight;
 
         // get affine matrix if necessary
         if (objs[i].obj_mode == 1) // affine
@@ -1443,6 +1491,16 @@ void GPU::update_attr()
             objs[i].pb = (s16) mem->read_u16(matrix_ptr +  0xE) / 256.0;
             objs[i].pc = (s16) mem->read_u16(matrix_ptr + 0x16) / 256.0;
             objs[i].pd = (s16) mem->read_u16(matrix_ptr + 0x1E) / 256.0;
+
+            // double wide affine
+            if (objs[i].obj_mode = 3)
+            {
+                objs[i].x += objs[i].hwidth;
+                objs[i].y += objs[i].hheight;
+
+                objs[i].hwidth  *= 2;
+                objs[i].hheight *= 2;
+            }
         }
     }
 }

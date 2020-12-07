@@ -27,7 +27,7 @@
 #define VDRAW         160 // # of scanlines in VDraw
 #define VBLANK        68  // # of scanlines in VBlank
 
-#define NUM_OBJS 128 // number of sprites that can be rendered
+#define NUM_OBJS      128 // number of sprites that can be rendered
 
 const u32 LOWER_SPRITE_BLOCK = 0x6010000;
 const u32 HIGHER_SPRITE_BLOCK = 0x6014000;
@@ -88,7 +88,7 @@ class GPU
             int size;
             int shape;
             
-            // width, height of sprite in tiles (& half width, height)
+            // width, height of sprite in pixels (& half width, height)
             int  width,  height;
             int hwidth, hheight;
 
@@ -115,6 +115,7 @@ class GPU
         // misc
         void render_scanline();
         void render_obj_scanline();
+        u16 decode_obj_pixel4BPP(u32, int, int, int);
         //void draw_sprites();
         //void draw_regular_sprite(obj_attr);
         //void draw_affine_sprite(obj_attr);

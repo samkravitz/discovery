@@ -61,6 +61,8 @@ class GPU
         clock_t old_time;
 
         u32 scanline_buffer[SCREEN_WIDTH];
+        u32 obj_scanline_buffer[SCREEN_WIDTH];
+
         u32 screen_buffer[SCREEN_HEIGHT * SCREEN_WIDTH];
 
         // oam data structure
@@ -90,6 +92,12 @@ class GPU
             u8 width;
             u8 height;
 
+            // affine matrix params
+            float pa;
+            float pb;
+            float pc;
+            float pd;
+            
         } objs[NUM_OBJS]; // can support 128 objects
 
         // window boundaries
@@ -110,9 +118,10 @@ class GPU
 
         // misc
         void render_scanline();
-        void draw_sprites();
-        void draw_regular_sprite(obj_attr);
-        void draw_affine_sprite(obj_attr);
+        void render_obj_scanline();
+        //void draw_sprites();
+        //void draw_regular_sprite(obj_attr);
+        //void draw_affine_sprite(obj_attr);
         void update_attr();
 };
 

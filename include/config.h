@@ -11,7 +11,7 @@
 
 #include "common.h"
 
-namespace util
+namespace config
 {
     std::string rom_name = "";
     std::string bios_name = "gba_bios.bin";

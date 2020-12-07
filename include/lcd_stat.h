@@ -58,9 +58,6 @@ struct lcd_stat
         u8 enabled     : 1;
     } bg_cnt[4]; // backgrounds 0-3
 
-    // contains index of oam entry that must be updated
-    std::queue<u8> oam_update;
-
     lcd_stat()
     {
         scanline = 0;

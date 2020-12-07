@@ -94,12 +94,14 @@ void GPU::reset()
     {
         objs[i].obj_mode     = 2; // hidden
 
+        objs[i].x            = 0;
         objs[i].y            = 0;
+        objs[i].x0           = 0;
+        objs[i].y0           = 0;
         objs[i].gfx_mode     = 0;
         objs[i].mosaic       = 0;
         objs[i].color_mode   = 0;
         objs[i].size         = 0;
-        objs[i].x            = 0;
         objs[i].affine_index = 0;
         objs[i].h_flip       = 0;
         objs[i].v_flip       = 0;
@@ -109,6 +111,8 @@ void GPU::reset()
         objs[i].palbank      = 0;
         objs[i].width        = 0;
         objs[i].height       = 0;
+        objs[i].hwidth       = 0;
+        objs[i].hheight      = 0;
 
         objs[i].pa           = 0.0;
         objs[i].pb           = 0.0;
@@ -270,7 +274,6 @@ void GPU::render()
 
 void GPU::render_scanline()
 {
-    if (scanline >= SCREEN_HEIGHT) return;
     std::memset(scanline_buffer, 0, sizeof(scanline_buffer));
 
     switch (stat->dispcnt.mode)
@@ -280,12 +283,24 @@ void GPU::render_scanline()
         case 5: render_mode5(); break;
     }
 
+    if (stat->dispcnt.obj_enabled)
+        render_obj_scanline();
+
     std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], scanline_buffer, sizeof(scanline_buffer));
+    std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
 }
 
 void GPU::render_obj_scanline()
 {
+    obj_attr *attr;
 
+    // loop through all objs
+    for (int i = 0; i < NUM_OBJS; ++i)
+    {
+        attr = &objs[i];
+
+
+    }
 }
 
 
@@ -1354,14 +1369,14 @@ void GPU::update_attr()
         attr1 = mem->read_u16_unprotected(oam_ptr); oam_ptr += 2;
         attr2 = mem->read_u16_unprotected(oam_ptr); oam_ptr += 4;
 
-        objs[i].y            = attr0 >>  0 & 0xFF;
+        objs[i].y0           = attr0 >>  0 & 0xFF;
         objs[i].obj_mode     = attr0 >>  8 & 0x3;
         objs[i].gfx_mode     = attr0 >> 10 & 0x3;
         objs[i].mosaic       = attr0 >> 12 & 0x1;
         objs[i].color_mode   = attr0 >> 13 & 0x1;
         objs[i].size         = attr0 >> 14 & 0x3;
 
-        objs[i].x            = attr1 >>  0 & 0x1FF;
+        objs[i].x0           = attr1 >>  0 & 0x1FF;
         objs[i].affine_index = attr1 >>  9 & 0x1F;
         objs[i].h_flip       = attr1 >> 12 & 0x1;
         objs[i].v_flip       = attr1 >> 13 & 0x1;
@@ -1408,6 +1423,14 @@ void GPU::update_attr()
                 objs[i].width = 0; objs[i].height = 0;
         }
 
+        // hwidth, hheight
+        objs[i].hwidth  = width / 2;
+        objs[i].hheight = height / 2;
+
+        // x, y of sprite origin
+        objs[i].x = objs[i].x0 + objs[i].hwidth * 4;
+        objs[i].y = objs[i].y0 + objs[i].hheight * 4;
+
         // get affine matrix if necessary
         if (objs[i].obj_mode == 1) // affine
         {
@@ -1424,7 +1447,7 @@ void GPU::update_attr()
     }
 }
 
-// // given a 16 bit GBA color, make it a 32 bit SDL color
+// given a 16 bit GBA color, make it a 32 bit SDL color
 inline u32 u16_to_u32_color (u16 color_u16)
 {
     u8 a = 0x1F;

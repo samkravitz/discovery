@@ -68,41 +68,37 @@ class GPU
         // oam data structure
         struct obj_attr
         {
-            // coordinates
-            u8  y;
-            u16 x;
+            // coordinate of top left (x0, y0) & origin 
+            int x,  y;
+            int x0, y0;
 
-            u8 obj_mode;     // 0 - normal render, 1 - affine, 2 - hidden, 3 - double-wide affine
-            u8 gfx_mode;     // 0 - normal, 1 - semi-transparent, 2 - obj window, 3 - illegal
-            u8 color_mode;   // 256 color if on, 16 color if off
+            int obj_mode;     // 0 - normal render, 1 - affine, 2 - hidden, 3 - double-wide affine
+            int gfx_mode;     // 0 - normal, 1 - semi-transparent, 2 - obj window, 3 - illegal
+            int color_mode;   // 256 color if on, 16 color if off
             bool mosaic;
 
-            u8 affine_index; // P matrix index (0 - 31)
+            int affine_index; // P matrix index (0 - 31)
             bool h_flip;
             bool v_flip;
 
-            u16 tileno;      // base tile index of sprite
-            u8 priority;
-            u8 palbank;      // use in 16 color mode
+            int tileno;       // base tile index of sprite
+            int priority;
+            int palbank;      // use in 16 color mode
 
-            u8 size;
-            u8 shape;
+            int size;
+            int shape;
             
-            // width, height of sprite in tiles
-            u8 width;
-            u8 height;
+            // width, height of sprite in tiles (& half width, height)
+            int  width,  height;
+            int hwidth, hheight;
 
             // affine matrix params
             float pa;
             float pb;
             float pc;
             float pd;
-            
-        } objs[NUM_OBJS]; // can support 128 objects
 
-        // window boundaries
-        u16 win0rr, win0ll, win1rr, win1ll; 
-        u8  win0tt, win0bb, win1tt, win1bb;
+        } objs[NUM_OBJS]; // can support 128 objects
 
         // video mode draws
         void render();

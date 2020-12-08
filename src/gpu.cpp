@@ -253,7 +253,7 @@ void GPU::render()
     
     // draw final_screen pixels on screen
     SDL_UpdateWindowSurface(window);
-    
+
     // update objs data structure
     if (stat->dispcnt.obj_enabled)
         update_attr();
@@ -285,6 +285,9 @@ void GPU::render_scanline()
 
 void GPU::render_obj_scanline()
 {
+    // zero obj scanline
+    std::memset(obj_scanline_buffer, 0, sizeof(obj_scanline_buffer));
+
     obj_attr *attr;
     u16 pixel;
 
@@ -304,12 +307,15 @@ void GPU::render_obj_scanline()
         int x, y;
         int px, py;
 
-        std::cout << attr->x0 << " " << attr->y0 << "\n";
+        //std::cout << attr->width << " " << attr->height << "\n";
+        //std::cout << attr->x0 << " " << attr->y0 << "\n";
         // render obj
         for (int ix = -attr->hwidth; ix < attr->hwidth; ++ix)
         {
             x = px = attr->x + ix;
             y = py = scanline;
+
+            //std::cout << x << " " << y << "\n";
 
             // transform affine & double wide affine
             if (attr->obj_mode == 1 || attr->obj_mode == 3)
@@ -330,6 +336,7 @@ void GPU::render_obj_scanline()
             tileno += block_x;
 
             pixel = decode_obj_pixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
+            
             obj_scanline_buffer[x] = u16_to_u32_color(pixel);
         }
     }
@@ -338,7 +345,7 @@ void GPU::render_obj_scanline()
 u16 GPU::decode_obj_pixel4BPP(u32 addr, int palbank, int x, int y)
 {
     u32 offset = addr + (y * 4) + (x / 2);
-
+    //std::cout << std::hex << (int) addr << " " << x << " " << y << "\n";
     u16 palette_index = mem->read_u8(offset);
 
     if (x & 1) { palette_index >>= 4; }
@@ -1411,7 +1418,7 @@ void GPU::update_attr()
     u16 attr0, attr1, attr2;
 
     // loop through all objs
-    for (int i = 0; i < NUM_OBJS; ++i)
+    for (int i = 0; i < 1; ++i)
     {   
         attr0 = mem->read_u16_unprotected(oam_ptr); oam_ptr += 2;
         attr1 = mem->read_u16_unprotected(oam_ptr); oam_ptr += 2;
@@ -1422,20 +1429,20 @@ void GPU::update_attr()
         objs[i].gfx_mode     = attr0 >> 10 & 0x3;
         objs[i].mosaic       = attr0 >> 12 & 0x1;
         objs[i].color_mode   = attr0 >> 13 & 0x1;
-        objs[i].size         = attr0 >> 14 & 0x3;
+        objs[i].shape        = attr0 >> 14 & 0x3;
 
         objs[i].x0           = attr1 >>  0 & 0x1FF;
         objs[i].affine_index = attr1 >>  9 & 0x1F;
         objs[i].h_flip       = attr1 >> 12 & 0x1;
         objs[i].v_flip       = attr1 >> 13 & 0x1;
-        objs[i].shape        = attr1 >> 14 & 0x3;
+        objs[i].size         = attr1 >> 14 & 0x3;
 
         objs[i].tileno       = attr2 >>  0 & 0x3FF;
         objs[i].priority     = attr2 >> 10 & 0x3;
         objs[i].palbank      = attr2 >> 12 & 0xF;
 
         // get actual dimensions of sprite
-        switch (objs[i].size)
+        switch (objs[i].shape)
         {
             case 0:
                 switch (objs[i].size)

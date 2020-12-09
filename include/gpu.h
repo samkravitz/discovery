@@ -115,7 +115,7 @@ class GPU
         // misc
         void render_scanline();
         void render_obj_scanline();
-        u16 decode_obj_pixel4BPP(u32, int, int, int);
+        u16 get_obj_pixel4BPP(u32, int, int, int);
         //void draw_sprites();
         //void draw_regular_sprite(obj_attr);
         //void draw_affine_sprite(obj_attr);

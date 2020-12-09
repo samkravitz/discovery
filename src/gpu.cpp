@@ -276,11 +276,14 @@ void GPU::render_scanline()
         case 5: render_mode5(); break;
     }
 
-    if (stat->dispcnt.obj_enabled)
-        render_obj_scanline();
-
     std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], scanline_buffer, sizeof(scanline_buffer));
-    //std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
+
+    if (stat->dispcnt.obj_enabled)
+    {
+        render_obj_scanline();
+        std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
+    }
+    
 }
 
 void GPU::render_obj_scanline()
@@ -300,21 +303,20 @@ void GPU::render_obj_scanline()
         if (attr->obj_mode == 2)
             continue;
 
-        // obj exists outside current scanline
+        // // obj exists outside current scanline
         if (scanline < attr->y0 || scanline >= attr->y0 + attr->height)
             continue;
         
-        int x, y;
-        int px, py;
+        
+        int px0 = attr->hwidth; // center of sprite texture
+        int qx0 = attr->x;      // center of sprite screen space
 
-        int transform[4] = {0x100, 0 , 0x100, 0};
-        //std::cout << attr->width << " " << attr->height << "\n";
-        //std::cout << attr->x0 << " " << attr->y0 << "\n";
-        // render obj
+        // x, y coordinate of texture after transformation
+        int px, py = scanline - attr->y0;
+
         for (int ix = -attr->hwidth; ix < attr->hwidth; ++ix)
         {
-            x = px = attr->x + ix - (3 * attr->hwidth);
-            y = py = scanline - (3 * attr->hwidth);
+            px = px0 + ix;
 
             // transform affine & double wide affine
             if (attr->obj_mode == 1 || attr->obj_mode == 3)
@@ -322,36 +324,30 @@ void GPU::render_obj_scanline()
                 
             }
 
-            // px = ((transform[0] * ix + transform[1] * 1) >> 8) + (attr->width / 2);
-            // py = ((transform[2] * ix + transform[3] * 1) >> 8) + (attr->height / 2);
-            //std::cout << attr->x0 + attr->width << " " << attr->y0 + attr->height << "\n";
-            std::cout << px << " " << py << "\n";
-
             // transformed coordinate is out of bounds
-            if (px >= attr->x0 + attr->width || py >= attr->y0 + attr->height) continue;
+            if (px >= attr->width || py >= attr->height) continue;//{ std::cout << "hi\n"; continue; }
             if (px < 0            || py < 0            ) continue;
 
-            int tile_x  = px % 8;
-            int tile_y  = py % 8;
-            int block_x = px / 8;
-            int block_y = py / 8;
+            int tile_x  = px % 8; // x coordinate of pixel within tile
+            int tile_y  = py % 8; // y coordinate of pixel within tile
+            int block_x = px / 8; // x coordinate of tile in vram
+            int block_y = py / 8; // y coordinate of tile in vram
 
             int tileno = attr->tileno + block_y * (attr->width / 8);
             tileno += block_x;
 
-            pixel = decode_obj_pixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
+            pixel = get_obj_pixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
             
-            //std::cout << (int) pixel << "\n";
-            scanline_buffer[x + attr->width] = u16_to_u32_color(pixel);
+            obj_scanline_buffer[qx0 + ix] = u16_to_u32_color(pixel);
         }
     }
 }
 
-u16 GPU::decode_obj_pixel4BPP(u32 addr, int palbank, int x, int y)
+u16 GPU::get_obj_pixel4BPP(u32 addr, int palbank, int x, int y)
 {
-    u32 offset = addr + (y * 4) + (x / 2);
-    //std::cout << std::hex << (int) addr << " " << x << " " << y << "\n";
-    u16 palette_index = mem->read_u8(offset);
+    addr += (y * 4) + (x / 2);
+    
+    u16 palette_index = mem->read_u8(addr);
 
     if (x & 1) { palette_index >>= 4; }
 

@@ -360,6 +360,18 @@ u16 GPU::get_obj_pixel4BPP(u32 addr, int palbank, int x, int y)
     return mem->read_u16(SPRITE_PALETTE + palette_index * sizeof(u16));
 }
 
+u16 GPU::get_obj_pixel8BPP(u32 addr, int palbank, int x, int y)
+{
+    addr += (y * 8) + x;
+    
+    u16 palette_index = mem->read_u8(addr);
+
+    if (palette_index == 0) 
+        return TRANSPARENT;
+
+    return mem->read_u16(SPRITE_PALETTE + palette_index * sizeof(u16));
+}
+
 
 
 

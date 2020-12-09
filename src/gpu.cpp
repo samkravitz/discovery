@@ -280,7 +280,7 @@ void GPU::render_scanline()
         render_obj_scanline();
 
     std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], scanline_buffer, sizeof(scanline_buffer));
-    std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
+    //std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
 }
 
 void GPU::render_obj_scanline()
@@ -307,15 +307,14 @@ void GPU::render_obj_scanline()
         int x, y;
         int px, py;
 
+        int transform[4] = {0x100, 0 , 0x100, 0};
         //std::cout << attr->width << " " << attr->height << "\n";
         //std::cout << attr->x0 << " " << attr->y0 << "\n";
         // render obj
         for (int ix = -attr->hwidth; ix < attr->hwidth; ++ix)
         {
-            x = px = attr->x + ix;
-            y = py = scanline;
-
-            //std::cout << x << " " << y << "\n";
+            x = px = attr->x + ix - (3 * attr->hwidth);
+            y = py = scanline - (3 * attr->hwidth);
 
             // transform affine & double wide affine
             if (attr->obj_mode == 1 || attr->obj_mode == 3)
@@ -323,8 +322,13 @@ void GPU::render_obj_scanline()
                 
             }
 
+            // px = ((transform[0] * ix + transform[1] * 1) >> 8) + (attr->width / 2);
+            // py = ((transform[2] * ix + transform[3] * 1) >> 8) + (attr->height / 2);
+            //std::cout << attr->x0 + attr->width << " " << attr->y0 + attr->height << "\n";
+            std::cout << px << " " << py << "\n";
+
             // transformed coordinate is out of bounds
-            if (px >= attr->width || py >= attr->height) continue;
+            if (px >= attr->x0 + attr->width || py >= attr->y0 + attr->height) continue;
             if (px < 0            || py < 0            ) continue;
 
             int tile_x  = px % 8;
@@ -337,7 +341,8 @@ void GPU::render_obj_scanline()
 
             pixel = decode_obj_pixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
             
-            obj_scanline_buffer[x] = u16_to_u32_color(pixel);
+            //std::cout << (int) pixel << "\n";
+            scanline_buffer[x + attr->width] = u16_to_u32_color(pixel);
         }
     }
 }

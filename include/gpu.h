@@ -100,26 +100,19 @@ class GPU
 
         } objs[NUM_OBJS]; // can support 128 objects
 
-        // video mode draws
+        // video mode renders
         void render();
-        void render_mode0();
-        void render_mode1();
-        void render_mode2();
-        void render_mode3();
-        void render_mode4();
-        void render_mode5();
+        void render_scanline();
+        void render_text_scanline();
+        void render_bitmap_scanline(int);
+        void render_obj_scanline();
 
         void draw_reg_background(int);
         void draw_affine_background(int);
 
         // misc
-        void render_scanline();
-        void render_obj_scanline();
         u16 get_obj_pixel4BPP(u32, int, int, int);
         u16 get_obj_pixel8BPP(u32, int, int);
-        //void draw_sprites();
-        //void draw_regular_sprite(obj_attr);
-        //void draw_affine_sprite(obj_attr);
         void update_attr();
 };
 

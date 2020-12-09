@@ -349,6 +349,7 @@ u16 GPU::get_obj_pixel4BPP(u32 addr, int palbank, int x, int y)
     
     u16 palette_index = mem->read_u8(addr);
 
+    // use top nybble for odd x, even otherwise
     if (x & 1) { palette_index >>= 4; }
 
     palette_index &= 0xF;
@@ -1412,102 +1413,105 @@ void GPU::render_mode5()
 //     }
 // }
 
-// // fills the objs data structure every frame an object needs to be drawn
+// TODO - add queue that holds index of every obj to be drawn this frame
+// fills the objs data structure every frame an object needs to be drawn
 void GPU::update_attr()
 {
     u32 oam_ptr = MEM_OAM_START;
     u16 attr0, attr1, attr2;
-
+    
     // loop through all objs
-    for (int i = 0; i < 1; ++i)
+    for (int i = 0; i < NUM_OBJS; ++i)
     {   
+        obj_attr &obj = objs[i];
+
         attr0 = mem->read_u16_unprotected(oam_ptr); oam_ptr += 2;
         attr1 = mem->read_u16_unprotected(oam_ptr); oam_ptr += 2;
         attr2 = mem->read_u16_unprotected(oam_ptr); oam_ptr += 4;
 
-        objs[i].y0           = attr0 >>  0 & 0xFF;
-        objs[i].obj_mode     = attr0 >>  8 & 0x3;
-        objs[i].gfx_mode     = attr0 >> 10 & 0x3;
-        objs[i].mosaic       = attr0 >> 12 & 0x1;
-        objs[i].color_mode   = attr0 >> 13 & 0x1;
-        objs[i].shape        = attr0 >> 14 & 0x3;
+        obj.y0           = attr0 >>  0 & 0xFF;
+        obj.obj_mode     = attr0 >>  8 & 0x3;
+        obj.gfx_mode     = attr0 >> 10 & 0x3;
+        obj.mosaic       = attr0 >> 12 & 0x1;
+        obj.color_mode   = attr0 >> 13 & 0x1;
+        obj.shape        = attr0 >> 14 & 0x3;
 
-        objs[i].x0           = attr1 >>  0 & 0x1FF;
-        objs[i].affine_index = attr1 >>  9 & 0x1F;
-        objs[i].h_flip       = attr1 >> 12 & 0x1;
-        objs[i].v_flip       = attr1 >> 13 & 0x1;
-        objs[i].size         = attr1 >> 14 & 0x3;
+        obj.x0           = attr1 >>  0 & 0x1FF;
+        obj.affine_index = attr1 >>  9 & 0x1F;
+        obj.h_flip       = attr1 >> 12 & 0x1;
+        obj.v_flip       = attr1 >> 13 & 0x1;
+        obj.size         = attr1 >> 14 & 0x3;
 
-        objs[i].tileno       = attr2 >>  0 & 0x3FF;
-        objs[i].priority     = attr2 >> 10 & 0x3;
-        objs[i].palbank      = attr2 >> 12 & 0xF;
+        obj.tileno       = attr2 >>  0 & 0x3FF;
+        obj.priority     = attr2 >> 10 & 0x3;
+        obj.palbank      = attr2 >> 12 & 0xF;
 
         // get actual dimensions of sprite
-        switch (objs[i].shape)
+        switch (obj.shape)
         {
             case 0:
-                switch (objs[i].size)
+                switch (obj.size)
                 {
-                    case 0: objs[i].width =  8; objs[i].height =  8; break;
-                    case 1: objs[i].width = 16; objs[i].height = 16; break;
-                    case 2: objs[i].width = 32; objs[i].height = 32; break;
-                    case 3: objs[i].width = 64; objs[i].height = 64; break;
+                    case 0: obj.width =  8; obj.height =  8; break;
+                    case 1: obj.width = 16; obj.height = 16; break;
+                    case 2: obj.width = 32; obj.height = 32; break;
+                    case 3: obj.width = 64; obj.height = 64; break;
                 }
                 break;
 
             case 1:
-                switch (objs[i].size)
+                switch (obj.size)
                 {
-                    case 0: objs[i].width = 16; objs[i].height =  8; break;
-                    case 1: objs[i].width = 32; objs[i].height =  8; break;
-                    case 2: objs[i].width = 32; objs[i].height = 16; break;
-                    case 3: objs[i].width = 64; objs[i].height = 32; break;
+                    case 0: obj.width = 16; obj.height =  8; break;
+                    case 1: obj.width = 32; obj.height =  8; break;
+                    case 2: obj.width = 32; obj.height = 16; break;
+                    case 3: obj.width = 64; obj.height = 32; break;
                 }
                 break;
 
             case 2:
-                switch (objs[i].size)
+                switch (obj.size)
                 {
-                    case 0: objs[i].width =  8; objs[i].height = 16; break;
-                    case 1: objs[i].width =  8; objs[i].height = 32; break;
-                    case 2: objs[i].width = 16; objs[i].height = 32; break;
-                    case 3: objs[i].width = 32; objs[i].height = 64; break;
+                    case 0: obj.width =  8; obj.height = 16; break;
+                    case 1: obj.width =  8; obj.height = 32; break;
+                    case 2: obj.width = 16; obj.height = 32; break;
+                    case 3: obj.width = 32; obj.height = 64; break;
                 }
                 break;
 
             default: // prohibited
-                objs[i].width = 0; objs[i].height = 0;
+                obj.width = 0; obj.height = 0;
         }
 
         // hwidth, hheight
-        objs[i].hwidth  = objs[i].width / 2;
-        objs[i].hheight = objs[i].height / 2;
+        obj.hwidth  = obj.width / 2;
+        obj.hheight = obj.height / 2;
 
         // x, y of sprite origin
-        objs[i].x = objs[i].x0 + objs[i].hwidth;
-        objs[i].y = objs[i].y0 + objs[i].hheight;
+        obj.x = obj.x0 + obj.hwidth;
+        obj.y = obj.y0 + obj.hheight;
 
         // get affine matrix if necessary
-        if (objs[i].obj_mode == 1) // affine
+        if (obj.obj_mode == 1) // affine
         {
-            u32 matrix_ptr = MEM_OAM_START + objs[i].affine_index * 32; // each affine entry is 32 bytes across
+            u32 matrix_ptr = MEM_OAM_START + obj.affine_index * 32; // each affine entry is 32 bytes across
 
             // transform P matrix from 8.8f to float
             // P = [pa pb]
             //     [pc pd]
-            objs[i].pa = (s16) mem->read_u16(matrix_ptr +  0x6) / 256.0; 
-            objs[i].pb = (s16) mem->read_u16(matrix_ptr +  0xE) / 256.0;
-            objs[i].pc = (s16) mem->read_u16(matrix_ptr + 0x16) / 256.0;
-            objs[i].pd = (s16) mem->read_u16(matrix_ptr + 0x1E) / 256.0;
+            obj.pa = (s16) mem->read_u16(matrix_ptr +  0x6) / 256.0; 
+            obj.pb = (s16) mem->read_u16(matrix_ptr +  0xE) / 256.0;
+            obj.pc = (s16) mem->read_u16(matrix_ptr + 0x16) / 256.0;
+            obj.pd = (s16) mem->read_u16(matrix_ptr + 0x1E) / 256.0;
 
             // double wide affine
-            if (objs[i].obj_mode = 3)
+            if (obj.obj_mode = 3)
             {
-                objs[i].x += objs[i].hwidth;
-                objs[i].y += objs[i].hheight;
+                obj.x += obj.hwidth;
+                obj.y += obj.hheight;
 
-                objs[i].hwidth  *= 2;
-                objs[i].hheight *= 2;
+                obj.hwidth  *= 2;
+                obj.hheight *= 2;
             }
         }
     }
@@ -1527,44 +1531,3 @@ inline u32 u16_to_u32_color (u16 color_u16)
     color |= (r << 19) | (g << 11) | (b << 3);
     return color;
 }
-
-
-
-
-// attempt at trying to draw a sprite not tile by tile
-// for (u8 hh = 0; hh < height * PX_IN_TILE_COL; ++hh)
-// {
-//     tile_ptr = base_tile_addr + hh * PX_IN_TILE_COL * width;
-//     std::cout << std::hex << tile_ptr << "\n";
-//     for (u16 ww = 0; ww < width * PX_IN_TILE_COL; ++ww)
-//     {
-//         //std::cout << "x: " << ww << " " << "y: " << (int) hh << "\n";
-//         palette_index = mem->read_u8_unprotected(tile_ptr + (ww / 8) * 32);
-//         // x = start_x + w * PX_IN_TILE_ROW + 2 * (i % 4); // s-tiles get left/right px in one read 
-//         // y = start_y + h * PX_IN_TILE_COL + (i / 4);
-
-//         u8 left_pixel = palette_index & 0xF;
-//         u8 right_pixel = (palette_index >> 4) & 0xF;
-        
-//         // add left, right pixel to screen buffer
-//         // pixel value 0 is transparent, so only draw if not 0
-//         if (left_pixel != 0)
-//         {
-//             // multiply by sizeof(u16) because each entry in palram is 2 bytes
-//             color = mem->read_u16_unprotected(SPRITE_PALETTE + left_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
-//             screen_buffer[y0 + hh][x0 + ww] = u16_to_u32_color(color);
-//         }
-
-//         // pixel value 0 is transparent, so only draw if not 0
-//         if (right_pixel != 0)
-//         {
-//             // multiply by sizeof(u16) because each entry in palram is 2 bytes
-//             color = mem->read_u16_unprotected(SPRITE_PALETTE + right_pixel * sizeof(u16) + (palbank * PALBANK_LEN));
-//             screen_buffer[y0 + hh][x0 + ww + 1] = u16_to_u32_color(color);
-//         }
-
-//         ww++;
-
-//         //base_tile_addr += s_tile ? S_TILE_LEN : D_TILE_LEN;
-//     }
-// }

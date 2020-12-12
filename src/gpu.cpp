@@ -374,6 +374,7 @@ void GPU::render_obj_scanline()
         
         //std::cout << attr->pa << " " << attr->pb << " " << attr->pc << " " << attr->pd << "\n";
         //std::cout << (int) attr->palbank << "\n";
+        //std::cout << attr->x0 << " " << attr->y0 << "\n";
         for (int ix = -attr->hwidth; ix < attr->hwidth; ++ix)
         {
             px = px0 + ix;
@@ -381,8 +382,8 @@ void GPU::render_obj_scanline()
             // transform affine & double wide affine
             if (attr->obj_mode == 1 || attr->obj_mode == 3)
             {
-                px = (attr->pa * ix + attr->pb * scanline - attr->hheight);
-                py = (attr->pc * ix + attr->pd * scanline - attr->hheight);
+                px = (attr->pa * ix + attr->pb * (scanline - attr->y0));
+                py = (attr->pc * ix + attr->pd * (scanline - attr->y0));
             }
 
             // transformed coordinate is out of bounds
@@ -487,7 +488,7 @@ void GPU::update_attr()
         obj.y = obj.y0 + obj.hheight;
 
         // get affine matrix if necessary
-        if (obj.obj_mode == 1) // affine
+        if (obj.obj_mode == 1 || obj.obj_mode == 3) // affine
         {
             u32 matrix_ptr = MEM_OAM_START + obj.affine_index * 32; // each affine entry is 32 bytes across
 
@@ -499,11 +500,11 @@ void GPU::update_attr()
             obj.pc = (s16) mem->read_u16(matrix_ptr + 0x16) / 256.0;
             obj.pd = (s16) mem->read_u16(matrix_ptr + 0x1E) / 256.0;
 
-            // obj.x = obj.x0;
-            // obj.y = obj.y0;
+            obj.x = obj.x0;
+            obj.y = obj.y0;
 
-            // obj.x0 = obj.x0 - obj.hwidth;
-            // obj.y0 = obj.y0 - obj.hheight;
+            obj.x0 = obj.x - obj.hwidth;
+            obj.y0 = obj.y - obj.hheight;
 
             // double wide affine
             if (obj.obj_mode = 3)

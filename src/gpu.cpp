@@ -389,13 +389,27 @@ void GPU::render_obj_scanline()
             // transformed coordinate is out of bounds
             if (px >= attr->width || py >= attr->height) continue;
             if (px < 0            || py < 0            ) continue;
-            if (qx0 + ix < 0                           ) continue;
+            if (qx0 + ix < 0      || qx0 + ix >= 240   ) continue;
+            
+            // horizontal / vertical flip
+            if (attr->h_flip) px = attr->width  - px - 1;
+            if (attr->v_flip) py = attr->height - py - 1;
 
             int tile_x  = px % 8; // x coordinate of pixel within tile
             int tile_y  = py % 8; // y coordinate of pixel within tile
             int block_x = px / 8; // x coordinate of tile in vram
             int block_y = py / 8; // y coordinate of tile in vram
 
+            if (attr->color_mode == 1) // 8bpp
+            {
+
+            }
+
+            else // 4bpp
+            {
+                
+            }
+            
             int tileno = attr->tileno + block_y * (attr->width / 8);
             tileno += block_x;
 
@@ -515,6 +529,10 @@ void GPU::update_attr()
                 obj.hwidth  *= 2;
                 obj.hheight *= 2;
             }
+
+            // make sure flips are set to zero
+            obj.v_flip = 0;
+            obj.h_flip = 0;
         }
     }
 }

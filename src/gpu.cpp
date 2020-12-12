@@ -371,7 +371,9 @@ void GPU::render_obj_scanline()
 
         // x, y coordinate of texture after transformation
         int px, py = scanline - attr->y0;
-
+        
+        //std::cout << attr->pa << " " << attr->pb << " " << attr->pc << " " << attr->pd << "\n";
+        //std::cout << (int) attr->palbank << "\n";
         for (int ix = -attr->hwidth; ix < attr->hwidth; ++ix)
         {
             px = px0 + ix;
@@ -379,12 +381,14 @@ void GPU::render_obj_scanline()
             // transform affine & double wide affine
             if (attr->obj_mode == 1 || attr->obj_mode == 3)
             {
-                
+                px = (attr->pa * ix + attr->pb * scanline - attr->hheight);
+                py = (attr->pc * ix + attr->pd * scanline - attr->hheight);
             }
 
             // transformed coordinate is out of bounds
             if (px >= attr->width || py >= attr->height) continue;
             if (px < 0            || py < 0            ) continue;
+            if (qx0 + ix < 0                           ) continue;
 
             int tile_x  = px % 8; // x coordinate of pixel within tile
             int tile_y  = py % 8; // y coordinate of pixel within tile
@@ -433,6 +437,9 @@ void GPU::update_attr()
         obj.tileno       = attr2 >>  0 & 0x3FF;
         obj.priority     = attr2 >> 10 & 0x3;
         obj.palbank      = attr2 >> 12 & 0xF;
+
+        if (obj.x0 >= SCREEN_WIDTH)  obj.x0 -= 512;
+        if (obj.y0 >= SCREEN_HEIGHT) obj.y0 -= 256;
 
         // get actual dimensions of sprite
         switch (obj.shape)
@@ -492,6 +499,12 @@ void GPU::update_attr()
             obj.pc = (s16) mem->read_u16(matrix_ptr + 0x16) / 256.0;
             obj.pd = (s16) mem->read_u16(matrix_ptr + 0x1E) / 256.0;
 
+            // obj.x = obj.x0;
+            // obj.y = obj.y0;
+
+            // obj.x0 = obj.x0 - obj.hwidth;
+            // obj.y0 = obj.y0 - obj.hheight;
+
             // double wide affine
             if (obj.obj_mode = 3)
             {
@@ -519,7 +532,7 @@ u16 GPU::get_obj_pixel4BPP(u32 addr, int palbank, int x, int y)
     if (palette_index == 0) 
         return TRANSPARENT;
 
-    return mem->read_u16(SPRITE_PALETTE + palette_index * sizeof(u16));
+    return mem->read_u16(SPRITE_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
 }
 
 u16 GPU::get_obj_pixel8BPP(u32 addr, int x, int y)

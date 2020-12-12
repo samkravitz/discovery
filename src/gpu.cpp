@@ -370,50 +370,75 @@ void GPU::render_obj_scanline()
         int qx0 = attr->x;      // center of sprite screen space
 
         // x, y coordinate of texture after transformation
-        int px, py = scanline - attr->y0;
+        int px, py;
         
         //std::cout << attr->pa << " " << attr->pb << " " << attr->pc << " " << attr->pd << "\n";
         //std::cout << (int) attr->palbank << "\n";
         //std::cout << attr->x0 << " " << attr->y0 << "\n";
+        //if (attr->v_flip) { py = attr->height - py - 1; std::cout << py << "\n" ; }
+        
         for (int ix = -attr->hwidth; ix < attr->hwidth; ++ix)
         {
             px = px0 + ix;
+            py = scanline - attr->y0;
 
             // transform affine & double wide affine
             if (attr->obj_mode == 1 || attr->obj_mode == 3)
             {
-                px = (attr->pa * ix + attr->pb * (scanline - attr->y0));
-                py = (attr->pc * ix + attr->pd * (scanline - attr->y0));
+                px = attr->pa * ix + attr->pb * py;
+                py = attr->pc * ix + attr->pd * py;
             }
 
+            // horizontal / vertical flip
+            if (attr->h_flip) px = attr->width  - px - 1;
+            if (attr->v_flip) py = attr->height - py - 1;
+            
             // transformed coordinate is out of bounds
             if (px >= attr->width || py >= attr->height) continue;
             if (px < 0            || py < 0            ) continue;
             if (qx0 + ix < 0      || qx0 + ix >= 240   ) continue;
             
-            // horizontal / vertical flip
-            if (attr->h_flip) px = attr->width  - px - 1;
-            if (attr->v_flip) py = attr->height - py - 1;
-
             int tile_x  = px % 8; // x coordinate of pixel within tile
             int tile_y  = py % 8; // y coordinate of pixel within tile
             int block_x = px / 8; // x coordinate of tile in vram
             int block_y = py / 8; // y coordinate of tile in vram
 
+            int tileno = attr->tileno;
+            int pixel;
+
             if (attr->color_mode == 1) // 8bpp
             {
+                if (stat->dispcnt.obj_map_mode == 1) // 1d
+                {
+                    tileno += block_y * (attr->width / 4);
+                }
 
+                else // 2d
+                {
+                    tileno = (tileno & ~1) + block_y * 32;
+                }
+                
+                tileno += block_x * 2;
+
+                pixel = get_obj_pixel8BPP(LOWER_SPRITE_BLOCK + tileno * 32, tile_x, tile_y);
             }
 
             else // 4bpp
             {
-                
-            }
-            
-            int tileno = attr->tileno + block_y * (attr->width / 8);
-            tileno += block_x;
+                if (stat->dispcnt.obj_map_mode == 1) // 1d
+                {
+                    tileno += block_y * (attr->width / 8);
+                }
 
-            pixel = get_obj_pixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
+                else // 2d
+                {
+                    tileno += block_y * 32;
+                }
+
+                tileno += block_x;
+
+                pixel = get_obj_pixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
+            }
             
             obj_scanline_buffer[qx0 + ix] = u16_to_u32_color(pixel);
         }
@@ -577,6 +602,5 @@ inline u32 u16_to_u32_color (u16 color_u16)
     g = color_u16 & 0x1F; color_u16 >>= 5; // bits  6 - 10
     b = color_u16 & 0x1F; color_u16 >>= 5; // bits 11 - 15
 
-    color |= (r << 19) | (g << 11) | (b << 3);
-    return color;
+    return r << 19 | g << 11 | b << 3;
 }

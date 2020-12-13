@@ -381,8 +381,8 @@ void GPU::render_obj_scanline()
             // transform affine & double wide affine
             if (attr->obj_mode == 1 || attr->obj_mode == 3)
             {
-                px = (attr->pa * ix + attr->pb * iy) + attr->hwidth;
-                py = (attr->pc * ix + attr->pd * iy) + attr->hheight;
+                px = (attr->pa * ix + attr->pb * iy) + (attr->width  / 2);
+                py = (attr->pc * ix + attr->pd * iy) + (attr->height / 2);
             }
 
             // horizontal / vertical flip
@@ -535,22 +535,15 @@ void GPU::update_attr()
             obj.pc = (s16) mem->read_u16(matrix_ptr + 0x16) / 256.0;
             obj.pd = (s16) mem->read_u16(matrix_ptr + 0x1E) / 256.0;
 
-            // obj.x = obj.x0;
-            // obj.y = obj.y0;
-
-            // obj.x0 = obj.x - obj.hwidth;
-            // obj.y0 = obj.y - obj.hheight;
-
             // double wide affine
-            // if (obj.obj_mode = 3)
-            // {
-            //     std::cout << "yuhhh\n";
-            //     obj.x += obj.hwidth;
-            //     obj.y += obj.hheight;
-
-            //     obj.hwidth  *= 2;
-            //     obj.hheight *= 2;
-            // }
+            if (obj.obj_mode == 3)
+            {
+                obj.x += obj.width;
+                obj.y += obj.height;
+                
+                obj.hwidth  *= 2;
+                obj.hheight *= 2;
+            }
 
             // make sure flips are set to zero
             obj.v_flip = 0;

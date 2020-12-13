@@ -354,7 +354,7 @@ void GPU::render_obj_scanline()
     u16 pixel;
 
     // loop through all objs
-    for (int i = 0; i < NUM_OBJS; ++i)
+    for (int i = 0; i >= 0; --i)
     {
         attr = &objs[i];
 
@@ -371,12 +371,8 @@ void GPU::render_obj_scanline()
 
         // x, y coordinate of texture after transformation
         int px, py;
-        
-        //std::cout << attr->pa << " " << attr->pb << " " << attr->pc << " " << attr->pd << "\n";
-        //std::cout << (int) attr->palbank << "\n";
-        //std::cout << attr->x0 << " " << attr->y0 << "\n";
-        //if (attr->v_flip) { py = attr->height - py - 1; std::cout << py << "\n" ; }
-        
+        int iy = scanline - attr->height;
+
         for (int ix = -attr->hwidth; ix < attr->hwidth; ++ix)
         {
             px = px0 + ix;
@@ -385,8 +381,8 @@ void GPU::render_obj_scanline()
             // transform affine & double wide affine
             if (attr->obj_mode == 1 || attr->obj_mode == 3)
             {
-                px = attr->pa * ix + attr->pb * py;
-                py = attr->pc * ix + attr->pd * py;
+                px = (attr->pa * ix + attr->pb * iy) + attr->hwidth;
+                py = (attr->pc * ix + attr->pd * iy) + attr->hheight;
             }
 
             // horizontal / vertical flip
@@ -440,7 +436,7 @@ void GPU::render_obj_scanline()
                 pixel = get_obj_pixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
             }
             
-            obj_scanline_buffer[qx0 + ix] = u16_to_u32_color(pixel);
+            if (pixel != TRANSPARENT) obj_scanline_buffer[qx0 + ix] = u16_to_u32_color(pixel);
         }
     }
 }
@@ -453,7 +449,7 @@ void GPU::update_attr()
     u16 attr0, attr1, attr2;
     
     // loop through all objs
-    for (int i = 0; i < NUM_OBJS; ++i)
+    for (int i = 0; i < 1; ++i)
     {   
         obj_attr &obj = objs[i];
 
@@ -539,21 +535,22 @@ void GPU::update_attr()
             obj.pc = (s16) mem->read_u16(matrix_ptr + 0x16) / 256.0;
             obj.pd = (s16) mem->read_u16(matrix_ptr + 0x1E) / 256.0;
 
-            obj.x = obj.x0;
-            obj.y = obj.y0;
+            // obj.x = obj.x0;
+            // obj.y = obj.y0;
 
-            obj.x0 = obj.x - obj.hwidth;
-            obj.y0 = obj.y - obj.hheight;
+            // obj.x0 = obj.x - obj.hwidth;
+            // obj.y0 = obj.y - obj.hheight;
 
             // double wide affine
-            if (obj.obj_mode = 3)
-            {
-                obj.x += obj.hwidth;
-                obj.y += obj.hheight;
+            // if (obj.obj_mode = 3)
+            // {
+            //     std::cout << "yuhhh\n";
+            //     obj.x += obj.hwidth;
+            //     obj.y += obj.hheight;
 
-                obj.hwidth  *= 2;
-                obj.hheight *= 2;
-            }
+            //     obj.hwidth  *= 2;
+            //     obj.hheight *= 2;
+            // }
 
             // make sure flips are set to zero
             obj.v_flip = 0;

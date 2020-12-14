@@ -103,7 +103,7 @@ class GPU
         // video mode renders
         void render();
         void render_scanline();
-        void render_text_scanline();
+        void render_text_scanline(int);
         void render_bitmap_scanline(int);
         void render_obj_scanline();
 

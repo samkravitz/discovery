@@ -58,7 +58,7 @@ GPU::GPU()
     final_screen = SDL_GetWindowSurface(window);
     original_screen = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32, 0, 0, 0, 0);
 
-    scale_rect.w = SCREEN_WIDTH * 2;
+    scale_rect.w = SCREEN_WIDTH  * 2;
     scale_rect.h = SCREEN_HEIGHT * 2;
     scale_rect.x = 0;
     scale_rect.y = 0;
@@ -271,11 +271,19 @@ void GPU::render_scanline()
 
     switch (stat->dispcnt.mode)
     {
+        case 0:
+            for (int i = 3; i >= 0; --i) // bg0 - bg3
+            {
+                if (stat->bg_cnt[i].enabled)
+                    render_text_scanline(i);
+            }
+
+            break;
         case 3:
         case 4:
         case 5:
             render_bitmap_scanline(stat->dispcnt.mode);
-        break;
+            break;
     }
 
     std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], scanline_buffer, sizeof(scanline_buffer));
@@ -286,6 +294,11 @@ void GPU::render_scanline()
         std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
     }
     
+}
+
+void GPU::render_text_scanline(int bg)
+{
+
 }
 
 // render the current scanline for bitmap modes
@@ -354,7 +367,7 @@ void GPU::render_obj_scanline()
     u16 pixel;
 
     // loop through all objs
-    for (int i = 0; i >= 0; --i)
+    for (int i = NUM_OBJS - 1; i >= 0; --i)
     {
         attr = &objs[i];
 
@@ -449,7 +462,7 @@ void GPU::update_attr()
     u16 attr0, attr1, attr2;
     
     // loop through all objs
-    for (int i = 0; i < 1; ++i)
+    for (int i = 0; i < NUM_OBJS; ++i)
     {   
         obj_attr &obj = objs[i];
 

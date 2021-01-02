@@ -1022,7 +1022,7 @@ void arm_7tdmi::software_interrupt(u32 instruction)
     u32 old_cpsr = get_register(cpsr);
     set_state(SVC);
     set_register(r14, get_register(r15) - 4);
-    registers.cpsr.bits.i = 1;
+    registers.cpsr.flags.i = 1;
     update_spsr(old_cpsr, false); // move up
     set_register(r15, 0x08);
     pipeline_full = false;

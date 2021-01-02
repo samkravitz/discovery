@@ -18,7 +18,7 @@
 // data type for special registers
 union status_register
 {
-    struct bits
+    struct flags
     {
         state_t state : 5;
         u8 t : 1;
@@ -29,8 +29,8 @@ union status_register
         u8 c : 1;
         u8 z : 1;
         u8 n : 1;
-    } bits;
-    u32 full;
+    } flags;
+    u32 raw;
 };
 
 class arm_7tdmi
@@ -115,8 +115,8 @@ class arm_7tdmi
         state_t get_state();
         void set_state(state_t s); 
 
-        cpu_mode_t get_mode() { return (cpu_mode_t) registers.cpsr.bits.t; }
-        void set_mode(cpu_mode_t m) { registers.cpsr.bits.t = m; }
+        cpu_mode_t get_mode() { return (cpu_mode_t) registers.cpsr.flags.t; }
+        void set_mode(cpu_mode_t m) { registers.cpsr.flags.t = m; }
 
         u32 get_register(u32);
         void set_register(u32, u32);

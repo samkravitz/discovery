@@ -107,7 +107,7 @@ void arm_7tdmi::swi_VBlankIntrWait()
 {
     // force interrupts to be enabled
     mem->write_u32_unprotected(REG_IME, 0x1);
-    registers.cpsr.bits.i = 0;
+    registers.cpsr.flags.i = 0;
 
     // write 1 to r0, r1
     set_register(r0, 0x1);

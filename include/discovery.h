@@ -42,7 +42,7 @@ class discovery
 
         u32 system_cycles;
 
-        void run_asm(char *);
+        void LoadRom(char *);
 
     private:
         void game_loop();

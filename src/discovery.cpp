@@ -27,7 +27,7 @@ int main(int argc, char **argv)
     if (deb == "-d")
         debug = 1;
     
-    emulator.run_asm(argv[1]);
+    emulator.LoadRom(argv[1]);
     return 0;
 }
 
@@ -174,7 +174,7 @@ void discovery::game_loop()
         }
 
         if (!valid)  {
-            std::cerr << "Invalid state in cpsr: " << (int) cpu->registers.cpsr.full << "\n";
+            std::cerr << "Invalid state in cpsr: " << (int) cpu->registers.cpsr.raw << "\n";
             exit(270);
         }
 
@@ -183,7 +183,7 @@ void discovery::game_loop()
     shutdown();
 }
 
-void discovery::run_asm(char *name)
+void discovery::LoadRom(char *name)
 {
     if (!mem->load_rom(name))
     {
@@ -434,7 +434,7 @@ void discovery::print_debug_info()
 				" -- R15 : 0x" << std::setw(8) << std::setfill('0') << cpu->get_register(15) << "\n";
 
 	
-			std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << cpu->registers.cpsr.full << "\t";
+			std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << cpu->registers.cpsr.raw << "\t";
             if (cpu->get_condition_code_flag(N))
                 std::cout << "N";
             if (cpu->get_condition_code_flag(Z))

@@ -20,7 +20,7 @@ union status_register
 {
     struct flags
     {
-        state_t state : 5;
+        u8 mode : 5;
         u8 t : 1;
         u8 f : 1;
         u8 i : 1;
@@ -107,16 +107,6 @@ class arm_7tdmi
         void execute(u32);
 
         void cycle(u8, u8, u8);
-        
-        // getters / setters
-        u8 get_condition_code_flag(condition_code_flag_t);
-        void set_condition_code_flag(condition_code_flag_t, u8);
-
-        state_t get_state();
-        void set_state(state_t s); 
-
-        cpu_mode_t get_mode() { return (cpu_mode_t) registers.cpsr.flags.t; }
-        void set_mode(cpu_mode_t m) { registers.cpsr.flags.t = m; }
 
         u32 get_register(u32);
         void set_register(u32, u32);
@@ -170,6 +160,7 @@ class arm_7tdmi
         // handle hardware interrupts
         void handle_interrupt();
 
+        Mode get_mode();
     private:
         // safely interface with memory
         u8 read_u8(u32);
@@ -188,9 +179,19 @@ class arm_7tdmi
         void increment_pc();
         void update_cpsr(u32, bool);
         void update_spsr(u32, bool);
-        bool condition_met(condition_t);
+        bool condition_met(Condition);
         bool mem_check_read(u32 &);
         bool mem_check_write(u32 &);
         u8   barrel_shift(u32, u32 &, u8);
         bool check_state();
+
+        // getters / setters
+        u8 get_condition_code_flag(ConditionFlag);
+        void set_condition_code_flag(ConditionFlag, u8);
+
+        State get_state()           { return registers.cpsr.flags.t == 1 ? State::THUMB : State::ARM; }
+        void set_state(State state) { registers.cpsr.flags.t = state == State::THUMB ? 1 : 0; }
+
+        
+        void set_mode(Mode);
 };

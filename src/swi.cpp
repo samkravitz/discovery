@@ -116,7 +116,7 @@ void arm_7tdmi::swi_VBlankIntrWait()
     // std::cout << "b" << ((int) mem->read_u32_unprotected(REG_IE)) << "\n";
     // std::cout << ((int) mem->read_u32_unprotected(REG_IME)) << "\n";
     //exit(0);
-    registers.r15 -= get_mode() == ARM ? 4 : 2;
+    registers.r15 -= get_state() == State::ARM ? 4 : 2;
     pipeline[1] = pipeline[0];
     pipeline[2] = pipeline[0];
     swi_vblank_intr = true;

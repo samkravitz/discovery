@@ -161,22 +161,22 @@ void discovery::game_loop()
 
         valid = false;
         // check for valid cpsr
-        switch (cpu->get_state())
-        {
-            case USR:
-            case FIQ:
-            case IRQ:
-            case SVC:
-            case ABT:
-            case SYS:
-            case UND:
-                valid = true;
-        }
+        // switch (cpu->get_mode())
+        // {
+        //     case Mode::USR:
+        //     case Mode::FIQ:
+        //     case Mode::IRQ:
+        //     case Mode::SVC:
+        //     case Mode::ABT:
+        //     case Mode::SYS:
+        //     case Mode::UND:
+        //         valid = true;
+        // }
 
-        if (!valid)  {
-            std::cerr << "Invalid state in cpsr: " << (int) cpu->registers.cpsr.raw << "\n";
-            exit(270);
-        }
+        // if (!valid)  {
+        //     std::cerr << "Invalid state in cpsr: " << (int) cpu->registers.cpsr.raw << "\n";
+        //     exit(270);
+        // }
 
     }
     
@@ -435,14 +435,14 @@ void discovery::print_debug_info()
 
 	
 			std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << cpu->registers.cpsr.raw << "\t";
-            if (cpu->get_condition_code_flag(N))
-                std::cout << "N";
-            if (cpu->get_condition_code_flag(Z))
-                std::cout << "Z";
-            if (cpu->get_condition_code_flag(C))
-                std::cout << "C";
-            if (cpu->get_condition_code_flag(V))
-                std::cout << "V";
+            // if (cpu->get_condition_code_flag(ConditionFlag::N))
+            //     std::cout << "N";
+            // if (cpu->get_condition_code_flag(ConditionFlag::Z))
+            //     std::cout << "Z";
+            // if (cpu->get_condition_code_flag(ConditionFlag::C))
+            //     std::cout << "C";
+            // if (cpu->get_condition_code_flag(ConditionFlag::V))
+            //     std::cout << "V";
             std::cout << "\n";
             std::cout << "Cycles: " << std::dec << cpu->cycles << "\n";
 }

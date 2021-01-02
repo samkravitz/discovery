@@ -73,7 +73,7 @@ void arm_7tdmi::move_immediate(u16 instruction)
     u16 Rd      = util::bitseq<10, 8>(instruction);
     u16 opcode  = util::bitseq<12, 11>(instruction);
     u32 result;
-    u8 carry = get_condition_code_flag(C);
+    u8 carry = get_condition_code_flag(ConditionFlag::C);
     u32 operand = get_register(Rd);
 
     switch (opcode)
@@ -110,7 +110,7 @@ void arm_7tdmi::alu_thumb(u16 instruction)
     u16 opcode = util::bitseq<9, 6>(instruction);
     u32 op1    = get_register(Rs);
     u32 op2    = get_register(Rd);
-    u8 carry   = get_condition_code_flag(C);
+    u8 carry   = get_condition_code_flag(ConditionFlag::C);
     u32 result;
 
     // cycles
@@ -325,7 +325,7 @@ void arm_7tdmi::hi_reg_ops(u16 instruction)
                 // align to word boundary
                 op1 &= ~3;
                 set_register(r15, op1);
-                set_mode(ARM);
+                set_state(State::ARM);
             }
 
             else
@@ -839,7 +839,7 @@ void arm_7tdmi::multiple_load_store(u16 instruction)
 void arm_7tdmi::conditional_branch(u16 instruction)
 {
     u16 soffset8 = util::bitseq<7, 0>(instruction); // signed 8 bit offset
-    condition_t condition = (condition_t) util::bitseq<11, 8>(instruction);
+    Condition condition = (Condition) util::bitseq<11, 8>(instruction);
     u32 base = get_register(r15);
     u32 jump_address;
     if (!condition_met(condition))
@@ -918,11 +918,11 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction)
 
     // LLE BIOS calls - handle thru BIOS
     u32 old_cpsr = get_register(cpsr);
-    set_state(SVC);
+    set_mode(Mode::SVC);
     set_register(r14, get_register(r15) - 2);
     registers.cpsr.flags.i = 1;
     update_spsr(old_cpsr, false);
-    set_mode(ARM);
+    set_state(State::ARM);
     set_register(r15, 0x08);
     pipeline_full = false;
 

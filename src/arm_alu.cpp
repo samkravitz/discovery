@@ -22,7 +22,7 @@ void arm_7tdmi::branch_exchange(u32 instruction)
     {
         std::cerr << "Undefined behavior: r15 as operand\n";
         std::cerr << std::hex << registers.r15 << "\n";
-        set_state(UND);
+        set_mode(Mode::UND);
         exit(0);
         return;
     }
@@ -35,7 +35,7 @@ void arm_7tdmi::branch_exchange(u32 instruction)
     if ((branch_address & 1) == 1)
     {
         registers.r15 -= 1; // continue at Rn - 1 for thumb mode
-        set_mode(THUMB);
+        set_state(State::THUMB);
     }
 
     // flush pipeline for refill
@@ -164,10 +164,10 @@ void arm_7tdmi::branch_link(u32 instruction)
     // for arithmetic operations that use a carry bit, this will either equal
     // - the carry out bit of the barrel shifter (if a register shift was applied), or
     // - the existing condition code flag from the cpsr
-    u8 carry = carry_out == 2 ? get_condition_code_flag(C) : carry_out;
+    u8 carry = carry_out == 2 ? get_condition_code_flag(ConditionFlag::C) : carry_out;
 
     // decode opcode (bits 24-21)
-    switch((dp_opcodes_t) util::bitseq<24, 21>(instruction))
+    switch((DataProcessingOpcodes) util::bitseq<24, 21>(instruction))
     {
         case AND: 
             result = op1 & op2;
@@ -195,17 +195,17 @@ void arm_7tdmi::branch_link(u32 instruction)
             if (set_condition_code) update_flags_addition(op1, op2, result);
             break;
         case ADC:
-            result = op1 + op2 + get_condition_code_flag(C);
+            result = op1 + op2 + get_condition_code_flag(ConditionFlag::C);
             set_register(Rd, result);
             if (set_condition_code) update_flags_addition(op1, op2, result);
             break;
         case SBC:
-            result = op1 - op2 + get_condition_code_flag(C) - 1;
+            result = op1 - op2 + get_condition_code_flag(ConditionFlag::C) - 1;
             set_register(Rd, result);
             if (set_condition_code) update_flags_subtraction(op1, op2, result);
             break;
         case RSC:
-            result = op2 - op1 + get_condition_code_flag(C) - 1;
+            result = op2 - op1 + get_condition_code_flag(ConditionFlag::C) - 1;
             set_register(Rd, result);
             if (set_condition_code) update_flags_subtraction(op2, op1, result);
             break;
@@ -315,12 +315,12 @@ void arm_7tdmi::multiply(u32 instruction)
     if (set_condition_code_flags)
     {
         u8 new_n_flag = result & 0x80000000 ? 1 : 0; // bit 31 of result
-        set_condition_code_flag(N, new_n_flag);
+        set_condition_code_flag(ConditionFlag::N, new_n_flag);
 
         u8 new_z_flag = result == 0 ? 1 : 0;
-        set_condition_code_flag(Z, new_z_flag);
+        set_condition_code_flag(ConditionFlag::Z, new_z_flag);
 
-        set_condition_code_flag(C, 1); // C is set to a meaningless value
+        set_condition_code_flag(ConditionFlag::C, 1); // C is set to a meaningless value
     }
 
     // cycles: 1S, mI
@@ -387,14 +387,14 @@ void arm_7tdmi::multiply_long(u32 instruction)
         if (set_condition_code)
         {
             u8 new_n_flag = result & 0x8000000000000000 ? 1 : 0; // bit 63 of result
-            set_condition_code_flag(N, new_n_flag);
+            set_condition_code_flag(ConditionFlag::N, new_n_flag);
 
             u8 new_z_flag = result == 0 ? 1 : 0;
-            set_condition_code_flag(Z, new_z_flag);
+            set_condition_code_flag(ConditionFlag::Z, new_z_flag);
 
             // C, V are set to meaningless values
-            set_condition_code_flag(C, 1);
-            set_condition_code_flag(V, 1);
+            set_condition_code_flag(ConditionFlag::C, 1);
+            set_condition_code_flag(ConditionFlag::V, 1);
         }
 
         // determine how many m cycles
@@ -442,14 +442,14 @@ void arm_7tdmi::multiply_long(u32 instruction)
         if (set_condition_code)
         {
             u8 new_n_flag = result & 0x8000000000000000; // bit 63 of result
-            set_condition_code_flag(N, new_n_flag);
+            set_condition_code_flag(ConditionFlag::N, new_n_flag);
 
             u8 new_z_flag = result == 0 ? 1 : 0;
-            set_condition_code_flag(Z, new_z_flag);
+            set_condition_code_flag(ConditionFlag::Z, new_z_flag);
 
             // C, V are set to meaningless values
-            set_condition_code_flag(C, 1);
-            set_condition_code_flag(V, 1);
+            set_condition_code_flag(ConditionFlag::C, 1);
+            set_condition_code_flag(ConditionFlag::V, 1);
         }
 
         // determine how many m cycles
@@ -786,7 +786,7 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
     u32 base          = get_register(Rb);
     int num_registers = 0; // number of set bitseq<> in the register list, should be between 0-16
     int set_registers[16];
-    state_t temp_state = get_state();
+    Mode temp_mode = get_mode();
     bool Rb_in_Rlist = false;
 
     bool r15_in_register_list = ((register_list >> 15) & 0x1) == 1;
@@ -846,7 +846,7 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
 
     // force use user bank registers
     if (load_psr)
-        set_state(USR);
+        set_mode(Mode::USR);
 
     if (load) // load from memory
     { 
@@ -969,7 +969,7 @@ void arm_7tdmi::block_data_transfer(u32 instruction)
     }
 
     if (load_psr)
-        set_state(temp_state); // restore cpu state
+        set_mode(temp_mode); // restore cpu state
     
     // cycles:
     // For normal LDM, nS + 1N + 1I.
@@ -1020,7 +1020,7 @@ void arm_7tdmi::software_interrupt(u32 instruction)
 
     // LLE BIOS calls - handle thru BIOS
     u32 old_cpsr = get_register(cpsr);
-    set_state(SVC);
+    set_mode(Mode::SVC);
     set_register(r14, get_register(r15) - 4);
     registers.cpsr.flags.i = 1;
     update_spsr(old_cpsr, false); // move up

@@ -17,10 +17,10 @@
 namespace util
 {
     // determine which type of operation the instruction is
-    instruction_set_format_t get_instruction_format(u32 instruction);
+    ArmInstruction get_instruction_format(u32 instruction);
 
     // determine which type of thumb operation an instruction is
-    thumb_instruction_format_t get_instruction_format(u16 instruction);
+    ThumbInstruction get_instruction_format(u16 instruction);
     
 
     /* get subset of bits for purposes like destination register, opcode, shifts

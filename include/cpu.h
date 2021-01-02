@@ -8,8 +8,8 @@
  */
 #pragma once
 
-// cpu state
-typedef enum State
+// cpu mode
+enum class Mode
 {
     USR = 0b10000, // The normal ARM program execution state
     FIQ = 0b10001, // Designed to support a data transfer or channel process
@@ -17,28 +17,28 @@ typedef enum State
     SVC = 0b10011, // Protected mode for the operating system
     ABT = 0b10111, // Entered after a data or instruction prefetch abort
     SYS = 0b11111, // A privileged user mode for the operating system
-    UND = 0b11011 // Entered when an undefined instruction is executed
-} state_t;
+    UND = 0b11011  // Entered when an undefined instruction is executed
+};
 
-// cpu mode 
-typedef enum Mode
+// cpu state 
+enum class State
 {
-    ARM = 0,
-    THUMB = 1
-} cpu_mode_t;
+    ARM,
+    THUMB
+};
 
 // condition code flag of program status register
-typedef enum ConditionCodeFlag
+enum class ConditionFlag
 {
     N, // 31st bit 
     Z, // 30th bit
     C, // 29th bit
     V // 28th bit
-} condition_code_flag_t;
+};
 
 // condition field of an instruction
 // first 4 bits of an instruction
-typedef enum Condition
+enum class Condition
 {
     EQ = 0b0000, // Z set,                       equal
     NE = 0b0001, // Z clear,                     not equal
@@ -56,7 +56,7 @@ typedef enum Condition
     LE = 0b1101, // Z set OR (N not equal to V), <=
     AL = 0b1110  // (ignored),                   always
     // 0b1111 is a noop
-} condition_t;
+};
 
 /* see docs/arm_instruction_set_bitfield.png to see a visual of the different types of instructions,
  * here are the abbreviations that I'm using:
@@ -77,7 +77,7 @@ typedef enum Condition
  * CRT - Coprocessor Register Transfer
  * INT - Software Interrupt
  */
-typedef enum InstructionSetFormat
+enum class ArmInstruction
 {
     DP,
     PSR,
@@ -94,7 +94,7 @@ typedef enum InstructionSetFormat
     CDO,
     CRT,
     INT,
-} instruction_set_format_t;
+};
 
 typedef enum DataProcessingOpcodes
 {
@@ -114,29 +114,28 @@ typedef enum DataProcessingOpcodes
     MOV = 0b1101, // op2 (op1 is ignored)
     BIC = 0b1110, // op1 AND NOT op2 (bit clear)
     MVN = 0b1111 // NOT op2 (op1 is ignored)
-} dp_opcodes_t;
+} DataProcessingOpcodes;
 
-// everything postfixed with "T", for thumb :)
-typedef enum ThumbInstructionFormat
+enum class ThumbInstruction
 {
-    MSR_T,    // move shifted register
-    ADDSUB_T, // add/subtract
-    IMM_T,    // move/compare/add/subtract immediate
-    ALU_T,    // ALU operations
-    HI_T,     // Hi register operations
-    PC_T,     // PC relative load
-    MOV_T,    // load/store with register offset
-    MOVS_T,   // load/store sign extended byte/halfword
-    MOVI_T,   // load/store with immediate offset
-    MOVH_T,   // load/store halfword
-    SP_T,     // SP relative load/store
-    LDA_T,    // load address
-    ADDSP_T,  // add offset to stack pointer
-    POP_T,    // push/pop registers
-    MOVM_T,   // multiple load/store
-    B_T,      // conditional branch
-    SWI_T,    // software interrupt
-    BAL_T,    // unconditional branch
-    BL_T,     // long branch with link
-    UND_T   // undefined
-} thumb_instruction_format_t;
+    MSR,    // move shifted register
+    ADDSUB, // add/subtract
+    IMM,    // move/compare/add/subtract immediate
+    ALU,    // ALU operations
+    HI,     // Hi register operations
+    PC,     // PC relative load
+    MOV,    // load/store with register offset
+    MOVS,   // load/store sign extended byte/halfword
+    MOVI,   // load/store with immediate offset
+    MOVH,   // load/store halfword
+    SP,     // SP relative load/store
+    LDA,    // load address
+    ADDSP,  // add offset to stack pointer
+    POP,    // push/pop registers
+    MOVM,   // multiple load/store
+    B,      // conditional branch
+    SWI,    // software interrupt
+    BAL,    // unconditional branch
+    BL,     // long branch with link
+    UND   // undefined
+};

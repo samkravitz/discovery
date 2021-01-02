@@ -6,9 +6,7 @@
  * DATE: June 27, 2020
  * DESCRIPTION: common typedefs throughout arm7tdmi use
  */
-
-#ifndef CPU_H
-#define CPU_H
+#pragma once
 
 // cpu state
 typedef enum State
@@ -142,5 +140,3 @@ typedef enum ThumbInstructionFormat
     BL_T,     // long branch with link
     UND_T   // undefined
 } thumb_instruction_format_t;
-
-#endif // CPU_H

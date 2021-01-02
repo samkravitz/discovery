@@ -7,8 +7,7 @@
  * DATE: July 13, 2020
  * DESCRIPTION: Emulator class declaration
  */
-#ifndef DISCOVERY_H
-#define DISCOVERY_H
+#pragma once
 
 #include "arm_7tdmi.h"
 #include "gpu.h"
@@ -52,5 +51,3 @@ class discovery
         void poll_keys(const SDL_Event &);
         void shutdown();
 };
-
-#endif // DISCOVERY_H

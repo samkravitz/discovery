@@ -7,8 +7,7 @@
  * DESCRIPTION: timer definition
  */
 
-#ifndef TIMER_H
-#define TIMER_H
+#pragma once
 
 #include "common.h"
 
@@ -38,5 +37,3 @@ struct timer
         u16 actual_freq;
 
 };
-
-#endif // TIMER_H

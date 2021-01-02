@@ -7,8 +7,8 @@
  * DATE: July 13, 2020
  * DESCRIPTION: class definition for arm7tdmi
  */
-#ifndef ARM_7TDMI_H
-#define ARM_7TDMI_H
+
+#pragma once
 
 #include "cpu.h"
 #include "memory.h"
@@ -193,6 +193,4 @@ class arm_7tdmi
         bool mem_check_write(u32 &);
         u8   barrel_shift(u32, u32 &, u8);
         bool check_state();
-}; 
-
-#endif // ARM_7TDMI_H
+};

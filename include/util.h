@@ -6,8 +6,8 @@
  * DATE: June 19, 2020
  * DESCRIPTION: utility functions that don't belong in any class
  */
-#ifndef UTIL_H
-#define UTIL_H
+
+#pragma once
 
 #include <bitset>
 
@@ -67,5 +67,3 @@ namespace util
         return subset;
     }
 }
-
-#endif

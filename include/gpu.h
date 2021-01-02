@@ -7,8 +7,7 @@
  * DATE: July 13, 2020
  * DESCRIPTION: class definition for graphics processing unit (gpu)
  */
-#ifndef GPU_H
-#define GPU_H
+#pragma once
 
 #include <SDL2/SDL.h>
 #include <iostream>
@@ -113,5 +112,3 @@ class GPU
         void draw_affine_sprite(obj_attr);
         void update_attr();
 };
-
-#endif // GPU_H

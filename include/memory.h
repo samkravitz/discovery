@@ -7,8 +7,7 @@
  * DATE: July 13, 2020
  * DESCRIPTION: GBA memory class defintion
  */
-#ifndef MEMORY_H
-#define MEMORY_H
+#pragma once
 
 #include <stdlib.h>
 #include <vector>
@@ -111,5 +110,3 @@ class Memory
         void dma2();
         void dma3();
 };
-
-#endif // MEMORY_H

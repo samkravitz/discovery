@@ -8,10 +8,8 @@
  * DESCRIPTION: struct containing status information for the LCD
  */
 
-#ifndef LCD_STAT_H
-#define LCD_STAT_H
+#pragma once
 
-#include <queue>
 #include "common.h"
 
 struct lcd_stat
@@ -58,9 +56,6 @@ struct lcd_stat
         u8 enabled     : 1;
     } bg_cnt[4]; // backgrounds 0-3
 
-    // contains index of oam entry that must be updated
-    std::queue<u8> oam_update;
-
     lcd_stat()
     {
         scanline = 0;
@@ -102,5 +97,3 @@ struct lcd_stat
 
     ~lcd_stat() { }
 };
-
-#endif // LCD_STAT_H

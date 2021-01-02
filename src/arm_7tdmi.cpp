@@ -182,7 +182,7 @@ void arm_7tdmi::execute(u32 instruction)
     switch (get_mode())
     {
         case ARM:
-            if (!condition_met((condition_t) util::get_instruction_subset(instruction, 31, 28)))
+            if (!condition_met((condition_t) util::bitseq<31, 28>(instruction)))
             {
                 increment_pc();
                 cycle(0, 0, 1); // 1I

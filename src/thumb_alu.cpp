@@ -10,10 +10,10 @@
 
 void arm_7tdmi::move_shifted_register(u16 instruction)
 {
-    u16 Rs = util::get_instruction_subset(instruction, 5, 3);
-    u16 Rd = util::get_instruction_subset(instruction, 2, 0); 
-    u32 offset5 = util::get_instruction_subset(instruction, 10, 6); // 5 bit immediate offset
-    u16 shift_type = util::get_instruction_subset(instruction, 12, 11);
+    u16 Rs         = util::bitseq<5, 3>(instruction);
+    u16 Rd         = util::bitseq<2, 0>(instruction); 
+    u32 offset5    = util::bitseq<10, 6>(instruction); // 5 bit immediate offset
+    u16 shift_type = util::bitseq<12, 11>(instruction);
     u32 op1 = get_register(Rs);
 
     // encodings of LSR #0, ASR #0, and ROR #0 should be interpreted as #LSR #2, ASR #32, and ROR #32
@@ -35,14 +35,12 @@ void arm_7tdmi::move_shifted_register(u16 instruction)
 
 void arm_7tdmi::add_sub(u16 instruction)
 {
-    u16 Rs = util::get_instruction_subset(instruction, 5, 3);
-    u16 Rd = util::get_instruction_subset(instruction, 2, 0);
-    u16 Rn_offset3 = util::get_instruction_subset(instruction, 8, 6);
-    bool immediate = util::get_instruction_subset(instruction, 10, 10) == 1;
-    bool add = util::get_instruction_subset(instruction, 9, 9) == 0;
-    u32 op1;
-    u32 op2;
-    u32 result;
+    u16 Rs         = util::bitseq<5, 3>(instruction);
+    u16 Rd         = util::bitseq<2, 0>(instruction);
+    u16 Rn_offset3 = util::bitseq<8, 6>(instruction);
+    bool immediate = util::bitseq<10, 10>(instruction) == 1;
+    bool add       = util::bitseq<9, 9>(instruction) == 0;
+    u32 op1, op2, result;
 
     op1 = get_register(Rs);
 
@@ -71,9 +69,9 @@ void arm_7tdmi::add_sub(u16 instruction)
 
 void arm_7tdmi::move_immediate(u16 instruction)
 {
-    u16 offset8 = util::get_instruction_subset(instruction, 7, 0);
-    u16 Rd = util::get_instruction_subset(instruction, 10, 8);
-    u16 opcode = util::get_instruction_subset(instruction, 12, 11);
+    u16 offset8 = util::bitseq<7, 0>(instruction);
+    u16 Rd      = util::bitseq<10, 8>(instruction);
+    u16 opcode  = util::bitseq<12, 11>(instruction);
     u32 result;
     u8 carry = get_condition_code_flag(C);
     u32 operand = get_register(Rd);
@@ -107,12 +105,12 @@ void arm_7tdmi::move_immediate(u16 instruction)
 
 void arm_7tdmi::alu_thumb(u16 instruction)
 {
-    u16 Rs = util::get_instruction_subset(instruction, 5, 3);
-    u16 Rd = util::get_instruction_subset(instruction, 2, 0); 
-    u16 opcode = util::get_instruction_subset(instruction, 9, 6);
-    u32 op1 = get_register(Rs);
-    u32 op2 = get_register(Rd);
-    u8 carry = get_condition_code_flag(C);
+    u16 Rs     = util::bitseq<5, 3>(instruction);
+    u16 Rd     = util::bitseq<2, 0>(instruction); 
+    u16 opcode = util::bitseq<9, 6>(instruction);
+    u32 op1    = get_register(Rs);
+    u32 op2    = get_register(Rd);
+    u8 carry   = get_condition_code_flag(C);
     u32 result;
 
     // cycles
@@ -233,12 +231,12 @@ void arm_7tdmi::alu_thumb(u16 instruction)
 
 void arm_7tdmi::hi_reg_ops(u16 instruction)
 {
-    u16 Rs = util::get_instruction_subset(instruction, 5, 3);
-    u16 Rd = util::get_instruction_subset(instruction, 2, 0); 
-    u16 opcode = util::get_instruction_subset(instruction, 9, 8);
+    u16 Rs     = util::bitseq<5, 3>(instruction);
+    u16 Rd     = util::bitseq<2, 0>(instruction); 
+    u16 opcode = util::bitseq<9, 8>(instruction);
 
-    bool H1 = util::get_instruction_subset(instruction, 7, 7) == 0x1; // Hi operand flag 1
-    bool H2 = util::get_instruction_subset(instruction, 6, 6) == 0x1; // Hi operand flag 2
+    bool H1 = util::bitseq<7, 7>(instruction) == 0x1; // Hi operand flag 1
+    bool H2 = util::bitseq<6, 6>(instruction) == 0x1; // Hi operand flag 2
 
     // access hi registers (need a 4th bit)
     if (H2) Rs |= 0b1000;
@@ -354,8 +352,8 @@ void arm_7tdmi::hi_reg_ops(u16 instruction)
 
 void arm_7tdmi::pc_rel_load(u16 instruction)
 {
-    u16 Rd = util::get_instruction_subset(instruction, 10, 8); 
-    u16 word8 = util::get_instruction_subset(instruction, 7, 0);
+    u16 Rd = util::bitseq<10, 8>(instruction); 
+    u16 word8 = util::bitseq<7, 0>(instruction);
     u32 base = get_register(r15);
     base &= ~2; // clear bit 1 for word alignment
 
@@ -370,12 +368,12 @@ void arm_7tdmi::pc_rel_load(u16 instruction)
 
 void arm_7tdmi::load_store_reg(u16 instruction)
 {
-    u16 Ro = util::get_instruction_subset(instruction, 8, 6); // offset register
-    u16 Rb = util::get_instruction_subset(instruction, 5, 3); // base register
-    u16 Rd = util::get_instruction_subset(instruction, 2, 0); // destination register
+    u16 Ro = util::bitseq<8, 6>(instruction); // offset register
+    u16 Rb = util::bitseq<5, 3>(instruction); // base register
+    u16 Rd = util::bitseq<2, 0>(instruction); // destination register
 
-    bool load = util::get_instruction_subset(instruction, 11, 11) == 1;
-    bool byte = util::get_instruction_subset(instruction, 10, 10) == 1;
+    bool load = util::bitseq<11, 11>(instruction) == 1;
+    bool byte = util::bitseq<10, 10>(instruction) == 1;
 
     u32 base = get_register(Rb);
     base += get_register(Ro); // add offset to base
@@ -416,12 +414,12 @@ void arm_7tdmi::load_store_reg(u16 instruction)
 
 void arm_7tdmi::load_store_signed_halfword(u16 instruction)
 {
-    u16 Ro = util::get_instruction_subset(instruction, 8, 6); // offset register
-    u16 Rb = util::get_instruction_subset(instruction, 5, 3); // base register
-    u16 Rd = util::get_instruction_subset(instruction, 2, 0); // destination register
+    u16 Ro = util::bitseq<8, 6>(instruction); // offset register
+    u16 Rb = util::bitseq<5, 3>(instruction); // base register
+    u16 Rd = util::bitseq<2, 0>(instruction); // destination register
 
-    bool H = util::get_instruction_subset(instruction, 11, 11) == 1; // H flag
-    bool S = util::get_instruction_subset(instruction, 10, 10) == 1; // sign extended flag
+    bool H = util::bitseq<11, 11>(instruction) == 1; // H flag
+    bool S = util::bitseq<10, 10>(instruction) == 1; // sign extended flag
 
     u32 base = get_register(Rb);
     base += get_register(Ro); // add offset to base
@@ -478,12 +476,12 @@ void arm_7tdmi::load_store_signed_halfword(u16 instruction)
 
 void arm_7tdmi::load_store_immediate(u16 instruction)
 {
-    u16 Rb = util::get_instruction_subset(instruction, 5, 3); // base register
-    u16 Rd = util::get_instruction_subset(instruction, 2, 0); // destination register
-    u16 offset5 = util::get_instruction_subset(instruction, 10, 6); // 5 bit immediate offset
+    u16 Rb      = util::bitseq<5, 3>(instruction);  // base register
+    u16 Rd      = util::bitseq<2, 0>(instruction);  // destination register
+    u16 offset5 = util::bitseq<10, 6>(instruction); // 5 bit immediate offset
 
-    bool byte = util::get_instruction_subset(instruction, 12, 12) == 1;
-    bool load = util::get_instruction_subset(instruction, 11, 11) == 1;
+    bool byte = util::bitseq<12, 12>(instruction) == 1;
+    bool load = util::bitseq<11, 11>(instruction) == 1;
     
     // cycles
     u8 n = 0;
@@ -535,12 +533,12 @@ void arm_7tdmi::load_store_immediate(u16 instruction)
 
 void arm_7tdmi::load_store_halfword(u16 instruction)
 {
-    u16 Rb = util::get_instruction_subset(instruction, 5, 3); // base register
-    u16 Rd = util::get_instruction_subset(instruction, 2, 0); // destination register
-    u16 offset5 = util::get_instruction_subset(instruction, 10, 6); // 5 bit immediate offset
+    u16 Rb      = util::bitseq<5, 3>(instruction);  // base register
+    u16 Rd      = util::bitseq<2, 0>(instruction);  // destination register
+    u16 offset5 = util::bitseq<10, 6>(instruction); // 5 bit immediate offset
 
     offset5 <<= 1; // assembler places #imm >> 1 in word5 to ensure halfword alignment
-    bool load = util::get_instruction_subset(instruction, 11, 11) == 1;
+    bool load = util::bitseq<11, 11>(instruction) == 1;
 
     // cycles
     u8 n = 0;
@@ -573,9 +571,9 @@ void arm_7tdmi::load_store_halfword(u16 instruction)
 
 void arm_7tdmi::sp_load_store(u16 instruction)
 {
-    u16 Rd = util::get_instruction_subset(instruction, 10, 8); // destination register
-    u16 word8 = util::get_instruction_subset(instruction, 7, 0); // 8 bit immediate offset
-    bool load = util::get_instruction_subset(instruction, 11, 11) == 1;
+    u16 Rd    = util::bitseq<10, 8>(instruction); // destination register
+    u16 word8 = util::bitseq<7, 0>(instruction);  // 8 bit immediate offset
+    bool load = util::bitseq<11, 11>(instruction) == 1;
 
     // cycles
     u8 n = 0;
@@ -610,9 +608,9 @@ void arm_7tdmi::sp_load_store(u16 instruction)
 
 void arm_7tdmi::load_address(u16 instruction)
 {
-    u16 Rd = util::get_instruction_subset(instruction, 10, 8); // destination register
-    u16 word8 = util::get_instruction_subset(instruction, 7, 0); // 8 bit immediate offset
-    bool sp = util::get_instruction_subset(instruction, 11, 11) == 1; // stack pointer if true, else PC
+    u16 Rd    = util::bitseq<10, 8>(instruction);       // destination register
+    u16 word8 = util::bitseq<7, 0>(instruction);        // 8 bit immediate offset
+    bool sp   = util::bitseq<11, 11>(instruction) == 1; // stack pointer if true, else PC
     u32 base;
 
     word8 <<= 2; // assembler places #imm >> 2 in word8 to ensure word alignment
@@ -622,8 +620,9 @@ void arm_7tdmi::load_address(u16 instruction)
         base = get_register(r13);
     }
     
+    // pc
     else
-    { // pc
+    {
         base = get_register(r15);
         base &= ~2; // force bit 1 of PC to 0
     }
@@ -638,8 +637,8 @@ void arm_7tdmi::load_address(u16 instruction)
 
 void arm_7tdmi::add_offset_to_sp(u16 instruction)
 {
-    u16 sword8 = util::get_instruction_subset(instruction, 6, 0); // 7 bit signed immediate value
-    bool positive = util::get_instruction_subset(instruction, 7, 7) == 0; // sign bit of sword8
+    u16 sword8 = util::bitseq<6, 0>(instruction); // 7 bit signed immediate value
+    bool positive = util::bitseq<7, 7>(instruction) == 0; // sign bit of sword8
 
     sword8 <<= 2; // assembler places #imm >> 2 in word8 to ensure word alignment
 
@@ -658,9 +657,9 @@ void arm_7tdmi::add_offset_to_sp(u16 instruction)
 
 void arm_7tdmi::push_pop(u16 instruction)
 {
-    bool load = util::get_instruction_subset(instruction, 11, 11) == 1;
-    bool R = util::get_instruction_subset(instruction, 8, 8) == 1; // PC/LR bit
-    u32 base = get_register(r13); // base address at SP
+    bool load = util::bitseq<11, 11>(instruction) == 1;
+    bool R    = util::bitseq<8, 8>(instruction) == 1; // PC/LR bit
+    u32 base  = get_register(r13); // base address at SP
 
     int num_registers = 0; // number of set bits in the register list, should be between 0-8
     int set_registers[8];
@@ -761,9 +760,9 @@ void arm_7tdmi::push_pop(u16 instruction)
 
 void arm_7tdmi::multiple_load_store(u16 instruction)
 {
-    u16 Rb = util::get_instruction_subset(instruction, 10, 8); // base register
-    bool load = util::get_instruction_subset(instruction, 11, 11) == 1;
-    u32 base = get_register(Rb);
+    u16 Rb    = util::bitseq<10, 8>(instruction); // base register
+    bool load = util::bitseq<11, 11>(instruction) == 1;
+    u32 base  = get_register(Rb);
 
     // cycles
     u8 n = 0;
@@ -839,8 +838,8 @@ void arm_7tdmi::multiple_load_store(u16 instruction)
 
 void arm_7tdmi::conditional_branch(u16 instruction)
 {
-    u16 soffset8 = util::get_instruction_subset(instruction, 7, 0); // signed 8 bit offset
-    condition_t condition = (condition_t) util::get_instruction_subset(instruction, 11, 8);
+    u16 soffset8 = util::bitseq<7, 0>(instruction); // signed 8 bit offset
+    condition_t condition = (condition_t) util::bitseq<11, 8>(instruction);
     u32 base = get_register(r15);
     u32 jump_address;
     if (!condition_met(condition))
@@ -933,7 +932,7 @@ void arm_7tdmi::software_interrupt_thumb(u16 instruction)
 
 void arm_7tdmi::unconditional_branch(u16 instruction)
 {
-    u16 offset11 = util::get_instruction_subset(instruction, 10, 0); // signed 11 bit offset
+    u16 offset11 = util::bitseq<10, 0>(instruction); // signed 11 bit offset
     u32 base = get_register(r15);
     u32 jump_address;
 
@@ -969,8 +968,8 @@ void arm_7tdmi::unconditional_branch(u16 instruction)
 
 void arm_7tdmi::long_branch_link(u16 instruction)
 {
-    u32 offset = util::get_instruction_subset(instruction, 10, 0); // long branch offset
-    bool H = util::get_instruction_subset(instruction, 11, 11) == 1; // high/low offset bit
+    u32 offset = util::bitseq<10, 0>(instruction);       // long branch offset
+    bool H     = util::bitseq<11, 11>(instruction) == 1; // high/low offset bit
     u32 base;
 
     if (H) // instruction 2

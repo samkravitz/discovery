@@ -12,7 +12,6 @@
 #include <bitset>
 
 #include "common.h"
-#include "cpu.h"
 
 namespace util
 {

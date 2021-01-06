@@ -15,6 +15,7 @@
 #include "lcd_stat.h"
 #include "common.h"
 #include "timer.h"
+#include "mmio.h"
 
 // start and end addresses of internal memory regions
 constexpr u32 MEM_BIOS_END          = 0x3FFF;

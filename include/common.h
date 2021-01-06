@@ -42,6 +42,138 @@ constexpr u32 r15  = 15;
 constexpr u32 cpsr = 16;
 constexpr u32 spsr = 17;
 
+// cpu mode
+enum class Mode
+{
+    USR = 0b10000, // The normal ARM program execution state
+    FIQ = 0b10001, // Designed to support a data transfer or channel process
+    IRQ = 0b10010, // Used for general-purpose interrupt handling
+    SVC = 0b10011, // Protected mode for the operating system
+    ABT = 0b10111, // Entered after a data or instruction prefetch abort
+    SYS = 0b11111, // A privileged user mode for the operating system
+    UND = 0b11011  // Entered when an undefined instruction is executed
+};
+
+// cpu state 
+enum class State
+{
+    ARM,
+    THUMB
+};
+
+// condition code flag of program status register
+enum class ConditionFlag
+{
+    N, // 31st bit 
+    Z, // 30th bit
+    C, // 29th bit
+    V // 28th bit
+};
+
+// condition field of an instruction
+// first 4 bits of an instruction
+enum class Condition
+{
+    EQ = 0b0000, // Z set,                       equal
+    NE = 0b0001, // Z clear,                     not equal
+    CS = 0b0010, // C set,                       unsigned >=
+    CC = 0b0011, // C clear,                     unsigned <
+    MI = 0b0100, // N set,                       negative
+    PL = 0b0101, // N clear,                     positive or 0
+    VS = 0b0110, // V set,                       overflow
+    VC = 0b0111, // V clear,                     no overflow
+    HI = 0b1000, // C set and Z clear,           unsigned >
+    LS = 0b1001, // C clear or Z set,            unsigned <=
+    GE = 0b1010, // N equals V,                  >=
+    LT = 0b1011, // N not equal to V,            <
+    GT = 0b1100, // Z clear AND (N equals V),    >
+    LE = 0b1101, // Z set OR (N not equal to V), <=
+    AL = 0b1110  // (ignored),                   always
+    // 0b1111 is a noop
+};
+
+/* see docs/arm_instruction_set_bitfield.png to see a visual of the different types of instructions,
+ * here are the abbreviations that I'm using:
+ * 
+ * DP - Data Processing
+ * PSR - PSR Transfer
+ * MUL - Multiply 
+ * MULL - Multiply long
+ * SDS - Single Data Swap
+ * BEX - Branch and Exchange
+ * HDT - Halfword Data Transfer
+ * SDT - Single Data Transfer
+ * UNDEF - Undefined
+ * BDT - Block Data Transfer
+ * B - Branch
+ * CDT -  Coprocessor Data Transfer
+ * CDO - Coprocessor Data Operation
+ * CRT - Coprocessor Register Transfer
+ * INT - Software Interrupt
+ */
+enum class ArmInstruction
+{
+    DP,
+    PSR,
+    MUL,
+    MULL, 
+    SWP,
+    BEX,
+    HDT,
+    SDT,
+    UNDEF,
+    BDT,
+    B,
+    CDT,
+    CDO,
+    CRT,
+    INT,
+};
+
+typedef enum DataProcessingOpcodes
+{
+    AND = 0b0000, // op1 AND op2
+    EOR = 0b0001, // op1 XOR op2
+    SUB = 0b0010, // op1 - op2
+    RSB = 0b0011, // op2 - op1
+    ADD = 0b0100, // op1 + op2
+    ADC = 0b0101, // op1 + op2 + carry
+    SBC = 0b0110, // op1 - op2 + carry - 1
+    RSC = 0b0111, // op2 - op1 + carry - 1
+    TST = 0b1000, // as AND, but result is not written
+    TEQ = 0b1001, // as EOR, but result is not written
+    CMP = 0b1010, // as SUB, but result is not written
+    CMN = 0b1011, // as ADD, but result is not written
+    ORR = 0b1100, // op1 OR op2
+    MOV = 0b1101, // op2 (op1 is ignored)
+    BIC = 0b1110, // op1 AND NOT op2 (bit clear)
+    MVN = 0b1111 // NOT op2 (op1 is ignored)
+} DataProcessingOpcodes;
+
+enum class ThumbInstruction
+{
+    MSR,    // move shifted register
+    ADDSUB, // add/subtract
+    IMM,    // move/compare/add/subtract immediate
+    ALU,    // ALU operations
+    HI,     // Hi register operations
+    PC,     // PC relative load
+    MOV,    // load/store with register offset
+    MOVS,   // load/store sign extended byte/halfword
+    MOVI,   // load/store with immediate offset
+    MOVH,   // load/store halfword
+    SP,     // SP relative load/store
+    LDA,    // load address
+    ADDSP,  // add offset to stack pointer
+    POP,    // push/pop registers
+    MOVM,   // multiple load/store
+    B,      // conditional branch
+    SWI,    // software interrupt
+    BAL,    // unconditional branch
+    BL,     // long branch with link
+    UND   // undefined
+};
+
 // IRQ bits
 constexpr u32 IRQ_VBLANK  = 1 << 0;
 constexpr u32 IRQ_HBLANK  = 1 << 1;
@@ -57,85 +189,3 @@ constexpr u32 IRQ_DMA2    = 1 << 10;
 constexpr u32 IRQ_DMA3    = 1 << 11;
 constexpr u32 IRQ_KEYPAD  = 1 << 12;
 constexpr u32 IRQ_GAMEPAK = 1 << 13;
-
-// LCD I/O Registers
-constexpr u32 REG_DISPCNT  = 0x4000000;
-constexpr u32 REG_DISPSTAT = 0x4000004;
-constexpr u32 REG_VCOUNT   = 0x4000006;
-
-constexpr u32 REG_BG0CNT   = 0x4000008;
-constexpr u32 REG_BG1CNT   = 0x400000A;
-constexpr u32 REG_BG2CNT   = 0x400000C;
-constexpr u32 REG_BG3CNT   = 0x400000E;
-
-constexpr u32 REG_BG0HOFS  = 0x4000010;
-constexpr u32 REG_BG1HOFS  = 0x4000014;
-constexpr u32 REG_BG2HOFS  = 0x4000018;
-constexpr u32 REG_BG3HOFS  = 0x400001C;
-
-constexpr u32 REG_BG0VOFS  = 0x4000012;
-constexpr u32 REG_BG1VOFS  = 0x4000016;
-constexpr u32 REG_BG2VOFS  = 0x400001A;
-constexpr u32 REG_BG3VOFS  = 0x400001E;
-
-// affine BG registers
-constexpr u32 REG_BG2X     = 0x4000028;
-constexpr u32 REG_BG2Y     = 0x400002C;
-constexpr u32 REG_BG2PA    = 0x4000020;
-constexpr u32 REG_BG2PB    = 0x4000022;
-constexpr u32 REG_BG2PC    = 0x4000024;
-constexpr u32 REG_BG2PD    = 0x4000026;
-
-constexpr u32 REG_BG3X     = 0x4000038;
-constexpr u32 REG_BG3Y     = 0x400003C;
-constexpr u32 REG_BG3PA    = 0x4000030;
-constexpr u32 REG_BG3PB    = 0x4000032;
-constexpr u32 REG_BG3PC    = 0x4000034;
-constexpr u32 REG_BG3PD    = 0x4000036;
-
-constexpr u32 REG_WIN0H    = 0x4000040;
-constexpr u32 REG_WIN1H    = 0x4000042;
-constexpr u32 REG_WIN0V    = 0x4000044;
-constexpr u32 REG_WIN1V    = 0x4000046;
-constexpr u32 REG_WININ    = 0x4000048;
-constexpr u32 REG_WINOUT   = 0x400004A;
-
-constexpr u32 REG_MOSAIC   = 0x400004C;
-
-// Sound registers
-
-// DMA Transfer Channels
-constexpr u32 REG_DMA0SAD  = 0x40000B0;
-constexpr u32 REG_DMA0DAD  = 0x40000B4;
-constexpr u32 REG_DMA0CNT  = 0x40000B8;
-constexpr u32 REG_DMA1SAD  = 0x40000BC;
-constexpr u32 REG_DMA1DAD  = 0x40000C0;
-constexpr u32 REG_DMA1CNT  = 0x40000C4;
-constexpr u32 REG_DMA2SAD  = 0x40000C8;
-constexpr u32 REG_DMA2DAD  = 0x40000CC;
-constexpr u32 REG_DMA2CNT  = 0x40000D0;
-constexpr u32 REG_DMA3SAD  = 0x40000D4;
-constexpr u32 REG_DMA3DAD  = 0x40000D8;
-constexpr u32 REG_DMA3CNT  = 0x40000DC;
-
-// Timer Registers
-constexpr u32 REG_TM0D     = 0x4000100;
-constexpr u32 REG_TM0CNT   = 0x4000102;
-constexpr u32 REG_TM1D     = 0x4000104;
-constexpr u32 REG_TM1CNT   = 0x4000106;
-constexpr u32 REG_TM2D     = 0x4000108;
-constexpr u32 REG_TM2CNT   = 0x400010A;
-constexpr u32 REG_TM3D     = 0x400010C;
-constexpr u32 REG_TM3CNT   = 0x400010E;
-
-// Keypad Input
-constexpr u32 REG_KEYINPUT = 0x4000130;
-constexpr u32 REG_KEYCNT   = 0x4000132;
-
-// Serial Communication
-
-// Interrupt, Waitstate, and Power down control
-constexpr u32 REG_IE       = 0x4000200; // interrupt enable register
-constexpr u32 REG_IF       = 0x4000202; // interrupt request flags
-constexpr u32 WAITCNT      = 0x4000204; // waitstate control
-constexpr u32 REG_IME      = 0x4000208; // master interrupt enable

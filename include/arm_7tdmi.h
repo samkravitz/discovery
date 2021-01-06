@@ -10,28 +10,10 @@
 
 #pragma once
 
-#include "cpu.h"
 #include "memory.h"
 #include "util.h"
 #include "gpu.h"
-
-// data type for special registers
-union status_register
-{
-    struct flags
-    {
-        u8 mode : 5;
-        u8 t : 1;
-        u8 f : 1;
-        u8 i : 1;
-        u32 reserved : 20;
-        u8 v : 1;
-        u8 c : 1;
-        u8 z : 1;
-        u8 n : 1;
-    } flags;
-    u32 raw;
-};
+#include "mmio.h"
 
 class arm_7tdmi
 {
@@ -39,6 +21,24 @@ class arm_7tdmi
         arm_7tdmi();
         ~arm_7tdmi();
         
+        // data type for special registers
+        union status_register
+        {
+            struct flags
+            {
+                u8 mode : 5;
+                u8 t : 1;
+                u8 f : 1;
+                u8 i : 1;
+                u32 reserved : 20;
+                u8 v : 1;
+                u8 c : 1;
+                u8 z : 1;
+                u8 n : 1;
+            } flags;
+            u32 raw;
+        };
+
         Memory *mem;
 
         u32  pipeline[3];

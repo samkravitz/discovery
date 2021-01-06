@@ -3,7 +3,7 @@
  * See LICENSE.txt for full license text
  * Author: Sam Kravitz
  * 
- * FILE: memory.cpp
+ * FILE: Memory.cpp
  * DATE: July 13, 2020
  * DESCRIPTION: Implementation of memory related functions
  */
@@ -12,7 +12,7 @@
 #include <experimental/filesystem>
 #include <string.h>
 
-#include "memory.h"
+#include "Memory.h"
 
 namespace fs = std::experimental::filesystem;
 
@@ -25,12 +25,12 @@ Memory::Memory()
     timers[1] = NULL;
     timers[2] = NULL;
     timers[3] = NULL;
-    reset();
+    Reset();
 }
 
 Memory::~Memory() { }
 
-void Memory::reset()
+void Memory::Reset()
 {
     // default cycle accesses for wait statae
     n_cycles = 4;
@@ -63,10 +63,10 @@ void Memory::reset()
     }
 
     // write all 1s to keypad (all keys cleared)
-    write_u32_unprotected(REG_KEYINPUT, 0b1111111111);
+    Write32Unsafe(REG_KEYINPUT, 0b1111111111);
 }
 
-bool Memory::load_rom(char *name)
+bool Memory::LoadRom(char *name)
 {
     std::ifstream rom(name, std::ios::in | std::ios::binary);
 
@@ -146,7 +146,7 @@ bool Memory::load_rom(char *name)
     return true;
 }
 
-bool Memory::load_bios()
+bool Memory::LoadBios()
 {
     // bios must be called gba_bios.bin
     std::ifstream bios("gba_bios.bin", std::ios::in | std::ios::binary);
@@ -164,20 +164,20 @@ bool Memory::load_bios()
     return true;
 }
 
-u32 Memory::read_u32(u32 address)
+u32 Memory::Read32(u32 address)
 {
-    return (read_u8(address + 3) << 24)
-    | (read_u8(address + 2) << 16)
-    | (read_u8(address + 1) << 8)
-    | read_u8(address);
+    return (Read8(address + 3) << 24)
+    | (Read8(address + 2) << 16)
+    | (Read8(address + 1) << 8)
+    | Read8(address);
 }
 
-u16 Memory::read_u16(u32 address)
+u16 Memory::Read16(u32 address)
 {
-    return (read_u8(address + 1) << 8) | read_u8(address);
+    return (Read8(address + 1) << 8) | Read8(address);
 }
 
-u8 Memory::read_u8(u32 address)
+u8 Memory::Read8(u32 address)
 {
     // get memory region for mirrors
     switch (address >> 24)
@@ -259,16 +259,16 @@ u8 Memory::read_u8(u32 address)
     {
         // IO reg
         case REG_DISPSTAT:
-            result |= stat->dispstat.in_vBlank ? 0b1      : 0b0;       // bit 0 set in vblank, clear in vdraw
-            result |= stat->dispstat.in_hBlank ? 0b10     : 0b00;      // bit 1 set in hblank, clear in hdraw
-            result |= stat->dispstat.vcs       ? 0b100    : 0b000;     // bit 2
-            result |= stat->dispstat.vbi       ? 0b1000   : 0b0000;    // bit 3
-            result |= stat->dispstat.hbi       ? 0b10000  : 0b00000;   // bit 4
-            result |= stat->dispstat.vci       ? 0b100000 : 0b000000;  // bit 5
+            result |= stat->DisplayStatus.in_vBlank ? 0b1      : 0b0;       // bit 0 set in vblank, clear in vdraw
+            result |= stat->DisplayStatus.in_hBlank ? 0b10     : 0b00;      // bit 1 set in hblank, clear in hdraw
+            result |= stat->DisplayStatus.vcs       ? 0b100    : 0b000;     // bit 2
+            result |= stat->DisplayStatus.vbi       ? 0b1000   : 0b0000;    // bit 3
+            result |= stat->DisplayStatus.hbi       ? 0b10000  : 0b00000;   // bit 4
+            result |= stat->DisplayStatus.vci       ? 0b100000 : 0b000000;  // bit 5
             return result;
         
         case REG_DISPSTAT + 1:
-            return stat->dispstat.vct;
+            return stat->DisplayStatus.vct;
 
         case REG_VCOUNT:
             return stat->scanline;
@@ -302,21 +302,21 @@ u8 Memory::read_u8(u32 address)
     }
 }
 
-void Memory::write_u32(u32 address, u32 value)
+void Memory::Write32(u32 address, u32 value)
 {
-    write_u8(address    , (value >>  0) & 0xFF);
-    write_u8(address + 1, (value >>  8) & 0xFF);
-    write_u8(address + 2, (value >> 16) & 0xFF);
-    write_u8(address + 3, (value >> 24) & 0xFF);
+    Write8(address    , (value >>  0) & 0xFF);
+    Write8(address + 1, (value >>  8) & 0xFF);
+    Write8(address + 2, (value >> 16) & 0xFF);
+    Write8(address + 3, (value >> 24) & 0xFF);
 }
 
-void Memory::write_u16(u32 address, u16 value)
+void Memory::Write16(u32 address, u16 value)
 {
-    write_u8(address    , (value >> 0) & 0xFF);
-    write_u8(address + 1, (value >> 8) & 0xFF);
+    Write8(address    , (value >> 0) & 0xFF);
+    Write8(address + 1, (value >> 8) & 0xFF);
 }
 
-void Memory::write_u8(u32 address, u8 value)
+void Memory::Write8(u32 address, u8 value)
 {
 
     switch (address >> 24)
@@ -356,7 +356,7 @@ void Memory::write_u8(u32 address, u8 value)
         case 0x7:
             address &= MEM_OAM_END;
             
-            if (!stat->dispcnt.hb && stat->dispstat.in_hBlank)
+            if (!stat->DisplayControl.hb && stat->DisplayStatus.in_hBlank)
                 return;
 
             break;
@@ -410,89 +410,89 @@ void Memory::write_u8(u32 address, u8 value)
     {
         // REG_DISPCNT
         case REG_DISPCNT:
-            stat->dispcnt.mode                  = value >> 0 & 0x7; // bits 0-2     
-            stat->dispcnt.gb                    = value >> 3 & 0x1; // bit 3
-            stat->dispcnt.ps                    = value >> 4 & 0x1; // bit 4
-            stat->dispcnt.hb                    = value >> 5 & 0x1; // bit 5
-            stat->dispcnt.obj_map_mode          = value >> 6 & 0x1; // bit 6
-            stat->dispcnt.fb                    = value >> 7 & 0x1; // bit 7    
+            stat->DisplayControl.mode                  = value >> 0 & 0x7; // bits 0-2     
+            stat->DisplayControl.gb                    = value >> 3 & 0x1; // bit 3
+            stat->DisplayControl.ps                    = value >> 4 & 0x1; // bit 4
+            stat->DisplayControl.hb                    = value >> 5 & 0x1; // bit 5
+            stat->DisplayControl.obj_map_mode          = value >> 6 & 0x1; // bit 6
+            stat->DisplayControl.fb                    = value >> 7 & 0x1; // bit 7    
         break;
 
         case REG_DISPCNT + 1:
-            stat->bg_cnt[0].enabled             = value >> 0 & 0x1; // bit 8
-            stat->bg_cnt[1].enabled             = value >> 1 & 0x1; // bit 9
-            stat->bg_cnt[2].enabled             = value >> 2 & 0x1; // bit A
-            stat->bg_cnt[3].enabled             = value >> 3 & 0x1; // bit B
-            stat->dispcnt.obj_enabled           = value >> 4 & 0x1; // bit C
-            stat->dispcnt.win_enabled           = value >> 5 & 0x7; // bits D-F
+            stat->BgControl[0].enabled             = value >> 0 & 0x1; // bit 8
+            stat->BgControl[1].enabled             = value >> 1 & 0x1; // bit 9
+            stat->BgControl[2].enabled             = value >> 2 & 0x1; // bit A
+            stat->BgControl[3].enabled             = value >> 3 & 0x1; // bit B
+            stat->DisplayControl.obj_enabled           = value >> 4 & 0x1; // bit C
+            stat->DisplayControl.win_enabled           = value >> 5 & 0x7; // bits D-F
         break;
 
         // REG_DISPSTAT
         case REG_DISPSTAT:
             // skip bits 0-2, unwritable
-            stat->dispstat.vbi = value >> 3 & 1;
-            stat->dispstat.hbi = value >> 4 & 1;
-            stat->dispstat.vci = value >> 5 & 1;
+            stat->DisplayStatus.vbi = value >> 3 & 1;
+            stat->DisplayStatus.hbi = value >> 4 & 1;
+            stat->DisplayStatus.vci = value >> 5 & 1;
         break;
 
         case REG_DISPSTAT + 1:
-            stat->dispstat.vct = value;
+            stat->DisplayStatus.vct = value;
         break;
 
         // REG_BG0CNT
         case REG_BG0CNT:
-            stat->bg_cnt[0].priority      = value >> 0 & 0x3; // bits 0-1
-            stat->bg_cnt[0].cbb           = value >> 2 & 0x3; // bits 2-3
-            stat->bg_cnt[0].mosaic        = value >> 6 & 0x1; // bit  6
-            stat->bg_cnt[0].color_mode    = value >> 7 & 0x1; // bit  7
+            stat->BgControl[0].priority      = value >> 0 & 0x3; // bits 0-1
+            stat->BgControl[0].cbb           = value >> 2 & 0x3; // bits 2-3
+            stat->BgControl[0].mosaic        = value >> 6 & 0x1; // bit  6
+            stat->BgControl[0].color_mode    = value >> 7 & 0x1; // bit  7
         break;
 
         case REG_BG0CNT + 1:
-            stat->bg_cnt[0].sbb           = value >> 0 & 0x1F; // bits 8-C
-            stat->bg_cnt[0].affine_wrap   = value >> 5 & 0x1;  // bit  D
-            stat->bg_cnt[0].size          = value >> 6 & 0x3;  // bits E-F
+            stat->BgControl[0].sbb           = value >> 0 & 0x1F; // bits 8-C
+            stat->BgControl[0].affine_wrap   = value >> 5 & 0x1;  // bit  D
+            stat->BgControl[0].size          = value >> 6 & 0x3;  // bits E-F
         break;
 
         // REG_BG1CNT
         case REG_BG1CNT:
-            stat->bg_cnt[1].priority      = value >> 0 & 0x3; // bits 0-1
-            stat->bg_cnt[1].cbb           = value >> 2 & 0x3; // bits 2-3
-            stat->bg_cnt[1].mosaic        = value >> 6 & 0x1; // bit  6
-            stat->bg_cnt[1].color_mode    = value >> 7 & 0x1; // bit  7
+            stat->BgControl[1].priority      = value >> 0 & 0x3; // bits 0-1
+            stat->BgControl[1].cbb           = value >> 2 & 0x3; // bits 2-3
+            stat->BgControl[1].mosaic        = value >> 6 & 0x1; // bit  6
+            stat->BgControl[1].color_mode    = value >> 7 & 0x1; // bit  7
         break;
 
         case REG_BG1CNT + 1:
-            stat->bg_cnt[1].sbb           = value >> 0 & 0x1F; // bits 8-C
-            stat->bg_cnt[1].affine_wrap   = value >> 5 & 0x1;  // bit  D
-            stat->bg_cnt[1].size          = value >> 6 & 0x3;  // bits E-F
+            stat->BgControl[1].sbb           = value >> 0 & 0x1F; // bits 8-C
+            stat->BgControl[1].affine_wrap   = value >> 5 & 0x1;  // bit  D
+            stat->BgControl[1].size          = value >> 6 & 0x3;  // bits E-F
         break;
 
         // REG_BG2CNT
         case REG_BG2CNT:
-            stat->bg_cnt[2].priority      = value >> 0 & 0x3; // bits 0-1
-            stat->bg_cnt[2].cbb           = value >> 2 & 0x3; // bits 2-3
-            stat->bg_cnt[2].mosaic        = value >> 6 & 0x1; // bit  6
-            stat->bg_cnt[2].color_mode    = value >> 7 & 0x1; // bit  7
+            stat->BgControl[2].priority      = value >> 0 & 0x3; // bits 0-1
+            stat->BgControl[2].cbb           = value >> 2 & 0x3; // bits 2-3
+            stat->BgControl[2].mosaic        = value >> 6 & 0x1; // bit  6
+            stat->BgControl[2].color_mode    = value >> 7 & 0x1; // bit  7
         break;
 
         case REG_BG2CNT + 1:
-            stat->bg_cnt[2].sbb           = value >> 0 & 0x1F; // bits 8-C
-            stat->bg_cnt[2].affine_wrap   = value >> 5 & 0x1;  // bit  D
-            stat->bg_cnt[2].size          = value >> 6 & 0x3;  // bits E-F
+            stat->BgControl[2].sbb           = value >> 0 & 0x1F; // bits 8-C
+            stat->BgControl[2].affine_wrap   = value >> 5 & 0x1;  // bit  D
+            stat->BgControl[2].size          = value >> 6 & 0x3;  // bits E-F
         break;
 
         // REG_BG3CNT
         case REG_BG3CNT:
-            stat->bg_cnt[3].priority      = value >> 0 & 0x3; // bits 0-1
-            stat->bg_cnt[3].cbb           = value >> 2 & 0x3; // bits 2-3
-            stat->bg_cnt[3].mosaic        = value >> 6 & 0x1; // bit  6
-            stat->bg_cnt[3].color_mode    = value >> 7 & 0x1; // bit  7
+            stat->BgControl[3].priority      = value >> 0 & 0x3; // bits 0-1
+            stat->BgControl[3].cbb           = value >> 2 & 0x3; // bits 2-3
+            stat->BgControl[3].mosaic        = value >> 6 & 0x1; // bit  6
+            stat->BgControl[3].color_mode    = value >> 7 & 0x1; // bit  7
         break;
 
         case REG_BG3CNT + 1:
-            stat->bg_cnt[3].sbb           = value >> 0 & 0x1F; // bits 8-C
-            stat->bg_cnt[3].affine_wrap   = value >> 5 & 0x1;  // bit  D
-            stat->bg_cnt[3].size          = value >> 6 & 0x3;  // bits E-F
+            stat->BgControl[3].sbb           = value >> 0 & 0x1F; // bits 8-C
+            stat->BgControl[3].affine_wrap   = value >> 5 & 0x1;  // bit  D
+            stat->BgControl[3].size          = value >> 6 & 0x3;  // bits E-F
         break;
         
         // write into waitstate ctl
@@ -536,7 +536,7 @@ void Memory::write_u8(u32 address, u8 value)
             if (dma[0].enable && dma[0].mode == 0) // immediate mode
             {
                 std::cout << "DMA0 immediate\n";
-                _dma(0);
+                _Dma(0);
 
                 // disable DMA after immediate transfer
                 dma[0].enable = 0;
@@ -565,7 +565,7 @@ void Memory::write_u8(u32 address, u8 value)
             if (dma[1].enable && dma[1].mode == 0) // immediate mode
             {
                 std::cout << "DMA1 immediate\n";
-                _dma(1);
+                _Dma(1);
 
                 // disable DMA after immediate transfer
                 dma[1].enable = 0;
@@ -594,7 +594,7 @@ void Memory::write_u8(u32 address, u8 value)
             if (dma[2].enable && dma[2].mode == 0) // immediate mode
             {
                 std::cout << "DMA2 immediate\n";
-                _dma(2);
+                _Dma(2);
 
                 // disable DMA after immediate transfer
                 dma[2].enable = 0;
@@ -623,7 +623,7 @@ void Memory::write_u8(u32 address, u8 value)
             if (dma[3].enable && dma[3].mode == 0) // immediate mode
             {
                 std::cout << "DMA3 immediate\n";
-                _dma(3);
+                _Dma(3);
 
                 // disable DMA after immediate transfer
                 dma[3].enable = 0;
@@ -731,63 +731,63 @@ void Memory::write_u8(u32 address, u8 value)
     }
 }
 
-u32 Memory::read_u32_unprotected(u32 address)
+u32 Memory::Read32Unsafe(u32 address)
 {
-    return (read_u8_unprotected(address + 3) << 24)
-    | (read_u8_unprotected(address + 2) << 16)
-    | (read_u8_unprotected(address + 1) << 8)
-    | read_u8_unprotected(address);
+    return (Read8Unsafe(address + 3) << 24)
+    | (Read8Unsafe(address + 2) << 16)
+    | (Read8Unsafe(address + 1) << 8)
+    | Read8Unsafe(address);
 }
 
-u16 Memory::read_u16_unprotected(u32 address)
+u16 Memory::Read16Unsafe(u32 address)
 {
-    return (read_u8_unprotected(address + 1) << 8) | read_u8_unprotected(address);
+    return (Read8Unsafe(address + 1) << 8) | Read8Unsafe(address);
 }
 
-u8 Memory::read_u8_unprotected(u32 address)
+u8 Memory::Read8Unsafe(u32 address)
 {
     return memory[address];
 }
 
-void Memory::write_u32_unprotected(u32 address, u32 value)
+void Memory::Write32Unsafe(u32 address, u32 value)
 {
-    write_u8_unprotected(address, value & 0xFF);
-    write_u8_unprotected(address + 1, (value >> 8) & 0xFF);
-    write_u8_unprotected(address + 2, (value >> 16) & 0xFF);
-    write_u8_unprotected(address + 3, (value >> 24) & 0xFF);
+    Write8Unsafe(address, value & 0xFF);
+    Write8Unsafe(address + 1, (value >> 8) & 0xFF);
+    Write8Unsafe(address + 2, (value >> 16) & 0xFF);
+    Write8Unsafe(address + 3, (value >> 24) & 0xFF);
 }
 
-void Memory::write_u16_unprotected(u32 address, u16 value)
+void Memory::Write16Unsafe(u32 address, u16 value)
 {
-    write_u8_unprotected(address, value & 0xFF);
-    write_u8_unprotected(address + 1, (value >> 8) & 0xFF);
+    Write8Unsafe(address, value & 0xFF);
+    Write8Unsafe(address + 1, (value >> 8) & 0xFF);
 }
 
-void Memory::write_u8_unprotected(u32 address, u8 value)
+void Memory::Write8Unsafe(u32 address, u8 value)
 {
     memory[address] = value;
 }
 
-void Memory::_dma(int n)
+void Memory::_Dma(int n)
 {
     switch (n)
     {
-        case 0: dma0(); break;
-        case 1: dma1(); break;
-        case 2: dma2(); break;
-        case 3: dma3(); break;
+        case 0: Dma0(); break;
+        case 1: Dma1(); break;
+        case 2: Dma2(); break;
+        case 3: Dma3(); break;
 
         default: // should never happen
             std::cerr << "Error: accessing unknown DMA: " << n << "\n";
     }
 }
 
-void Memory::dma0()
+void Memory::Dma0()
 {
     std::cout << "DMA 0\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
-    src_ptr  = original_src  = read_u32_unprotected(REG_DMA0SAD) & 0x7FFFFFF; // 27 bit
-    dest_ptr = original_dest = read_u32_unprotected(REG_DMA0DAD) & 0x7FFFFFF; // 27 bit;
+    src_ptr  = original_src  = Read32Unsafe(REG_DMA0SAD) & 0x7FFFFFF; // 27 bit
+    dest_ptr = original_dest = Read32Unsafe(REG_DMA0DAD) & 0x7FFFFFF; // 27 bit;
 
     std::cout << "DMA 0 start addr: " << std::hex << src_ptr << "\n";
     std::cout << "DMA 0 dest addr: " << std::hex << dest_ptr << "\n";
@@ -824,7 +824,7 @@ void Memory::dma0()
         for (int i = 0; i < dma[0].num_transfers; ++i)
         {
             // copy memory from src address to dest address
-            write_u32(dest_ptr, read_u32(src_ptr));
+            Write32(dest_ptr, Read32(src_ptr));
 
             // increment src, dest ptrs
             src_ptr  += src_inc  * sizeof(u32);
@@ -838,7 +838,7 @@ void Memory::dma0()
         for (int i = 0; i < dma[0].num_transfers; ++i)
         {
             // copy memory from src address to dest address
-            write_u16(dest_ptr, read_u16(src_ptr));
+            Write16(dest_ptr, Read16(src_ptr));
 
             // increment src, dest ptrs
             src_ptr  += src_inc  * sizeof(u16);
@@ -851,10 +851,10 @@ void Memory::dma0()
         dest_ptr = original_dest;
 
     // write back dest
-    write_u32_unprotected(REG_DMA0DAD, dest_ptr);
+    Write32Unsafe(REG_DMA0DAD, dest_ptr);
 
     // write back src
-    write_u32_unprotected(REG_DMA0SAD, src_ptr);
+    Write32Unsafe(REG_DMA0SAD, src_ptr);
     
 
     // turn off this transfer if repeat bit is not set
@@ -868,12 +868,12 @@ void Memory::dma0()
     std::cout << "DMA 0 Done\n";
 }
 
-void Memory::dma1()
+void Memory::Dma1()
 {
     std::cout << "DMA 1\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
-    src_ptr  = original_src  = read_u32_unprotected(REG_DMA1SAD) & 0xFFFFFFF; // 28 bit
-    dest_ptr = original_dest = read_u32_unprotected(REG_DMA1DAD) & 0x7FFFFFF; // 27 bit
+    src_ptr  = original_src  = Read32Unsafe(REG_DMA1SAD) & 0xFFFFFFF; // 28 bit
+    dest_ptr = original_dest = Read32Unsafe(REG_DMA1DAD) & 0x7FFFFFF; // 27 bit
 
     std::cout << "DMA 1 start addr: " << std::hex << src_ptr << "\n";
     std::cout << "DMA 1 dest addr: " << std::hex << dest_ptr << "\n";
@@ -911,7 +911,7 @@ void Memory::dma1()
         for (int i = 0; i < dma[1].num_transfers; ++i)
         {
             // copy memory from src address to dest address
-            write_u32(dest_ptr, read_u32(src_ptr));
+            Write32(dest_ptr, Read32(src_ptr));
 
             // increment src, dest ptrs
             src_ptr  += src_inc  * sizeof(u32);
@@ -925,7 +925,7 @@ void Memory::dma1()
         for (int i = 0; i < dma[1].num_transfers; ++i)
         {
             // copy memory from src address to dest address
-            write_u16(dest_ptr, read_u16(src_ptr));
+            Write16(dest_ptr, Read16(src_ptr));
 
             // increment src, dest ptrs
             src_ptr  += src_inc  * sizeof(u16);
@@ -938,10 +938,10 @@ void Memory::dma1()
         dest_ptr = original_dest;
 
     // write back dest
-    write_u32_unprotected(REG_DMA1DAD, dest_ptr);
+    Write32Unsafe(REG_DMA1DAD, dest_ptr);
 
     // write back src
-    write_u32_unprotected(REG_DMA1SAD, src_ptr);
+    Write32Unsafe(REG_DMA1SAD, src_ptr);
     
 
     // turn off this transfer if repeat bit is not set
@@ -955,12 +955,12 @@ void Memory::dma1()
     std::cout << "DMA 1 Done\n";
 }
 
-void Memory::dma2()
+void Memory::Dma2()
 {
     std::cout << "DMA 2\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
-    src_ptr  = original_src  = read_u32_unprotected(REG_DMA2SAD) & 0xFFFFFFF; // 28 bit
-    dest_ptr = original_dest = read_u32_unprotected(REG_DMA2DAD) & 0x7FFFFFF; // 27 bit;
+    src_ptr  = original_src  = Read32Unsafe(REG_DMA2SAD) & 0xFFFFFFF; // 28 bit
+    dest_ptr = original_dest = Read32Unsafe(REG_DMA2DAD) & 0x7FFFFFF; // 27 bit;
 
     std::cout << "DMA 2 start addr: " << std::hex << src_ptr << "\n";
     std::cout << "DMA 2 dest addr: " << std::hex << dest_ptr << "\n";
@@ -998,7 +998,7 @@ void Memory::dma2()
         for (int i = 0; i < dma[2].num_transfers; ++i)
         {
             // copy memory from src address to dest address
-            write_u32(dest_ptr, read_u32(src_ptr));
+            Write32(dest_ptr, Read32(src_ptr));
 
             // increment src, dest ptrs
             src_ptr  += src_inc  * sizeof(u32);
@@ -1012,7 +1012,7 @@ void Memory::dma2()
         for (int i = 0; i < dma[2].num_transfers; ++i)
         {
             // copy memory from src address to dest address
-            write_u16(dest_ptr, read_u16(src_ptr));
+            Write16(dest_ptr, Read16(src_ptr));
 
             // increment src, dest ptrs
             src_ptr  += src_inc  * sizeof(u16);
@@ -1025,10 +1025,10 @@ void Memory::dma2()
         dest_ptr = original_dest;
 
     // write back dest
-    write_u32_unprotected(REG_DMA2DAD, dest_ptr);
+    Write32Unsafe(REG_DMA2DAD, dest_ptr);
 
     // write back src
-    write_u32_unprotected(REG_DMA2SAD, src_ptr);
+    Write32Unsafe(REG_DMA2SAD, src_ptr);
     
 
     // turn off this transfer if repeat bit is not set
@@ -1042,12 +1042,12 @@ void Memory::dma2()
     std::cout << "DMA 2 Done\n";
 }
 
-void Memory::dma3()
+void Memory::Dma3()
 {
     //std::cout << "DMA 3\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
-    src_ptr  = original_src  = read_u32_unprotected(REG_DMA3SAD) & 0xFFFFFFF; // 28 bit
-    dest_ptr = original_dest = read_u32_unprotected(REG_DMA3DAD) & 0xFFFFFFF; // 28 bit;
+    src_ptr  = original_src  = Read32Unsafe(REG_DMA3SAD) & 0xFFFFFFF; // 28 bit
+    dest_ptr = original_dest = Read32Unsafe(REG_DMA3DAD) & 0xFFFFFFF; // 28 bit;
 
     // increment for destination, src
     int dest_inc, src_inc;
@@ -1086,7 +1086,7 @@ void Memory::dma3()
         for (int i = 0; i < dma[3].num_transfers; ++i)
         {
             // copy memory from src address to dest address
-            write_u32(dest_ptr, read_u32(src_ptr));
+            Write32(dest_ptr, Read32(src_ptr));
 
             // increment src, dest ptrs
             src_ptr  += src_inc  * sizeof(u32);
@@ -1103,7 +1103,7 @@ void Memory::dma3()
         for (int i = 0; i < dma[3].num_transfers; ++i)
         {
             // copy memory from src address to dest address
-            write_u16(dest_ptr, read_u16(src_ptr));
+            Write16(dest_ptr, Read16(src_ptr));
 
             // increment src, dest ptrs
             src_ptr  += src_inc  * sizeof(u16);
@@ -1116,10 +1116,10 @@ void Memory::dma3()
         dest_ptr = original_dest;
 
     // write back dest
-    write_u32_unprotected(REG_DMA3DAD, dest_ptr);
+    Write32Unsafe(REG_DMA3DAD, dest_ptr);
 
     // write back src
-    write_u32_unprotected(REG_DMA3SAD, src_ptr);
+    Write32Unsafe(REG_DMA3SAD, src_ptr);
     
 
     // turn off this transfer if repeat bit is not set

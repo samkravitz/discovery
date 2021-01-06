@@ -3,29 +3,29 @@
  * See LICENSE.txt for full license text
  * Author: Sam Kravitz
  * 
- * FILE: discovery.h
+ * FILE: Discovery.h
  * DATE: July 13, 2020
  * DESCRIPTION: Emulator class declaration
  */
 #pragma once
 
-#include "arm_7tdmi.h"
-#include "gpu.h"
-#include "memory.h"
-#include "timer.h"
+#include "Arm7Tdmi.h"
+#include "PPU.h"
+#include "Memory.h"
+#include "Timer.h"
 
-class discovery
+class Discovery
 {
     public:
-        discovery();
+        Discovery();
 
-        arm_7tdmi *cpu;
-        GPU       *gpu;
+        Arm7Tdmi  *cpu;
+        PPU       *ppu;
         Memory    *mem;
-        lcd_stat  *stat;
-        timer     *timers[4];
+        LcdStat   *stat;
+        Timer     *timers[4];
 
-        struct gamepad
+        struct Gamepad
         {
             u8 a;
             u8 b;
@@ -38,16 +38,17 @@ class discovery
             u8 r;
             u8 l;
             u16 keys;
-        } gamepad;
+        } Gamepad;
 
         u32 system_cycles;
 
         void LoadRom(char *);
 
     private:
-        void game_loop();
+        void GameLoop();
+        void PollKeys(const SDL_Event &);
+        void ShutDown();
+
         void game_loop_debug();
         void print_debug_info();
-        void poll_keys(const SDL_Event &);
-        void shutdown();
 };

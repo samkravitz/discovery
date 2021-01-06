@@ -11,10 +11,10 @@
 
 #include "common.h"
 
-struct timer
+struct Timer
 {
     public:
-        timer()
+        Timer()
         {
             // zero time
             data = 0;
@@ -26,7 +26,7 @@ struct timer
             actual_freq = 0;
         }
 
-        ~timer() { }
+        ~Timer() { }
 
         u16 data;
         u16 start_data;

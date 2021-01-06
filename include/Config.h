@@ -4,19 +4,16 @@
  * 
  * FILE: config.h
  * DATE: December 7th, 2020
- * DESCRIPTION: Global configuration data for discovery
+ * DESCRIPTION: global configuration data for discovery
  */
-#ifndef CONFIG_H
-#define CONFIG_H
+#pragma once
 
 #include "common.h"
 
-namespace config
+namespace Config
 {
     std::string rom_name = "";
     std::string bios_name = "gba_bios.bin";
 
     bool debug = false;
 }
-
-#endif // CONFIG_H

@@ -1,8 +1,18 @@
+/* discovery
+ * License: GPLv2
+ * See LICENSE.txt for full license text
+ * Author: Sam Kravitz
+ * 
+ * FILE: PPU.cpp
+ * DATE: January 6th, 2021
+ * DESCRIPTION: Implementation of PPU class
+ */
+
 #include <ctime>
 #include <sstream>
 #include <iomanip>
 
-#include "gpu.h"
+#include "PPU.h"
 
 #define S_TILE_LEN 32
 #define D_TILE_LEN 64
@@ -23,16 +33,16 @@
 // transparent pixel color
 #define TRANSPARENT 0x8000
 
-u32 u16_to_u32_color(u16);
+u32 U16ToU32Color(u16);
 
-GPU::GPU()
+PPU::PPU()
 {
     mem  = NULL;
     stat = NULL;
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
-        std::cerr << "Could not initialize GPU" << "\n";
+        std::cerr << "Could not initialize PPU" << "\n";
         exit(2);
     }
 
@@ -63,16 +73,16 @@ GPU::GPU()
     scale_rect.x = 0;
     scale_rect.y = 0;
 
-    reset();
+    Reset();
 }
 
-GPU::~GPU()
+PPU::~PPU()
 {
-    std::cout << "GPU:: Shutdown\n";
+    std::cout << "PPU:: Shutdown\n";
     SDL_Quit();
 }
 
-void GPU::reset()
+void PPU::Reset()
 {
     cycles    = 0;
     scanline  = 0;
@@ -114,8 +124,8 @@ void GPU::reset()
     }
 }
 
-// 1 clock cycle of the gpu
-void GPU::cycle()
+// 1 clock cycle of the PPU
+void PPU::Tick()
 {
     cycles++;
 
@@ -123,12 +133,12 @@ void GPU::cycle()
     if (cycles == HDRAW)
     {
         if (scanline < SCREEN_HEIGHT)
-            render_scanline();
+            RenderScanline();
 
-        stat->dispstat.in_hBlank = true;
+        stat->DisplayStatus.in_hBlank = true;
 
         // fire HBlank interrupt if necessary
-        if (stat->dispstat.hbi)
+        if (stat->DisplayStatus.hbi)
         {
             mem->memory[REG_IF] |= IRQ_HBLANK;
             //std::cout << "HBlank interrupt\n";
@@ -141,7 +151,7 @@ void GPU::cycle()
         {
             if (mem->dma[i].enable && mem->dma[i].mode == 2) // start at HBLANK
             {
-                mem->_dma(i);
+                mem->_Dma(i);
                 std::cout << "DMA" << i << " HBLANK\n";
             }
         }
@@ -149,11 +159,11 @@ void GPU::cycle()
         // start VBlank
         if (scanline == VDRAW)
         {
-            render();
-            stat->dispstat.in_vBlank = true;
+            Render();
+            stat->DisplayStatus.in_vBlank = true;
 
             // fire Vblank interrupt if necessary
-            if (stat->dispstat.vbi)
+            if (stat->DisplayStatus.vbi)
             {
                 //std::cout << "VBlank interrupt\n";
                 mem->memory[REG_IF] |= IRQ_VBLANK;
@@ -164,7 +174,7 @@ void GPU::cycle()
             {
                 if (mem->dma[i].enable && mem->dma[i].mode == 1) // start at VBLANK
                 {
-                    mem->_dma(i);
+                    mem->_Dma(i);
                     std::cout << "DMA" << i << " VBLANK\n";
                 }
             }
@@ -196,7 +206,7 @@ void GPU::cycle()
         // completed full refresh
         if (scanline == VDRAW + VBLANK)
         {
-            stat->dispstat.in_vBlank = false;
+            stat->DisplayStatus.in_vBlank = false;
             scanline = 0;
             stat->scanline = 0;
         }
@@ -208,13 +218,13 @@ void GPU::cycle()
         }
 
         // scanline has reached trigger value
-        if (scanline == stat->dispstat.vct)
+        if (scanline == stat->DisplayStatus.vct)
         {
             // set trigger status
-            stat->dispstat.vcs = 1;
+            stat->DisplayStatus.vcs = 1;
             
             // scanline interrupt is triggered if requested
-            if (stat->dispstat.vci)
+            if (stat->DisplayStatus.vci)
             {
                 mem->memory[REG_IF] |= IRQ_VCOUNT;
                 //std::cout << "Scanline interrupt\n";
@@ -225,15 +235,15 @@ void GPU::cycle()
         // scanline is not equal to trigger value, reset this bit
         else
         {
-            stat->dispstat.vcs = 0;
+            stat->DisplayStatus.vcs = 0;
         }
         
         cycles = 0;
-        stat->dispstat.in_hBlank = false;
+        stat->DisplayStatus.in_hBlank = false;
     }
 }
 
-void GPU::render()
+void PPU::Render()
 {
     //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
     
@@ -255,54 +265,54 @@ void GPU::render()
     SDL_UpdateWindowSurface(window);
 
     // update objs data structure
-    if (stat->dispcnt.obj_enabled)
-        update_attr();
+    if (stat->DisplayControl.obj_enabled)
+        UpdateAttr();
 
     // zero screen buffer for next frame
-    if (stat->dispcnt.fb)
+    if (stat->DisplayControl.fb)
         memset(screen_buffer, 0xFF, sizeof(screen_buffer)); // white
     else
         memset(screen_buffer, 0, sizeof(screen_buffer));    // black
 }
 
-void GPU::render_scanline()
+void PPU::RenderScanline()
 {
     std::memset(scanline_buffer, 0, sizeof(scanline_buffer));
 
-    switch (stat->dispcnt.mode)
+    switch (stat->DisplayControl.mode)
     {
         case 0:
             for (int i = 3; i >= 0; --i) // bg0 - bg3
             {
-                if (stat->bg_cnt[i].enabled)
-                    render_text_scanline(i);
+                if (stat->BgControl[i].enabled)
+                    RenderScanlineText(i);
             }
 
             break;
         case 3:
         case 4:
         case 5:
-            render_bitmap_scanline(stat->dispcnt.mode);
+            RenderScanlineBitmap(stat->DisplayControl.mode);
             break;
     }
 
     std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], scanline_buffer, sizeof(scanline_buffer));
 
-    if (stat->dispcnt.obj_enabled)
+    if (stat->DisplayControl.obj_enabled)
     {
-        render_obj_scanline();
+        RenderScanlineObj();
         std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
     }
     
 }
 
-void GPU::render_text_scanline(int bg)
+void PPU::RenderScanlineText(int bg)
 {
 
 }
 
 // render the current scanline for bitmap modes
-void GPU::render_bitmap_scanline(int mode)
+void PPU::RenderScanlineBitmap(int mode)
 {
     u8 palette_index;
     u16 pixel;
@@ -315,8 +325,8 @@ void GPU::render_bitmap_scanline(int mode)
 
             for (int i = 0; i < SCREEN_WIDTH; ++i)
             {
-                pixel = mem->read_u16_unprotected(pal_ptr); pal_ptr += 2;
-                scanline_buffer[i] = u16_to_u32_color(pixel);
+                pixel = mem->Read16Unsafe(pal_ptr); pal_ptr += 2;
+                scanline_buffer[i] = U16ToU32Color(pixel);
             }
             break;
         
@@ -324,15 +334,15 @@ void GPU::render_bitmap_scanline(int mode)
             pal_ptr = MEM_VRAM_START + (scanline * SCREEN_WIDTH);
 
             // page 2 starts at 0x600A000
-            if (stat->dispcnt.ps)
+            if (stat->DisplayControl.ps)
                 pal_ptr += 0xA000;
 
             for (int i = 0; i < SCREEN_WIDTH; ++i)
             {
-                palette_index = mem->read_u8_unprotected(pal_ptr++);
+                palette_index = mem->Read8Unsafe(pal_ptr++);
                 // multiply by sizeof(u16) because each entry in palram is 2 bytes
-                pixel = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
-                scanline_buffer[i] = u16_to_u32_color(pixel);
+                pixel = mem->Read16Unsafe(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
+                scanline_buffer[i] = U16ToU32Color(pixel);
             }
 
             break;
@@ -343,27 +353,27 @@ void GPU::render_bitmap_scanline(int mode)
             pal_ptr = MEM_VRAM_START + (scanline * 160);
 
             // page 2 starts at 0x600A000
-            if (stat->dispcnt.ps)
+            if (stat->DisplayControl.ps)
                 pal_ptr += 0xA000;
 
             for (int i = 0; i < 160; ++i)
             {
-                palette_index = mem->read_u8_unprotected(pal_ptr++);
+                palette_index = mem->Read8Unsafe(pal_ptr++);
                 // multiply by sizeof(u16) because each entry in palram is 2 bytes
-                pixel = mem->read_u16_unprotected(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
-                scanline_buffer[i] = u16_to_u32_color(pixel);
+                pixel = mem->Read16Unsafe(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
+                scanline_buffer[i] = U16ToU32Color(pixel);
             }
 
             break;
     }
 }
 
-void GPU::render_obj_scanline()
+void PPU::RenderScanlineObj()
 {
     // zero obj scanline
     std::memset(obj_scanline_buffer, 0, sizeof(obj_scanline_buffer));
 
-    obj_attr *attr;
+    ObjAttr *attr;
     u16 pixel;
 
     // loop through all objs
@@ -417,7 +427,7 @@ void GPU::render_obj_scanline()
 
             if (attr->color_mode == 1) // 8bpp
             {
-                if (stat->dispcnt.obj_map_mode == 1) // 1d
+                if (stat->DisplayControl.obj_map_mode == 1) // 1d
                 {
                     tileno += block_y * (attr->width / 4);
                 }
@@ -429,12 +439,12 @@ void GPU::render_obj_scanline()
                 
                 tileno += block_x * 2;
 
-                pixel = get_obj_pixel8BPP(LOWER_SPRITE_BLOCK + tileno * 32, tile_x, tile_y);
+                pixel = GetObjPixel8BPP(LOWER_SPRITE_BLOCK + tileno * 32, tile_x, tile_y);
             }
 
             else // 4bpp
             {
-                if (stat->dispcnt.obj_map_mode == 1) // 1d
+                if (stat->DisplayControl.obj_map_mode == 1) // 1d
                 {
                     tileno += block_y * (attr->width / 8);
                 }
@@ -446,17 +456,17 @@ void GPU::render_obj_scanline()
 
                 tileno += block_x;
 
-                pixel = get_obj_pixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
+                pixel = GetObjPixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
             }
             
-            if (pixel != TRANSPARENT) obj_scanline_buffer[qx0 + ix] = u16_to_u32_color(pixel);
+            if (pixel != TRANSPARENT) obj_scanline_buffer[qx0 + ix] = U16ToU32Color(pixel);
         }
     }
 }
 
 // TODO - add queue that holds index of every obj to be drawn this frame
 // fills the objs data structure every frame an object needs to be drawn
-void GPU::update_attr()
+void PPU::UpdateAttr()
 {
     u32 oam_ptr = MEM_OAM_START;
     u16 attr0, attr1, attr2;
@@ -464,11 +474,11 @@ void GPU::update_attr()
     // loop through all objs
     for (int i = 0; i < NUM_OBJS; ++i)
     {   
-        obj_attr &obj = objs[i];
+        ObjAttr &obj = objs[i];
 
-        attr0 = mem->read_u16_unprotected(oam_ptr); oam_ptr += 2;
-        attr1 = mem->read_u16_unprotected(oam_ptr); oam_ptr += 2;
-        attr2 = mem->read_u16_unprotected(oam_ptr); oam_ptr += 4;
+        attr0 = mem->Read16Unsafe(oam_ptr); oam_ptr += 2;
+        attr1 = mem->Read16Unsafe(oam_ptr); oam_ptr += 2;
+        attr2 = mem->Read16Unsafe(oam_ptr); oam_ptr += 4;
 
         obj.y0           = attr0 >>  0 & 0xFF;
         obj.obj_mode     = attr0 >>  8 & 0x3;
@@ -543,10 +553,10 @@ void GPU::update_attr()
             // transform P matrix from 8.8f to float
             // P = [pa pb]
             //     [pc pd]
-            obj.pa = (s16) mem->read_u16(matrix_ptr +  0x6) / 256.0; 
-            obj.pb = (s16) mem->read_u16(matrix_ptr +  0xE) / 256.0;
-            obj.pc = (s16) mem->read_u16(matrix_ptr + 0x16) / 256.0;
-            obj.pd = (s16) mem->read_u16(matrix_ptr + 0x1E) / 256.0;
+            obj.pa = (s16) mem->Read16(matrix_ptr +  0x6) / 256.0; 
+            obj.pb = (s16) mem->Read16(matrix_ptr +  0xE) / 256.0;
+            obj.pc = (s16) mem->Read16(matrix_ptr + 0x16) / 256.0;
+            obj.pd = (s16) mem->Read16(matrix_ptr + 0x1E) / 256.0;
 
             // double wide affine
             if (obj.obj_mode == 3)
@@ -565,11 +575,11 @@ void GPU::update_attr()
     }
 }
 
-u16 GPU::get_obj_pixel4BPP(u32 addr, int palbank, int x, int y)
+u16 PPU::GetObjPixel4BPP(u32 addr, int palbank, int x, int y)
 {
     addr += (y * 4) + (x / 2);
     
-    u16 palette_index = mem->read_u8(addr);
+    u16 palette_index = mem->Read8(addr);
 
     // use top nybble for odd x, even otherwise
     if (x & 1) { palette_index >>= 4; }
@@ -579,23 +589,23 @@ u16 GPU::get_obj_pixel4BPP(u32 addr, int palbank, int x, int y)
     if (palette_index == 0) 
         return TRANSPARENT;
 
-    return mem->read_u16(SPRITE_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
+    return mem->Read16(SPRITE_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
 }
 
-u16 GPU::get_obj_pixel8BPP(u32 addr, int x, int y)
+u16 PPU::GetObjPixel8BPP(u32 addr, int x, int y)
 {
     addr += (y * 8) + x;
     
-    u16 palette_index = mem->read_u8(addr);
+    u16 palette_index = mem->Read8(addr);
 
     if (palette_index == 0) 
         return TRANSPARENT;
 
-    return mem->read_u16(SPRITE_PALETTE + palette_index * sizeof(u16));
+    return mem->Read16(SPRITE_PALETTE + palette_index * sizeof(u16));
 }
 
 // given a 16 bit GBA color, make it a 32 bit SDL color
-inline u32 u16_to_u32_color (u16 color_u16)
+inline u32 U16ToU32Color (u16 color_u16)
 {
     u8 a = 0x1F;
     u32 r, g, b;

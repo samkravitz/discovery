@@ -1,0 +1,2 @@
+# WARNING
+I wrote these tests for discovery mostly at the very beginning of the project when all I had was a half implemented CPU - no graphical output. So much has changed in the structure of the project that likely 0% of these tests will compile anymore. They were, however, very useful for the beginning of the project. They are kept here for historical reasons

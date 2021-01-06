@@ -1,7 +1,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include "discovery.h"
+#include "Discovery.h"
 
 void PrintKeys(u16);
 int debug = 0;

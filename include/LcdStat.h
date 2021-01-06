@@ -3,7 +3,7 @@
  * See LICENSE.txt for full license text
  * Author: Sam Kravitz
  * 
- * FILE: lcd_stat.h
+ * FILE: LcdStat.h
  * DATE: August 27, 2020
  * DESCRIPTION: struct containing status information for the LCD
  */

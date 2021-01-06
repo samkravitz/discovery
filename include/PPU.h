@@ -13,7 +13,7 @@
 #include <iostream>
 #include <ctime>
 
-#include "memory.h"
+#include "<Memory.h"
 #include "common.h"
 #include "mmio.h"
 
@@ -34,11 +34,11 @@ constexpr u32 HIGHER_SPRITE_BLOCK = 0x6014000;
 
 constexpr u32 SPRITE_PALETTE      = 0x5000200;
 
-class GPU
+class PPU
 {
     public:
-        GPU();
-        ~GPU();
+        PPU();
+        ~PPU();
 
         Memory *mem;
         LcdStat *stat;

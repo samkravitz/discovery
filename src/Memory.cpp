@@ -3,7 +3,7 @@
  * See LICENSE.txt for full license text
  * Author: Sam Kravitz
  * 
- * FILE: memory.cpp
+ * FILE: Memory.cpp
  * DATE: July 13, 2020
  * DESCRIPTION: Implementation of memory related functions
  */
@@ -12,7 +12,7 @@
 #include <experimental/filesystem>
 #include <string.h>
 
-#include "memory.h"
+#include "Memory.h"
 
 namespace fs = std::experimental::filesystem;
 

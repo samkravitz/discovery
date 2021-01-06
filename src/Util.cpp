@@ -2,12 +2,12 @@
  * License: GPLv2
  * See LICENSE.txt for full license text
  * 
- * FILE: util.cpp
+ * FILE: Ttil.cpp
  * DATE: June 27, 2020
  * DESCRIPTION: utility function implementations
  */
 
-#include "util.h"
+#include "Util.h"
 
 // determine which type of operation the instruction is
 // see docs/arm_instruction_set_bitfield.png to see a visual of the different types of instructions

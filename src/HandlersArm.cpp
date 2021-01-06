@@ -2,12 +2,12 @@
  * License: GPLv2
  * See LICENSE.txt for full license text
  * 
- * FILE: arm_alu.cpp
+ * FILE: HandlersArm.cpp
  * DATE: June 27, 2020
  * DESCRIPTION: execution of arm instructions
  */
 
-#include "arm_7tdmi.h"
+#include "Arm7Tdmi.h"
 
 /*
  * Copies the contents of Rn (bits 3-0) of instruction into the PC,

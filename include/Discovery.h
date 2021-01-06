@@ -3,16 +3,16 @@
  * See LICENSE.txt for full license text
  * Author: Sam Kravitz
  * 
- * FILE: discovery.h
+ * FILE: Discovery.h
  * DATE: July 13, 2020
  * DESCRIPTION: Emulator class declaration
  */
 #pragma once
 
-#include "arm_7tdmi.h"
-#include "gpu.h"
-#include "memory.h"
-#include "timer.h"
+#include "Arm7Tdmi.h"
+#include "PPU.h"
+#include "Memory.h"
+#include "Timer.h"
 
 class Discovery
 {

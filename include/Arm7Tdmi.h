@@ -3,16 +3,16 @@
  * See LICENSE.txt for full license text
  * Author: Sam Kravitz
  * 
- * FILE: arm_7tdmi.h
+ * FILE: Arm7Tdmi.h
  * DATE: July 13, 2020
  * DESCRIPTION: class definition for arm7tdmi
  */
 
 #pragma once
 
-#include "memory.h"
-#include "util.h"
-#include "gpu.h"
+#include "Memory.h"
+#include "Util.h"
+#include "PPU.h"
 #include "mmio.h"
 
 class Arm7Tdmi

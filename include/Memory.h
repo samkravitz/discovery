@@ -3,7 +3,7 @@
  * See LICENSE.txt for full license text
  * Author: Sam Kravitz
  * 
- * FILE: memory.h
+ * FILE: Memory.h
  * DATE: July 13, 2020
  * DESCRIPTION: GBA memory class defintion
  */
@@ -12,9 +12,9 @@
 #include <stdlib.h>
 #include <vector>
 
-#include "lcd_stat.h"
+#include "LcdStat.h"
 #include "common.h"
-#include "timer.h"
+#include "Timer.h"
 #include "mmio.h"
 
 // start and end addresses of internal memory regions

@@ -16,7 +16,7 @@
  * 
  * 
  */
-void Arm7Tdmi::swi_softReset()
+void Arm7Tdmi::SwiSoftReset()
 {
     
 }

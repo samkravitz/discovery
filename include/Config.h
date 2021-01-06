@@ -4,7 +4,7 @@
  * 
  * FILE: config.h
  * DATE: December 7th, 2020
- * DESCRIPTION: Global configuration data for discovery
+ * DESCRIPTION: global configuration data for discovery
  */
 #pragma once
 

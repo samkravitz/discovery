@@ -3,14 +3,14 @@
  * See LICENSE.txt for full license text
  * Author: Sam Kravitz
  * 
- * FILE: arm_7tdmi.cpp
+ * FILE: Arm7Tdmi.cpp
  * DATE: July 13, 2020
  * DESCRIPTION: Implementation of arm7tdmi functions
  */
 #include <iostream>
 #include <iomanip>
 
-#include "arm_7tdmi.h"
+#include "Arm7Tdmi.h"
 
 // uncomment this if running tests
 //#define TEST

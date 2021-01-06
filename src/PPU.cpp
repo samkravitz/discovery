@@ -2,7 +2,7 @@
 #include <sstream>
 #include <iomanip>
 
-#include "gpu.h"
+#include "PPU.h"
 
 #define S_TILE_LEN 32
 #define D_TILE_LEN 64
@@ -25,14 +25,14 @@
 
 u32 U16ToU32Color(u16);
 
-GPU::GPU()
+PPU::PPU()
 {
     mem  = NULL;
     stat = NULL;
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
-        std::cerr << "Could not initialize GPU" << "\n";
+        std::cerr << "Could not initialize PPU" << "\n";
         exit(2);
     }
 
@@ -66,13 +66,13 @@ GPU::GPU()
     Reset();
 }
 
-GPU::~GPU()
+PPU::~PPU()
 {
-    std::cout << "GPU:: Shutdown\n";
+    std::cout << "PPU:: Shutdown\n";
     SDL_Quit();
 }
 
-void GPU::Reset()
+void PPU::Reset()
 {
     cycles    = 0;
     scanline  = 0;
@@ -114,8 +114,8 @@ void GPU::Reset()
     }
 }
 
-// 1 clock cycle of the gpu
-void GPU::Tick()
+// 1 clock cycle of the PPU
+void PPU::Tick()
 {
     cycles++;
 
@@ -233,7 +233,7 @@ void GPU::Tick()
     }
 }
 
-void GPU::Render()
+void PPU::Render()
 {
     //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
     
@@ -265,7 +265,7 @@ void GPU::Render()
         memset(screen_buffer, 0, sizeof(screen_buffer));    // black
 }
 
-void GPU::RenderScanline()
+void PPU::RenderScanline()
 {
     std::memset(scanline_buffer, 0, sizeof(scanline_buffer));
 
@@ -296,13 +296,13 @@ void GPU::RenderScanline()
     
 }
 
-void GPU::RenderScanlineText(int bg)
+void PPU::RenderScanlineText(int bg)
 {
 
 }
 
 // render the current scanline for bitmap modes
-void GPU::RenderScanlineBitmap(int mode)
+void PPU::RenderScanlineBitmap(int mode)
 {
     u8 palette_index;
     u16 pixel;
@@ -358,7 +358,7 @@ void GPU::RenderScanlineBitmap(int mode)
     }
 }
 
-void GPU::RenderScanlineObj()
+void PPU::RenderScanlineObj()
 {
     // zero obj scanline
     std::memset(obj_scanline_buffer, 0, sizeof(obj_scanline_buffer));
@@ -456,7 +456,7 @@ void GPU::RenderScanlineObj()
 
 // TODO - add queue that holds index of every obj to be drawn this frame
 // fills the objs data structure every frame an object needs to be drawn
-void GPU::UpdateAttr()
+void PPU::UpdateAttr()
 {
     u32 oam_ptr = MEM_OAM_START;
     u16 attr0, attr1, attr2;
@@ -565,7 +565,7 @@ void GPU::UpdateAttr()
     }
 }
 
-u16 GPU::GetObjPixel4BPP(u32 addr, int palbank, int x, int y)
+u16 PPU::GetObjPixel4BPP(u32 addr, int palbank, int x, int y)
 {
     addr += (y * 4) + (x / 2);
     
@@ -582,7 +582,7 @@ u16 GPU::GetObjPixel4BPP(u32 addr, int palbank, int x, int y)
     return mem->Read16(SPRITE_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
 }
 
-u16 GPU::GetObjPixel8BPP(u32 addr, int x, int y)
+u16 PPU::GetObjPixel8BPP(u32 addr, int x, int y)
 {
     addr += (y * 8) + x;
     

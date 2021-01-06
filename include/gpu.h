@@ -15,6 +15,7 @@
 
 #include "memory.h"
 #include "common.h"
+#include "mmio.h"
 
 constexpr int SCREEN_WIDTH  = 240;
 constexpr int SCREEN_HEIGHT = 160;
@@ -40,14 +41,14 @@ class GPU
         ~GPU();
 
         Memory *mem;
-        lcd_stat *stat;
+        LcdStat *stat;
 
         u32 cycles;
         u8 scanline;
 
-        void cycle();
+        void Tick();
         
-        void reset();
+        void Reset();
 
     private:
         SDL_Window  *window;
@@ -65,7 +66,7 @@ class GPU
         u32 screen_buffer[SCREEN_HEIGHT * SCREEN_WIDTH];
 
         // oam data structure
-        struct obj_attr
+        struct ObjAttr
         {
             // coordinate of top left (x0, y0) & origin 
             int x,  y;
@@ -100,17 +101,17 @@ class GPU
         } objs[NUM_OBJS]; // can support 128 objects
 
         // video mode renders
-        void render();
-        void render_scanline();
-        void render_text_scanline(int);
-        void render_bitmap_scanline(int);
-        void render_obj_scanline();
+        void Render();
+        void RenderScanline();
+        void RenderScanlineText(int);
+        void RenderScanlineBitmap(int);
+        void RenderScanlineObj();
 
-        void draw_reg_background(int);
-        void draw_affine_background(int);
+        void DrawBackgroundReg(int);
+        void DrawBackgroundAffine(int);
 
         // misc
-        u16 get_obj_pixel4BPP(u32, int, int, int);
-        u16 get_obj_pixel8BPP(u32, int, int);
-        void update_attr();
+        u16 GetObjPixel4BPP(u32, int, int, int);
+        u16 GetObjPixel8BPP(u32, int, int);
+        void UpdateAttr();
 };

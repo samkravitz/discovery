@@ -15,14 +15,14 @@
 #include "gpu.h"
 #include "mmio.h"
 
-class arm_7tdmi
+class Arm7Tdmi
 {
     public:
-        arm_7tdmi();
-        ~arm_7tdmi();
+        Arm7Tdmi();
+        ~Arm7Tdmi();
         
         // data type for special registers
-        union status_register
+        union StatusRegister
         {
             struct flags
             {
@@ -48,7 +48,7 @@ class arm_7tdmi
         u32  current_interrupt;
         u32  cycles;
 
-        struct registers
+        struct Registers
         {
             // general purpose registers
             u32 r0;
@@ -93,105 +93,103 @@ class arm_7tdmi
             u32 r13_und;
             u32 r14_und;
 
-            status_register cpsr;
-
-            status_register spsr_fiq;
-            status_register spsr_svc;
-            status_register spsr_abt;
-            status_register spsr_irq;
-            status_register spsr_und;
-        } registers;
+            StatusRegister cpsr;
+            StatusRegister spsr_fiq;
+            StatusRegister spsr_svc;
+            StatusRegister spsr_abt;
+            StatusRegister spsr_irq;
+            StatusRegister spsr_und;
+        } Registers;
         
-        void fetch();
-        void decode(u32);
-        void execute(u32);
+        void Fetch();
+        void Decode(u32);
+        void Execute(u32);
 
-        void cycle(u8, u8, u8);
+        void Tick(u8, u8, u8);
 
-        u32 get_register(u32);
-        void set_register(u32, u32);
+        u32 GetRegister(u32);
+        void SetRegister(u32, u32);
 
         // instruction execution
-        void branch_exchange(u32);
-        void branch_link(u32);
-        void data_processing(u32);
-        void multiply(u32);
-        void multiply_long(u32);
-        void psr_transfer(u32);
-        void single_data_transfer(u32);
-        void halfword_data_transfer(u32);
-        void block_data_transfer(u32);
-        void single_data_swap(u32);
-        void software_interrupt(u32);
+        void BranchExchange(u32);
+        void BranchLink(u32);
+        void DataProcessing(u32);
+        void Multiply(u32);
+        void MultiplyLong(u32);
+        void PSRTransfer(u32);
+        void SingleDataTransfer(u32);
+        void HalfwordDataTransfer(u32);
+        void BlockDataTransfer(u32);
+        void SingleDataSwap(u32);
+        void SoftwareInterruptArm(u32);
 
         // thumb instructions
-        void move_shifted_register(u16);
-        void add_sub(u16);
-        void move_immediate(u16);
-        void alu_thumb(u16);
-        void hi_reg_ops(u16);
-        void pc_rel_load(u16);
-        void load_store_reg(u16);
-        void load_store_signed_halfword(u16);
-        void load_store_immediate(u16);
-        void load_store_halfword(u16);
-        void sp_load_store(u16);
-        void load_address(u16);
-        void add_offset_to_sp(u16);
-        void push_pop(u16);
-        void multiple_load_store(u16);
-        void conditional_branch(u16);
-        void software_interrupt_thumb(u16);
-        void unconditional_branch(u16);
-        void long_branch_link(u16);
+        void MoveShiftedRegister(u16);
+        void AddSubtract(u16);
+        void MoveImmediate(u16);
+        void AluThumb(u16);
+        void HiRegisterOps(u16);
+        void PcRelLoad(u16);
+        void LoadStoreRegOffset(u16);
+        void LoadStoreSignedHalfword(u16);
+        void LoadStoreImmediate(u16);
+        void LoadStoreHalfword(u16);
+        void SpRelLoadStore(u16);
+        void LoadAddress(u16);
+        void AddOffsetToSp(u16);
+        void PushPop(u16);
+        void MultipleLoadStore(u16);
+        void ConditionalBranch(u16);
+        void SoftwareInterruptThumb(u16);
+        void UnconditionalBranch(u16);
+        void LongBranchLink(u16);
 
         // software interrupts (swi)
         void swi_softReset();
-        void swi_registerRamReset();
-        void swi_VBlankIntrWait();
-        void swi_division();
-        void swi_sqrt();
-        void swi_arctan2();
-        void swi_cpuSet();
-        void swi_objAffineSet();
-        void swi_bitUnpack();
-        void swi_RLUnCompVRAM();
+        void SwiRegisterRamReset();
+        void SwiVBlankIntrWait();
+        void SwiDivision();
+        void SwiSqrt();
+        void SwiArctan2();
+        void SwiCpuSet();
+        void SwiObjAffineSet();
+        void SwiBitUnpack();
+        void SwiRLUnCompVRAM();
 
         // handle hardware interrupts
-        void handle_interrupt();
+        void HandleInerrupt();
 
-        Mode get_mode();
+        // getters / setters
+        u8 GetConditionCodeFlag(ConditionFlag);
+        void SetConditionCodeFlag(ConditionFlag, u8);
+
+        Mode GetMode();
+        void SetMode(Mode);
+
+        State GetState()           { return Registers.cpsr.flags.t == 1 ? State::THUMB : State::ARM; }
+        void SetState(State state) { Registers.cpsr.flags.t = state == State::THUMB ? 1 : 0; }
+        
     private:
         // safely interface with memory
-        u8 read_u8(u32);
-        u32 read_u16(u32, bool);
-        u32 read_u32(u32, bool);
-        void write_u8(u32, u8);
-        void write_u16(u32, u16);
-        void write_u32(u32, u32);
+        u8   Read8(u32);
+        u32  Read16(u32, bool);
+        u32  Read32(u32, bool);
+        void Write8(u32, u8);
+        void Write16(u32, u16);
+        void Write32(u32, u32);
 
         u32 last_read_bios;
 
         // misc
-        void update_flags_logical(u32, u8);
-        void update_flags_addition(u32, u32, u32);
-        void update_flags_subtraction(u32, u32, u32);
-        void increment_pc();
-        void update_cpsr(u32, bool);
-        void update_spsr(u32, bool);
-        bool condition_met(Condition);
-        bool mem_check_read(u32 &);
-        bool mem_check_write(u32 &);
-        u8   barrel_shift(u32, u32 &, u8);
-        bool check_state();
-
-        // getters / setters
-        u8 get_condition_code_flag(ConditionFlag);
-        void set_condition_code_flag(ConditionFlag, u8);
-
-        State get_state()           { return registers.cpsr.flags.t == 1 ? State::THUMB : State::ARM; }
-        void set_state(State state) { registers.cpsr.flags.t = state == State::THUMB ? 1 : 0; }
-
-        
-        void set_mode(Mode);
+        void UpdateFlagsLogical(u32, u8);
+        void UpdateFlagsAddition(u32, u32, u32);
+        void UpdateFlagsSubtraction(u32, u32, u32);
+        void IncrementPC();
+        void UpdateCPSR(u32, bool);
+        void UpdateSPSR(u32, bool);
+        bool ConditionMet(Condition);
+        bool MemCheckRead(u32 &);
+        bool MemCheckWrite(u32 &);
+        u8   BarrelShift(u32, u32 &, u8);
+        bool CheckState();
 };

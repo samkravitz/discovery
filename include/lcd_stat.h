@@ -12,12 +12,12 @@
 
 #include "common.h"
 
-struct lcd_stat
+struct LcdStat
 {
     u8 scanline;
 
     // REG_DISPCNT control
-    struct dispcnt
+    struct DisplayControl
     {
         u8 mode         : 3; // video mode (0-5)
         u8 gb           : 1; // set if gbc game
@@ -28,10 +28,10 @@ struct lcd_stat
         u8 bg_enabled   : 4; // bg0-bg3 enabled
         u8 obj_enabled  : 1; // set if sprites are enabled
         u8 win_enabled  : 3; // windows 0, 1, and object window enabled
-    } dispcnt;
+    } DisplayControl;
 
     // REG_DISPSTAT control
-    struct dispstat
+    struct DisplayStatus
     {
         u8 in_vBlank : 1;
         u8 in_hBlank : 1;
@@ -40,10 +40,10 @@ struct lcd_stat
         u8 hbi       : 1; // hblank irq
         u8 vci       : 1; // vcount irq (fires interrupt when VCount trigger value == current scanline)
         u8 vct       : 8; // vcount trigger value
-    } dispstat;
+    } DisplayStatus;
 
     // background controls (BGXCNT)
-    struct bg_cnt
+    struct BgControl
     {
         u8 priority    : 2; 
         u8 cbb         : 2; // character base block 
@@ -54,46 +54,46 @@ struct lcd_stat
         u8 affine_wrap : 1;
         u8 size        : 2;
         u8 enabled     : 1;
-    } bg_cnt[4]; // backgrounds 0-3
+    } BgControl[4]; // backgrounds 0-3
 
-    lcd_stat()
+    LcdStat()
     {
         scanline = 0;
 
         // zero reg_dispcnt
-        dispcnt.mode         = 0; 
-        dispcnt.gb           = 0; 
-        dispcnt.ps           = 0; 
-        dispcnt.hb           = 0;
-        dispcnt.obj_map_mode = 0; 
-        dispcnt.fb           = 0; 
-        dispcnt.bg_enabled   = 0; 
-        dispcnt.obj_enabled  = 0; 
-        dispcnt.win_enabled  = 0;
+        DisplayControl.mode         = 0; 
+        DisplayControl.gb           = 0; 
+        DisplayControl.ps           = 0; 
+        DisplayControl.hb           = 0;
+        DisplayControl.obj_map_mode = 0; 
+        DisplayControl.fb           = 0; 
+        DisplayControl.bg_enabled   = 0; 
+        DisplayControl.obj_enabled  = 0; 
+        DisplayControl.win_enabled  = 0;
 
         // zero reg_dispstat
-        dispstat.in_vBlank   = 0;
-        dispstat.in_hBlank   = 0;
-        dispstat.vcs         = 0;
-        dispstat.vbi         = 0;
-        dispstat.hbi         = 0;
-        dispstat.vci         = 0;
-        dispstat.vct         = 0;
+        DisplayStatus.in_vBlank   = 0;
+        DisplayStatus.in_hBlank   = 0;
+        DisplayStatus.vcs         = 0;
+        DisplayStatus.vbi         = 0;
+        DisplayStatus.hbi         = 0;
+        DisplayStatus.vci         = 0;
+        DisplayStatus.vct         = 0;
 
         // zero background ctl
         for (int i = 0; i < 4; ++i)
         {
-            bg_cnt[i].priority    = 0; 
-            bg_cnt[i].cbb         = 0;  
-            bg_cnt[i].mosaic      = 0; 
-            bg_cnt[i].unused      = 0; 
-            bg_cnt[i].color_mode  = 0; 
-            bg_cnt[i].sbb         = 0; 
-            bg_cnt[i].affine_wrap = 0; 
-            bg_cnt[i].size        = 0; 
-            bg_cnt[i].enabled     = 0;
+            BgControl[i].priority    = 0; 
+            BgControl[i].cbb         = 0;  
+            BgControl[i].mosaic      = 0; 
+            BgControl[i].unused      = 0; 
+            BgControl[i].color_mode  = 0; 
+            BgControl[i].sbb         = 0; 
+            BgControl[i].affine_wrap = 0; 
+            BgControl[i].size        = 0; 
+            BgControl[i].enabled     = 0;
         }
     }
 
-    ~lcd_stat() { }
+    ~LcdStat() { }
 };

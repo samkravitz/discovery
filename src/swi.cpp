@@ -16,7 +16,7 @@
  * 
  * 
  */
-void arm_7tdmi::swi_softReset()
+void Arm7Tdmi::swi_softReset()
 {
     
 }
@@ -37,43 +37,43 @@ void arm_7tdmi::swi_softReset()
  * The function always switches the screen into forced blank by setting DISPCNT=0080h
  * (regardless of incoming R0, screen becomes white).
  */
-void arm_7tdmi::swi_registerRamReset()
+void Arm7Tdmi::SwiRegisterRamReset()
 {
-    u8 flags = get_register(r0) & 0xFF;
+    u8 flags = GetRegister(r0) & 0xFF;
 
     // bit 0
     if (flags & (1 << 0))
     {
         for (int i = 0; i < MEM_EWRAM_SIZE; ++i)
-            mem->write_u8_unprotected(i + MEM_EWRAM_START, 0);
+            mem->Write8Unsafe(i + MEM_EWRAM_START, 0);
     }
 
     // bit 1
     if (flags & (1 << 1))
     {
         for (int i = 0; i < MEM_IWRAM_SIZE - 0x200; ++i)
-            mem->write_u8_unprotected(i + MEM_IWRAM_START, 0);
+            mem->Write8Unsafe(i + MEM_IWRAM_START, 0);
     }
 
     // bit 2
     if (flags & (1 << 2))
     {
         for (int i = 0; i < MEM_PALETTE_RAM_SIZE; ++i)
-            mem->write_u8_unprotected(i + MEM_PALETTE_RAM_START, 0);
+            mem->Write8Unsafe(i + MEM_PALETTE_RAM_START, 0);
     }
 
     // bit 3
     if (flags & (1 << 3))
     {
         for (int i = 0; i < MEM_VRAM_SIZE; ++i)
-            mem->write_u8_unprotected(i + MEM_VRAM_START, 0);
+            mem->Write8Unsafe(i + MEM_VRAM_START, 0);
     }
 
     // bit 4
     if (flags & (1 << 4))
     {
         for (int i = 0; i < MEM_OAM_SIZE; ++i)
-            mem->write_u8_unprotected(i + MEM_OAM_START, 0);
+            mem->Write8Unsafe(i + MEM_OAM_START, 0);
     }
 
     // bit 5
@@ -95,7 +95,7 @@ void arm_7tdmi::swi_registerRamReset()
     }
 
     // force white screen
-    mem->write_u32_unprotected(REG_DISPCNT, 0x0080);
+    mem->Write32Unsafe(REG_DISPCNT, 0x0080);
 }
 
 /*
@@ -103,20 +103,20 @@ void arm_7tdmi::swi_registerRamReset()
  * 
  * Halts execution until a VBlank interrupt arises
  */
-void arm_7tdmi::swi_VBlankIntrWait()
+void Arm7Tdmi::SwiVBlankIntrWait()
 {
     // force interrupts to be enabled
-    mem->write_u32_unprotected(REG_IME, 0x1);
-    registers.cpsr.flags.i = 0;
+    mem->Write32Unsafe(REG_IME, 0x1);
+    Registers.cpsr.flags.i = 0;
 
     // write 1 to r0, r1
-    set_register(r0, 0x1);
-    set_register(r1, 0x1);
+    SetRegister(r0, 0x1);
+    SetRegister(r1, 0x1);
     // std::cout << "a" << ((int) mem->read_u32_unprotected(REG_IF)) << "\n";
     // std::cout << "b" << ((int) mem->read_u32_unprotected(REG_IE)) << "\n";
     // std::cout << ((int) mem->read_u32_unprotected(REG_IME)) << "\n";
     //exit(0);
-    registers.r15 -= get_state() == State::ARM ? 4 : 2;
+    Registers.r15 -= GetState() == State::ARM ? 4 : 2;
     pipeline[1] = pipeline[0];
     pipeline[2] = pipeline[0];
     swi_vblank_intr = true;
@@ -132,10 +132,10 @@ void arm_7tdmi::swi_VBlankIntrWait()
  * r1 - number MOD denom, signed
  * r3 - abs(number DIV) denom, unsigned
  */
-void arm_7tdmi::swi_division()
+void Arm7Tdmi::SwiDivision()
 {
-    s32 num   = (s32) get_register(r0);
-    s32 denom = (s32) get_register(r1);
+    s32 num   = (s32) GetRegister(r0);
+    s32 denom = (s32) GetRegister(r1);
 
     // divide by 0
     if (denom == 0)
@@ -144,9 +144,9 @@ void arm_7tdmi::swi_division()
         return;
     }
 
-    set_register(r0, (u32) (num / denom));
-    set_register(r1, (u32) (num % denom));
-    set_register(r3, abs(num / denom));
+    SetRegister(r0, (u32) (num / denom));
+    SetRegister(r1, (u32) (num % denom));
+    SetRegister(r3, abs(num / denom));
 }
 
 /*
@@ -156,12 +156,12 @@ void arm_7tdmi::swi_division()
  * return:
  * r0 - u16 result
  */
-void arm_7tdmi::swi_sqrt()
+void Arm7Tdmi::SwiSqrt()
 {
-    u32 num    = get_register(r0);
+    u32 num    = GetRegister(r0);
     u16 result = (u16) sqrt(num);
 
-    set_register(r0, result);
+    SetRegister(r0, result);
 }
 
 /*
@@ -172,10 +172,10 @@ void arm_7tdmi::swi_sqrt()
  * return:
  * r0 - 0x0000 - 0xFFFF for 0 <= theta <= 2π
  */
-void arm_7tdmi::swi_arctan2()
+void Arm7Tdmi::SwiArctan2()
 {
-    s16 x = get_register(r0);
-    s16 y = get_register(r1);
+    s16 x = GetRegister(r0);
+    s16 y = GetRegister(r1);
 
     // TODO - handle case for negative x ?
     float result = atan2f(y, x);
@@ -184,14 +184,14 @@ void arm_7tdmi::swi_arctan2()
     // result in range [0x0, 0xFFFF]
     result *= (0xFFFF / (2 * M_PI));
 
-    set_register(r0, (u16) result);
+    SetRegister(r0, (u16) result);
 }
 
-void arm_7tdmi::swi_cpuSet()
+void Arm7Tdmi::SwiCpuSet()
 {
-    u32 src_ptr  = get_register(r0);
-    u32 dest_ptr = get_register(r1);
-    u32 mode     = get_register(r2);
+    u32 src_ptr  = GetRegister(r0);
+    u32 dest_ptr = GetRegister(r1);
+    u32 mode     = GetRegister(r2);
 
     u32 wordcount = mode & 0x1FFFFF; // bits 0-20
     u8 fill       = mode >> 24 & 1; // bit 24 (1 == fill, 0 == copy)
@@ -210,10 +210,10 @@ void arm_7tdmi::swi_cpuSet()
             src_ptr  &= ~0x1;
             dest_ptr &= ~0x1;
 
-            val16 = mem->read_u16(src_ptr);
+            val16 = mem->Read16(src_ptr);
             for (int i = 0; i < wordcount; ++i)
             {
-                mem->write_u16(dest_ptr, val16);
+                mem->Write16(dest_ptr, val16);
                 dest_ptr += datasize;
             }
         }
@@ -224,10 +224,10 @@ void arm_7tdmi::swi_cpuSet()
             src_ptr  &= ~0x3;
             dest_ptr &= ~0x3;
 
-            val32 = mem->read_u32(src_ptr);
+            val32 = mem->Read32(src_ptr);
             for (int i = 0; i < wordcount; ++i)
             {
-                mem->write_u32(dest_ptr, val32);
+                mem->Write32(dest_ptr, val32);
                 dest_ptr += datasize;
             } 
         }
@@ -247,8 +247,8 @@ void arm_7tdmi::swi_cpuSet()
 
                 for (int i = 0; i < wordcount; ++i)
                 {
-                    val16 = mem->read_u16(src_ptr);
-                    mem->write_u16(dest_ptr, val16);
+                    val16 = mem->Read16(src_ptr);
+                    mem->Write16(dest_ptr, val16);
                     dest_ptr += datasize;
                     src_ptr += datasize;
                 }
@@ -262,8 +262,8 @@ void arm_7tdmi::swi_cpuSet()
 
                 for (int i = 0; i < wordcount; ++i)
                 {
-                    val32 = mem->read_u32(src_ptr);
-                    mem->write_u32(dest_ptr, val32);
+                    val32 = mem->Read32(src_ptr);
+                    mem->Write32(dest_ptr, val32);
                     dest_ptr += datasize;
                     src_ptr += datasize;
                 }
@@ -283,13 +283,13 @@ void arm_7tdmi::swi_cpuSet()
 /*
  * ObjAffineSet
  */
-void arm_7tdmi::swi_objAffineSet()
+void Arm7Tdmi::SwiObjAffineSet()
 {
     //return;
-    u32 src_ptr          = get_register(r0);
-    u32 dest_ptr         = get_register(r1);
-    u32 num_calculations = get_register(r2);
-    u32 offset           = get_register(r3);
+    u32 src_ptr          = GetRegister(r0);
+    u32 dest_ptr         = GetRegister(r1);
+    u32 num_calculations = GetRegister(r2);
+    u32 offset           = GetRegister(r3);
 
     float sx, sy;         // scale x, y
 	float alpha;          // angle of rotation
@@ -302,11 +302,11 @@ void arm_7tdmi::swi_objAffineSet()
     for (int i = 0; i < num_calculations; ++i)
     {
         // integer portion of 8.8f sx, sy
-        sx = (float) (mem->read_u16(src_ptr    ) >> 8);
-        sy = (float) (mem->read_u16(src_ptr + 2) >> 8);
+        sx = (float) (mem->Read16(src_ptr    ) >> 8);
+        sy = (float) (mem->Read16(src_ptr + 2) >> 8);
 
         // convert alpha from range [0x0 - 0xFFFF] to [0, 2π]
-        alpha = (mem->read_u16(src_ptr + 4)) / 32768.0 * M_PI;
+        alpha = (mem->Read16(src_ptr + 4)) / 32768.0 * M_PI;
         pa = pd = cosf(alpha);
         pb = pc = sinf(alpha);
 
@@ -316,10 +316,10 @@ void arm_7tdmi::swi_objAffineSet()
         pd *=  sy; // sy *  cos(α)
 
         // convert back to range [0x0 - 0xFFFF]
-        mem->write_u16(dest_ptr, pa * 256); dest_ptr += offset;
-        mem->write_u16(dest_ptr, pb * 256); dest_ptr += offset;
-        mem->write_u16(dest_ptr, pc * 256); dest_ptr += offset;
-        mem->write_u16(dest_ptr, pd * 256); dest_ptr += offset;
+        mem->Write16(dest_ptr, pa * 256); dest_ptr += offset;
+        mem->Write16(dest_ptr, pb * 256); dest_ptr += offset;
+        mem->Write16(dest_ptr, pc * 256); dest_ptr += offset;
+        mem->Write16(dest_ptr, pd * 256); dest_ptr += offset;
 
         src_ptr  += offset;
     }
@@ -336,14 +336,14 @@ void arm_7tdmi::swi_objAffineSet()
  *      8bit   Width of Destination Units in bits (only 1,2,4,8,16,32 supported)
  *      32bit  Data Offset (Bit 0-30), and Zero Data Flag (Bit 31)
  */
-void arm_7tdmi::swi_bitUnpack()
+void Arm7Tdmi::SwiBitUnpack()
 {
-    u32 src_ptr     = get_register(r0);
-    u32 dest_ptr    = get_register(r1) & ~0x3;
-    u32 info_ptr    = get_register(r2);
+    u32 src_ptr     = GetRegister(r0);
+    u32 dest_ptr    = GetRegister(r1) & ~0x3;
+    u32 info_ptr    = GetRegister(r2);
 
-    u32 info_lower  = mem->read_u32(info_ptr);
-    u32 data_offset = mem->read_u32(info_ptr + 4);
+    u32 info_lower  = mem->Read32(info_ptr);
+    u32 data_offset = mem->Read32(info_ptr + 4);
 
     bool zero_flag = (data_offset >> 31) == 1;
     data_offset &= 0x7FFFFFFF; // clear MSB
@@ -391,7 +391,7 @@ void arm_7tdmi::swi_bitUnpack()
     for (int i = 0; i < len; ++i)
     {
         
-        data = mem->read_u8(src_ptr++);
+        data = mem->Read8(src_ptr++);
         src_bit_count = 0;
         mask = 0xFF >> (8 - src_width);
 
@@ -406,7 +406,7 @@ void arm_7tdmi::swi_bitUnpack()
 
             if (dest_bit_count >= 32)
             {
-                mem->write_u32(dest_ptr, buffer);
+                mem->Write32(dest_ptr, buffer);
                 dest_ptr += sizeof(u32);
                 dest_bit_count = 0;
                 buffer = 0;
@@ -423,21 +423,21 @@ void arm_7tdmi::swi_bitUnpack()
     // std::cout << "dest_width: " << (int) dest_width << "\n";
 }
 
-void arm_7tdmi::swi_RLUnCompVRAM()
+void Arm7Tdmi::SwiRLUnCompVRAM()
 {
     u32 src_ptr, dest_ptr;
-    src_ptr  = get_register(r0) & ~0x3; // word aligned
-    dest_ptr = get_register(r1) & ~0x1; // halword aligned
+    src_ptr  = GetRegister(r0) & ~0x3; // word aligned
+    dest_ptr = GetRegister(r1) & ~0x1; // halword aligned
 
     // bits 0-3 reserved, 4-7 compressed type (3), 8-31 size of compressed data
-    u32 data_header = mem->read_u32(src_ptr);
+    u32 data_header = mem->Read32(src_ptr);
     u32 decomp_len = data_header >> 8;
 
     src_ptr += 4;
 
     while (decomp_len > 0)
     {
-        u8 flags = mem->read_u8(src_ptr++);
+        u8 flags = mem->Read8(src_ptr++);
         u8 expand_len = flags & 0x7F;
 
         if ((flags >> 7) == 0) // uncompressed
@@ -447,8 +447,8 @@ void arm_7tdmi::swi_RLUnCompVRAM()
 
             while (decomp_len > 0)
             {
-                u16 data = mem->read_u16(src_ptr);
-                mem->write_u16(dest_ptr, data);
+                u16 data = mem->Read16(src_ptr);
+                mem->Write16(dest_ptr, data);
 
                 src_ptr  += 2;
                 dest_ptr += 2;
@@ -461,10 +461,10 @@ void arm_7tdmi::swi_RLUnCompVRAM()
             expand_len += 3;
             decomp_len -= expand_len;
 
-            u16 data = mem->read_u16(src_ptr);
+            u16 data = mem->Read16(src_ptr);
             while (decomp_len > 0)
             {
-                mem->write_u16(dest_ptr, data);
+                mem->Write16(dest_ptr, data);
 
                 dest_ptr += 2;
                 decomp_len--;

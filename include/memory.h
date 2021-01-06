@@ -53,7 +53,7 @@ class Memory
 
         u8 memory[MEM_SIZE];
 
-        lcd_stat *stat;
+        LcdStat *stat;
 
         // cart buffers & sizes
         u8  cart_rom[0x2000000];
@@ -61,7 +61,7 @@ class Memory
         size_t rom_size;
         size_t ram_size;
         
-        struct dma
+        struct DMA
         {
             u16 num_transfers;
             u8  dest_adjust : 2; // destination adjustment
@@ -76,38 +76,38 @@ class Memory
             u32 dest_address;
         } dma[4];
 
-        timer *timers[4];
+        Timer *timers[4];
 
         u8 n_cycles;
         u8 s_cycles;
 
-        void reset();
-        bool load_rom(char *);
-        bool load_bios();
+        void Reset();
+        bool LoadRom(char *);
+        bool LoadBios();
 
         // read / write from memory
-        u32 read_u32(u32);
-        u16 read_u16(u32);
-        u8 read_u8(u32);
-        void write_u8(u32, u8);
-        void write_u16(u32, u16);
-        void write_u32(u32, u32);
+        u32  Read32(u32);
+        u16  Read16(u32);
+        u8   Read8(u32);
+        void Write8(u32, u8);
+        void Write16(u32, u16);
+        void Write32(u32, u32);
 
         // unprotected read/write from memory
         // dangerous, but fast
-        u32 read_u32_unprotected(u32);
-        u16 read_u16_unprotected(u32);
-        u8 read_u8_unprotected(u32);
-        void write_u8_unprotected(u32, u8);
-        void write_u16_unprotected(u32, u16);
-        void write_u32_unprotected(u32, u32);
+        u32  Read32Unsafe(u32);
+        u16  Read16Unsafe(u32);
+        u8   Read8Unsafe(u32);
+        void Write8Unsafe(u32, u8);
+        void Write16Unsafe(u32, u16);
+        void Write32Unsafe(u32, u32);
 
         // DMA transfer routine
-        void _dma(int);
+        void _Dma(int);
 
     private:
-        void dma0();
-        void dma1();
-        void dma2();
-        void dma3();
+        void Dma0();
+        void Dma1();
+        void Dma2();
+        void Dma3();
 };

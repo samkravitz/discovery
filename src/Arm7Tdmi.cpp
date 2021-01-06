@@ -63,7 +63,7 @@ Mode Arm7Tdmi::GetMode()
         case 0b11111: return Mode::SYS;
         case 0b11011: return Mode::UND;
         default:
-            std::cout << "Undefined mode\n";
+            LOG(Util::LogLevel::Error, "Undefined mode {}\n", (int) Registers.cpsr.flags.mode);
             exit(21);
     } 
 }
@@ -225,8 +225,7 @@ void Arm7Tdmi::Execute(u32 instruction)
                 case ArmInstruction::SWP:  SingleDataSwap(instruction);       break;
                 case ArmInstruction::INT:  SoftwareInterruptArm(instruction); break;
                 default:
-                    std::cerr << "Cannot execute instruction: " << instruction << "\n";
-                    std::cout << Registers.r15 << "\n";
+                    LOG(Util::LogLevel::Error, "Cannot execute instruction {}, pc {}\n", instruction, Registers.r15);
                     Registers.r15 &= ~0x3;
             }
             break;
@@ -715,7 +714,7 @@ void Arm7Tdmi::UpdateCPSR(u32 value, bool flags_only)
     Registers.cpsr.raw = value;
 
     if (Registers.cpsr.flags.t != sr.flags.t)
-        std::cout << "Software is changing TBIT in CPSR!" << "\n"; // is this allowed??
+        LOG(Util::LogLevel::Warning, "Software is changing T-Bit in CPSR!\n");
 
     // TODO - validate CPSR was appropriately changed
     bool valid = false;
@@ -779,7 +778,7 @@ void Arm7Tdmi::UpdateSPSR(u32 value, bool flags_only)
             case Mode::ABT: Registers.spsr_abt = old_spsr; break;
             case Mode::IRQ: Registers.spsr_irq = old_spsr; break;
             case Mode::UND: Registers.spsr_und = old_spsr; break;
-            case Mode::SYS: std::cout << "SYS in SPSR flags\n";  break;
+            case Mode::SYS: Util::LOG("SYS in SPSR flags\n");
         }
         
         return;
@@ -793,7 +792,7 @@ void Arm7Tdmi::UpdateSPSR(u32 value, bool flags_only)
         case Mode::ABT: Registers.spsr_abt = new_spsr; break;
         case Mode::IRQ: Registers.spsr_irq = new_spsr; break;
         case Mode::UND: Registers.spsr_und = new_spsr; break;
-        case Mode::SYS: std::cout << "SYS in SPSR\n";  break;
+        case Mode::SYS: Util::LOG("SYS in SPSR\n");    break;
     }
 }
 
@@ -944,7 +943,7 @@ u8 Arm7Tdmi::Read8(u32 address)
     // reading from BIOS memory
     if (address <= 0x3FFF && Registers.r15 > 0x3FFF)
     {
-        std::cout << "Invalid read from BIOS u8: " << std::hex << last_read_bios << "\n";
+        Util::LOG(Util::LogLevel::Error, "Invalid read from BIOS u8: 0x{x}\n", last_read_bios);
         // u32 value = last_read_bios;
         
         // switch (address & 0x3)
@@ -960,7 +959,7 @@ u8 Arm7Tdmi::Read8(u32 address)
 
     if ((address >= 0x4000 && address <= 0x1FFFFFF) || address >= 0x10000000)
     {
-        std::cout << "UNUSED U8\n";
+        Util::LOG(Util::LogLevel::Warning, "UNUSED U8\n");
         switch (GetState())
         {
             case State::ARM: return mem->Read32(Registers.r15);
@@ -993,8 +992,8 @@ u32 Arm7Tdmi::Read16(u32 address, bool sign)
     // reading from BIOS memory
     if (address <= 0x3FFF && Registers.r15 > 0x3FFF)
     {
-        std::cout << "Invalid read from BIOS u16: " << std::hex << last_read_bios << "\n";
-        //exit(0);
+        Util::LOG(Util::LogLevel::Error, "Invalid read from BIOS u16: 0x{x}\n", last_read_bios);
+
         u32 value = last_read_bios;
         switch (address & 0x1)
         {
@@ -1053,7 +1052,7 @@ u32 Arm7Tdmi::Read16(u32 address, bool sign)
         case REG_DMA3SAD:
         case REG_DMA3DAD:
         case REG_DMA3CNT:
-            std::cout << "u16 sadkjflsadfkjsdaflkj\n";
+            Util::LOG(Util::LogLevel::Error, "Invalid read from BIOS u166\n");
             return 0;
     }
 

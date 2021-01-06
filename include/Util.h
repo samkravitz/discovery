@@ -98,3 +98,8 @@ namespace Util
         fmt::vprint(format, fmt::make_args_checked<Args...>(format, args...));
     }
 }
+
+// LOG(Util::LogLevel::Message, "");
+// LOG(Util::LogLevel::Debug, "");
+// LOG(Util::LogLevel::Warning, "");
+// LOG(Util::LogLevel::Error, "");

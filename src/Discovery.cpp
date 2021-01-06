@@ -24,7 +24,7 @@ int main(int argc, char **argv)
     // load bios
     if (!emulator.mem->LoadBios())
     {
-        std::cerr << "Error loading BIOS\n";
+        Util::LOG(Util::LogLevel::Error, "Error Loading Bios\n");
         return 1;
     }
 
@@ -197,6 +197,7 @@ void Discovery::LoadRom(char *name)
 {
     if (!mem->LoadRom(name))
     {
+        Util::LOG(LogLevel::Error, "Error loading ROM: {}\n", name);
         std::cerr << "Error loading ROM: " << name << "\n";
         exit(1);
     }

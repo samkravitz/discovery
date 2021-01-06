@@ -17,7 +17,8 @@ int debug = 0;
 
 int main(int argc, char **argv)
 {
-    std::cout << "Gameboy emulator!" << "\n";
+    Util::LOG("Welcome to Discovery\n");
+
     Discovery emulator;
 
     // load bios

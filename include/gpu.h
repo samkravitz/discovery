@@ -16,22 +16,22 @@
 #include "memory.h"
 #include "common.h"
 
-#define SCREEN_WIDTH  240
-#define SCREEN_HEIGHT 160
-#define MAX_X         512
-#define MAX_Y         256
+constexpr int SCREEN_WIDTH  = 240;
+constexpr int SCREEN_HEIGHT = 160;
+constexpr int MAX_X         = 512;
+constexpr int MAX_Y         = 256;
 
-#define HDRAW         960 // # of cycles in HDraw
-#define HBLANK        272 // # of cycles in HBlank
-#define VDRAW         160 // # of scanlines in VDraw
-#define VBLANK        68  // # of scanlines in VBlank
+constexpr int HDRAW         = 960; // # of cycles in HDraw
+constexpr int HBLANK        = 272; // # of cycles in HBlank
+constexpr int VDRAW         = 160; // # of scanlines in VDraw
+constexpr int VBLANK        = 68;  // # of scanlines in VBlank
 
-#define NUM_OBJS      128 // number of sprites that can be rendered
+constexpr int NUM_OBJS      = 128; // number of sprites that can be rendered
 
-const u32 LOWER_SPRITE_BLOCK = 0x6010000;
-const u32 HIGHER_SPRITE_BLOCK = 0x6014000;
+constexpr u32 LOWER_SPRITE_BLOCK  = 0x6010000;
+constexpr u32 HIGHER_SPRITE_BLOCK = 0x6014000;
 
-const u32 SPRITE_PALETTE = 0x5000200;
+constexpr u32 SPRITE_PALETTE      = 0x5000200;
 
 class GPU
 {

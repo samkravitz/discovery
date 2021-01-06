@@ -90,7 +90,7 @@ void Discovery::GameLoop()
         cpu->Decode(cpu->pipeline[0]);
         cpu->Execute(cpu->pipeline[0]);
 
-        cpu->HandleInerrupt();
+        cpu->HandleInterrupt();
 
         // update pipeline
         cpu->pipeline[0] = cpu->pipeline[1];

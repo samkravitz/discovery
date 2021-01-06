@@ -820,7 +820,7 @@ void Arm7Tdmi::Tick(u8 n, u8 s, u8 i)
     cycles += access_cycles;
 }
 
-void Arm7Tdmi::HandleInerrupt()
+void Arm7Tdmi::HandleInterrupt()
 {
     // exit interrupt
     if (in_interrupt && GetRegister(r15) == 0x138)

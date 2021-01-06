@@ -157,10 +157,10 @@ class Arm7Tdmi
         void SwiRLUnCompVRAM();
 
         // handle hardware interrupts
-        void HandleInerrupt();
+        void HandleInterrupt();
 
         // getters / setters
-        u8 GetConditionCodeFlag(ConditionFlag);
+        u8   GetConditionCodeFlag(ConditionFlag);
         void SetConditionCodeFlag(ConditionFlag, u8);
 
         Mode GetMode();

@@ -222,7 +222,7 @@ void Arm7Tdmi::AluThumb(u16 instruction)
             break;
 
         default:
-            std::cerr << "Error: Invalid thumb ALU opcode" << "\n";
+            LOG(LogLevel::Error, "Error: Invalid thumb ALU opcode\n");
             return;
     }
 
@@ -256,7 +256,7 @@ void Arm7Tdmi::HiRegisterOps(u16 instruction)
         case 0b00: // ADD
             if (!H1 && !H2)
             {
-                std::cerr << "Error: H1 = 0 and H2 = 0 for thumb ADD is not defined" << "\n";
+                LOG(LogLevel::Error, "Error: H1 = 0 and H2 = 0 for thumb ADD is not defined\n");
                 return;
             }
 
@@ -281,7 +281,7 @@ void Arm7Tdmi::HiRegisterOps(u16 instruction)
         case 0b01: // CMP
             if (!H1 && !H2)
             {
-                std::cerr << "Error: H1 = 0 and H2 = 0 for thumb CMP is not defined" << "\n";
+                LOG(LogLevel::Error, "Error: H1 = 0 and H2 = 0 for thumb CMP is not defined\n");
                 return;
             }
 
@@ -291,7 +291,7 @@ void Arm7Tdmi::HiRegisterOps(u16 instruction)
         case 0b10: // MOV
             if (!H1 && !H2)
             {
-                std::cerr << "Error: H1 = 0 and H2 = 0 for thumb MOV is not defined" << "\n";
+                LOG(LogLevel::Error, "Error: H1 = 0 and H2 = 0 for thumb MOV is not defined\n");
                 return;
             }
 
@@ -315,7 +315,7 @@ void Arm7Tdmi::HiRegisterOps(u16 instruction)
         case 0b11: // BX
             if (H1)
             {
-                std::cerr << "Error: H1 = 1 for thumb BX is not defined" << "\n";
+                LOG(LogLevel::Error, "Error: H1 = 1 for thumb BX is not defined\n");
                 return;
             }
 
@@ -876,7 +876,7 @@ void Arm7Tdmi::ConditionalBranch(u16 instruction)
 
 void Arm7Tdmi::SoftwareInterruptThumb(u16 instruction)
 {
-    std::cout << "thumb SWI:  " << (instruction & 0xFF) << "\n";
+    LOG(LogLevel::Debug, "Thumb SWI: {}\n", instruction & 0xFF);
 
     // HLE BIOS calls
     // bits 7 - 0 determine which interrupt

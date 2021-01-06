@@ -140,7 +140,7 @@ void Arm7Tdmi::SwiDivision()
     // divide by 0
     if (denom == 0)
     {
-        std::cerr << "SWI DIV: dividing by 0!\n";
+        LOG(LogLevel::Error, "SWI DIV: dividing by 0!\n");
         return;
     }
 

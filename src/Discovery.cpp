@@ -140,7 +140,7 @@ void Discovery::GameLoop()
 
                         // overflow irq
                         if (timers[j]->irq)
-                            std::cout << "Timer " << j << " overflow IRQ request\n";
+                            LOG("Timer {} overflow IRQ request\n");
 
                         // cascade
                         // timer 4 can't cascade any other timer
@@ -153,7 +153,7 @@ void Discovery::GameLoop()
 
                             // cascade caused overflow (deal with this later)
                             if (timers[j + 1]->data == 0x0000)
-                                std::cout << "Timer " << (j + 1) << " overflow\n";
+                                LOG("Timer {} cascade overflow\n", j + 1);
                         }
                     }
                 }
@@ -170,24 +170,6 @@ void Discovery::GameLoop()
         }
 
         valid = false;
-        // check for valid cpsr
-        // switch (cpu->get_mode())
-        // {
-        //     case Mode::USR:
-        //     case Mode::FIQ:
-        //     case Mode::IRQ:
-        //     case Mode::SVC:
-        //     case Mode::ABT:
-        //     case Mode::SYS:
-        //     case Mode::UND:
-        //         valid = true;
-        // }
-
-        // if (!valid)  {
-        //     std::cerr << "Invalid state in cpsr: " << (int) cpu->registers.cpsr.raw << "\n";
-        //     exit(270);
-        // }
-
     }
     
     ShutDown();
@@ -198,7 +180,6 @@ void Discovery::LoadRom(char *name)
     if (!mem->LoadRom(name))
     {
         LOG(LogLevel::Error, "Error loading ROM: {}\n", name);
-        std::cerr << "Error loading ROM: " << name << "\n";
         exit(1);
     }
 
@@ -319,16 +300,16 @@ void Discovery::PollKeys(const SDL_Event &e)
 void PrintKeys(u16 keys)
 {
     std::cout << "\n\n";
-    if (((keys >> 9) & 1) == 0) std::cout << "L is pressed\n";
-    if (((keys >> 8) & 1) == 0) std::cout << "R is pressed\n";
-    if (((keys >> 7) & 1) == 0) std::cout << "Down is pressed\n";
-    if (((keys >> 6) & 1) == 0) std::cout << "Up is pressed\n";
-    if (((keys >> 5) & 1) == 0) std::cout << "Left is pressed\n";
-    if (((keys >> 4) & 1) == 0) std::cout << "Right is pressed\n";
-    if (((keys >> 3) & 1) == 0) std::cout << "Start is pressed\n";
-    if (((keys >> 2) & 1) == 0) std::cout << "Select is pressed\n";
-    if (((keys >> 1) & 1) == 0) std::cout << "b is pressed\n";
-    if (((keys >> 0) & 1) == 0) std::cout << "a is pressed\n";
+    if (((keys >> 9) & 1) == 0) LOG("L is pressed\n");
+    if (((keys >> 8) & 1) == 0) LOG("R is pressed\n");
+    if (((keys >> 7) & 1) == 0) LOG("Down is pressed\n");
+    if (((keys >> 6) & 1) == 0) LOG("Up is pressed\n");
+    if (((keys >> 5) & 1) == 0) LOG("Left is pressed\n");
+    if (((keys >> 4) & 1) == 0) LOG("Right is pressed\n");
+    if (((keys >> 3) & 1) == 0) LOG("Start is pressed\n");
+    if (((keys >> 2) & 1) == 0) LOG("Select is pressed\n");
+    if (((keys >> 1) & 1) == 0) LOG("b is pressed\n");
+    if (((keys >> 0) & 1) == 0) LOG("a is pressed\n");
 }
 
 void Discovery::ShutDown()

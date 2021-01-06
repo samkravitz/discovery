@@ -42,7 +42,7 @@ PPU::PPU()
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
-        std::cerr << "Could not initialize PPU" << "\n";
+        LOG(LogLevel::Error, "Could not initialize PPU");
         exit(2);
     }
 
@@ -50,7 +50,7 @@ PPU::PPU()
 
     if (window == NULL)
     {
-        std::cerr << "Could not create window" << "\n";
+        LOG(LogLevel::Error, "Could not create window");
         exit(2);
     }
 
@@ -59,7 +59,7 @@ PPU::PPU()
 
     if (logo == NULL)
     {
-        std::cerr << "Could not load discovery logo!\n";
+        LOG(LogLevel::Error, "Could not load discovery logo!\n");
         exit(2);
     }
     
@@ -78,7 +78,7 @@ PPU::PPU()
 
 PPU::~PPU()
 {
-    std::cout << "PPU:: Shutdown\n";
+    LOG("PPU: Shutdown\n");
     SDL_Quit();
 }
 
@@ -141,7 +141,7 @@ void PPU::Tick()
         if (stat->DisplayStatus.hbi)
         {
             mem->memory[REG_IF] |= IRQ_HBLANK;
-            //std::cout << "HBlank interrupt\n";
+            //LOG(LogLevel::Debug, "HBlank interrupt\n");
         }
             
 
@@ -152,7 +152,7 @@ void PPU::Tick()
             if (mem->dma[i].enable && mem->dma[i].mode == 2) // start at HBLANK
             {
                 mem->_Dma(i);
-                std::cout << "DMA" << i << " HBLANK\n";
+                LOG(LogLevel::Debug, "DMA {} HBLANK\n", i);
             }
         }
         
@@ -165,7 +165,7 @@ void PPU::Tick()
             // fire Vblank interrupt if necessary
             if (stat->DisplayStatus.vbi)
             {
-                //std::cout << "VBlank interrupt\n";
+                //LOG(LogLevel::Debug, "VBlank interrupt\n");
                 mem->memory[REG_IF] |= IRQ_VBLANK;
             }
                 
@@ -175,7 +175,7 @@ void PPU::Tick()
                 if (mem->dma[i].enable && mem->dma[i].mode == 1) // start at VBLANK
                 {
                     mem->_Dma(i);
-                    std::cout << "DMA" << i << " VBLANK\n";
+                    LOG(LogLevel::Debug, "DMA {} VBLANK\n", i);
                 }
             }
 

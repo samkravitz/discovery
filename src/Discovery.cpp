@@ -46,17 +46,12 @@ Discovery::Discovery()
 {
     system_cycles = 0;
 
-    cpu     = new Arm7Tdmi();
-    mem     = new Memory();
-    ppu     = new PPU();
+    stat    = new LcdStat();
+    mem     = new Memory(stat);
+
+    cpu     = new Arm7Tdmi(mem);
+    ppu     = new PPU(mem, stat);
     gamepad = new Gamepad();
-
-    cpu->mem = mem;
-    ppu->mem = mem;
-
-    stat = new LcdStat();
-    mem->stat = stat;
-    ppu->stat = stat;
 
     // initialize timers
     Timer *t0 = new Timer();

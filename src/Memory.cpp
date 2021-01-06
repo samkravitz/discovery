@@ -16,11 +16,11 @@
 
 namespace fs = std::experimental::filesystem;
 
-Memory::Memory()
+Memory::Memory(LcdStat *stat) : stat(stat)
 {
     //cart_rom  = NULL;
     cart_ram  = NULL;
-    stat      = NULL;
+
     timers[0] = NULL;
     timers[1] = NULL;
     timers[2] = NULL;

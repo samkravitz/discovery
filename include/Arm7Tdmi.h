@@ -18,7 +18,7 @@
 class Arm7Tdmi
 {
     public:
-        Arm7Tdmi();
+        Arm7Tdmi(Memory *mem);
         ~Arm7Tdmi();
         
         // data type for special registers

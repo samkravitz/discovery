@@ -37,7 +37,7 @@ constexpr u32 SPRITE_PALETTE      = 0x5000200;
 class PPU
 {
     public:
-        PPU();
+        PPU(Memory *, LcdStat *);
         ~PPU();
 
         Memory *mem;

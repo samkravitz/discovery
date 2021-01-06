@@ -35,11 +35,8 @@
 
 u32 U16ToU32Color(u16);
 
-PPU::PPU()
+PPU::PPU(Memory *mem, LcdStat *stat) : mem(mem), stat(stat)
 {
-    mem  = NULL;
-    stat = NULL;
-
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
         LOG(LogLevel::Error, "Could not initialize PPU");

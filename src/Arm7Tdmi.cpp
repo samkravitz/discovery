@@ -17,7 +17,7 @@
 
 //#define PRINT
 
-Arm7Tdmi::Arm7Tdmi()
+Arm7Tdmi::Arm7Tdmi(Memory *mem) : mem(mem)
 {
     registers = {0}; // zero out registers
     registers.r15 = 0x8000000; // starting address of gamepak flash rom
@@ -39,7 +39,6 @@ Arm7Tdmi::Arm7Tdmi()
     in_interrupt  = false;
     swi_vblank_intr = false;
     last_read_bios = 0xE129F000;
-    mem = NULL;
     
     // different initialization for the testing environment
     #ifdef TEST

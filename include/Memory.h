@@ -49,7 +49,7 @@ constexpr u32 MEM_SIZE             = 0x8000000;
 class Memory
 {
     public:
-        Memory();
+        Memory(LcdStat *);
         ~Memory();
 
         u8 memory[MEM_SIZE];

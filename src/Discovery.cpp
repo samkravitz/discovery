@@ -12,12 +12,9 @@
 
 #include "Discovery.h"
 
-void PrintKeys(u16);
-int debug = 0;
-
 int main(int argc, char **argv)
 {
-    LOG("Welcome to Discovery\n");
+    LOG("Welcome to Discovery!\n");
 
     Discovery emulator;
 
@@ -27,15 +24,6 @@ int main(int argc, char **argv)
         LOG(LogLevel::Error, "Error Loading Bios\n");
         return 1;
     }
-
-    std::string deb = "";
-
-    // debug mode
-    if (argc > 2)
-        deb += argv[2];
-
-    if (deb == "-d")
-        debug = 1;
     
     emulator.LoadRom(argv[1]);
     return 0;
@@ -52,8 +40,6 @@ Discovery::Discovery()
 
     cpu->mem = mem;
     ppu->mem = mem;
-
-    system_cycles = 0;
 
     stat = new LcdStat();
     mem->stat = stat;
@@ -173,10 +159,6 @@ void Discovery::LoadRom(char *name)
         exit(1);
     }
 
-    // if (debug)
-    //     game_loop_debug();
-    
-    // else
     GameLoop();
 }
 
@@ -191,118 +173,3 @@ void Discovery::ShutDown()
     cpu->~Arm7Tdmi();
     ppu->~PPU();
 }
-
-// void discovery::game_loop_debug()
-// {
-//     SDL_Event e;
-//     u32 old_cycles = 0;
-//     int num = 0;
-//     std::string input;
-//     u32 breakpoint;
-//     while (true)
-//     {
-//         std::cout << "> ";
-//         std::getline(std::cin, input);
-
-//         switch (input.at(0))
-//         {
-//             case 'n':
-//                 cpu->Fetch();
-//                 cpu->Decode(cpu->pipeline[0]);
-//                 cpu->Execute(cpu->pipeline[0]);
-//                 print_debug_info();
-//                 break;
-
-//             case 'b':
-//                 breakpoint = std::stoi(input.substr(2));
-//                 continue;
-//                 break;
-            
-//             case 'c':
-//                 while (cpu->Registers.r15 != breakpoint)
-//                 {
-//                     cpu->Fetch();
-//                     cpu->Decode(cpu->pipeline[0]);
-//                     cpu->Execute(cpu->pipeline[0]);
-
-//                     cpu->pipeline[0] = cpu->pipeline[1];
-//                     cpu->pipeline[1] = cpu->pipeline[2];
-
-//                     // run gpu for as many clock cycles as cpu used
-//                     system_cycles = cpu->cycles;
-//                     for (int i = system_cycles - old_cycles; i > 0; --i)
-//                         gpu->Tick();
-//                     old_cycles = system_cycles;
-                
-//                     // poll for key presses at start of vblank
-//                     if (stat->scanline == 160 && SDL_PollEvent(&e))
-//                     {
-//                         if (e.type == SDL_QUIT)
-//                             break;
-//                     }
-//                 }
-//                 print_debug_info();
-//                 continue;
-//         }
-        
-
-//         // update pipeline
-//         cpu->pipeline[0] = cpu->pipeline[1];
-//         cpu->pipeline[1] = cpu->pipeline[2];
-
-//         // run gpu for as many clock cycles as cpu used
-//         system_cycles = cpu->cycles;
-//         for (int i = system_cycles - old_cycles; i > 0; --i)
-//             gpu->Tick();
-//         old_cycles = system_cycles;
-    
-//         // poll for key presses at start of vblank
-//         if (gpu->stat->scanline == 160 && SDL_PollEvent(&e))
-//         {
-//             if (e.type == SDL_QUIT)
-//                 break;
-//         }
-
-//         cpu->HandleInerrupt();
-//     }
-//     shutdown();
-// }
-
-// void discovery::print_debug_info()
-// {
-//     std::cout << "Executed: " << std::hex << cpu->pipeline[0] << "\n";
-
-//     //print registers
-//     std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << cpu->GetRegister(0) << 
-// 				" -- R4  : 0x" << std::setw(8) << std::setfill('0') << cpu->GetRegister(4) << 
-// 				" -- R8  : 0x" << std::setw(8) << std::setfill('0') << cpu->GetRegister(8) << 
-// 				" -- R12 : 0x" << std::setw(8) << std::setfill('0') << cpu->GetRegister(12) << "\n";
-
-// 			std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << cpu->GetRegister(1) << 
-// 				" -- R5  : 0x" << std::setw(8) << std::setfill('0') << cpu->GetRegister(5) << 
-// 				" -- R9  : 0x" << std::setw(8) << std::setfill('0') << cpu->GetRegister(9) << 
-// 				" -- R13 : 0x" << std::setw(8) << std::setfill('0') << cpu->GetRegister(13) << "\n";
-
-// 			std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << cpu->GetRegister(2) << 
-// 				" -- R6  : 0x" << std::setw(8) << std::setfill('0') << cpu->GetRegister(6) << 
-// 				" -- R10 : 0x" << std::setw(8) << std::setfill('0') << cpu->GetRegister(10) << 
-// 				" -- R14 : 0x" << std::setw(8) << std::setfill('0') << cpu->GetRegister(14) << "\n";
-
-// 			std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << cpu->GetRegister(3) << 
-// 				" -- R7  : 0x" << std::setw(8) << std::setfill('0') << cpu->GetRegister(7) << 
-// 				" -- R11 : 0x" << std::setw(8) << std::setfill('0') << cpu->GetRegister(11) << 
-// 				" -- R15 : 0x" << std::setw(8) << std::setfill('0') << cpu->GetRegister(15) << "\n";
-
-	
-// 			std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << cpu->Registers.cpsr.raw << "\t";
-//             // if (cpu->get_condition_code_flag(ConditionFlag::N))
-//             //     std::cout << "N";
-//             // if (cpu->get_condition_code_flag(ConditionFlag::Z))
-//             //     std::cout << "Z";
-//             // if (cpu->get_condition_code_flag(ConditionFlag::C))
-//             //     std::cout << "C";
-//             // if (cpu->get_condition_code_flag(ConditionFlag::V))
-//             //     std::cout << "V";
-//             std::cout << "\n";
-//             std::cout << "Cycles: " << std::dec << cpu->cycles << "\n";
-// }

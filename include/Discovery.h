@@ -34,7 +34,4 @@ class Discovery
     private:
         void GameLoop();
         void ShutDown();
-
-        void game_loop_debug();
-        void print_debug_info();
 };

@@ -48,7 +48,7 @@ class Arm7Tdmi
         u32  current_interrupt;
         u32  cycles;
 
-        struct Registers
+        struct registers
         {
             // general purpose registers
             u32 r0;
@@ -99,7 +99,7 @@ class Arm7Tdmi
             StatusRegister spsr_abt;
             StatusRegister spsr_irq;
             StatusRegister spsr_und;
-        } Registers;
+        } registers;
         
         void Fetch();
         void Decode(u32);
@@ -166,8 +166,8 @@ class Arm7Tdmi
         Mode GetMode();
         void SetMode(Mode);
 
-        State GetState()           { return Registers.cpsr.flags.t == 1 ? State::THUMB : State::ARM; }
-        void SetState(State state) { Registers.cpsr.flags.t = state == State::THUMB ? 1 : 0; }
+        State GetState()           { return registers.cpsr.flags.t == 1 ? State::THUMB : State::ARM; }
+        void SetState(State state) { registers.cpsr.flags.t = state == State::THUMB ? 1 : 0; }
         
     private:
         // safely interface with memory

@@ -20,7 +20,7 @@ void Arm7Tdmi::BranchExchange(u32 instruction)
 
     if (Rn == r15)
     {
-        LOG(LogLevel::Error, "BranchExchange: Undefined behavior: r15 as operand: 0x{x}\n", Registers.r15);
+        LOG(LogLevel::Error, "BranchExchange: Undefined behavior: r15 as operand: 0x{x}\n", registers.r15);
         SetMode(Mode::UND);
         exit(0);
         return;
@@ -33,7 +33,7 @@ void Arm7Tdmi::BranchExchange(u32 instruction)
     // swith to THUMB mode if necessary
     if ((branch_address & 1) == 1)
     {
-        Registers.r15 -= 1; // continue at Rn - 1 for thumb mode
+        registers.r15 -= 1; // continue at Rn - 1 for thumb mode
         SetState(State::THUMB);
     }
 
@@ -284,8 +284,6 @@ void Arm7Tdmi::Multiply(u32 instruction)
         LOG(LogLevel::Error, "Multiply: Register 15 may not be used as destination nor operand register\n");
         return;
     }
-
-    //std::cout << "Multiplication\n";
 
     u8 m; // # of m cycles
     
@@ -812,7 +810,7 @@ void Arm7Tdmi::BlockDataTransfer(u32 instruction)
 
         else // store r15
         {
-            Write32(base, Registers.r15 + 4);
+            Write32(base, registers.r15 + 4);
         }
 
         // store Rb = Rb +/- 0x40
@@ -1021,7 +1019,7 @@ void Arm7Tdmi::SoftwareInterruptArm(u32 instruction)
     u32 old_cpsr = GetRegister(cpsr);
     SetMode(Mode::SVC);
     SetRegister(r14, GetRegister(r15) - 4);
-    Registers.cpsr.flags.i = 1;
+    registers.cpsr.flags.i = 1;
     UpdateSPSR(old_cpsr, false); // move up
     SetRegister(r15, 0x08);
     pipeline_full = false;

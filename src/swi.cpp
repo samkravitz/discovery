@@ -107,7 +107,7 @@ void Arm7Tdmi::SwiVBlankIntrWait()
 {
     // force interrupts to be enabled
     mem->Write32Unsafe(REG_IME, 0x1);
-    Registers.cpsr.flags.i = 0;
+    registers.cpsr.flags.i = 0;
 
     // write 1 to r0, r1
     SetRegister(r0, 0x1);
@@ -116,7 +116,7 @@ void Arm7Tdmi::SwiVBlankIntrWait()
     // std::cout << "b" << ((int) mem->read_u32_unprotected(REG_IE)) << "\n";
     // std::cout << ((int) mem->read_u32_unprotected(REG_IME)) << "\n";
     //exit(0);
-    Registers.r15 -= GetState() == State::ARM ? 4 : 2;
+    registers.r15 -= GetState() == State::ARM ? 4 : 2;
     pipeline[1] = pipeline[0];
     pipeline[2] = pipeline[0];
     swi_vblank_intr = true;

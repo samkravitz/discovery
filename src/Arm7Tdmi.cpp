@@ -19,19 +19,19 @@
 
 Arm7Tdmi::Arm7Tdmi()
 {
-    Registers = {0}; // zero out registers
-    Registers.r15 = 0x8000000; // starting address of gamepak flash rom
+    registers = {0}; // zero out registers
+    registers.r15 = 0x8000000; // starting address of gamepak flash rom
 
-    Registers.r13     = 0x3007F00; // starting address of user stack
-    Registers.r13_svc = 0x3007FE0; // starting address of swi stack
-    Registers.r13_irq = 0x3007FA0; // starting address of interrupt stack
+    registers.r13     = 0x3007F00; // starting address of user stack
+    registers.r13_svc = 0x3007FE0; // starting address of swi stack
+    registers.r13_irq = 0x3007FA0; // starting address of interrupt stack
 
     SetMode(Mode::SVC);
     SetState(State::ARM);
 
     // initialize cpsr
-    Registers.cpsr.flags.f = 1;
-    Registers.cpsr.flags.i = 1;
+    registers.cpsr.flags.f = 1;
+    registers.cpsr.flags.i = 1;
 
     pipeline_full = false;
     cycles = 0;
@@ -53,7 +53,7 @@ Arm7Tdmi::~Arm7Tdmi() { }
 
 Mode Arm7Tdmi::GetMode()
 {
-    switch (Registers.cpsr.flags.mode)
+    switch (registers.cpsr.flags.mode)
     {
         case 0b10000: return Mode::USR;
         case 0b10001: return Mode::FIQ;
@@ -63,7 +63,7 @@ Mode Arm7Tdmi::GetMode()
         case 0b11111: return Mode::SYS;
         case 0b11011: return Mode::UND;
         default:
-            LOG(LogLevel::Error, "Undefined mode {}\n", (int) Registers.cpsr.flags.mode);
+            LOG(LogLevel::Error, "Undefined mode {}\n", (int) registers.cpsr.flags.mode);
             exit(21);
     } 
 }
@@ -86,13 +86,13 @@ void Arm7Tdmi::SetMode(Mode mode)
 
     switch (mode)
     {
-        case Mode::USR: Registers.cpsr.flags.mode = 0b10000; break;
-        case Mode::FIQ: Registers.cpsr.flags.mode = 0b10001; break;
-        case Mode::IRQ: Registers.cpsr.flags.mode = 0b10010; break;
-        case Mode::SVC: Registers.cpsr.flags.mode = 0b10011; break;
-        case Mode::ABT: Registers.cpsr.flags.mode = 0b10111; break;
-        case Mode::SYS: Registers.cpsr.flags.mode = 0b11111; break;
-        case Mode::UND: Registers.cpsr.flags.mode = 0b11011; break;
+        case Mode::USR: registers.cpsr.flags.mode = 0b10000; break;
+        case Mode::FIQ: registers.cpsr.flags.mode = 0b10001; break;
+        case Mode::IRQ: registers.cpsr.flags.mode = 0b10010; break;
+        case Mode::SVC: registers.cpsr.flags.mode = 0b10011; break;
+        case Mode::ABT: registers.cpsr.flags.mode = 0b10111; break;
+        case Mode::SYS: registers.cpsr.flags.mode = 0b11111; break;
+        case Mode::UND: registers.cpsr.flags.mode = 0b11011; break;
     }
 }
 
@@ -100,10 +100,10 @@ u8 Arm7Tdmi::GetConditionCodeFlag(ConditionFlag flag)
 {
     switch (flag)
     {
-        case ConditionFlag::N: return Registers.cpsr.flags.n; 
-        case ConditionFlag::Z: return Registers.cpsr.flags.z;
-        case ConditionFlag::C: return Registers.cpsr.flags.c;
-        case ConditionFlag::V: return Registers.cpsr.flags.v;
+        case ConditionFlag::N: return registers.cpsr.flags.n; 
+        case ConditionFlag::Z: return registers.cpsr.flags.z;
+        case ConditionFlag::C: return registers.cpsr.flags.c;
+        case ConditionFlag::V: return registers.cpsr.flags.v;
         default:
             std::cerr << "Unrecognized condition code flag\n";
             return 0;
@@ -121,10 +121,10 @@ void Arm7Tdmi::SetConditionCodeFlag(ConditionFlag flag, u8 bit)
 
     switch (flag)
     {
-        case ConditionFlag::N: Registers.cpsr.flags.n = bit; break;
-        case ConditionFlag::Z: Registers.cpsr.flags.z = bit; break;
-        case ConditionFlag::C: Registers.cpsr.flags.c = bit; break;
-        case ConditionFlag::V: Registers.cpsr.flags.v = bit; break;
+        case ConditionFlag::N: registers.cpsr.flags.n = bit; break;
+        case ConditionFlag::Z: registers.cpsr.flags.z = bit; break;
+        case ConditionFlag::C: registers.cpsr.flags.c = bit; break;
+        case ConditionFlag::V: registers.cpsr.flags.v = bit; break;
         default:
             std::cerr << "Unrecognized condition code flag\n";
             return;
@@ -165,14 +165,14 @@ void Arm7Tdmi::Fetch()
         switch (GetState())
         {
             case State::ARM:
-                pipeline[0] = Read32(Registers.r15, false); Registers.r15 += 4;
-                pipeline[1] = Read32(Registers.r15, false); Registers.r15 += 4;
-                pipeline[2] = Read32(Registers.r15, false);
+                pipeline[0] = Read32(registers.r15, false); registers.r15 += 4;
+                pipeline[1] = Read32(registers.r15, false); registers.r15 += 4;
+                pipeline[2] = Read32(registers.r15, false);
                 break;
             case State::THUMB:
-                pipeline[0] = Read16(Registers.r15, false); Registers.r15 += 2;
-                pipeline[1] = Read16(Registers.r15, false); Registers.r15 += 2;
-                pipeline[2] = Read16(Registers.r15, false);
+                pipeline[0] = Read16(registers.r15, false); registers.r15 += 2;
+                pipeline[1] = Read16(registers.r15, false); registers.r15 += 2;
+                pipeline[2] = Read16(registers.r15, false);
                 break;
         }
 
@@ -183,10 +183,10 @@ void Arm7Tdmi::Fetch()
     switch (GetState())
     {
         case State::ARM:
-            pipeline[2] = Read32(Registers.r15, false);
+            pipeline[2] = Read32(registers.r15, false);
             break;
         case State::THUMB:
-            pipeline[2] = (u16) Read16(Registers.r15, false);
+            pipeline[2] = (u16) Read16(registers.r15, false);
             break;
     }
 }
@@ -225,8 +225,8 @@ void Arm7Tdmi::Execute(u32 instruction)
                 case ArmInstruction::SWP:  SingleDataSwap(instruction);       break;
                 case ArmInstruction::INT:  SoftwareInterruptArm(instruction); break;
                 default:
-                    LOG(LogLevel::Error, "Cannot execute instruction {}, pc {}\n", instruction, Registers.r15);
-                    Registers.r15 &= ~0x3;
+                    LOG(LogLevel::Error, "Cannot execute instruction {}, pc {}\n", instruction, registers.r15);
+                    registers.r15 &= ~0x3;
             }
             break;
 
@@ -254,8 +254,8 @@ void Arm7Tdmi::Execute(u32 instruction)
                 case ThumbInstruction::BAL:    UnconditionalBranch(instr);     break;
                 case ThumbInstruction::BL:     LongBranchLink(instr);          break;
                 default:
-                    std::cerr << "Cannot execute thumb instruction: " << (u16) instruction << " " << std::hex << Registers.r15 << "\n";
-                    Registers.r15 &= ~0x1;
+                    std::cerr << "Cannot execute thumb instruction: " << (u16) instruction << " " << std::hex << registers.r15 << "\n";
+                    registers.r15 &= ~0x1;
             }
             break;
     }
@@ -304,83 +304,83 @@ u32 Arm7Tdmi::GetRegister(u32 reg)
 {
     switch (reg)
     {
-        case r0: return Registers.r0;
-        case r1: return Registers.r1;
-        case r2: return Registers.r2;
-        case r3: return Registers.r3;
-        case r4: return Registers.r4;
-        case r5: return Registers.r5;
-        case r6: return Registers.r6;
-        case r7: return Registers.r7;
+        case r0: return registers.r0;
+        case r1: return registers.r1;
+        case r2: return registers.r2;
+        case r3: return registers.r3;
+        case r4: return registers.r4;
+        case r5: return registers.r5;
+        case r6: return registers.r6;
+        case r7: return registers.r7;
 
         case r8:
             switch (GetMode())
             {
-                case Mode::FIQ: return Registers.r8_fiq;
-                default: return Registers.r8;
+                case Mode::FIQ: return registers.r8_fiq;
+                default: return registers.r8;
             }
         case r9:
             switch (GetMode())
             {
-                case Mode::FIQ: return Registers.r9_fiq;
-                default: return Registers.r9;
+                case Mode::FIQ: return registers.r9_fiq;
+                default: return registers.r9;
             }
         case r10:
             switch (GetMode())
             {
-                case Mode::FIQ: return Registers.r10_fiq;
-                default: return Registers.r10;
+                case Mode::FIQ: return registers.r10_fiq;
+                default: return registers.r10;
             }
         case r11:
             switch (GetMode())
             {
-                case Mode::FIQ: return Registers.r11_fiq;
-                default: return Registers.r11;
+                case Mode::FIQ: return registers.r11_fiq;
+                default: return registers.r11;
             }
         case r12:
             switch (GetMode())
             {
-                case Mode::FIQ: return Registers.r12_fiq;
-                default: return Registers.r12;
+                case Mode::FIQ: return registers.r12_fiq;
+                default: return registers.r12;
             }
 
         case r13:
             switch(GetMode())
             {
                 case Mode::USR:
-                case Mode::SYS: return Registers.r13;
-                case Mode::FIQ: return Registers.r13_fiq;
-                case Mode::SVC: return Registers.r13_svc;
-                case Mode::ABT: return Registers.r13_abt;
-                case Mode::IRQ: return Registers.r13_irq;
-                case Mode::UND: return Registers.r13_und;
+                case Mode::SYS: return registers.r13;
+                case Mode::FIQ: return registers.r13_fiq;
+                case Mode::SVC: return registers.r13_svc;
+                case Mode::ABT: return registers.r13_abt;
+                case Mode::IRQ: return registers.r13_irq;
+                case Mode::UND: return registers.r13_und;
             }
 
         case r14:
             switch(GetMode())
             {
                 case Mode::USR:
-                case Mode::SYS: return Registers.r14;
-                case Mode::FIQ: return Registers.r14_fiq;
-                case Mode::SVC: return Registers.r14_svc;
-                case Mode::ABT: return Registers.r14_abt;
-                case Mode::IRQ: return Registers.r14_irq;
-                case Mode::UND: return Registers.r14_und;
+                case Mode::SYS: return registers.r14;
+                case Mode::FIQ: return registers.r14_fiq;
+                case Mode::SVC: return registers.r14_svc;
+                case Mode::ABT: return registers.r14_abt;
+                case Mode::IRQ: return registers.r14_irq;
+                case Mode::UND: return registers.r14_und;
             }
 
         case r15:
-            return Registers.r15; // all banks share r15
+            return registers.r15; // all banks share r15
         case cpsr:
-            return Registers.cpsr.raw; // all banks share cpsr
+            return registers.cpsr.raw; // all banks share cpsr
         case spsr:
             switch(GetMode())
             {
-                case Mode::FIQ: return Registers.spsr_fiq.raw;
-                case Mode::SVC: return Registers.spsr_svc.raw;
-                case Mode::ABT: return Registers.spsr_abt.raw;
-                case Mode::IRQ: return Registers.spsr_irq.raw;
-                case Mode::SYS: return Registers.cpsr.raw;
-                case Mode::UND: return Registers.spsr_und.raw;
+                case Mode::FIQ: return registers.spsr_fiq.raw;
+                case Mode::SVC: return registers.spsr_svc.raw;
+                case Mode::ABT: return registers.spsr_abt.raw;
+                case Mode::IRQ: return registers.spsr_irq.raw;
+                case Mode::SYS: return registers.cpsr.raw;
+                case Mode::UND: return registers.spsr_und.raw;
             }
             break;
         default:
@@ -395,24 +395,24 @@ void Arm7Tdmi::SetRegister(u32 reg, u32 val)
     switch (reg)
     {
         // all banks share r0 - r7
-        case r0: Registers.r0 = val; break;
-        case r1: Registers.r1 = val; break;
-        case r2: Registers.r2 = val; break;
-        case r3: Registers.r3 = val; break;
-        case r4: Registers.r4 = val; break;
-        case r5: Registers.r5 = val; break;
-        case r6: Registers.r6 = val; break;
-        case r7: Registers.r7 = val; break;
+        case r0: registers.r0 = val; break;
+        case r1: registers.r1 = val; break;
+        case r2: registers.r2 = val; break;
+        case r3: registers.r3 = val; break;
+        case r4: registers.r4 = val; break;
+        case r5: registers.r5 = val; break;
+        case r6: registers.r6 = val; break;
+        case r7: registers.r7 = val; break;
 
         // banked registers
         case r8:
             switch (GetMode())
             {
                 case Mode::FIQ:
-                    Registers.r8_fiq = val;
+                    registers.r8_fiq = val;
                     break;
                 default:
-                    Registers.r8 = val;
+                    registers.r8 = val;
                     break;
             }
             break;
@@ -420,10 +420,10 @@ void Arm7Tdmi::SetRegister(u32 reg, u32 val)
             switch (GetMode())
             {
                 case Mode::FIQ:
-                    Registers.r9_fiq = val;
+                    registers.r9_fiq = val;
                     break;
                 default:
-                    Registers.r9 = val;
+                    registers.r9 = val;
                     break;
             }
             break;
@@ -431,10 +431,10 @@ void Arm7Tdmi::SetRegister(u32 reg, u32 val)
             switch (GetMode())
             {
                 case Mode::FIQ:
-                    Registers.r10_fiq = val;
+                    registers.r10_fiq = val;
                     break;
                 default:
-                    Registers.r10 = val;
+                    registers.r10 = val;
                     break;
             }
             break;
@@ -442,10 +442,10 @@ void Arm7Tdmi::SetRegister(u32 reg, u32 val)
             switch (GetMode())
             {
                 case Mode::FIQ:
-                    Registers.r11_fiq = val;
+                    registers.r11_fiq = val;
                     break;
                 default:
-                    Registers.r11 = val;
+                    registers.r11 = val;
                     break;
             }
             break;
@@ -453,10 +453,10 @@ void Arm7Tdmi::SetRegister(u32 reg, u32 val)
             switch (GetMode())
             {
                 case Mode::FIQ:
-                    Registers.r12_fiq = val;
+                    registers.r12_fiq = val;
                     break;
                 default:
-                    Registers.r12 = val;
+                    registers.r12 = val;
                     break;
             }
             break;
@@ -466,22 +466,22 @@ void Arm7Tdmi::SetRegister(u32 reg, u32 val)
             {
                 case Mode::USR:
                 case Mode::SYS:
-                    Registers.r13 = val;
+                    registers.r13 = val;
                     break;
                 case Mode::FIQ:
-                    Registers.r13_fiq = val;
+                    registers.r13_fiq = val;
                     break;
                 case Mode::SVC:
-                    Registers.r13_svc = val;
+                    registers.r13_svc = val;
                     break;
                 case Mode::ABT:
-                    Registers.r13_abt = val;
+                    registers.r13_abt = val;
                     break;
                 case Mode::IRQ:
-                    Registers.r13_irq = val;
+                    registers.r13_irq = val;
                     break;
                 case Mode::UND:
-                    Registers.r13_und = val;
+                    registers.r13_und = val;
                     break;
             }
             break;
@@ -491,29 +491,29 @@ void Arm7Tdmi::SetRegister(u32 reg, u32 val)
             {
                 case Mode::USR:
                 case Mode::SYS:
-                    Registers.r14 = val;
+                    registers.r14 = val;
                     break;
                 case Mode::FIQ:
-                    Registers.r14_fiq = val;
+                    registers.r14_fiq = val;
                     break;
                 case Mode::SVC:
-                    Registers.r14_svc = val;
+                    registers.r14_svc = val;
                     break;
                 case Mode::ABT:
-                    Registers.r14_abt = val;
+                    registers.r14_abt = val;
                     break;
                 case Mode::IRQ:
-                    Registers.r14_irq = val;
+                    registers.r14_irq = val;
                     break;
                 case Mode::UND:
-                    Registers.r14_und = val;
+                    registers.r14_und = val;
                     break;
             }
             break;
 
 
-        case r15: Registers.r15 = val; break; // all banks share r15
-        case cpsr: Registers.cpsr.raw = val; break; // all banks share cpsr
+        case r15: registers.r15 = val; break; // all banks share r15
+        case cpsr: registers.cpsr.raw = val; break; // all banks share cpsr
         default:
             std::cerr << "Unknown register: " << reg << "\n";
             break;
@@ -689,7 +689,7 @@ u8 Arm7Tdmi::BarrelShift(u32 shift_amount, u32 &num, u8 opcode)
 
 inline void Arm7Tdmi::IncrementPC()
 {
-    Registers.r15 += GetState() == State::ARM ? 4 : 2;
+    registers.r15 += GetState() == State::ARM ? 4 : 2;
 }
 
 /*
@@ -704,16 +704,16 @@ void Arm7Tdmi::UpdateCPSR(u32 value, bool flags_only)
     // in user mode, only condition bits can be changed
     if (flags_only || GetMode() == Mode::USR)
     {
-        Registers.cpsr.flags.n = sr.flags.n;
-        Registers.cpsr.flags.z = sr.flags.z;
-        Registers.cpsr.flags.c = sr.flags.c;
-        Registers.cpsr.flags.v = sr.flags.v;
+        registers.cpsr.flags.n = sr.flags.n;
+        registers.cpsr.flags.z = sr.flags.z;
+        registers.cpsr.flags.c = sr.flags.c;
+        registers.cpsr.flags.v = sr.flags.v;
         return;
     }
 
-    Registers.cpsr.raw = value;
+    registers.cpsr.raw = value;
 
-    if (Registers.cpsr.flags.t != sr.flags.t)
+    if (registers.cpsr.flags.t != sr.flags.t)
         LOG(LogLevel::Warning, "Software is changing T-Bit in CPSR!\n");
 
     // TODO - validate CPSR was appropriately changed
@@ -750,12 +750,12 @@ void Arm7Tdmi::UpdateSPSR(u32 value, bool flags_only)
     {
         // spsr doesn't exist in user mode
         case Mode::USR: std::cerr << "Error: SPSR does not exist in user mode" << "\n"; exit(6);
-        case Mode::FIQ: old_spsr = Registers.spsr_fiq; break;
-        case Mode::SVC: old_spsr = Registers.spsr_svc; break;
-        case Mode::ABT: old_spsr = Registers.spsr_abt; break;
-        case Mode::IRQ: old_spsr = Registers.spsr_irq; break;
-        case Mode::SYS: old_spsr = Registers.cpsr;     break;
-        case Mode::UND: old_spsr = Registers.spsr_und; break;
+        case Mode::FIQ: old_spsr = registers.spsr_fiq; break;
+        case Mode::SVC: old_spsr = registers.spsr_svc; break;
+        case Mode::ABT: old_spsr = registers.spsr_abt; break;
+        case Mode::IRQ: old_spsr = registers.spsr_irq; break;
+        case Mode::SYS: old_spsr = registers.cpsr;     break;
+        case Mode::UND: old_spsr = registers.spsr_und; break;
     }
 
     // new spsr
@@ -773,11 +773,11 @@ void Arm7Tdmi::UpdateSPSR(u32 value, bool flags_only)
         // set updated spsr_<mode>
         switch (GetMode())
         {
-            case Mode::FIQ: Registers.spsr_fiq = old_spsr; break;
-            case Mode::SVC: Registers.spsr_svc = old_spsr; break;
-            case Mode::ABT: Registers.spsr_abt = old_spsr; break;
-            case Mode::IRQ: Registers.spsr_irq = old_spsr; break;
-            case Mode::UND: Registers.spsr_und = old_spsr; break;
+            case Mode::FIQ: registers.spsr_fiq = old_spsr; break;
+            case Mode::SVC: registers.spsr_svc = old_spsr; break;
+            case Mode::ABT: registers.spsr_abt = old_spsr; break;
+            case Mode::IRQ: registers.spsr_irq = old_spsr; break;
+            case Mode::UND: registers.spsr_und = old_spsr; break;
             case Mode::SYS: LOG("SYS in SPSR flags\n");
         }
         
@@ -787,11 +787,11 @@ void Arm7Tdmi::UpdateSPSR(u32 value, bool flags_only)
     // set updated spsr_<mode>
     switch (GetMode())
     {
-        case Mode::FIQ: Registers.spsr_fiq = new_spsr; break;
-        case Mode::SVC: Registers.spsr_svc = new_spsr; break;
-        case Mode::ABT: Registers.spsr_abt = new_spsr; break;
-        case Mode::IRQ: Registers.spsr_irq = new_spsr; break;
-        case Mode::UND: Registers.spsr_und = new_spsr; break;
+        case Mode::FIQ: registers.spsr_fiq = new_spsr; break;
+        case Mode::SVC: registers.spsr_svc = new_spsr; break;
+        case Mode::ABT: registers.spsr_abt = new_spsr; break;
+        case Mode::IRQ: registers.spsr_irq = new_spsr; break;
+        case Mode::UND: registers.spsr_und = new_spsr; break;
         case Mode::SYS: LOG("SYS in SPSR\n");    break;
     }
 }
@@ -845,7 +845,7 @@ void Arm7Tdmi::HandleInterrupt()
         SetRegister(cpsr, GetRegister(spsr));
 
         // re-enable interrupts
-        Registers.cpsr.flags.i = 0;
+        registers.cpsr.flags.i = 0;
         mem->Write32Unsafe(REG_IME, 1);
 
         pipeline_full = false;
@@ -862,7 +862,7 @@ void Arm7Tdmi::HandleInterrupt()
     }
 
     // check if master interrupts are enabled
-    if ((mem->Read32Unsafe(REG_IME) & 1) && Registers.cpsr.flags.i == 0) 
+    if ((mem->Read32Unsafe(REG_IME) & 1) && registers.cpsr.flags.i == 0) 
     {
         // get enabled interrupts and requested interrupts
         u16 interrupts_enabled   = mem->Read16Unsafe(REG_IE);
@@ -924,7 +924,7 @@ void Arm7Tdmi::HandleInterrupt()
                 // ldr r15, [r0, -0x4]
                 SetRegister(r15, mem->Read32(GetRegister(r0) - 0x4) & ~0x3);
 
-                Registers.cpsr.flags.i = 1; // disable interrupts
+                registers.cpsr.flags.i = 1; // disable interrupts
                 SetState(State::ARM);
                 pipeline_full = false;
                 in_interrupt  = true;
@@ -941,7 +941,7 @@ void Arm7Tdmi::HandleInterrupt()
 u8 Arm7Tdmi::Read8(u32 address)
 {
     // reading from BIOS memory
-    if (address <= 0x3FFF && Registers.r15 > 0x3FFF)
+    if (address <= 0x3FFF && registers.r15 > 0x3FFF)
     {
         LOG(LogLevel::Error, "Invalid read from BIOS u8: 0x{x}\n", last_read_bios);
         // u32 value = last_read_bios;
@@ -962,7 +962,7 @@ u8 Arm7Tdmi::Read8(u32 address)
         LOG(LogLevel::Warning, "UNUSED U8\n");
         switch (GetState())
         {
-            case State::ARM: return mem->Read32(Registers.r15);
+            case State::ARM: return mem->Read32(registers.r15);
             case State::THUMB:
                 exit(0);
                 break;
@@ -990,7 +990,7 @@ u8 Arm7Tdmi::Read8(u32 address)
 u32 Arm7Tdmi::Read16(u32 address, bool sign)
 {
     // reading from BIOS memory
-    if (address <= 0x3FFF && Registers.r15 > 0x3FFF)
+    if (address <= 0x3FFF && registers.r15 > 0x3FFF)
     {
         LOG(LogLevel::Error, "Invalid read from BIOS u16: 0x{x}\n", last_read_bios);
 
@@ -1062,7 +1062,7 @@ u32 Arm7Tdmi::Read16(u32 address, bool sign)
         
         switch (GetState())
         {
-            case State::ARM: return mem->Read32(Registers.r15);
+            case State::ARM: return mem->Read32(registers.r15);
             case State::THUMB:
                 exit(0);
                 break;
@@ -1119,7 +1119,7 @@ u32 Arm7Tdmi::Read32(u32 address, bool ldr)
     if (address <= 0x3FFF)
     {
 
-        if (Registers.r15 < 0x3FFF)
+        if (registers.r15 < 0x3FFF)
             last_read_bios = mem->Read32Unsafe(address);
         
         return last_read_bios;
@@ -1178,7 +1178,7 @@ u32 Arm7Tdmi::Read32(u32 address, bool ldr)
         switch (GetState())
         {
             
-            case State::ARM: return mem->Read32(Registers.r15);
+            case State::ARM: return mem->Read32(registers.r15);
             case State::THUMB:
                 exit(0);
                 break;

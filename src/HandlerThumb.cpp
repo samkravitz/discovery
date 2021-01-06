@@ -793,7 +793,7 @@ void Arm7Tdmi::MultipleLoadStore(u16 instruction)
 
         else // store r15
         {
-            Write32(base, Registers.r15 + 4);
+            Write32(base, registers.r15 + 4);
         }
 
         // store Rb = Rb +/- 0x40
@@ -920,7 +920,7 @@ void Arm7Tdmi::SoftwareInterruptThumb(u16 instruction)
     u32 old_cpsr = GetRegister(cpsr);
     SetMode(Mode::SVC);
     SetRegister(r14, GetRegister(r15) - 2);
-    Registers.cpsr.flags.i = 1;
+    registers.cpsr.flags.i = 1;
     UpdateSPSR(old_cpsr, false);
     SetState(State::ARM);
     SetRegister(r15, 0x08);

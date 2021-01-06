@@ -806,11 +806,11 @@ void Arm7Tdmi::Tick(u8 n, u8 s, u8 i)
 
     // non-sequential wait states
     for (int x = 0; x < n; ++x)
-        access_cycles += 1 + mem->NCycles; // 1 + N waitstates
+        access_cycles += 1 + mem->n_cycles; // 1 + N waitstates
     
     // sequential wait states
     for (int x = 0; x < s; ++x)
-        access_cycles += 1 + mem->SCycles; // 1 + S waitstates
+        access_cycles += 1 + mem->s_cycles; // 1 + S waitstates
     
     // internal cycle
     for (int x = 0; x < i; ++x)

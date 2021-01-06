@@ -13,6 +13,7 @@
 #include "PPU.h"
 #include "Memory.h"
 #include "Timer.h"
+#include "Gamepad.h"
 
 class Discovery
 {
@@ -23,30 +24,15 @@ class Discovery
         PPU       *ppu;
         Memory    *mem;
         LcdStat   *stat;
+        Gamepad   *gamepad;
         Timer     *timers[4];
 
-        struct Gamepad
-        {
-            u8 a;
-            u8 b;
-            u8 sel;
-            u8 start;
-            u8 right;
-            u8 left;
-            u8 up;
-            u8 down;
-            u8 r;
-            u8 l;
-            u16 keys;
-        } Gamepad;
-
-        u32 system_cycles;
+        long system_cycles;
 
         void LoadRom(char *);
 
     private:
         void GameLoop();
-        void PollKeys(const SDL_Event &);
         void ShutDown();
 
         void game_loop_debug();

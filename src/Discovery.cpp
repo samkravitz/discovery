@@ -43,25 +43,15 @@ int main(int argc, char **argv)
 
 Discovery::Discovery()
 {
-    cpu = new Arm7Tdmi();
-    mem = new Memory();
-    ppu = new PPU();
-    
+    system_cycles = 0;
+
+    cpu     = new Arm7Tdmi();
+    mem     = new Memory();
+    ppu     = new PPU();
+    gamepad = new Gamepad();
+
     cpu->mem = mem;
     ppu->mem = mem;
-
-    // initialize gamepad buttons to 1 (released)
-    Gamepad.a = 1;
-    Gamepad.b = 1;
-    Gamepad.sel = 1;
-    Gamepad.start = 1;
-    Gamepad.right = 1;
-    Gamepad.left = 1;
-    Gamepad.up = 1;
-    Gamepad.down = 1;
-    Gamepad.r = 1;
-    Gamepad.l = 1;
-    Gamepad.keys = 0x3FF;
 
     system_cycles = 0;
 
@@ -166,7 +156,7 @@ void Discovery::GameLoop()
             if (e.type == SDL_QUIT)
                 break;
             if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)
-                PollKeys(e);
+                mem->Write32Unsafe(REG_KEYINPUT, gamepad->Poll(e));
         }
 
         valid = false;
@@ -188,128 +178,6 @@ void Discovery::LoadRom(char *name)
     
     // else
     GameLoop();
-}
-
-// write current key state to KEYINPUT register
-void Discovery::PollKeys(const SDL_Event &e)
-{
-    /*
-     * Order of keys in KEYINPUT is as follows:
-     * a: 0
-     * b: 1
-     * select: 2
-     * start: 3
-     * right: 4
-     * left: 5
-     * up: 6
-     * down: 7
-     * r: 8
-     * l: 9
-     */
-    // poll button presses
-    if (e.type == SDL_KEYDOWN)
-    {
-        switch(e.key.keysym.sym)
-        {
-            case SDLK_x:         Gamepad.a     = 0; break;
-            case SDLK_z:         Gamepad.b     = 0; break;
-            case SDLK_BACKSPACE: Gamepad.sel   = 0; break;
-            case SDLK_RETURN:    Gamepad.start = 0; break;
-            case SDLK_RIGHT:     Gamepad.right = 0; break;
-            case SDLK_LEFT:      Gamepad.left  = 0; break;
-            case SDLK_UP:        Gamepad.up    = 0; break;
-            case SDLK_DOWN:      Gamepad.down  = 0; break;
-            case SDLK_s:         Gamepad.r     = 0; break;
-            case SDLK_a:         Gamepad.l     = 0; break;
-            default: break;
-        }
-    }
-
-    // poll button releases
-    if (e.type == SDL_KEYUP)
-    {
-        switch(e.key.keysym.sym)
-        {
-            case SDLK_x:         Gamepad.a     = 1; break;
-            case SDLK_z:         Gamepad.b     = 1; break;
-            case SDLK_BACKSPACE: Gamepad.sel   = 1; break;
-            case SDLK_RETURN:    Gamepad.start = 1; break;
-            case SDLK_RIGHT:     Gamepad.right = 1; break;
-            case SDLK_LEFT:      Gamepad.left  = 1; break;
-            case SDLK_UP:        Gamepad.up    = 1; break;
-            case SDLK_DOWN:      Gamepad.down  = 1; break;
-            case SDLK_s:         Gamepad.r     = 1; break;
-            case SDLK_a:         Gamepad.l     = 1; break;
-            default: break;
-        }
-    }
-
-    u16 gamepad_result = 0;
-    gamepad_result |= Gamepad.l     << 9;
-    gamepad_result |= Gamepad.r     << 8;
-    gamepad_result |= Gamepad.down  << 7;
-    gamepad_result |= Gamepad.up    << 6;
-    gamepad_result |= Gamepad.left  << 5;
-    gamepad_result |= Gamepad.right << 4;
-    gamepad_result |= Gamepad.start << 3;
-    gamepad_result |= Gamepad.sel   << 2;
-    gamepad_result |= Gamepad.b     << 1;
-    gamepad_result |= Gamepad.a     << 0;
-
-    Gamepad.keys = gamepad_result;
-    
-    // check for key interrupt
-    u16 keycnt = mem->Read16Unsafe(REG_KEYCNT);
-    if (keycnt >> 14 & 0x1) // key interrupts enabled
-    {
-        u16 keys = keycnt & 0x3FF; // keys to check
-
-        bool raise_interrupt = false;
-        if (keycnt >> 15) // use AND (raise if all keys are down)
-        {
-            // all keys to check are down (high)
-            if (keys == ~gamepad_result)
-                raise_interrupt = true;
-        }
-
-        else // use OR (raise if any keys are down)
-        {
-            for (int i = 0; i < 10; ++i) // 10 keys
-            {
-                if ((keys >> i & 1) && (gamepad_result >> i & 1) == 0) 
-                {
-                    raise_interrupt = true;
-                    break;
-                }
-            }
-        }
-
-        // raise keypad interrupt
-        if (raise_interrupt)
-        {
-            std::cout << "Raising gamepad interrupt\n";
-            u16 reg_if = mem->Read16Unsafe(REG_IF) | IRQ_KEYPAD;
-            mem->Write16Unsafe(REG_IF, reg_if);
-        }
-    }
-
-    // store gamepad result back into the KEYINPUT address
-    mem->Write32Unsafe(REG_KEYINPUT, gamepad_result);
-}
-
-void PrintKeys(u16 keys)
-{
-    std::cout << "\n\n";
-    if (((keys >> 9) & 1) == 0) LOG("L is pressed\n");
-    if (((keys >> 8) & 1) == 0) LOG("R is pressed\n");
-    if (((keys >> 7) & 1) == 0) LOG("Down is pressed\n");
-    if (((keys >> 6) & 1) == 0) LOG("Up is pressed\n");
-    if (((keys >> 5) & 1) == 0) LOG("Left is pressed\n");
-    if (((keys >> 4) & 1) == 0) LOG("Right is pressed\n");
-    if (((keys >> 3) & 1) == 0) LOG("Start is pressed\n");
-    if (((keys >> 2) & 1) == 0) LOG("Select is pressed\n");
-    if (((keys >> 1) & 1) == 0) LOG("b is pressed\n");
-    if (((keys >> 0) & 1) == 0) LOG("a is pressed\n");
 }
 
 void Discovery::ShutDown()

@@ -1365,6 +1365,6 @@ bool Arm7Tdmi::CheckState()
     return valid;
 }
 
-// #include "arm_alu.cpp"
-// #include "thumb_alu.cpp"
+// #include "HandlerArm.cpp"
+// #include "HandlerThumb.cpp"
 // #include "swi.cpp"

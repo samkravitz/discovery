@@ -20,9 +20,9 @@ class Discovery
         Discovery();
 
         Arm7Tdmi  *cpu;
-        GPU       *gpu;
+        PPU       *ppu;
         Memory    *mem;
-        LcdStat  *stat;
+        LcdStat   *stat;
         Timer     *timers[4];
 
         struct Gamepad

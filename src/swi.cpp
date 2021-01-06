@@ -9,7 +9,7 @@
  */
 
 #include <cmath>
-#include "arm_7tdmi.h"
+#include "Arm7Tdmi.h"
 
 /*
  *

@@ -35,10 +35,10 @@ Discovery::Discovery()
 {
     cpu = new Arm7Tdmi();
     mem = new Memory();
-    gpu = new GPU();
+    ppu = new PPU();
     
     cpu->mem = mem;
-    gpu->mem = mem;
+    ppu->mem = mem;
 
     // initialize gamepad buttons to 1 (released)
     Gamepad.a = 1;
@@ -57,7 +57,7 @@ Discovery::Discovery()
 
     stat = new LcdStat();
     mem->stat = stat;
-    gpu->stat = stat;
+    ppu->stat = stat;
 
     // initialize timers
     Timer *t0 = new Timer();
@@ -102,7 +102,7 @@ void Discovery::GameLoop()
         {
             ++old_cycles;
 
-            gpu->Tick();
+            ppu->Tick();
 
             // clock timers
             for (int j = 0; j < 4; ++j)
@@ -329,7 +329,7 @@ void Discovery::ShutDown()
         delete timers[i];
         
     cpu->~Arm7Tdmi();
-    gpu->~GPU();
+    ppu->~PPU();
 }
 
 // void discovery::game_loop_debug()

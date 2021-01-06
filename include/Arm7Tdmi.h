@@ -145,7 +145,7 @@ class Arm7Tdmi
         void LongBranchLink(u16);
 
         // software interrupts (swi)
-        void swi_softReset();
+        void SwiSoftReset();
         void SwiRegisterRamReset();
         void SwiVBlankIntrWait();
         void SwiDivision();

@@ -2,7 +2,7 @@
  * License: GPLv2
  * See LICENSE.txt for full license text
  * 
- * FILE: HandlersThumb.cpp
+ * FILE: HandlerThumb.cpp
  * DATE: October 8th, 2020
  * DESCRIPTION: execution of thumb instructions
  */
@@ -10,10 +10,10 @@
 
 void Arm7Tdmi::MoveShiftedRegister(u16 instruction)
 {
-    u16 Rs         = util::bitseq<5, 3>(instruction);
-    u16 Rd         = util::bitseq<2, 0>(instruction); 
-    u32 offset5    = util::bitseq<10, 6>(instruction); // 5 bit immediate offset
-    u16 shift_type = util::bitseq<12, 11>(instruction);
+    u16 Rs         = Util::bitseq<5, 3>(instruction);
+    u16 Rd         = Util::bitseq<2, 0>(instruction); 
+    u32 offset5    = Util::bitseq<10, 6>(instruction); // 5 bit immediate offset
+    u16 shift_type = Util::bitseq<12, 11>(instruction);
     u32 op1 = GetRegister(Rs);
 
     // encodings of LSR #0, ASR #0, and ROR #0 should be interpreted as #LSR #2, ASR #32, and ROR #32
@@ -35,11 +35,11 @@ void Arm7Tdmi::MoveShiftedRegister(u16 instruction)
 
 void Arm7Tdmi::AddSubtract(u16 instruction)
 {
-    u16 Rs         = util::bitseq<5, 3>(instruction);
-    u16 Rd         = util::bitseq<2, 0>(instruction);
-    u16 Rn_offset3 = util::bitseq<8, 6>(instruction);
-    bool immediate = util::bitseq<10, 10>(instruction) == 1;
-    bool add       = util::bitseq<9, 9>(instruction) == 0;
+    u16 Rs         = Util::bitseq<5, 3>(instruction);
+    u16 Rd         = Util::bitseq<2, 0>(instruction);
+    u16 Rn_offset3 = Util::bitseq<8, 6>(instruction);
+    bool immediate = Util::bitseq<10, 10>(instruction) == 1;
+    bool add       = Util::bitseq<9, 9>(instruction) == 0;
     u32 op1, op2, result;
 
     op1 = GetRegister(Rs);
@@ -69,9 +69,9 @@ void Arm7Tdmi::AddSubtract(u16 instruction)
 
 void Arm7Tdmi::MoveImmediate(u16 instruction)
 {
-    u16 offset8 = util::bitseq<7, 0>(instruction);
-    u16 Rd      = util::bitseq<10, 8>(instruction);
-    u16 opcode  = util::bitseq<12, 11>(instruction);
+    u16 offset8 = Util::bitseq<7, 0>(instruction);
+    u16 Rd      = Util::bitseq<10, 8>(instruction);
+    u16 opcode  = Util::bitseq<12, 11>(instruction);
     u32 result;
     u8 carry = GetConditionCodeFlag(ConditionFlag::C);
     u32 operand = GetRegister(Rd);
@@ -105,9 +105,9 @@ void Arm7Tdmi::MoveImmediate(u16 instruction)
 
 void Arm7Tdmi::AluThumb(u16 instruction)
 {
-    u16 Rs     = util::bitseq<5, 3>(instruction);
-    u16 Rd     = util::bitseq<2, 0>(instruction); 
-    u16 opcode = util::bitseq<9, 6>(instruction);
+    u16 Rs     = Util::bitseq<5, 3>(instruction);
+    u16 Rd     = Util::bitseq<2, 0>(instruction); 
+    u16 opcode = Util::bitseq<9, 6>(instruction);
     u32 op1    = GetRegister(Rs);
     u32 op2    = GetRegister(Rd);
     u8 carry   = GetConditionCodeFlag(ConditionFlag::C);
@@ -231,12 +231,12 @@ void Arm7Tdmi::AluThumb(u16 instruction)
 
 void Arm7Tdmi::HiRegisterOps(u16 instruction)
 {
-    u16 Rs     = util::bitseq<5, 3>(instruction);
-    u16 Rd     = util::bitseq<2, 0>(instruction); 
-    u16 opcode = util::bitseq<9, 8>(instruction);
+    u16 Rs     = Util::bitseq<5, 3>(instruction);
+    u16 Rd     = Util::bitseq<2, 0>(instruction); 
+    u16 opcode = Util::bitseq<9, 8>(instruction);
 
-    bool H1 = util::bitseq<7, 7>(instruction) == 0x1; // Hi operand flag 1
-    bool H2 = util::bitseq<6, 6>(instruction) == 0x1; // Hi operand flag 2
+    bool H1 = Util::bitseq<7, 7>(instruction) == 0x1; // Hi operand flag 1
+    bool H2 = Util::bitseq<6, 6>(instruction) == 0x1; // Hi operand flag 2
 
     // access hi registers (need a 4th bit)
     if (H2) Rs |= 0b1000;
@@ -352,8 +352,8 @@ void Arm7Tdmi::HiRegisterOps(u16 instruction)
 
 void Arm7Tdmi::PcRelLoad(u16 instruction)
 {
-    u16 Rd = util::bitseq<10, 8>(instruction); 
-    u16 word8 = util::bitseq<7, 0>(instruction);
+    u16 Rd = Util::bitseq<10, 8>(instruction); 
+    u16 word8 = Util::bitseq<7, 0>(instruction);
     u32 base = GetRegister(r15);
     base &= ~2; // clear bit 1 for word alignment
 
@@ -368,12 +368,12 @@ void Arm7Tdmi::PcRelLoad(u16 instruction)
 
 void Arm7Tdmi::LoadStoreRegOffset(u16 instruction)
 {
-    u16 Ro = util::bitseq<8, 6>(instruction); // offset register
-    u16 Rb = util::bitseq<5, 3>(instruction); // base register
-    u16 Rd = util::bitseq<2, 0>(instruction); // destination register
+    u16 Ro = Util::bitseq<8, 6>(instruction); // offset register
+    u16 Rb = Util::bitseq<5, 3>(instruction); // base register
+    u16 Rd = Util::bitseq<2, 0>(instruction); // destination register
 
-    bool load = util::bitseq<11, 11>(instruction) == 1;
-    bool byte = util::bitseq<10, 10>(instruction) == 1;
+    bool load = Util::bitseq<11, 11>(instruction) == 1;
+    bool byte = Util::bitseq<10, 10>(instruction) == 1;
 
     u32 base = GetRegister(Rb);
     base += GetRegister(Ro); // add offset to base
@@ -414,12 +414,12 @@ void Arm7Tdmi::LoadStoreRegOffset(u16 instruction)
 
 void Arm7Tdmi::LoadStoreSignedHalfword(u16 instruction)
 {
-    u16 Ro = util::bitseq<8, 6>(instruction); // offset register
-    u16 Rb = util::bitseq<5, 3>(instruction); // base register
-    u16 Rd = util::bitseq<2, 0>(instruction); // destination register
+    u16 Ro = Util::bitseq<8, 6>(instruction); // offset register
+    u16 Rb = Util::bitseq<5, 3>(instruction); // base register
+    u16 Rd = Util::bitseq<2, 0>(instruction); // destination register
 
-    bool H = util::bitseq<11, 11>(instruction) == 1; // H flag
-    bool S = util::bitseq<10, 10>(instruction) == 1; // sign extended flag
+    bool H = Util::bitseq<11, 11>(instruction) == 1; // H flag
+    bool S = Util::bitseq<10, 10>(instruction) == 1; // sign extended flag
 
     u32 base = GetRegister(Rb);
     base += GetRegister(Ro); // add offset to base
@@ -476,12 +476,12 @@ void Arm7Tdmi::LoadStoreSignedHalfword(u16 instruction)
 
 void Arm7Tdmi::LoadStoreImmediate(u16 instruction)
 {
-    u16 Rb      = util::bitseq<5, 3>(instruction);  // base register
-    u16 Rd      = util::bitseq<2, 0>(instruction);  // destination register
-    u16 offset5 = util::bitseq<10, 6>(instruction); // 5 bit immediate offset
+    u16 Rb      = Util::bitseq<5, 3>(instruction);  // base register
+    u16 Rd      = Util::bitseq<2, 0>(instruction);  // destination register
+    u16 offset5 = Util::bitseq<10, 6>(instruction); // 5 bit immediate offset
 
-    bool byte = util::bitseq<12, 12>(instruction) == 1;
-    bool load = util::bitseq<11, 11>(instruction) == 1;
+    bool byte = Util::bitseq<12, 12>(instruction) == 1;
+    bool load = Util::bitseq<11, 11>(instruction) == 1;
     
     // cycles
     u8 n = 0;
@@ -533,12 +533,12 @@ void Arm7Tdmi::LoadStoreImmediate(u16 instruction)
 
 void Arm7Tdmi::LoadStoreHalfword(u16 instruction)
 {
-    u16 Rb      = util::bitseq<5, 3>(instruction);  // base register
-    u16 Rd      = util::bitseq<2, 0>(instruction);  // destination register
-    u16 offset5 = util::bitseq<10, 6>(instruction); // 5 bit immediate offset
+    u16 Rb      = Util::bitseq<5, 3>(instruction);  // base register
+    u16 Rd      = Util::bitseq<2, 0>(instruction);  // destination register
+    u16 offset5 = Util::bitseq<10, 6>(instruction); // 5 bit immediate offset
 
     offset5 <<= 1; // assembler places #imm >> 1 in word5 to ensure halfword alignment
-    bool load = util::bitseq<11, 11>(instruction) == 1;
+    bool load = Util::bitseq<11, 11>(instruction) == 1;
 
     // cycles
     u8 n = 0;
@@ -571,9 +571,9 @@ void Arm7Tdmi::LoadStoreHalfword(u16 instruction)
 
 void Arm7Tdmi::SpRelLoadStore(u16 instruction)
 {
-    u16 Rd    = util::bitseq<10, 8>(instruction); // destination register
-    u16 word8 = util::bitseq<7, 0>(instruction);  // 8 bit immediate offset
-    bool load = util::bitseq<11, 11>(instruction) == 1;
+    u16 Rd    = Util::bitseq<10, 8>(instruction); // destination register
+    u16 word8 = Util::bitseq<7, 0>(instruction);  // 8 bit immediate offset
+    bool load = Util::bitseq<11, 11>(instruction) == 1;
 
     // cycles
     u8 n = 0;
@@ -608,9 +608,9 @@ void Arm7Tdmi::SpRelLoadStore(u16 instruction)
 
 void Arm7Tdmi::LoadAddress(u16 instruction)
 {
-    u16 Rd    = util::bitseq<10, 8>(instruction);       // destination register
-    u16 word8 = util::bitseq<7, 0>(instruction);        // 8 bit immediate offset
-    bool sp   = util::bitseq<11, 11>(instruction) == 1; // stack pointer if true, else PC
+    u16 Rd    = Util::bitseq<10, 8>(instruction);       // destination register
+    u16 word8 = Util::bitseq<7, 0>(instruction);        // 8 bit immediate offset
+    bool sp   = Util::bitseq<11, 11>(instruction) == 1; // stack pointer if true, else PC
     u32 base;
 
     word8 <<= 2; // assembler places #imm >> 2 in word8 to ensure word alignment
@@ -637,8 +637,8 @@ void Arm7Tdmi::LoadAddress(u16 instruction)
 
 void Arm7Tdmi::AddOffsetToSp(u16 instruction)
 {
-    u16 sword8 = util::bitseq<6, 0>(instruction); // 7 bit signed immediate value
-    bool positive = util::bitseq<7, 7>(instruction) == 0; // sign bit of sword8
+    u16 sword8 = Util::bitseq<6, 0>(instruction); // 7 bit signed immediate value
+    bool positive = Util::bitseq<7, 7>(instruction) == 0; // sign bit of sword8
 
     sword8 <<= 2; // assembler places #imm >> 2 in word8 to ensure word alignment
 
@@ -657,8 +657,8 @@ void Arm7Tdmi::AddOffsetToSp(u16 instruction)
 
 void Arm7Tdmi::PushPop(u16 instruction)
 {
-    bool load = util::bitseq<11, 11>(instruction) == 1;
-    bool R    = util::bitseq<8, 8>(instruction) == 1; // PC/LR bit
+    bool load = Util::bitseq<11, 11>(instruction) == 1;
+    bool R    = Util::bitseq<8, 8>(instruction) == 1; // PC/LR bit
     u32 base  = GetRegister(r13); // base address at SP
 
     int num_registers = 0; // number of set bits in the register list, should be between 0-8
@@ -760,8 +760,8 @@ void Arm7Tdmi::PushPop(u16 instruction)
 
 void Arm7Tdmi::MultipleLoadStore(u16 instruction)
 {
-    u16 Rb    = util::bitseq<10, 8>(instruction); // base register
-    bool load = util::bitseq<11, 11>(instruction) == 1;
+    u16 Rb    = Util::bitseq<10, 8>(instruction); // base register
+    bool load = Util::bitseq<11, 11>(instruction) == 1;
     u32 base  = GetRegister(Rb);
 
     // cycles
@@ -838,8 +838,8 @@ void Arm7Tdmi::MultipleLoadStore(u16 instruction)
 
 void Arm7Tdmi::ConditionalBranch(u16 instruction)
 {
-    u16 soffset8 = util::bitseq<7, 0>(instruction); // signed 8 bit offset
-    Condition condition = (Condition) util::bitseq<11, 8>(instruction);
+    u16 soffset8 = Util::bitseq<7, 0>(instruction); // signed 8 bit offset
+    Condition condition = (Condition) Util::bitseq<11, 8>(instruction);
     u32 base = GetRegister(r15);
     u32 jump_address;
     if (!ConditionMet(condition))
@@ -932,7 +932,7 @@ void Arm7Tdmi::SoftwareInterruptThumb(u16 instruction)
 
 void Arm7Tdmi::UnconditionalBranch(u16 instruction)
 {
-    u16 offset11 = util::bitseq<10, 0>(instruction); // signed 11 bit offset
+    u16 offset11 = Util::bitseq<10, 0>(instruction); // signed 11 bit offset
     u32 base = GetRegister(r15);
     u32 jump_address;
 
@@ -968,8 +968,8 @@ void Arm7Tdmi::UnconditionalBranch(u16 instruction)
 
 void Arm7Tdmi::LongBranchLink(u16 instruction)
 {
-    u32 offset = util::bitseq<10, 0>(instruction);       // long branch offset
-    bool H     = util::bitseq<11, 11>(instruction) == 1; // high/low offset bit
+    u32 offset = Util::bitseq<10, 0>(instruction);       // long branch offset
+    bool H     = Util::bitseq<11, 11>(instruction) == 1; // high/low offset bit
     u32 base;
 
     if (H) // instruction 2

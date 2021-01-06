@@ -1,3 +1,13 @@
+/* discovery
+ * License: GPLv2
+ * See LICENSE.txt for full license text
+ * Author: Sam Kravitz
+ * 
+ * FILE: PPU.cpp
+ * DATE: January 6th, 2021
+ * DESCRIPTION: Implementation of PPU class
+ */
+
 #include <ctime>
 #include <sstream>
 #include <iomanip>

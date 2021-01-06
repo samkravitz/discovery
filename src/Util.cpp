@@ -13,7 +13,7 @@
 // see docs/arm_instruction_set_bitfield.png to see a visual of the different types of instructions
 // basically each instruction has its own required bits that need to be set, this function just looks for those bits
 // a lot of this code is taken from shonumi's GBE+ (https://github.com/shonumi/gbe-plus/blob/master/src/gba/arm7.cpp)
-ArmInstruction util::get_instruction_format(u32 instruction)
+ArmInstruction Util::GetInstructionFormat(u32 instruction)
 {
     if ((instruction >> 4 & 0b111111111111111111111111) == 0b000100101111111111110001)
         return ArmInstruction::BEX; // BEX
@@ -88,7 +88,7 @@ ArmInstruction util::get_instruction_format(u32 instruction)
 }
 
 // determine which type of thumb operation an instruction is
-ThumbInstruction util::get_instruction_format(u16 instruction)
+ThumbInstruction Util::GetInstructionFormat(u16 instruction)
 {
     if ((instruction >> 13 & 0b111) == 0)
     {

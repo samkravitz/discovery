@@ -13,13 +13,13 @@
 
 #include "common.h"
 
-namespace util
+namespace Util
 {
     // determine which type of operation the instruction is
-    ArmInstruction get_instruction_format(u32 instruction);
+    ArmInstruction GetInstructionFormat(u32 instruction);
 
     // determine which type of thumb operation an instruction is
-    ThumbInstruction get_instruction_format(u16 instruction);
+    ThumbInstruction GetInstructionFormat(u16 instruction);
     
 
     /* get subset of bits for purposes like destination register, opcode, shifts

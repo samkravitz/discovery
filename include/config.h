@@ -8,9 +8,9 @@
  */
 #pragma once
 
-#include "common.h"
+#include <string>
 
-namespace Config
+namespace config
 {
     std::string rom_name = "";
     std::string bios_name = "gba_bios.bin";

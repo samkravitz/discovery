@@ -9,11 +9,14 @@
  */
 #pragma once
 
+#include <vector>
+
 #include "Arm7Tdmi.h"
 #include "PPU.h"
 #include "Memory.h"
 #include "Timer.h"
 #include "Gamepad.h"
+#include "config.h"
 
 class Discovery
 {
@@ -29,9 +32,9 @@ class Discovery
 
         long system_cycles;
 
-        void LoadRom(char *);
+        std::vector<std::string> argv;
 
-    private:
         void GameLoop();
+        void ParseArgs();
         void ShutDown();
 };

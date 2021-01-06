@@ -18,14 +18,27 @@ int main(int argc, char **argv)
 
     Discovery emulator;
 
-    // load bios
-    if (!emulator.mem->LoadBios())
+    if (argc < 2)
     {
-        LOG(LogLevel::Error, "Error Loading Bios\n");
-        return 1;
+        LOG(LogLevel::Error, "Error: No ROM file given\n");
+        LOG("Usage: ./discovery /path/to/rom\n");
+        exit(1);
     }
-    
-    emulator.LoadRom(argv[1]);
+
+    // collect command line args
+    for (int i = 1; i < argc; ++i)
+    {
+        emulator.argv.push_back(argv[i]);
+    }
+
+    // parse command line args
+    emulator.ParseArgs();
+
+    // load bios, rom, and launch game loop
+    emulator.mem->LoadBios(config::bios_name);
+    emulator.mem->LoadRom(config::rom_name);
+
+    emulator.GameLoop();
     return 0;
 }
 
@@ -151,15 +164,18 @@ void Discovery::GameLoop()
     ShutDown();
 }
 
-void Discovery::LoadRom(char *name)
+// parse command line args
+void Discovery::ParseArgs()
 {
-    if (!mem->LoadRom(name))
+    for (int i = 0; i < argv.size(); ++i)
     {
-        LOG(LogLevel::Error, "Error loading ROM: {}\n", name);
-        exit(1);
+        // ROM name
+        if (i == 0)
+            config::rom_name = argv[i];
+        
+        else if (argv[i] == "-b" && i != argv.size() - 1)
+            config::bios_name = argv[++i];
     }
-
-    GameLoop();
 }
 
 void Discovery::ShutDown()

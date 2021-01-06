@@ -83,8 +83,8 @@ class Memory
         u8 s_cycles;
 
         void Reset();
-        bool LoadRom(char *);
-        bool LoadBios();
+        bool LoadRom(const std::string &);
+        bool LoadBios(const std::string &);
 
         // read / write from memory
         u32  Read32(u32);

@@ -66,20 +66,17 @@ void Memory::Reset()
     Write32Unsafe(REG_KEYINPUT, 0b1111111111);
 }
 
-bool Memory::LoadRom(char *name)
+bool Memory::LoadRom(const std::string &name)
 {
     std::ifstream rom(name, std::ios::in | std::ios::binary);
 
-    if (!rom)
-        return false;
+    if (!rom || !rom.good())
+    {
+        LOG(LogLevel::Error, "Error: Unable to open ROM file {}\n", name);
+        exit(1);
+    }
 
     rom_size = fs::file_size(name);
-
-    if (!rom.good())
-    {
-        LOG(LogLevel::Error, "Bad rom!\n");
-        return false;
-    }
 
     //cart_rom = new u8[rom_size]();
     rom.read((char *) cart_rom, rom_size);
@@ -146,17 +143,15 @@ bool Memory::LoadRom(char *name)
     return true;
 }
 
-bool Memory::LoadBios()
+bool Memory::LoadBios(const std::string &name)
 {
     // bios must be called gba_bios.bin
-    std::ifstream bios("gba_bios.bin", std::ios::in | std::ios::binary);
-    if (!bios)
-        return false;
+    std::ifstream bios(name, std::ios::in | std::ios::binary);
 
-    if (!bios.good())
+    if (!bios || !bios.good())
     {
-        LOG(LogLevel::Error, "Bad bios!\n");
-        return false;
+        LOG(LogLevel::Error, "Error: Unable to open BIOS file {}\n", name);
+        exit(1);
     }
 
     bios.read((char *) memory, MEM_BIOS_SIZE);

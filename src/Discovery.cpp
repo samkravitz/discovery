@@ -17,14 +17,14 @@ int debug = 0;
 
 int main(int argc, char **argv)
 {
-    Util::LOG("Welcome to Discovery\n");
+    LOG("Welcome to Discovery\n");
 
     Discovery emulator;
 
     // load bios
     if (!emulator.mem->LoadBios())
     {
-        Util::LOG(Util::LogLevel::Error, "Error Loading Bios\n");
+        LOG(LogLevel::Error, "Error Loading Bios\n");
         return 1;
     }
 
@@ -197,7 +197,7 @@ void Discovery::LoadRom(char *name)
 {
     if (!mem->LoadRom(name))
     {
-        Util::LOG(LogLevel::Error, "Error loading ROM: {}\n", name);
+        LOG(LogLevel::Error, "Error loading ROM: {}\n", name);
         std::cerr << "Error loading ROM: " << name << "\n";
         exit(1);
     }

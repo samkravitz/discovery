@@ -23,7 +23,16 @@ Discovery will attempt to load a BIOS in the same directory as the executable ca
 `./discovery path/to/rom -b path/to/bios`
 
 ## Building on Linux based systems
-The only dependencies for building discovery are make and [SDL](https://www.libsdl.org). Simply run `make` to build.
+Discovery has the following dependencies:
+- make
+- [SDL](https://www.libsdl.org)
+- [fmt](https://www.github.com/fmtlib/fmt)
+
+If fmt is already installed on your system, simply run `make` to build.
+
+Otherwise, follow the instructions from fmt to install it.
+
+Coming soon: cmake build process to automatically install fmt
 
 ## Building on MacOS & Windows
 As the only dependencies are make & SDL, discovery should be just as easy to build on non-Linux systems. However, I do not develop for these systems, so you're on your own there ;)

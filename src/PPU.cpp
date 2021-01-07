@@ -306,33 +306,36 @@ void PPU::RenderScanline()
 void PPU::RenderScanlineText(int bg)
 {
     auto & bgcnt = stat->BgControl[bg];
-    bgcnt.voff = 0;
-    bgcnt.hoff = 0;
+
     // vertical, horizontal offset
     //int voff = mem->Read32Unsafe(REG)
     // screen position
-    int px, py = (scanline + bgcnt.voff) % bgcnt.height;
-
+    //int px, py = (scanline + bgcnt.voff) % bgcnt.height;
+    int px, py = 0;
     // tile x, tile y
     int tx, ty = py / 8;
-
+    int tile_index;
     int screenblock, screenentry;
-    for (int x = 0; x < 400; ++x)
+    u32 tile_address;
+    for (int x = 0; x < SCREEN_WIDTH; ++x)
     {
-        px = (x + bgcnt.hoff) % bgcnt.width;
+        //px = (x + bgcnt.hoff) % bgcnt.width;
+        px = x;
         tx = px / 8;
 
         // get screen entry index
         screenblock = (ty / 32) * (0x800 / 32) + (tx / 32);
-        screenentry = sbb * 1024 + (ty % 32) * 32 + tx % 32;
-        LOG("{}\n", screenblock);
+        screenentry = screenblock * 1024 + (ty % 32) * 32 + tx % 32;
+
+        tile_index = screenentry & 0x3FF;
+        //LOG("{}\n", tile_index);
     }
 
-    exit(0);
+    //exit(0);
     
     //LOG("{} {}\n", py, ty);
     //LOG("{} {}\n", bgcnt.voff, bgcnt.hoff);
-    LOG("{}\n", screenblock);
+    //LOG("{}\n", screenblock);
 }
 
 // render the current scanline for bitmap modes

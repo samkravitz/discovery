@@ -305,8 +305,15 @@ void PPU::RenderScanline()
 
 void PPU::RenderScanlineText(int bg)
 {
-    // width, height of map
-    int width, height;
+    auto const& bgcnt = stat->BgControl[bg];
+
+    // vertical, horizontal offset
+    //int voff = mem->Read32Unsafe(REG)
+    // screen position
+    //int px, py;
+
+    
+    // LOG("{} {}\n", bgcnt.voff, bgcnt.hoff);
 }
 
 // render the current scanline for bitmap modes

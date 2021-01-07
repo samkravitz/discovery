@@ -449,10 +449,10 @@ void Memory::Write8(u32 address, u8 value)
 
             switch (stat->BgControl[0].size)
             {
-                case 0: stat->BgControl[1].width = 256;  stat->BgControl[1].height = 256; break;
-                case 1: stat->BgControl[1].width = 512;  stat->BgControl[1].height = 256; break;
-                case 2: stat->BgControl[1].width = 256;  stat->BgControl[1].height = 512; break;
-                case 3: stat->BgControl[1].width = 1024; stat->BgControl[1].height = 1024; break;
+                case 0: stat->BgControl[0].width = 256;  stat->BgControl[0].height = 256; break;
+                case 1: stat->BgControl[0].width = 512;  stat->BgControl[0].height = 256; break;
+                case 2: stat->BgControl[0].width = 256;  stat->BgControl[0].height = 512; break;
+                case 3: stat->BgControl[0].width = 1024; stat->BgControl[0].height = 1024; break;
             }
         break;
 
@@ -469,7 +469,7 @@ void Memory::Write8(u32 address, u8 value)
             stat->BgControl[1].affine_wrap   = value >> 5 & 0x1;  // bit  D
             stat->BgControl[1].size          = value >> 6 & 0x3;  // bits E-F
 
-            switch (stat->BgControl[0].size)
+            switch (stat->BgControl[1].size)
             {
                 case 0: stat->BgControl[1].width = 256;  stat->BgControl[1].height = 256; break;
                 case 1: stat->BgControl[1].width = 512;  stat->BgControl[1].height = 256; break;
@@ -491,7 +491,7 @@ void Memory::Write8(u32 address, u8 value)
             stat->BgControl[2].affine_wrap   = value >> 5 & 0x1;  // bit  D
             stat->BgControl[2].size          = value >> 6 & 0x3;  // bits E-F
 
-            switch (stat->BgControl[0].size)
+            switch (stat->BgControl[2].size)
             {
                 case 0: stat->BgControl[2].width = 256;  stat->BgControl[2].height = 256; break;
                 case 1: stat->BgControl[2].width = 512;  stat->BgControl[2].height = 256; break;
@@ -513,7 +513,7 @@ void Memory::Write8(u32 address, u8 value)
             stat->BgControl[3].affine_wrap   = value >> 5 & 0x1;  // bit  D
             stat->BgControl[3].size          = value >> 6 & 0x3;  // bits E-F
 
-            switch (stat->BgControl[0].size)
+            switch (stat->BgControl[3].size)
             {
                 case 0: stat->BgControl[3].width = 256;  stat->BgControl[3].height = 256; break;
                 case 1: stat->BgControl[3].width = 512;  stat->BgControl[3].height = 256; break;
@@ -521,6 +521,54 @@ void Memory::Write8(u32 address, u8 value)
                 case 3: stat->BgControl[3].width = 1024; stat->BgControl[3].height = 1024; break;
             }
         break;
+
+        // REG_BG0HOFS
+        case REG_BG0HOFS:
+        case REG_BG0HOFS + 1:
+            stat->BgControl[0].hoff = (memory[REG_BG0HOFS + 1] << 8) | (memory[REG_BG0HOFS]);
+            break;
+        
+        // REG_BG0VOFS
+        case REG_BG0VOFS:
+        case REG_BG0VOFS + 1:
+            stat->BgControl[0].voff = (memory[REG_BG0VOFS + 1] << 8) | (memory[REG_BG0VOFS]);
+            break;
+        
+        // REG_BG1HOFS
+        case REG_BG1HOFS:
+        case REG_BG1HOFS + 1:
+            stat->BgControl[1].hoff = (memory[REG_BG1HOFS + 1] << 8) | (memory[REG_BG1HOFS]);
+            break;
+        
+        // REG_BG1VOFS
+        case REG_BG1VOFS:
+        case REG_BG1VOFS + 1:
+            stat->BgControl[1].voff = (memory[REG_BG1VOFS + 1] << 8) | (memory[REG_BG1VOFS]);
+            break;
+        
+        // REG_BG2HOFS
+        case REG_BG2HOFS:
+        case REG_BG2HOFS + 1:
+            stat->BgControl[2].hoff = (memory[REG_BG2HOFS + 1] << 8) | (memory[REG_BG2HOFS]);
+            break;
+        
+        // REG_BG2VOFS
+        case REG_BG2VOFS:
+        case REG_BG2VOFS + 1:
+            stat->BgControl[2].voff = (memory[REG_BG2VOFS + 1] << 8) | (memory[REG_BG2VOFS]);
+            break;
+        
+        // REG_BG3HOFS
+        case REG_BG3HOFS:
+        case REG_BG3HOFS + 1:
+            stat->BgControl[3].hoff = (memory[REG_BG3HOFS + 1] << 8) | (memory[REG_BG3HOFS]);
+            break;
+        
+        // REG_BG3VOFS
+        case REG_BG3VOFS:
+        case REG_BG3VOFS + 1:
+            stat->BgControl[3].voff = (memory[REG_BG3VOFS + 1] << 8) | (memory[REG_BG3VOFS]);
+            break;
         
         // write into waitstate ctl
         case WAITCNT:

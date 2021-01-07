@@ -56,6 +56,7 @@ struct LcdStat
         u8 enabled     : 1;
 
         int width, height; // dimensions of map in pixels
+        int voff,  hoff;   // vertical, horizontal offsets
     } BgControl[4]; // backgrounds 0-3
 
     LcdStat()
@@ -96,6 +97,8 @@ struct LcdStat
             BgControl[i].enabled     = 0;
             BgControl[i].width       = 0;
             BgControl[i].height      = 0;
+            BgControl[i].voff        = 0;
+            BgControl[i].hoff        = 0;
         }
     }
 

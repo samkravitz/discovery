@@ -54,6 +54,8 @@ struct LcdStat
         u8 affine_wrap : 1;
         u8 size        : 2;
         u8 enabled     : 1;
+
+        int width, height; // dimensions of map in pixels
     } BgControl[4]; // backgrounds 0-3
 
     LcdStat()
@@ -92,6 +94,8 @@ struct LcdStat
             BgControl[i].affine_wrap = 0; 
             BgControl[i].size        = 0; 
             BgControl[i].enabled     = 0;
+            BgControl[i].width       = 0;
+            BgControl[i].height      = 0;
         }
     }
 

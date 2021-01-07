@@ -446,6 +446,14 @@ void Memory::Write8(u32 address, u8 value)
             stat->BgControl[0].sbb           = value >> 0 & 0x1F; // bits 8-C
             stat->BgControl[0].affine_wrap   = value >> 5 & 0x1;  // bit  D
             stat->BgControl[0].size          = value >> 6 & 0x3;  // bits E-F
+
+            switch (stat->BgControl[0].size)
+            {
+                case 0: stat->BgControl[1].width = 256;  stat->BgControl[1].height = 256; break;
+                case 1: stat->BgControl[1].width = 512;  stat->BgControl[1].height = 256; break;
+                case 2: stat->BgControl[1].width = 256;  stat->BgControl[1].height = 512; break;
+                case 3: stat->BgControl[1].width = 1024; stat->BgControl[1].height = 1024; break;
+            }
         break;
 
         // REG_BG1CNT
@@ -460,6 +468,14 @@ void Memory::Write8(u32 address, u8 value)
             stat->BgControl[1].sbb           = value >> 0 & 0x1F; // bits 8-C
             stat->BgControl[1].affine_wrap   = value >> 5 & 0x1;  // bit  D
             stat->BgControl[1].size          = value >> 6 & 0x3;  // bits E-F
+
+            switch (stat->BgControl[0].size)
+            {
+                case 0: stat->BgControl[1].width = 256;  stat->BgControl[1].height = 256; break;
+                case 1: stat->BgControl[1].width = 512;  stat->BgControl[1].height = 256; break;
+                case 2: stat->BgControl[1].width = 256;  stat->BgControl[1].height = 512; break;
+                case 3: stat->BgControl[1].width = 1024; stat->BgControl[1].height = 1024; break;
+            }
         break;
 
         // REG_BG2CNT
@@ -474,6 +490,14 @@ void Memory::Write8(u32 address, u8 value)
             stat->BgControl[2].sbb           = value >> 0 & 0x1F; // bits 8-C
             stat->BgControl[2].affine_wrap   = value >> 5 & 0x1;  // bit  D
             stat->BgControl[2].size          = value >> 6 & 0x3;  // bits E-F
+
+            switch (stat->BgControl[0].size)
+            {
+                case 0: stat->BgControl[2].width = 256;  stat->BgControl[2].height = 256; break;
+                case 1: stat->BgControl[2].width = 512;  stat->BgControl[2].height = 256; break;
+                case 2: stat->BgControl[2].width = 256;  stat->BgControl[2].height = 512; break;
+                case 3: stat->BgControl[2].width = 1024; stat->BgControl[2].height = 1024; break;
+            }
         break;
 
         // REG_BG3CNT
@@ -488,6 +512,14 @@ void Memory::Write8(u32 address, u8 value)
             stat->BgControl[3].sbb           = value >> 0 & 0x1F; // bits 8-C
             stat->BgControl[3].affine_wrap   = value >> 5 & 0x1;  // bit  D
             stat->BgControl[3].size          = value >> 6 & 0x3;  // bits E-F
+
+            switch (stat->BgControl[0].size)
+            {
+                case 0: stat->BgControl[3].width = 256;  stat->BgControl[3].height = 256; break;
+                case 1: stat->BgControl[3].width = 512;  stat->BgControl[3].height = 256; break;
+                case 2: stat->BgControl[3].width = 256;  stat->BgControl[3].height = 512; break;
+                case 3: stat->BgControl[3].width = 1024; stat->BgControl[3].height = 1024; break;
+            }
         break;
         
         // write into waitstate ctl

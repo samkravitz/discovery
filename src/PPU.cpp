@@ -305,7 +305,8 @@ void PPU::RenderScanline()
 
 void PPU::RenderScanlineText(int bg)
 {
-
+    // width, height of map
+    int width, height;
 }
 
 // render the current scanline for bitmap modes

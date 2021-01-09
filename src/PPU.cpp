@@ -331,7 +331,7 @@ void PPU::RenderScanlineText(int bg)
         //LOG("{}\n", tile_index);
     }
 
-    //exit(0);
+    exit(0);
     
     //LOG("{} {}\n", py, ty);
     //LOG("{} {}\n", bgcnt.voff, bgcnt.hoff);

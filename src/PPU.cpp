@@ -313,22 +313,23 @@ void PPU::RenderScanlineText(int bg)
     //int px, py = (scanline + bgcnt.voff) % bgcnt.height;
     int px, py = 0;
     // tile x, tile y
-    int tx, ty = py / 8;
+    int grid_x, grid_y = py / 8;
     int tile_index;
     int screenblock, screenentry;
     u32 tile_address;
+    int tile_x, tile_y;
     for (int x = 0; x < SCREEN_WIDTH; ++x)
     {
         //px = (x + bgcnt.hoff) % bgcnt.width;
         px = x;
-        tx = px / 8;
+        grid_x = px / 8;
 
         // get screen entry index
-        screenblock = (ty / 32) * (0x800 / 32) + (tx / 32);
-        screenentry = screenblock * 1024 + (ty % 32) * 32 + tx % 32;
+        screenblock = (grid_y / 32) * (0x800 / 32) + (grid_x / 32);
+        screenentry = screenblock * 1024 + (grid_y % 32) * 32 + grid_x % 32;
 
         tile_index = screenentry & 0x3FF;
-        //LOG("{}\n", tile_index);
+        LOG("{}\n", screenblock);
     }
 
     exit(0);

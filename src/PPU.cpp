@@ -307,6 +307,7 @@ void PPU::RenderScanlineText(int bg)
 {
     auto &bgcnt = stat->BgControl[bg];
 
+
     // vertical, horizontal offset
     //int voff = mem->Read32Unsafe(REG)
     // screen position

@@ -2,7 +2,7 @@
  * License: GPLv2
  * See LICENSE.txt for full license text
  * Author: Sam Kravitz
- * 
+ *
  * FILE: Memory.cpp
  * DATE: July 13, 2020
  * DESCRIPTION: Implementation of memory related functions
@@ -18,9 +18,8 @@ namespace fs = std::experimental::filesystem;
 
 Memory::Memory(LcdStat *stat) : stat(stat)
 {
-    cart_rom  = NULL;
+    // cart_rom  = NULL;
     cart_ram  = NULL;
-
 
     timers[0] = NULL;
     timers[1] = NULL;
@@ -43,16 +42,16 @@ void Memory::Reset()
     // zero memory
     for (int i = 0; i < MEM_SIZE; ++i)
         memory[i] = 0;
-    
+
     for (int i = 0; i < 0x2000000; ++i)
         cart_rom[i] = 0;
-    
+
     // zero dma
     for (int i = 0; i < 4; ++i)
     {
         dma[i].num_transfers    = 0;
-        dma[i].dest_adjust      = 0; 
-        dma[i].src_adjust       = 0;  
+        dma[i].dest_adjust      = 0;
+        dma[i].src_adjust       = 0;
         dma[i].repeat           = 0;
         dma[i].chunk_size       = 0;
         dma[i].mode             = 0;
@@ -184,7 +183,7 @@ u8 Memory::Read8(u32 address)
         case 0x8:
         case 0x9:
             break;
-        
+
         // EWRAM
         case 0x2:
             address &= MEM_EWRAM_END;
@@ -194,18 +193,18 @@ u8 Memory::Read8(u32 address)
         case 0x3:
             address &= MEM_IWRAM_END;
             break;
-        
+
         // Palette RAM
         case 0x5:
             address &= MEM_PALETTE_RAM_END;
             break;
-        
+
         // VRAM
         case 0x6:
             // 0x6010000 - 0x6017FFF is mirrored from 0x6018000 - 0x601FFFF.
             if (address >= 0x6018000 && address <= 0x601FFFF)
                 address -= 0x8000;
-            
+
             address &= 0x601FFFF;
             break;
 
@@ -213,19 +212,19 @@ u8 Memory::Read8(u32 address)
         case 0x7:
             address &= MEM_OAM_END;
             break;
-        
+
         // ROM image 1
         case 0xA:
         case 0xB:
             address -= 0x2000000;
             break;
-        
+
         // ROM image 2
         case 0xC:
         case 0xD:
             address -= 0x4000000;
             break;
-        
+
         // Cart RAM
         case 0xF:
             address -= 0x1000000;
@@ -233,7 +232,7 @@ u8 Memory::Read8(u32 address)
             //std::cout << "Reading from cart RAM\n";
             address &= ~ram_size; // RAM Mirror
             return cart_ram[address - 0xE000000];
-        
+
         default:
             LOG(LogLevel::Error, "Invalid address to read: 0x{x}\n", address);
             return 0;
@@ -262,19 +261,19 @@ u8 Memory::Read8(u32 address)
             result |= stat->DisplayStatus.hbi       ? 0b10000  : 0b00000;   // bit 4
             result |= stat->DisplayStatus.vci       ? 0b100000 : 0b000000;  // bit 5
             return result;
-        
+
         case REG_DISPSTAT + 1:
             return stat->DisplayStatus.vct;
 
         case REG_VCOUNT:
             return stat->scanline;
-        
+
         // REG_TM0D
         case REG_TM0D:
             return timers[0]->data & 0xFF;
         case REG_TM0D + 1:
             return (timers[0]->data >> 8) & 0xFF;
-        
+
         // REG_TM1D
         case REG_TM1D:
             return timers[1]->data & 0xFF;
@@ -323,7 +322,7 @@ void Memory::Write8(u32 address, u8 value)
         case 0x8:
         case 0x9:
             break;
-        
+
         // EWRAM
         case 0x2:
             address &= MEM_EWRAM_END;
@@ -333,42 +332,42 @@ void Memory::Write8(u32 address, u8 value)
         case 0x3:
             address &= MEM_IWRAM_END;
             break;
-        
+
         // Palette RAM
         case 0x5:
             address &= MEM_PALETTE_RAM_END;
             break;
-        
+
         // VRAM
         case 0x6:
             // 0x6010000 - 0x6017FFF is mirrored from 0x6018000 - 0x601FFFF.
             if (address >= 0x6018000 && address <= 0x601FFFF)
                 address -= 0x8000;
-            
+
             address &= 0x601FFFF;
             break;
 
         // OAM
         case 0x7:
             address &= MEM_OAM_END;
-            
+
             if (!stat->DisplayControl.hb && stat->DisplayStatus.in_hBlank)
                 return;
 
             break;
-        
+
         // ROM image 1
         case 0xA:
         case 0xB:
             address -= 0x2000000;
             break;
-        
+
         // ROM image 2
         case 0xC:
         case 0xD:
             address -= 0x4000000;
             break;
-        
+
         // Cart RAM
         case 0xF:
             address -= 0x1000000;
@@ -377,7 +376,7 @@ void Memory::Write8(u32 address, u8 value)
             address &= ~ram_size; // RAM Mirror
             cart_ram[address - 0xE000000] = value;
             return;
-        
+
         default:
             LOG(LogLevel::Error, "Invalid address to write: 0x{x}\n", address);
             return;
@@ -406,12 +405,12 @@ void Memory::Write8(u32 address, u8 value)
     {
         // REG_DISPCNT
         case REG_DISPCNT:
-            stat->DisplayControl.mode                  = value >> 0 & 0x7; // bits 0-2     
+            stat->DisplayControl.mode                  = value >> 0 & 0x7; // bits 0-2
             stat->DisplayControl.gb                    = value >> 3 & 0x1; // bit 3
             stat->DisplayControl.ps                    = value >> 4 & 0x1; // bit 4
             stat->DisplayControl.hb                    = value >> 5 & 0x1; // bit 5
             stat->DisplayControl.obj_map_mode          = value >> 6 & 0x1; // bit 6
-            stat->DisplayControl.fb                    = value >> 7 & 0x1; // bit 7    
+            stat->DisplayControl.fb                    = value >> 7 & 0x1; // bit 7
         break;
 
         case REG_DISPCNT + 1:
@@ -528,49 +527,49 @@ void Memory::Write8(u32 address, u8 value)
         case REG_BG0HOFS + 1:
             stat->BgControl[0].hoff = (memory[REG_BG0HOFS + 1] << 8) | (memory[REG_BG0HOFS]);
             break;
-        
+
         // REG_BG0VOFS
         case REG_BG0VOFS:
         case REG_BG0VOFS + 1:
             stat->BgControl[0].voff = (memory[REG_BG0VOFS + 1] << 8) | (memory[REG_BG0VOFS]);
             break;
-        
+
         // REG_BG1HOFS
         case REG_BG1HOFS:
         case REG_BG1HOFS + 1:
             stat->BgControl[1].hoff = (memory[REG_BG1HOFS + 1] << 8) | (memory[REG_BG1HOFS]);
             break;
-        
+
         // REG_BG1VOFS
         case REG_BG1VOFS:
         case REG_BG1VOFS + 1:
             stat->BgControl[1].voff = (memory[REG_BG1VOFS + 1] << 8) | (memory[REG_BG1VOFS]);
             break;
-        
+
         // REG_BG2HOFS
         case REG_BG2HOFS:
         case REG_BG2HOFS + 1:
             stat->BgControl[2].hoff = (memory[REG_BG2HOFS + 1] << 8) | (memory[REG_BG2HOFS]);
             break;
-        
+
         // REG_BG2VOFS
         case REG_BG2VOFS:
         case REG_BG2VOFS + 1:
             stat->BgControl[2].voff = (memory[REG_BG2VOFS + 1] << 8) | (memory[REG_BG2VOFS]);
             break;
-        
+
         // REG_BG3HOFS
         case REG_BG3HOFS:
         case REG_BG3HOFS + 1:
             stat->BgControl[3].hoff = (memory[REG_BG3HOFS + 1] << 8) | (memory[REG_BG3HOFS]);
             break;
-        
+
         // REG_BG3VOFS
         case REG_BG3VOFS:
         case REG_BG3VOFS + 1:
             stat->BgControl[3].voff = (memory[REG_BG3VOFS + 1] << 8) | (memory[REG_BG3VOFS]);
             break;
-        
+
         // write into waitstate ctl
         case WAITCNT:
             switch(value >> 2 & 0b11) // bits 2-3
@@ -588,7 +587,7 @@ void Memory::Write8(u32 address, u8 value)
             }
 
         break;
-        
+
         // DMA
 
         // REG_DMA0CNT
@@ -607,7 +606,7 @@ void Memory::Write8(u32 address, u8 value)
             dma[0].chunk_size     = value >> 2 & 0x1;
             dma[0].mode           = value >> 4 & 0x3;
             dma[0].irq            = value >> 6 & 0x1;
-            dma[0].enable         = value >> 7 & 0x1; 
+            dma[0].enable         = value >> 7 & 0x1;
 
             if (dma[0].enable && dma[0].mode == 0) // immediate mode
             {
@@ -636,7 +635,7 @@ void Memory::Write8(u32 address, u8 value)
             dma[1].chunk_size     = value >> 2 & 0x1;
             dma[1].mode           = value >> 4 & 0x3;
             dma[1].irq            = value >> 6 & 0x1;
-            dma[1].enable         = value >> 7 & 0x1; 
+            dma[1].enable         = value >> 7 & 0x1;
 
             if (dma[1].enable && dma[1].mode == 0) // immediate mode
             {
@@ -665,7 +664,7 @@ void Memory::Write8(u32 address, u8 value)
             dma[2].chunk_size     = value >> 2 & 0x1;
             dma[2].mode           = value >> 4 & 0x3;
             dma[2].irq            = value >> 6 & 0x1;
-            dma[2].enable         = value >> 7 & 0x1; 
+            dma[2].enable         = value >> 7 & 0x1;
 
             if (dma[2].enable && dma[2].mode == 0) // immediate mode
             {
@@ -694,8 +693,8 @@ void Memory::Write8(u32 address, u8 value)
             dma[3].chunk_size     = value >> 2 & 0x1;
             dma[3].mode           = value >> 4 & 0x3;
             dma[3].irq            = value >> 6 & 0x1;
-            dma[3].enable         = value >> 7 & 0x1; 
-            
+            dma[3].enable         = value >> 7 & 0x1;
+
             if (dma[3].enable && dma[3].mode == 0) // immediate mode
             {
                 LOG(LogLevel::Message, "DMA3 immediate\n");
@@ -715,7 +714,7 @@ void Memory::Write8(u32 address, u8 value)
             timers[0]->data       = (memory[REG_TM0D + 1] << 8) | (memory[REG_TM0D]);
             timers[0]->start_data = (memory[REG_TM0D + 1] << 8) | (memory[REG_TM0D]);
             break;
-        
+
         // REG_TM1D
         case REG_TM1D:
         case REG_TM1D + 1:
@@ -736,7 +735,7 @@ void Memory::Write8(u32 address, u8 value)
             timers[3]->data       = (memory[REG_TM3D + 1] << 8) | (memory[REG_TM3D]);
             timers[3]->start_data = (memory[REG_TM3D + 1] << 8) | (memory[REG_TM3D]);
             break;
-        
+
         // REG_TM0CNT
         case REG_TM0CNT:
             timers[0]->freq       = value      & 0x3;
@@ -770,7 +769,7 @@ void Memory::Write8(u32 address, u8 value)
                 case 3: timers[1]->actual_freq = 1024; break;
             }
             break;
-        
+
         // REG_TM2CNT
         case REG_TM2CNT:
             timers[2]->freq       = value      & 0x3;
@@ -803,7 +802,7 @@ void Memory::Write8(u32 address, u8 value)
                 case 2: timers[3]->actual_freq = 256;  break;
                 case 3: timers[3]->actual_freq = 1024; break;
             }
-            break;  
+            break;
     }
 }
 
@@ -883,7 +882,7 @@ void Memory::Dma0()
             LOG(LogLevel::Error, "Error: Illegal option for DMA 0 dest adjust: {}\n", (int) dma[0].dest_adjust);
             break;
     }
-    
+
     // get increment mode for destination
     switch (dma[0].src_adjust)
     {
@@ -894,7 +893,7 @@ void Memory::Dma0()
             LOG(LogLevel::Error, "Error: Illegal option for DMA 0 src adjust: {}\n", (int) dma[0].src_adjust);
             break;
     }
-    
+
     // 32 bit copy
     if (dma[0].chunk_size == 1)
     {
@@ -932,16 +931,16 @@ void Memory::Dma0()
 
     // write back src
     Write32Unsafe(REG_DMA0SAD, src_ptr);
-    
+
 
     // turn off this transfer if repeat bit is not set
     if (dma[0].repeat == 0)
         dma[0].enable = 0;
-    
+
     // IRQ request
     if (dma[0].irq)
         LOG(LogLevel::Debug, "DMA0 IRQ request\n");
-    
+
     LOG(LogLevel::Debug, "DMA 0 Done\n");
 }
 
@@ -970,7 +969,7 @@ void Memory::Dma1()
             LOG(LogLevel::Error, "Error: Illegal option for DMA 1 dest adjust: {}\n", (int) dma[1].dest_adjust);
         break;
     }
-    
+
     // get increment mode for destination
     switch (dma[1].src_adjust)
     {
@@ -981,7 +980,7 @@ void Memory::Dma1()
             LOG(LogLevel::Error, "Error: Illegal option for DMA 1 src adjust: {}\n", (int) dma[1].src_adjust);
             break;
     }
-    
+
     // 32 bit copy
     if (dma[1].chunk_size == 1)
     {
@@ -1019,16 +1018,16 @@ void Memory::Dma1()
 
     // write back src
     Write32Unsafe(REG_DMA1SAD, src_ptr);
-    
+
 
     // turn off this transfer if repeat bit is not set
     if (dma[1].repeat == 0)
         dma[1].enable = 0;
-    
+
     // IRQ request
     if (dma[1].irq)
         LOG(LogLevel::Debug, "DMA1 IRQ request\n");
-    
+
     LOG(LogLevel::Debug, "DMA 1 Done\n");
 }
 
@@ -1057,7 +1056,7 @@ void Memory::Dma2()
             LOG(LogLevel::Error, "Error: Illegal option for DMA 2 dest adjust: {}\n", (int) dma[2].dest_adjust);
             break;
     }
-    
+
     // get increment mode for destination
     switch (dma[2].src_adjust)
     {
@@ -1068,7 +1067,7 @@ void Memory::Dma2()
             LOG(LogLevel::Error, "Error: Illegal option for DMA 2 src adjust: {}\n", (int) dma[2].src_adjust);
             break;
     }
-    
+
     // 32 bit copy
     if (dma[2].chunk_size == 1)
     {
@@ -1106,16 +1105,16 @@ void Memory::Dma2()
 
     // write back src
     Write32Unsafe(REG_DMA2SAD, src_ptr);
-    
+
 
     // turn off this transfer if repeat bit is not set
     if (dma[2].repeat == 0)
         dma[2].enable = 0;
-    
+
     // IRQ request
     if (dma[2].irq)
         LOG(LogLevel::Debug, "DMA3 IRQ request\n");
-    
+
     LOG(LogLevel::Debug, "DMA 2 Done\n");
 }
 
@@ -1132,7 +1131,7 @@ void Memory::Dma3()
     LOG(LogLevel::Debug, "DMA 3 start addr: 0x{x}\n", src_ptr);
     LOG(LogLevel::Debug, "DMA 3 dest  addr: 0x{x}\n", dest_ptr);
     LOG(LogLevel::Debug, "DMA 3 num transfers: {}\n", dma[3].num_transfers);
-    
+
     // get increment mode for destination
     switch (dma[3].dest_adjust)
     {
@@ -1144,7 +1143,7 @@ void Memory::Dma3()
             LOG(LogLevel::Error, "Error: Illegal option for DMA 3 dest adjust: {}\n", (int) dma[3].dest_adjust);
             break;
     }
-    
+
     // get increment mode for src
     switch (dma[3].src_adjust)
     {
@@ -1155,12 +1154,12 @@ void Memory::Dma3()
             LOG(LogLevel::Error, "Error: Illegal option for DMA 3 src adjust: {}\n", (int) dma[3].src_adjust);
             break;
     }
-    
+
     // 32 bit copy
     if (dma[3].chunk_size == 1)
     {
         src_ptr  &= ~0x3; original_src  = src_ptr;
-        dest_ptr &= ~0x3; original_dest = dest_ptr; 
+        dest_ptr &= ~0x3; original_dest = dest_ptr;
         for (int i = 0; i < dma[3].num_transfers; ++i)
         {
             // copy memory from src address to dest address
@@ -1198,16 +1197,16 @@ void Memory::Dma3()
 
     // write back src
     Write32Unsafe(REG_DMA3SAD, src_ptr);
-    
+
 
     // turn off this transfer if repeat bit is not set
     if (dma[3].repeat == 0)
         dma[3].enable = 0;
-    
+
     // IRQ request
     if (dma[3].irq)
-        LOG(LogLevel::Debug, "DMA3 IRQ request\n");   
-    
+        LOG(LogLevel::Debug, "DMA3 IRQ request\n");
+
     LOG(LogLevel::Debug, "DMA 3 Done\n");
 }
 

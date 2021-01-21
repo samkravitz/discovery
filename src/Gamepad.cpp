@@ -2,7 +2,7 @@
  * License: GPLv2
  * See LICENSE.txt for full license text
  * Author: Sam Kravitz
- * 
+ *
  * FILE: Gamepad.cpp
  * DATE: January 6th, 2021
  * DESCRIPTION: Gamepad class
@@ -40,7 +40,7 @@ u16 Gamepad::Poll(const SDL_Event &e)
             case SDLK_DOWN:      keys.down  = 0; break;
             case SDLK_s:         keys.r     = 0; break;
             case SDLK_a:         keys.l     = 0; break;
-            default: break;
+            case SDLK_ESCAPE:    exit(0); // escape
         }
     }
 
@@ -59,12 +59,11 @@ u16 Gamepad::Poll(const SDL_Event &e)
             case SDLK_DOWN:      keys.down  = 1; break;
             case SDLK_s:         keys.r     = 1; break;
             case SDLK_a:         keys.l     = 1; break;
-            default: break;
         }
     }
 
     return keys.raw;
-    
+
     // // check for key interrupt
     // u16 keycnt = mem->Read16Unsafe(REG_KEYCNT);
     // if (keycnt >> 14 & 0x1) // key interrupts enabled
@@ -83,7 +82,7 @@ u16 Gamepad::Poll(const SDL_Event &e)
     //     {
     //         for (int i = 0; i < 10; ++i) // 10 keys
     //         {
-    //             if ((keys >> i & 1) && (gamepad_result >> i & 1) == 0) 
+    //             if ((keys >> i & 1) && (gamepad_result >> i & 1) == 0)
     //             {
     //                 raise_interrupt = true;
     //                 break;

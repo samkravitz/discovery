@@ -311,11 +311,11 @@ void PPU::RenderScanlineText(int bg)
     //int voff = mem->Read32Unsafe(REG)
     // screen position
     //int px, py = (scanline + bgcnt.voff) % bgcnt.height;
-    int px, py = 0;
+    int px, py = scanline;
     // tile x, tile y
     int grid_x, grid_y = py / 8;
     int tile_index;
-    int screenblock, screenentry;
+    int screenblock = 0, screenentry;
     u32 tile_address;
     int tile_x, tile_y;
     for (int x = 0; x < SCREEN_WIDTH; ++x)
@@ -324,15 +324,16 @@ void PPU::RenderScanlineText(int bg)
         px = x;
         grid_x = px / 8;
 
+
         // get screen entry index
-        screenblock = (grid_y / 32) * (0x800 / 32) + (grid_x / 32);
-        screenentry = screenblock * 1024 + (grid_y % 32) * 32 + grid_x % 32;
+        //screenblock = (grid_y / 32) * (0x800 / 32) + (grid_x / 32);
+        //screenentry = screenblock * 1024 + (grid_y % 32) * 32 + grid_x % 32;
 
-        tile_index = screenentry & 0x3FF;
-        LOG("{}\n", screenblock);
+        //tile_index = screenentry & 0x3FF;
+        // LOG("{}\n", px);
     }
-
-    exit(0);
+    LOG("{}\n", grid_y);
+    //exit(0);
     
     //LOG("{} {}\n", py, ty);
     //LOG("{} {}\n", bgcnt.voff, bgcnt.hoff);

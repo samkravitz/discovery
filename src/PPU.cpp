@@ -311,18 +311,19 @@ void PPU::RenderScanlineText(int bg)
     //int voff = mem->Read32Unsafe(REG)
     // screen position
     //int px, py = (scanline + bgcnt.voff) % bgcnt.height;
-    int px, py = scanline;
-    // tile x, tile y
-    int grid_x, grid_y = py / 8;
+    int map_x, map_y = scanline;
+    // tile x, tile yd
     int tile_index;
     int screenblock = 0, screenentry;
-    u32 tile_address;
-    int tile_x, tile_y;
+    u32 sb_address, se_address;
+    int tile_x, tile_y; // tile x, y coordinate (in screenblock)
     for (int x = 0; x < SCREEN_WIDTH; ++x)
     {
         //px = (x + bgcnt.hoff) % bgcnt.width;
-        px = x;
-        grid_x = px / 8;
+        map_x = x;
+
+        tile_x = map_x / 8;
+        tile_y = map_y / 8;
 
 
         // get screen entry index
@@ -332,7 +333,7 @@ void PPU::RenderScanlineText(int bg)
         //tile_index = screenentry & 0x3FF;
         // LOG("{}\n", px);
     }
-    LOG("{}\n", grid_y);
+    //LOG("{}\n", grid_y);
     //exit(0);
     
     //LOG("{} {}\n", py, ty);

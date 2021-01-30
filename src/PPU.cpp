@@ -325,9 +325,12 @@ void PPU::RenderScanlineText(int bg)
     int tile_x, tile_y = map_y / 8; // 8 px per tile 
     
     int screenblock, screenentry, se_index;
-    int tile_id, h_flip, v_vlip, palbank; // screenentry properties
+    int tile_id, hflip, vflip, palbank; // screenentry properties
     int pixel;
     u32 sb_addr, tile_addr;
+
+    // used for vflip / hflip
+    int grid_x, grid_y;
 
     for (int x = 0; x < SCREEN_WIDTH; ++x)
     {
@@ -340,21 +343,30 @@ void PPU::RenderScanlineText(int bg)
 
         screenentry = mem->Read16(MEM_VRAM_START + 2 * se_index);
         tile_id = screenentry >>  0 & 0x3FF;
-        h_flip  = screenentry >> 10 & 0x1;
-        v_vlip  = screenentry >> 11 & 0x1;
+        hflip  = screenentry >> 10 & 0x1;
+        vflip  = screenentry >> 11 & 0x1;
+
+        grid_x = map_x % 8;
+        grid_y = map_y % 8;
+
+        if (hflip)
+            grid_x = 7 - grid_x;
+        
+        if (vflip)
+            grid_y = 7 - grid_y;
 
         if (bgcnt.color_mode == 0) // 4BPP
         {
             palbank = screenentry >> 12 & 0xF;
 
             tile_addr = (MEM_VRAM_START + bgcnt.cbb * CHARBLOCK_LEN) + 0x20 * tile_id;
-            pixel = GetBGPixel4BPP(tile_addr, palbank, map_x % 8, map_y % 8);
+            pixel = GetBGPixel4BPP(tile_addr, palbank, grid_x, grid_y);
         }
 
         else // 8BPP
         {
             tile_addr = (MEM_VRAM_START + bgcnt.cbb * CHARBLOCK_LEN) + 0x40 * tile_id;
-            pixel = GetBGPixel8BPP(tile_addr, map_x % 8, map_y % 8);
+            pixel = GetBGPixel8BPP(tile_addr, grid_x, grid_y);
         }
 
 

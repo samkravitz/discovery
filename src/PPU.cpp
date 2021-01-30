@@ -269,7 +269,7 @@ void PPU::Render()
     if (stat->DisplayControl.fb)
         memset(screen_buffer, 0xFF, sizeof(screen_buffer)); // white
     else
-        memset(screen_buffer, 0, sizeof(screen_buffer));    // black
+        memset(screen_buffer,    0, sizeof(screen_buffer));    // black
 }
 
 void PPU::RenderScanline()
@@ -325,8 +325,9 @@ void PPU::RenderScanlineText(int bg)
     // tile coordinates (in map)
     int tile_x, tile_y = map_y / 8; // 8 px per tile 
     
+    int screenblock, screenentry, se_index;
     int tile_id, h_flip, v_vlip, palbank; // screenentry properties
-    int screenblock, screenentry;
+    int pixel;
     u32 sb_addr, tile_addr;
 
     for (int x = 0; x < SCREEN_WIDTH; ++x)
@@ -336,17 +337,28 @@ void PPU::RenderScanlineText(int bg)
 
         screenblock = bgcnt.sbb + ((tile_y / 32) * pitch + (tile_x / 32));
         sb_addr = MEM_VRAM_START + SCREENBLOCK_LEN * screenblock;
+        se_index = screenblock * 1024 + (tile_y % 32) * 32 + (tile_x % 32);
 
-        int se_index = screenblock * 1024 + (tile_y % 32) * 32 + (tile_x % 32);
-
+        //screenentry = mem->Read16(sb_addr + 2 * se_index);
         screenentry = mem->Read16(MEM_VRAM_START + 2 * se_index);
-        
-        tile_id = screenentry & 0x3FF;
+        tile_id = screenentry >>  0 & 0x3FF;
+        h_flip  = screenentry >> 10 & 0x1;
+        v_vlip  = screenentry >> 11 & 0x1;
 
-        tile_addr = MEM_VRAM_START + 0x20 * tile_id;
-        int palbank = screenentry >> 12 & 0xF;
+        if (bgcnt.color_mode == 0) // 4BPP
+        {
+            palbank = screenentry >> 12 & 0xF;
 
-        int pixel = GetBGPixel4BPP(tile_addr, palbank, map_x % 8, map_y % 8);
+            tile_addr = (MEM_VRAM_START + bgcnt.cbb * CHARBLOCK_LEN) + 0x20 * tile_id;
+            pixel = GetBGPixel4BPP(tile_addr, palbank, map_x % 8, map_y % 8);
+        }
+
+        else // 8BPP
+        {
+            tile_addr = (MEM_VRAM_START + bgcnt.cbb * CHARBLOCK_LEN) + 0x40 * tile_id;
+            pixel = GetBGPixel8BPP(tile_addr, map_x % 8, map_y % 8);
+        }
+
 
         if (pixel != TRANSPARENT)
             scanline_buffer[x] = U16ToU32Color(pixel);

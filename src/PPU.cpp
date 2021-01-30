@@ -312,10 +312,10 @@ void PPU::RenderScanlineText(int bg)
     // screen position
     //int px, py = (scanline + bgcnt.voff) % bgcnt.height;
     int map_x, map_y = scanline;
-    // tile x, tile yd
+    
     int tile_index;
-    int screenblock = 0, screenentry;
-    u32 sb_address, se_address;
+    int screenblock = 30;
+    u32 sb_address = MEM_VRAM_START + 0x800 * screenblock;
     int tile_x, tile_y; // tile x, y coordinate (in screenblock)
     for (int x = 0; x < SCREEN_WIDTH; ++x)
     {
@@ -325,20 +325,18 @@ void PPU::RenderScanlineText(int bg)
         tile_x = map_x / 8;
         tile_y = map_y / 8;
 
+        u16 screenentry = mem->Read16(sb_address + (2 * (tile_y * 32 + tile_x)));
+        int se_index = screenentry & 0x3FF;
 
-        // get screen entry index
-        //screenblock = (grid_y / 32) * (0x800 / 32) + (grid_x / 32);
-        //screenentry = screenblock * 1024 + (grid_y % 32) * 32 + grid_x % 32;
+        u32 tile_addr = MEM_VRAM_START + 0x20 * se_index;
+        int palbank = screenentry >> 12 & 0xF;
 
-        //tile_index = screenentry & 0x3FF;
-        // LOG("{}\n", px);
+        int pixel = GetBGPixel4BPP(tile_addr, palbank, map_x % 8, map_y % 8);
+
+        if (pixel != TRANSPARENT)
+            scanline_buffer[x] = U16ToU32Color(pixel);
     }
-    //LOG("{}\n", grid_y);
-    //exit(0);
-    
-    //LOG("{} {}\n", py, ty);
-    //LOG("{} {}\n", bgcnt.voff, bgcnt.hoff);
-    //LOG("{}\n", screenblock);
+
 }
 
 // render the current scanline for bitmap modes
@@ -632,6 +630,35 @@ u16 PPU::GetObjPixel8BPP(u32 addr, int x, int y)
         return TRANSPARENT;
 
     return mem->Read16(SPRITE_PALETTE + palette_index * sizeof(u16));
+}
+
+u16 PPU::GetBGPixel4BPP(u32 addr, int palbank, int x, int y)
+{
+    addr += (y * 4) + (x / 2);
+    
+    u16 palette_index = mem->Read8(addr);
+
+    // use top nybble for odd x, even otherwise
+    if (x & 1) { palette_index >>= 4; }
+
+    palette_index &= 0xF;
+
+    if (palette_index == 0) 
+        return TRANSPARENT;
+
+    return mem->Read16(BG_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
+}
+
+u16 PPU::GetBGPixel8BPP(u32 addr, int x, int y)
+{
+    addr += (y * 8) + x;
+    
+    u16 palette_index = mem->Read8(addr);
+
+    if (palette_index == 0) 
+        return TRANSPARENT;
+
+    return mem->Read16(BG_PALETTE + palette_index * sizeof(u16));
 }
 
 // given a 16 bit GBA color, make it a 32 bit SDL color

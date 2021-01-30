@@ -17,21 +17,22 @@
 #include "common.h"
 #include "mmio.h"
 
-constexpr int SCREEN_WIDTH  = 240;
-constexpr int SCREEN_HEIGHT = 160;
-constexpr int MAX_X         = 512;
-constexpr int MAX_Y         = 256;
+constexpr int SCREEN_WIDTH        = 240;
+constexpr int SCREEN_HEIGHT       = 160;
+constexpr int MAX_X               = 512;
+constexpr int MAX_Y               = 256;
 
-constexpr int HDRAW         = 960; // # of cycles in HDraw
-constexpr int HBLANK        = 272; // # of cycles in HBlank
-constexpr int VDRAW         = 160; // # of scanlines in VDraw
-constexpr int VBLANK        = 68;  // # of scanlines in VBlank
+constexpr int HDRAW               = 960; // # of cycles in HDraw
+constexpr int HBLANK              = 272; // # of cycles in HBlank
+constexpr int VDRAW               = 160; // # of scanlines in VDraw
+constexpr int VBLANK              = 68;  // # of scanlines in VBlank
 
-constexpr int NUM_OBJS      = 128; // number of sprites that can be rendered
+constexpr int NUM_OBJS            = 128; // number of sprites that can be rendered
 
 constexpr u32 LOWER_SPRITE_BLOCK  = 0x6010000;
 constexpr u32 HIGHER_SPRITE_BLOCK = 0x6014000;
 
+constexpr u32 BG_PALETTE          = 0x5000000;
 constexpr u32 SPRITE_PALETTE      = 0x5000200;
 
 class PPU
@@ -113,5 +114,7 @@ class PPU
         // misc
         u16 GetObjPixel4BPP(u32, int, int, int);
         u16 GetObjPixel8BPP(u32, int, int);
+        u16 GetBGPixel4BPP(u32, int, int, int);
+        u16 GetBGPixel8BPP(u32, int, int);
         void UpdateAttr();
 };

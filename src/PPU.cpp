@@ -307,7 +307,16 @@ void PPU::RenderScanlineText(int bg)
 {
     auto &bgcnt = stat->BgControl[bg];
 
-    // vertical, horizontal offset
+    // width, height of map in pixels
+    int width, height;
+    switch (bgcnt.size)
+    {
+        case 0: width =  256; height =  256; break;
+        case 1: width =  512; height =  256; break;
+        case 2: width =  256; height =  512; break;
+        case 3: width = 1024; height = 1024; break;
+    }
+
     //int voff = mem->Read32Unsafe(REG)
     // screen position
     //int px, py = (scanline + bgcnt.voff) % bgcnt.height;

@@ -1096,9 +1096,9 @@ void Memory::Dma3()
     // increment for destination, src
     int dest_inc, src_inc;
 
-    LOG(LogLevel::Debug, "DMA 3 start addr: 0x{x}\n", src_ptr);
-    LOG(LogLevel::Debug, "DMA 3 dest  addr: 0x{x}\n", dest_ptr);
-    LOG(LogLevel::Debug, "DMA 3 num transfers: {}\n", dma[3].num_transfers);
+    // LOG(LogLevel::Debug, "DMA 3 start addr: 0x{x}\n", (int) src_ptr);
+    // LOG(LogLevel::Debug, "DMA 3 dest  addr: 0x{x}\n", (int) dest_ptr);
+    // LOG(LogLevel::Debug, "DMA 3 num transfers: {}\n", dma[3].num_transfers);
 
     // get increment mode for destination
     switch (dma[3].dest_adjust)

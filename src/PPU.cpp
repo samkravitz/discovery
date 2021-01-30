@@ -293,13 +293,13 @@ void PPU::RenderScanline()
             break;
     }
 
-    std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], scanline_buffer, sizeof(scanline_buffer));
+    // if (stat->DisplayControl.obj_enabled)
+    // {
+    //     RenderScanlineObj();
+    //     std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
+    // }
 
-    if (stat->DisplayControl.obj_enabled)
-    {
-        RenderScanlineObj();
-        std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
-    }
+    std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], scanline_buffer, sizeof(scanline_buffer));
     
 }
 
@@ -313,10 +313,10 @@ void PPU::RenderScanlineText(int bg)
     int width, height;
     switch (bgcnt.size)
     {
-        case 0: width =  256; height =  256; pitch = 0; break;
-        case 1: width =  512; height =  256; pitch = 0; break;
-        case 2: width =  256; height =  512; pitch = 1; break;
-        case 3: width = 1024; height = 1024; pitch = 2; break;
+        case 0: width = 256; height = 256; pitch = 0; break;
+        case 1: width = 512; height = 256; pitch = 0; break;
+        case 2: width = 256; height = 512; pitch = 1; break;
+        case 3: width = 512; height = 512; pitch = 2; break;
     }
 
     // map position
@@ -336,10 +336,9 @@ void PPU::RenderScanlineText(int bg)
         tile_x = map_x / 8; // 8 px per tile
 
         screenblock = bgcnt.sbb + ((tile_y / 32) * pitch + (tile_x / 32));
-        sb_addr = MEM_VRAM_START + SCREENBLOCK_LEN * screenblock;
+        sb_addr = MEM_VRAM_START + SCREENBLOCK_LEN * (bgcnt.sbb);
         se_index = screenblock * 1024 + (tile_y % 32) * 32 + (tile_x % 32);
 
-        //screenentry = mem->Read16(sb_addr + 2 * se_index);
         screenentry = mem->Read16(MEM_VRAM_START + 2 * se_index);
         tile_id = screenentry >>  0 & 0x3FF;
         h_flip  = screenentry >> 10 & 0x1;

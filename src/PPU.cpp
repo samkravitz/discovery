@@ -293,14 +293,13 @@ void PPU::RenderScanline()
             break;
     }
 
-    // if (stat->DisplayControl.obj_enabled)
-    // {
-    //     RenderScanlineObj();
-    //     std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
-    // }
+    if (stat->DisplayControl.obj_enabled)
+    {
+        RenderScanlineObj();
+        std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
+    }
 
     std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], scanline_buffer, sizeof(scanline_buffer));
-    
 }
 
 void PPU::RenderScanlineText(int bg)
@@ -424,9 +423,6 @@ void PPU::RenderScanlineBitmap(int mode)
 
 void PPU::RenderScanlineObj()
 {
-    // zero obj scanline
-    std::memset(obj_scanline_buffer, 0, sizeof(obj_scanline_buffer));
-
     ObjAttr *attr;
     u16 pixel;
 
@@ -513,7 +509,8 @@ void PPU::RenderScanlineObj()
                 pixel = GetObjPixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
             }
             
-            if (pixel != TRANSPARENT) obj_scanline_buffer[qx0 + ix] = U16ToU32Color(pixel);
+            if (pixel != TRANSPARENT)
+                scanline_buffer[qx0 + ix] = U16ToU32Color(pixel);
         }
     }
 }

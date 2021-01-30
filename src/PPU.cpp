@@ -325,9 +325,9 @@ void PPU::RenderScanlineText(int bg)
     // tile coordinates (in map)
     int tile_x, tile_y = map_y / 8; // 8 px per tile 
     
-    int tile_index;
-    int screenblock;
-    u32 sb_address;
+    int tile_id, h_flip, v_vlip, palbank; // screenentry properties
+    int screenblock, screenentry;
+    u32 sb_addr, tile_addr;
 
     for (int x = 0; x < SCREEN_WIDTH; ++x)
     {
@@ -335,15 +335,15 @@ void PPU::RenderScanlineText(int bg)
         tile_x = map_x / 8; // 8 px per tile
 
         screenblock = bgcnt.sbb + ((tile_y / 32) * pitch + (tile_x / 32));
-        sb_address = MEM_VRAM_START + SCREENBLOCK_LEN * screenblock;
+        sb_addr = MEM_VRAM_START + SCREENBLOCK_LEN * screenblock;
 
         int se_index = screenblock * 1024 + (tile_y % 32) * 32 + (tile_x % 32);
 
-        u16 screenentry = mem->Read16(MEM_VRAM_START + 2 * se_index);
+        screenentry = mem->Read16(MEM_VRAM_START + 2 * se_index);
         
-        tile_index = screenentry & 0x3FF;
+        tile_id = screenentry & 0x3FF;
 
-        u32 tile_addr = MEM_VRAM_START + 0x20 * tile_index;
+        tile_addr = MEM_VRAM_START + 0x20 * tile_id;
         int palbank = screenentry >> 12 & 0xF;
 
         int pixel = GetBGPixel4BPP(tile_addr, palbank, map_x % 8, map_y % 8);

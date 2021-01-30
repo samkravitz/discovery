@@ -317,22 +317,20 @@ void PPU::RenderScanlineText(int bg)
         case 3: width = 1024; height = 1024; break;
     }
 
-    //int voff = mem->Read32Unsafe(REG)
     // screen position
-    //int px, py = (scanline + bgcnt.voff) % bgcnt.height;
-    int map_x, map_y = scanline;
+    int map_x, map_y = (scanline + bgcnt.voff) % height;
+
+    // tile coordinates (in screenblock)
+    int tile_x, tile_y = map_y / 8; // 8 px per tile 
     
     int tile_index;
     int screenblock = 30;
     u32 sb_address = MEM_VRAM_START + 0x800 * screenblock;
-    int tile_x, tile_y; // tile x, y coordinate (in screenblock)
+
     for (int x = 0; x < SCREEN_WIDTH; ++x)
     {
-        //px = (x + bgcnt.hoff) % bgcnt.width;
-        map_x = x;
-
-        tile_x = map_x / 8;
-        tile_y = map_y / 8;
+        map_x = (x + bgcnt.hoff) % width;
+        tile_x = map_x / 8; // 8 px per tile
 
         u16 screenentry = mem->Read16(sb_address + (2 * (tile_y * 32 + tile_x)));
         int se_index = screenentry & 0x3FF;

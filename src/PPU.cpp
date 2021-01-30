@@ -307,35 +307,43 @@ void PPU::RenderScanlineText(int bg)
 {
     auto &bgcnt = stat->BgControl[bg];
 
+    int pitch; // pitch of screenblocks
+
     // width, height of map in pixels
     int width, height;
     switch (bgcnt.size)
     {
-        case 0: width =  256; height =  256; break;
-        case 1: width =  512; height =  256; break;
-        case 2: width =  256; height =  512; break;
-        case 3: width = 1024; height = 1024; break;
+        case 0: width =  256; height =  256; pitch = 0; break;
+        case 1: width =  512; height =  256; pitch = 0; break;
+        case 2: width =  256; height =  512; pitch = 1; break;
+        case 3: width = 1024; height = 1024; pitch = 2; break;
     }
 
-    // screen position
+    // map position
     int map_x, map_y = (scanline + bgcnt.voff) % height;
 
-    // tile coordinates (in screenblock)
+    // tile coordinates (in map)
     int tile_x, tile_y = map_y / 8; // 8 px per tile 
     
     int tile_index;
-    int screenblock = 30;
-    u32 sb_address = MEM_VRAM_START + 0x800 * screenblock;
+    int screenblock;
+    u32 sb_address;
 
     for (int x = 0; x < SCREEN_WIDTH; ++x)
     {
         map_x = (x + bgcnt.hoff) % width;
         tile_x = map_x / 8; // 8 px per tile
 
-        u16 screenentry = mem->Read16(sb_address + (2 * (tile_y * 32 + tile_x)));
-        int se_index = screenentry & 0x3FF;
+        screenblock = bgcnt.sbb + ((tile_y / 32) * pitch + (tile_x / 32));
+        sb_address = MEM_VRAM_START + SCREENBLOCK_LEN * screenblock;
 
-        u32 tile_addr = MEM_VRAM_START + 0x20 * se_index;
+        int se_index = screenblock * 1024 + (tile_y % 32) * 32 + (tile_x % 32);
+
+        u16 screenentry = mem->Read16(MEM_VRAM_START + 2 * se_index);
+        
+        tile_index = screenentry & 0x3FF;
+
+        u32 tile_addr = MEM_VRAM_START + 0x20 * tile_index;
         int palbank = screenentry >> 12 & 0xF;
 
         int pixel = GetBGPixel4BPP(tile_addr, palbank, map_x % 8, map_y % 8);

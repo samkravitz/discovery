@@ -12,6 +12,8 @@
 #include <SDL2/SDL.h>
 #include <iostream>
 #include <ctime>
+#include <memory>
+#include <stack>
 
 #include "Memory.h"
 #include "common.h"
@@ -26,6 +28,11 @@ constexpr int HDRAW               = 960; // # of cycles in HDraw
 constexpr int HBLANK              = 272; // # of cycles in HBlank
 constexpr int VDRAW               = 160; // # of scanlines in VDraw
 constexpr int VBLANK              = 68;  // # of scanlines in VBlank
+
+constexpr int CHARBLOCK_LEN       = 0x4000;
+constexpr int SCREENBLOCK_LEN     = 0x800;
+
+constexpr int PALBANK_LEN         = 32; // length of each of palette RAM's 16 banks in 4bpp mode (s-tiles)
 
 constexpr int NUM_OBJS            = 128; // number of sprites that can be rendered
 
@@ -64,7 +71,7 @@ class PPU
         u32 scanline_buffer[SCREEN_WIDTH];
         u32 obj_scanline_buffer[SCREEN_WIDTH];
 
-        u32 screen_buffer[SCREEN_HEIGHT * SCREEN_WIDTH];
+        u32 screen_buffer[SCREEN_HEIGHT][SCREEN_WIDTH];
 
         // oam data structure
         struct ObjAttr
@@ -101,12 +108,15 @@ class PPU
 
         } objs[NUM_OBJS]; // can support 128 objects
 
+        // holds the indeces of which objs need to be displayed
+        std::unique_ptr<std::stack<int>> oam_update;
+
         // video mode renders
         void Render();
+        void RenderObj();
         void RenderScanline();
         void RenderScanlineText(int);
         void RenderScanlineBitmap(int);
-        void RenderScanlineObj();
 
         void DrawBackgroundReg(int);
         void DrawBackgroundAffine(int);

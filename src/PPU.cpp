@@ -14,22 +14,6 @@
 
 #include "PPU.h"
 
-#define S_TILE_LEN 32
-#define D_TILE_LEN 64
-
-#define PX_IN_TILE_ROW 8
-#define PX_IN_TILE_COL 8
-
-// length of each of palette RAM's 16 banks
-// in 4bpp mode (s-tiles)
-#define PALBANK_LEN 32
-
-#define CHARBLOCK_LEN             0x4000
-#define SCREENBLOCK_LEN           0x800
-#define S_SCREENENTRY_DEPTH       32    // s-tile SE depth
-#define D_SCREENENTRY_DEPTH       64    // d-tile SE depth
-#define TILES_PER_SCREENBLOCK     32
-
 // transparent pixel color
 #define TRANSPARENT 0x8000
 
@@ -69,6 +53,8 @@ PPU::PPU(Memory *mem, LcdStat *stat) : mem(mem), stat(stat)
     scale_rect.h = SCREEN_HEIGHT * 2;
     scale_rect.x = 0;
     scale_rect.y = 0;
+
+    oam_update = std::make_unique<std::stack<int>>();
 
     Reset();
 }
@@ -243,6 +229,14 @@ void PPU::Tick()
 void PPU::Render()
 {
     //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
+
+    // update objs data structure
+    if (stat->dispcnt.obj_enabled)
+    {
+        UpdateAttr();
+        RenderObj();
+        //std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
+    }
     
     // copy pixel buffer over to surface pixels
     if (SDL_MUSTLOCK(final_screen))
@@ -260,10 +254,6 @@ void PPU::Render()
     
     // draw final_screen pixels on screen
     SDL_UpdateWindowSurface(window);
-
-    // update objs data structure
-    if (stat->dispcnt.obj_enabled)
-        UpdateAttr();
 
     // zero screen buffer for next frame
     if (stat->dispcnt.fb)
@@ -293,13 +283,7 @@ void PPU::RenderScanline()
             break;
     }
 
-    if (stat->dispcnt.obj_enabled)
-    {
-        RenderScanlineObj();
-        //std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
-    }
-
-    std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], scanline_buffer, sizeof(scanline_buffer));
+    std::memcpy(&screen_buffer[scanline], scanline_buffer, sizeof(scanline_buffer));
 }
 
 void PPU::RenderScanlineText(int bg)
@@ -433,102 +417,103 @@ void PPU::RenderScanlineBitmap(int mode)
     }
 }
 
-void PPU::RenderScanlineObj()
+void PPU::RenderObj()
 {
     ObjAttr *attr;
     u16 pixel;
 
-    // loop through all objs
-    for (int i = NUM_OBJS - 1; i >= 0; --i)
+    while (!oam_update->empty())
     {
-        attr = &objs[i];
+        attr = &objs[oam_update->top()];
+        oam_update->pop();
 
         // skip hidden object
         if (attr->obj_mode == 2)
-            continue;
-
-        // // obj exists outside current scanline
-        if (scanline < attr->y0 || scanline >= attr->y0 + attr->height)
             continue;
         
         int px0 = attr->hwidth; // center of sprite texture
         int qx0 = attr->x;      // center of sprite screen space
 
+        int py0 = attr->hheight;
+        int qy0 = attr->y;
+
         // x, y coordinate of texture after transformation
         int px, py;
         int iy = scanline - attr->height;
 
-        for (int ix = -attr->hwidth; ix < attr->hwidth; ++ix)
+        for (int iy = -attr->hheight; iy < attr->hheight; ++iy)
         {
-            px = px0 + ix;
-            py = scanline - attr->y0;
-
-            // transform affine & double wide affine
-            if (attr->obj_mode == 1 || attr->obj_mode == 3)
+            for (int ix = -attr->hwidth; ix < attr->hwidth; ++ix)
             {
-                px = (attr->pa * ix + attr->pb * iy) + (attr->width  / 2);
-                py = (attr->pc * ix + attr->pd * iy) + (attr->height / 2);
-            }
+                px = px0 + ix;
+                py = py0 + iy;
 
-            // horizontal / vertical flip
-            if (attr->h_flip) px = attr->width  - px - 1;
-            if (attr->v_flip) py = attr->height - py - 1;
-            
-            // transformed coordinate is out of bounds
-            if (px >= attr->width || py >= attr->height) continue;
-            if (px < 0            || py < 0            ) continue;
-            if (qx0 + ix < 0      || qx0 + ix >= 240   ) continue;
-            
-            int tile_x  = px % 8; // x coordinate of pixel within tile
-            int tile_y  = py % 8; // y coordinate of pixel within tile
-            int block_x = px / 8; // x coordinate of tile in vram
-            int block_y = py / 8; // y coordinate of tile in vram
-
-            int tileno = attr->tileno;
-            int pixel;
-
-            if (attr->color_mode == 1) // 8bpp
-            {
-                if (stat->dispcnt.obj_map_mode == 1) // 1d
+                // transform affine & double wide affine
+                if (attr->obj_mode == 1 || attr->obj_mode == 3)
                 {
-                    tileno += block_y * (attr->width / 4);
+                    px = (attr->pa * ix + attr->pb * iy) + (attr->width  / 2);
+                    py = (attr->pc * ix + attr->pd * iy) + (attr->height / 2);
                 }
 
-                else // 2d
+                // horizontal / vertical flip
+                if (attr->h_flip) px = attr->width  - px - 1;
+                if (attr->v_flip) py = attr->height - py - 1;
+                
+                // transformed coordinate is out of bounds
+                if (px >= attr->width || py >= attr->height) continue;
+                if (px < 0            || py < 0            ) continue;
+                if (qx0 + ix < 0      || qx0 + ix >= 240   ) continue;
+                if (qy0 + iy < 0      || qy0 + iy >= 160   ) continue;
+                
+                int tile_x  = px % 8; // x coordinate of pixel within tile
+                int tile_y  = py % 8; // y coordinate of pixel within tile
+                int block_x = px / 8; // x coordinate of tile in vram
+                int block_y = py / 8; // y coordinate of tile in vram
+
+                int tileno = attr->tileno;
+                int pixel;
+
+                if (attr->color_mode == 1) // 8bpp
                 {
-                    tileno = (tileno & ~1) + block_y * 32;
+                    if (stat->dispcnt.obj_map_mode == 1) // 1d
+                    {
+                        tileno += block_y * (attr->width / 4);
+                    }
+
+                    else // 2d
+                    {
+                        tileno = (tileno & ~1) + block_y * 32;
+                    }
+                    
+                    tileno += block_x * 2;
+
+                    pixel = GetObjPixel8BPP(LOWER_SPRITE_BLOCK + tileno * 32, tile_x, tile_y);
+                }
+
+                else // 4bpp
+                {
+                    if (stat->dispcnt.obj_map_mode == 1) // 1d
+                    {
+                        tileno += block_y * (attr->width / 8);
+                    }
+
+                    else // 2d
+                    {
+                        tileno += block_y * 32;
+                    }
+
+                    tileno += block_x;
+
+                    pixel = GetObjPixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
                 }
                 
-                tileno += block_x * 2;
-
-                pixel = GetObjPixel8BPP(LOWER_SPRITE_BLOCK + tileno * 32, tile_x, tile_y);
+                if (pixel != TRANSPARENT)
+                    screen_buffer[qy0 + iy][qx0 + ix] = U16ToU32Color(pixel);
             }
-
-            else // 4bpp
-            {
-                if (stat->dispcnt.obj_map_mode == 1) // 1d
-                {
-                    tileno += block_y * (attr->width / 8);
-                }
-
-                else // 2d
-                {
-                    tileno += block_y * 32;
-                }
-
-                tileno += block_x;
-
-                pixel = GetObjPixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
-            }
-            
-            if (pixel != TRANSPARENT)
-                scanline_buffer[qx0 + ix] = U16ToU32Color(pixel);
         }
     }
 }
 
-// TODO - add queue that holds index of every obj to be drawn this frame
-// fills the objs data structure every frame an object needs to be drawn
 void PPU::UpdateAttr()
 {
     u32 oam_ptr = MEM_OAM_START;
@@ -624,8 +609,8 @@ void PPU::UpdateAttr()
             // double wide affine
             if (obj.obj_mode == 3)
             {
-                obj.x += obj.width;
-                obj.y += obj.height;
+                obj.x += obj.hwidth;
+                obj.y += obj.hheight;
                 
                 obj.hwidth  *= 2;
                 obj.hheight *= 2;
@@ -635,6 +620,10 @@ void PPU::UpdateAttr()
             obj.v_flip = 0;
             obj.h_flip = 0;
         }
+
+        // add index to stack to be displayed
+        if (obj.obj_mode != 2)
+            oam_update->push(i);
     }
 }
 

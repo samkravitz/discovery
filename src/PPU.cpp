@@ -387,13 +387,14 @@ void PPU::RenderScanlineAffine(int bg)
         case 0b11: width = height = 1024; break;
     }
 
-    s32 dx, dy; // displacement vector
+    u32 dx_raw, dy_raw;
+    float dx, dy; // displacement vector
     float pa, pb, pc, pd; // P matrix
     switch (bg)
     {
         case 2:
-            dx = (s32) mem->Read32(REG_BG2X);
-            dy = (s32) mem->Read32(REG_BG2Y);
+            dx_raw = mem->Read32(REG_BG2X);
+            dy_raw = mem->Read32(REG_BG2Y);
 
             pa = (s16) mem->Read32(REG_BG2PA) / 256.0; 
             pb = (s16) mem->Read32(REG_BG2PB) / 256.0;
@@ -402,8 +403,8 @@ void PPU::RenderScanlineAffine(int bg)
             break;
 
         case 3:
-            dx = (s32) mem->Read32(REG_BG3X);
-            dy = (s32) mem->Read32(REG_BG3Y);
+            dx_raw = mem->Read32(REG_BG3X);
+            dy_raw = mem->Read32(REG_BG3Y);
 
             pa = (s16) mem->Read32(REG_BG3PA) / 256.0; 
             pb = (s16) mem->Read32(REG_BG3PB) / 256.0;
@@ -412,9 +413,21 @@ void PPU::RenderScanlineAffine(int bg)
             break;
     }
 
+    dx = (dx_raw >> 8 & 0x7FFFF) + ((dx_raw & 0xFF) / 256.0);
+    dy = (dy_raw >> 8 & 0x7FFFF) + ((dy_raw & 0xFF) / 256.0);
+
+    if (dx_raw & 0x8000000)
+        dx *= -1.0;
+    if (dy_raw & 0x8000000)
+        dy *= -1.0;
+    
+
+    //LOG("{} {} {} {}\n", dx, dx_raw, dy, dy_raw);
+    
+
     int px0 = width / 2;
     int px, py;
-    int x0 = 0, y0 = 0;
+    int x0 = dx, y0 = dy;
 
     // map position
     int map_x, map_y = scanline;
@@ -422,10 +435,9 @@ void PPU::RenderScanlineAffine(int bg)
     // tile coordinates (in map)
     int tile_x, tile_y = map_y / 8; // 8 px per tile 
     
-    int screenblock, screenentry, se_index;
-    int tile_id, hflip, vflip, palbank; // screenentry properties
+    int se_index;
     int pixel;
-    u32 sb_addr, tile_addr;
+    u32 tile_addr;
 
     for (int x = 0; x < SCREEN_WIDTH; ++x)
     {

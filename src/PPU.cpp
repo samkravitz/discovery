@@ -374,7 +374,45 @@ void PPU::RenderScanlineText(int bg)
 // render the current scanline for affine bg modes
 void PPU::RenderScanlineAffine(int bg)
 {
+    auto const &bgcnt = stat->bgcnt[bg];
+
+    // displacement vector
+    // width, height of map in pixels
+    int width, height;
+    switch (bgcnt.size)
+    {
+        case 0b00: width = height =  128; break;
+        case 0b01: width = height =  256; break;
+        case 0b10: width = height =  512; break;
+        case 0b11: width = height = 1024; break;
+    }
+
+    // map position
+    int map_x, map_y = scanline;
+
+    // tile coordinates (in map)
+    int tile_x, tile_y = map_y / 8; // 8 px per tile 
     
+    int screenblock, screenentry, se_index;
+    int tile_id, hflip, vflip, palbank; // screenentry properties
+    int pixel;
+    u32 sb_addr, tile_addr;
+
+    for (int x = 0; x < SCREEN_WIDTH; ++x)
+    {
+        map_x = x;
+        tile_x = map_x / 8; // 8 px per tile
+
+        se_index = mem->Read8((MEM_VRAM_START + bgcnt.sbb * SCREENBLOCK_LEN) + tile_y * (width / 8) + tile_x);
+        tile_addr = (MEM_VRAM_START + bgcnt.cbb * CHARBLOCK_LEN) + (se_index * 0x40);
+
+        // 8BPP only
+        pixel = GetBGPixel8BPP(tile_addr, map_x % 8, map_y % 8);
+
+
+        if (pixel != TRANSPARENT)
+            scanline_buffer[x] = U16ToU32Color(pixel);
+    }
 }
 
 // render the current scanline for bitmap modes

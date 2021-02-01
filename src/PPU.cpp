@@ -259,7 +259,7 @@ void PPU::Render()
     if (stat->dispcnt.fb)
         memset(screen_buffer, 0xFF, sizeof(screen_buffer)); // white
     else
-        memset(screen_buffer,    0, sizeof(screen_buffer));    // black
+       memset(screen_buffer,    0, sizeof(screen_buffer));    // black
 }
 
 void PPU::RenderScanline()

@@ -919,9 +919,9 @@ void Memory::Dma1()
     src_ptr  = original_src  = Read32Unsafe(REG_DMA1SAD) & 0xFFFFFFF; // 28 bit
     dest_ptr = original_dest = Read32Unsafe(REG_DMA1DAD) & 0x7FFFFFF; // 27 bit
 
-    LOG(LogLevel::Debug, "DMA 1 start addr: 0x{x}\n", src_ptr);
-    LOG(LogLevel::Debug, "DMA 1 dest  addr: 0x{x}\n", dest_ptr);
-    LOG(LogLevel::Debug, "DMA 1 num transfers: {}\n", dma[1].num_transfers);
+    // LOG(LogLevel::Debug, "DMA 1 start addr: 0x{x}\n", src_ptr);
+    // LOG(LogLevel::Debug, "DMA 1 dest  addr: 0x{x}\n", dest_ptr);
+    // LOG(LogLevel::Debug, "DMA 1 num transfers: {}\n", dma[1].num_transfers);
 
     // increment for destination, src
     int dest_inc, src_inc;
@@ -1006,9 +1006,9 @@ void Memory::Dma2()
     src_ptr  = original_src  = Read32Unsafe(REG_DMA2SAD) & 0xFFFFFFF; // 28 bit
     dest_ptr = original_dest = Read32Unsafe(REG_DMA2DAD) & 0x7FFFFFF; // 27 bit;
 
-    LOG(LogLevel::Debug, "DMA 2 start addr: 0x{x}\n", src_ptr);
-    LOG(LogLevel::Debug, "DMA 2 dest  addr: 0x{x}\n", dest_ptr);
-    LOG(LogLevel::Debug, "DMA 2 num transfers: {}\n", dma[2].num_transfers);
+    // LOG(LogLevel::Debug, "DMA 2 start addr: 0x{x}\n", src_ptr);
+    // LOG(LogLevel::Debug, "DMA 2 dest  addr: 0x{x}\n", dest_ptr);
+    // LOG(LogLevel::Debug, "DMA 2 num transfers: {}\n", dma[2].num_transfers);
 
     // increment for destination, src
     int dest_inc, src_inc;

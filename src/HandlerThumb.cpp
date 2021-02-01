@@ -880,41 +880,23 @@ void Arm7Tdmi::SoftwareInterruptThumb(u16 instruction)
 
     // HLE BIOS calls
     // bits 7 - 0 determine which interrupt
-    // switch (instruction & 0xFF)
-    // {
-    //     case 0x0:
-    //         swi_softReset();
-    //         break;
-    //     case 0x1:
-    //         swi_registerRamReset();
-    //         break;
-    //     case 0x5:
-    //         swi_VBlankIntrWait();
-    //         break;
-    //     case 0x6:
-    //         swi_division();
-    //         break;
-    //     case 0x8:
-    //         swi_sqrt();
-    //         break;
-    //     case 0xA:
-    //         swi_arctan2();
-    //         break;
-    //     case 0xB:
-    //         swi_cpuSet();
-    //         break;
-    //     case 0xF:
-    //         swi_objAffineSet();
-    //         break;
-    //     case 0x10:
-    //         swi_bitUnpack();
-    //         break;
-    //     case 0x15:
-    //         //swi_RLUnCompVRAM();
-    //         break;
-    //     default:
-    //         std::cout << "Unknown SWI code: " << std::hex << (instruction & 0xFF) << "\n";
-    // }
+    switch (instruction & 0xFF)
+    {
+        case 0x0:  SwiSoftReset();        return;
+        case 0x1:  SwiRegisterRamReset(); return;
+        //case 0x5:  SwiVBlankIntrWait(); return;
+        case 0x6:  SwiDivision();         return;
+        case 0x8:  SwiSqrt();             return;
+        case 0xA:  SwiArctan2();          return;
+        case 0xB:  SwiCpuSet();           return;
+        case 0xF:  SwiObjAffineSet();     return;
+        case 0x10: SwiBitUnpack();        return;
+        case 0x15:
+            //swi_RLUnCompVRAM();
+            break;
+        default:
+            std::cout << "Unknown SWI code: " << std::hex << (instruction & 0xFF) << "\n";
+    }
 
     // LLE BIOS calls - handle thru BIOS
     u32 old_cpsr = GetRegister(cpsr);

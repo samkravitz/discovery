@@ -106,20 +106,22 @@ void Arm7Tdmi::SwiRegisterRamReset()
 void Arm7Tdmi::SwiVBlankIntrWait()
 {
     // force interrupts to be enabled
-    mem->Write32Unsafe(REG_IME, 0x1);
-    registers.cpsr.flags.i = 0;
+    // mem->Write32Unsafe(REG_IME, 0x1);
+    // registers.cpsr.flags.i = 0;
 
-    // write 1 to r0, r1
-    SetRegister(r0, 0x1);
-    SetRegister(r1, 0x1);
+    // // write 1 to r0, r1
+    // SetRegister(r0, 0x1);
+    // SetRegister(r1, 0x1);
+
+    // cycles = cycles + 197120 - cycles;
     // std::cout << "a" << ((int) mem->read_u32_unprotected(REG_IF)) << "\n";
     // std::cout << "b" << ((int) mem->read_u32_unprotected(REG_IE)) << "\n";
     // std::cout << ((int) mem->read_u32_unprotected(REG_IME)) << "\n";
     //exit(0);
-    registers.r15 -= GetState() == State::ARM ? 4 : 2;
-    pipeline[1] = pipeline[0];
-    pipeline[2] = pipeline[0];
-    swi_vblank_intr = true;
+    // registers.r15 -= GetState() == State::ARM ? 4 : 2;
+    // pipeline[1] = pipeline[0];
+    // pipeline[2] = pipeline[0];
+    // swi_vblank_intr = true;
 }
 
 /*

@@ -254,16 +254,16 @@ u8 Memory::Read8(u32 address)
     {
         // IO reg
         case REG_DISPSTAT:
-            result |= stat->DisplayStatus.in_vBlank ? 0b1      : 0b0;       // bit 0 set in vblank, clear in vdraw
-            result |= stat->DisplayStatus.in_hBlank ? 0b10     : 0b00;      // bit 1 set in hblank, clear in hdraw
-            result |= stat->DisplayStatus.vcs       ? 0b100    : 0b000;     // bit 2
-            result |= stat->DisplayStatus.vbi       ? 0b1000   : 0b0000;    // bit 3
-            result |= stat->DisplayStatus.hbi       ? 0b10000  : 0b00000;   // bit 4
-            result |= stat->DisplayStatus.vci       ? 0b100000 : 0b000000;  // bit 5
+            result |= stat->displaystat.in_vBlank ? 0b1      : 0b0;       // bit 0 set in vblank, clear in vdraw
+            result |= stat->displaystat.in_hBlank ? 0b10     : 0b00;      // bit 1 set in hblank, clear in hdraw
+            result |= stat->displaystat.vcs       ? 0b100    : 0b000;     // bit 2
+            result |= stat->displaystat.vbi       ? 0b1000   : 0b0000;    // bit 3
+            result |= stat->displaystat.hbi       ? 0b10000  : 0b00000;   // bit 4
+            result |= stat->displaystat.vci       ? 0b100000 : 0b000000;  // bit 5
             return result;
 
         case REG_DISPSTAT + 1:
-            return stat->DisplayStatus.vct;
+            return stat->displaystat.vct;
 
         case REG_VCOUNT:
             return stat->scanline;
@@ -351,7 +351,7 @@ void Memory::Write8(u32 address, u8 value)
         case 0x7:
             address &= MEM_OAM_END;
 
-            if (!stat->DisplayControl.hb && stat->DisplayStatus.in_hBlank)
+            if (!stat->dispcnt.hb && stat->displaystat.in_hBlank)
                 return;
 
             break;
@@ -405,137 +405,137 @@ void Memory::Write8(u32 address, u8 value)
     {
         // REG_DISPCNT
         case REG_DISPCNT:
-            stat->DisplayControl.mode                  = value >> 0 & 0x7; // bits 0-2
-            stat->DisplayControl.gb                    = value >> 3 & 0x1; // bit 3
-            stat->DisplayControl.ps                    = value >> 4 & 0x1; // bit 4
-            stat->DisplayControl.hb                    = value >> 5 & 0x1; // bit 5
-            stat->DisplayControl.obj_map_mode          = value >> 6 & 0x1; // bit 6
-            stat->DisplayControl.fb                    = value >> 7 & 0x1; // bit 7
+            stat->dispcnt.mode                  = value >> 0 & 0x7; // bits 0-2
+            stat->dispcnt.gb                    = value >> 3 & 0x1; // bit 3
+            stat->dispcnt.ps                    = value >> 4 & 0x1; // bit 4
+            stat->dispcnt.hb                    = value >> 5 & 0x1; // bit 5
+            stat->dispcnt.obj_map_mode          = value >> 6 & 0x1; // bit 6
+            stat->dispcnt.fb                    = value >> 7 & 0x1; // bit 7
         break;
 
         case REG_DISPCNT + 1:
-            stat->BgControl[0].enabled             = value >> 0 & 0x1; // bit 8
-            stat->BgControl[1].enabled             = value >> 1 & 0x1; // bit 9
-            stat->BgControl[2].enabled             = value >> 2 & 0x1; // bit A
-            stat->BgControl[3].enabled             = value >> 3 & 0x1; // bit B
-            stat->DisplayControl.obj_enabled           = value >> 4 & 0x1; // bit C
-            stat->DisplayControl.win_enabled           = value >> 5 & 0x7; // bits D-F
+            stat->bgcnt[0].enabled             = value >> 0 & 0x1; // bit 8
+            stat->bgcnt[1].enabled             = value >> 1 & 0x1; // bit 9
+            stat->bgcnt[2].enabled             = value >> 2 & 0x1; // bit A
+            stat->bgcnt[3].enabled             = value >> 3 & 0x1; // bit B
+            stat->dispcnt.obj_enabled           = value >> 4 & 0x1; // bit C
+            stat->dispcnt.win_enabled           = value >> 5 & 0x7; // bits D-F
         break;
 
         // REG_DISPSTAT
         case REG_DISPSTAT:
             // skip bits 0-2, unwritable
-            stat->DisplayStatus.vbi = value >> 3 & 1;
-            stat->DisplayStatus.hbi = value >> 4 & 1;
-            stat->DisplayStatus.vci = value >> 5 & 1;
+            stat->displaystat.vbi = value >> 3 & 1;
+            stat->displaystat.hbi = value >> 4 & 1;
+            stat->displaystat.vci = value >> 5 & 1;
         break;
 
         case REG_DISPSTAT + 1:
-            stat->DisplayStatus.vct = value;
+            stat->displaystat.vct = value;
         break;
 
         // REG_BG0CNT
         case REG_BG0CNT:
-            stat->BgControl[0].priority      = value >> 0 & 0x3; // bits 0-1
-            stat->BgControl[0].cbb           = value >> 2 & 0x3; // bits 2-3
-            stat->BgControl[0].mosaic        = value >> 6 & 0x1; // bit  6
-            stat->BgControl[0].color_mode    = value >> 7 & 0x1; // bit  7
+            stat->bgcnt[0].priority      = value >> 0 & 0x3; // bits 0-1
+            stat->bgcnt[0].cbb           = value >> 2 & 0x3; // bits 2-3
+            stat->bgcnt[0].mosaic        = value >> 6 & 0x1; // bit  6
+            stat->bgcnt[0].color_mode    = value >> 7 & 0x1; // bit  7
         break;
 
         case REG_BG0CNT + 1:
-            stat->BgControl[0].sbb           = value >> 0 & 0x1F; // bits 8-C
-            stat->BgControl[0].affine_wrap   = value >> 5 & 0x1;  // bit  D
-            stat->BgControl[0].size          = value >> 6 & 0x3;  // bits E-F
+            stat->bgcnt[0].sbb           = value >> 0 & 0x1F; // bits 8-C
+            stat->bgcnt[0].affine_wrap   = value >> 5 & 0x1;  // bit  D
+            stat->bgcnt[0].size          = value >> 6 & 0x3;  // bits E-F
         break;
 
         // REG_BG1CNT
         case REG_BG1CNT:
-            stat->BgControl[1].priority      = value >> 0 & 0x3; // bits 0-1
-            stat->BgControl[1].cbb           = value >> 2 & 0x3; // bits 2-3
-            stat->BgControl[1].mosaic        = value >> 6 & 0x1; // bit  6
-            stat->BgControl[1].color_mode    = value >> 7 & 0x1; // bit  7
+            stat->bgcnt[1].priority      = value >> 0 & 0x3; // bits 0-1
+            stat->bgcnt[1].cbb           = value >> 2 & 0x3; // bits 2-3
+            stat->bgcnt[1].mosaic        = value >> 6 & 0x1; // bit  6
+            stat->bgcnt[1].color_mode    = value >> 7 & 0x1; // bit  7
         break;
 
         case REG_BG1CNT + 1:
-            stat->BgControl[1].sbb           = value >> 0 & 0x1F; // bits 8-C
-            stat->BgControl[1].affine_wrap   = value >> 5 & 0x1;  // bit  D
-            stat->BgControl[1].size          = value >> 6 & 0x3;  // bits E-F
+            stat->bgcnt[1].sbb           = value >> 0 & 0x1F; // bits 8-C
+            stat->bgcnt[1].affine_wrap   = value >> 5 & 0x1;  // bit  D
+            stat->bgcnt[1].size          = value >> 6 & 0x3;  // bits E-F
         break;
 
         // REG_BG2CNT
         case REG_BG2CNT:
-            stat->BgControl[2].priority      = value >> 0 & 0x3; // bits 0-1
-            stat->BgControl[2].cbb           = value >> 2 & 0x3; // bits 2-3
-            stat->BgControl[2].mosaic        = value >> 6 & 0x1; // bit  6
-            stat->BgControl[2].color_mode    = value >> 7 & 0x1; // bit  7
+            stat->bgcnt[2].priority      = value >> 0 & 0x3; // bits 0-1
+            stat->bgcnt[2].cbb           = value >> 2 & 0x3; // bits 2-3
+            stat->bgcnt[2].mosaic        = value >> 6 & 0x1; // bit  6
+            stat->bgcnt[2].color_mode    = value >> 7 & 0x1; // bit  7
         break;
 
         case REG_BG2CNT + 1:
-            stat->BgControl[2].sbb           = value >> 0 & 0x1F; // bits 8-C
-            stat->BgControl[2].affine_wrap   = value >> 5 & 0x1;  // bit  D
-            stat->BgControl[2].size          = value >> 6 & 0x3;  // bits E-F
+            stat->bgcnt[2].sbb           = value >> 0 & 0x1F; // bits 8-C
+            stat->bgcnt[2].affine_wrap   = value >> 5 & 0x1;  // bit  D
+            stat->bgcnt[2].size          = value >> 6 & 0x3;  // bits E-F
         break;
 
         // REG_BG3CNT
         case REG_BG3CNT:
-            stat->BgControl[3].priority      = value >> 0 & 0x3; // bits 0-1
-            stat->BgControl[3].cbb           = value >> 2 & 0x3; // bits 2-3
-            stat->BgControl[3].mosaic        = value >> 6 & 0x1; // bit  6
-            stat->BgControl[3].color_mode    = value >> 7 & 0x1; // bit  7
+            stat->bgcnt[3].priority      = value >> 0 & 0x3; // bits 0-1
+            stat->bgcnt[3].cbb           = value >> 2 & 0x3; // bits 2-3
+            stat->bgcnt[3].mosaic        = value >> 6 & 0x1; // bit  6
+            stat->bgcnt[3].color_mode    = value >> 7 & 0x1; // bit  7
         break;
 
         case REG_BG3CNT + 1:
-            stat->BgControl[3].sbb           = value >> 0 & 0x1F; // bits 8-C
-            stat->BgControl[3].affine_wrap   = value >> 5 & 0x1;  // bit  D
-            stat->BgControl[3].size          = value >> 6 & 0x3;  // bits E-F
+            stat->bgcnt[3].sbb           = value >> 0 & 0x1F; // bits 8-C
+            stat->bgcnt[3].affine_wrap   = value >> 5 & 0x1;  // bit  D
+            stat->bgcnt[3].size          = value >> 6 & 0x3;  // bits E-F
         break;
 
         // REG_BG0HOFS
         case REG_BG0HOFS:
         case REG_BG0HOFS + 1:
-            stat->BgControl[0].hoff = (memory[REG_BG0HOFS + 1] << 8) | (memory[REG_BG0HOFS]);
+            stat->bgcnt[0].hoff = (memory[REG_BG0HOFS + 1] << 8) | (memory[REG_BG0HOFS]);
             break;
 
         // REG_BG0VOFS
         case REG_BG0VOFS:
         case REG_BG0VOFS + 1:
-            stat->BgControl[0].voff = (memory[REG_BG0VOFS + 1] << 8) | (memory[REG_BG0VOFS]);
+            stat->bgcnt[0].voff = (memory[REG_BG0VOFS + 1] << 8) | (memory[REG_BG0VOFS]);
             break;
 
         // REG_BG1HOFS
         case REG_BG1HOFS:
         case REG_BG1HOFS + 1:
-            stat->BgControl[1].hoff = (memory[REG_BG1HOFS + 1] << 8) | (memory[REG_BG1HOFS]);
+            stat->bgcnt[1].hoff = (memory[REG_BG1HOFS + 1] << 8) | (memory[REG_BG1HOFS]);
             break;
 
         // REG_BG1VOFS
         case REG_BG1VOFS:
         case REG_BG1VOFS + 1:
-            stat->BgControl[1].voff = (memory[REG_BG1VOFS + 1] << 8) | (memory[REG_BG1VOFS]);
+            stat->bgcnt[1].voff = (memory[REG_BG1VOFS + 1] << 8) | (memory[REG_BG1VOFS]);
             break;
 
         // REG_BG2HOFS
         case REG_BG2HOFS:
         case REG_BG2HOFS + 1:
-            stat->BgControl[2].hoff = (memory[REG_BG2HOFS + 1] << 8) | (memory[REG_BG2HOFS]);
+            stat->bgcnt[2].hoff = (memory[REG_BG2HOFS + 1] << 8) | (memory[REG_BG2HOFS]);
             break;
 
         // REG_BG2VOFS
         case REG_BG2VOFS:
         case REG_BG2VOFS + 1:
-            stat->BgControl[2].voff = (memory[REG_BG2VOFS + 1] << 8) | (memory[REG_BG2VOFS]);
+            stat->bgcnt[2].voff = (memory[REG_BG2VOFS + 1] << 8) | (memory[REG_BG2VOFS]);
             break;
 
         // REG_BG3HOFS
         case REG_BG3HOFS:
         case REG_BG3HOFS + 1:
-            stat->BgControl[3].hoff = (memory[REG_BG3HOFS + 1] << 8) | (memory[REG_BG3HOFS]);
+            stat->bgcnt[3].hoff = (memory[REG_BG3HOFS + 1] << 8) | (memory[REG_BG3HOFS]);
             break;
 
         // REG_BG3VOFS
         case REG_BG3VOFS:
         case REG_BG3VOFS + 1:
-            stat->BgControl[3].voff = (memory[REG_BG3VOFS + 1] << 8) | (memory[REG_BG3VOFS]);
+            stat->bgcnt[3].voff = (memory[REG_BG3VOFS + 1] << 8) | (memory[REG_BG3VOFS]);
             break;
 
         // write into waitstate ctl

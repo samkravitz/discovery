@@ -28,7 +28,7 @@ struct LcdStat
         u8 bg_enabled   : 4; // bg0-bg3 enabled
         u8 obj_enabled  : 1; // set if sprites are enabled
         u8 win_enabled  : 3; // windows 0, 1, and object window enabled
-    } DisplayControl;
+    } dispcnt;
 
     // REG_DISPSTAT control
     struct DisplayStatus
@@ -40,7 +40,7 @@ struct LcdStat
         u8 hbi       : 1; // hblank irq
         u8 vci       : 1; // vcount irq (fires interrupt when VCount trigger value == current scanline)
         u8 vct       : 8; // vcount trigger value
-    } DisplayStatus;
+    } displaystat;
 
     // background controls (BGXCNT)
     struct BgControl
@@ -57,48 +57,48 @@ struct LcdStat
 
         int width, height; // dimensions of map in pixels
         int voff,  hoff;   // vertical, horizontal offsets
-    } BgControl[4]; // backgrounds 0-3
+    } bgcnt[4]; // backgrounds 0-3
 
     LcdStat()
     {
         scanline = 0;
 
         // zero reg_dispcnt
-        DisplayControl.mode         = 0; 
-        DisplayControl.gb           = 0; 
-        DisplayControl.ps           = 0; 
-        DisplayControl.hb           = 0;
-        DisplayControl.obj_map_mode = 0; 
-        DisplayControl.fb           = 0; 
-        DisplayControl.bg_enabled   = 0; 
-        DisplayControl.obj_enabled  = 0; 
-        DisplayControl.win_enabled  = 0;
+        dispcnt.mode         = 0; 
+        dispcnt.gb           = 0; 
+        dispcnt.ps           = 0; 
+        dispcnt.hb           = 0;
+        dispcnt.obj_map_mode = 0; 
+        dispcnt.fb           = 0; 
+        dispcnt.bg_enabled   = 0; 
+        dispcnt.obj_enabled  = 0; 
+        dispcnt.win_enabled  = 0;
 
         // zero reg_dispstat
-        DisplayStatus.in_vBlank   = 0;
-        DisplayStatus.in_hBlank   = 0;
-        DisplayStatus.vcs         = 0;
-        DisplayStatus.vbi         = 0;
-        DisplayStatus.hbi         = 0;
-        DisplayStatus.vci         = 0;
-        DisplayStatus.vct         = 0;
+        displaystat.in_vBlank   = 0;
+        displaystat.in_hBlank   = 0;
+        displaystat.vcs         = 0;
+        displaystat.vbi         = 0;
+        displaystat.hbi         = 0;
+        displaystat.vci         = 0;
+        displaystat.vct         = 0;
 
         // zero background ctl
         for (int i = 0; i < 4; ++i)
         {
-            BgControl[i].priority    = 0; 
-            BgControl[i].cbb         = 0;  
-            BgControl[i].mosaic      = 0; 
-            BgControl[i].unused      = 0; 
-            BgControl[i].color_mode  = 0; 
-            BgControl[i].sbb         = 0; 
-            BgControl[i].affine_wrap = 0; 
-            BgControl[i].size        = 0; 
-            BgControl[i].enabled     = 0;
-            BgControl[i].width       = 0;
-            BgControl[i].height      = 0;
-            BgControl[i].voff        = 0;
-            BgControl[i].hoff        = 0;
+            bgcnt[i].priority    = 0; 
+            bgcnt[i].cbb         = 0;  
+            bgcnt[i].mosaic      = 0; 
+            bgcnt[i].unused      = 0; 
+            bgcnt[i].color_mode  = 0; 
+            bgcnt[i].sbb         = 0; 
+            bgcnt[i].affine_wrap = 0; 
+            bgcnt[i].size        = 0; 
+            bgcnt[i].enabled     = 0;
+            bgcnt[i].width       = 0;
+            bgcnt[i].height      = 0;
+            bgcnt[i].voff        = 0;
+            bgcnt[i].hoff        = 0;
         }
     }
 

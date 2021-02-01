@@ -1225,7 +1225,7 @@ void Arm7Tdmi::Write8(u32 address, u8 value)
     // VRAM byte writes
     if (address >= MEM_VRAM_START && address <= MEM_VRAM_END)
     {      
-        switch (mem->stat->DisplayControl.mode)
+        switch (mem->stat->dispcnt.mode)
         {
             // tile modes
             case 0:
@@ -1334,7 +1334,7 @@ inline bool Arm7Tdmi::MemCheckWrite(u32 &address)
     // add cycles for expensive memory accesses
 
     // +1 cycles for VRAM accress while not in v-blank
-    if (address >= MEM_PALETTE_RAM_START && address <= MEM_OAM_END && !mem->stat->DisplayStatus.in_vBlank)
+    if (address >= MEM_PALETTE_RAM_START && address <= MEM_OAM_END && !mem->stat->displaystat.in_vBlank)
         cycles++;
     
     // bios write

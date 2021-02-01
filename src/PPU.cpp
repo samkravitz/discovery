@@ -132,10 +132,10 @@ void PPU::Tick()
         if (scanline < SCREEN_HEIGHT)
             RenderScanline();
 
-        stat->DisplayStatus.in_hBlank = true;
+        stat->displaystat.in_hBlank = true;
 
         // fire HBlank interrupt if necessary
-        if (stat->DisplayStatus.hbi)
+        if (stat->displaystat.hbi)
         {
             mem->memory[REG_IF] |= IRQ_HBLANK;
             //LOG(LogLevel::Debug, "HBlank interrupt\n");
@@ -157,10 +157,10 @@ void PPU::Tick()
         if (scanline == VDRAW)
         {
             Render();
-            stat->DisplayStatus.in_vBlank = true;
+            stat->displaystat.in_vBlank = true;
 
             // fire Vblank interrupt if necessary
-            if (stat->DisplayStatus.vbi)
+            if (stat->displaystat.vbi)
             {
                 //LOG(LogLevel::Debug, "VBlank interrupt\n");
                 mem->memory[REG_IF] |= IRQ_VBLANK;
@@ -203,7 +203,7 @@ void PPU::Tick()
         // completed full refresh
         if (scanline == VDRAW + VBLANK)
         {
-            stat->DisplayStatus.in_vBlank = false;
+            stat->displaystat.in_vBlank = false;
             scanline = 0;
             stat->scanline = 0;
         }
@@ -215,13 +215,13 @@ void PPU::Tick()
         }
 
         // scanline has reached trigger value
-        if (scanline == stat->DisplayStatus.vct)
+        if (scanline == stat->displaystat.vct)
         {
             // set trigger status
-            stat->DisplayStatus.vcs = 1;
+            stat->displaystat.vcs = 1;
             
             // scanline interrupt is triggered if requested
-            if (stat->DisplayStatus.vci)
+            if (stat->displaystat.vci)
             {
                 mem->memory[REG_IF] |= IRQ_VCOUNT;
                 //std::cout << "Scanline interrupt\n";
@@ -232,11 +232,11 @@ void PPU::Tick()
         // scanline is not equal to trigger value, reset this bit
         else
         {
-            stat->DisplayStatus.vcs = 0;
+            stat->displaystat.vcs = 0;
         }
         
         cycles = 0;
-        stat->DisplayStatus.in_hBlank = false;
+        stat->displaystat.in_hBlank = false;
     }
 }
 
@@ -262,11 +262,11 @@ void PPU::Render()
     SDL_UpdateWindowSurface(window);
 
     // update objs data structure
-    if (stat->DisplayControl.obj_enabled)
+    if (stat->dispcnt.obj_enabled)
         UpdateAttr();
 
     // zero screen buffer for next frame
-    if (stat->DisplayControl.fb)
+    if (stat->dispcnt.fb)
         memset(screen_buffer, 0xFF, sizeof(screen_buffer)); // white
     else
         memset(screen_buffer,    0, sizeof(screen_buffer));    // black
@@ -276,12 +276,12 @@ void PPU::RenderScanline()
 {
     std::memset(scanline_buffer, 0, sizeof(scanline_buffer));
 
-    switch (stat->DisplayControl.mode)
+    switch (stat->dispcnt.mode)
     {
         case 0:
             for (int i = 3; i >= 0; --i) // bg0 - bg3
             {
-                if (stat->BgControl[i].enabled)
+                if (stat->bgcnt[i].enabled)
                     RenderScanlineText(i);
             }
 
@@ -289,11 +289,11 @@ void PPU::RenderScanline()
         case 3:
         case 4:
         case 5:
-            RenderScanlineBitmap(stat->DisplayControl.mode);
+            RenderScanlineBitmap(stat->dispcnt.mode);
             break;
     }
 
-    if (stat->DisplayControl.obj_enabled)
+    if (stat->dispcnt.obj_enabled)
     {
         RenderScanlineObj();
         std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
@@ -304,7 +304,7 @@ void PPU::RenderScanline()
 
 void PPU::RenderScanlineText(int bg)
 {
-    auto &bgcnt = stat->BgControl[bg];
+    auto const &bgcnt = stat->bgcnt[bg];
 
     int pitch; // pitch of screenblocks
 
@@ -399,7 +399,7 @@ void PPU::RenderScanlineBitmap(int mode)
             pal_ptr = MEM_VRAM_START + (scanline * SCREEN_WIDTH);
 
             // page 2 starts at 0x600A000
-            if (stat->DisplayControl.ps)
+            if (stat->dispcnt.ps)
                 pal_ptr += 0xA000;
 
             for (int i = 0; i < SCREEN_WIDTH; ++i)
@@ -418,7 +418,7 @@ void PPU::RenderScanlineBitmap(int mode)
             pal_ptr = MEM_VRAM_START + (scanline * 160);
 
             // page 2 starts at 0x600A000
-            if (stat->DisplayControl.ps)
+            if (stat->dispcnt.ps)
                 pal_ptr += 0xA000;
 
             for (int i = 0; i < 160; ++i)
@@ -489,7 +489,7 @@ void PPU::RenderScanlineObj()
 
             if (attr->color_mode == 1) // 8bpp
             {
-                if (stat->DisplayControl.obj_map_mode == 1) // 1d
+                if (stat->dispcnt.obj_map_mode == 1) // 1d
                 {
                     tileno += block_y * (attr->width / 4);
                 }
@@ -506,7 +506,7 @@ void PPU::RenderScanlineObj()
 
             else // 4bpp
             {
-                if (stat->DisplayControl.obj_map_mode == 1) // 1d
+                if (stat->dispcnt.obj_map_mode == 1) // 1d
                 {
                     tileno += block_y * (attr->width / 8);
                 }

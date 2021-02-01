@@ -268,12 +268,23 @@ void PPU::RenderScanline()
 
     switch (stat->dispcnt.mode)
     {
-        case 0:
+        case 0: // reg bg 0-3
             for (int i = 3; i >= 0; --i) // bg0 - bg3
             {
                 if (stat->bgcnt[i].enabled)
                     RenderScanlineText(i);
             }
+
+            break;
+        case 1: // reg bg 0-1, aff bg 2
+            if (stat->bgcnt[2].enabled) RenderScanlineAffine(2);
+            if (stat->bgcnt[1].enabled) RenderScanlineText(1);
+            if (stat->bgcnt[0].enabled) RenderScanlineText(0);
+
+            break;
+        case 2: // aff bg 2-3
+            if (stat->bgcnt[3].enabled) RenderScanlineAffine(3);
+            if (stat->bgcnt[2].enabled) RenderScanlineAffine(2);
 
             break;
         case 3:
@@ -358,6 +369,12 @@ void PPU::RenderScanlineText(int bg)
             scanline_buffer[x] = U16ToU32Color(pixel);
     }
 
+}
+
+// render the current scanline for affine bg modes
+void PPU::RenderScanlineAffine(int bg)
+{
+    
 }
 
 // render the current scanline for bitmap modes

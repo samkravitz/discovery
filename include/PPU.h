@@ -116,6 +116,7 @@ class PPU
         void RenderObj();
         void RenderScanline();
         void RenderScanlineText(int);
+        void RenderScanlineAffine(int);
         void RenderScanlineBitmap(int);
 
         void DrawBackgroundReg(int);

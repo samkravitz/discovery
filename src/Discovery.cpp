@@ -92,9 +92,8 @@ void Discovery::GameLoop()
 
         // run gpu and timers for as many clock cycles as cpu used
         system_cycles = cpu->cycles;
-        for (int i = system_cycles - old_cycles; i > 0; --i)
+        while (old_cycles++ < system_cycles)
         {
-            ++old_cycles;
 
             ppu->Tick();
 
@@ -152,8 +151,6 @@ void Discovery::GameLoop()
             if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)
                 mem->Write32Unsafe(REG_KEYINPUT, gamepad->Poll(e));
         }
-
-        valid = false;
     }
 
     ShutDown();
@@ -176,11 +173,12 @@ void Discovery::ParseArgs()
 void Discovery::ShutDown()
 {
     // free resources and shutdown
+    delete cpu;
+    delete ppu;
     delete mem;
+    delete stat;
+    delete gamepad;
 
     for (int i = 0; i < 4; ++i)
         delete timers[i];
-
-    cpu->~Arm7Tdmi();
-    ppu->~PPU();
 }

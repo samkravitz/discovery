@@ -234,7 +234,7 @@ u8 Memory::Read8(u32 address)
             return cart_ram[address - 0xE000000];
 
         default:
-            LOG(LogLevel::Error, "Invalid address to read: 0x{x}\n", address);
+            //LOG(LogLevel::Error, "Invalid address to read: 0x{x}\n", address);
             return 0;
     }
 

@@ -75,7 +75,6 @@ void Discovery::GameLoop()
 {
     SDL_Event e;
     u32 old_cycles = 0;
-    int num = 0;
     bool valid;
 
     while (true)

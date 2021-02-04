@@ -303,6 +303,7 @@ void PPU::RenderScanlineText(int bg)
 
     int pitch; // pitch of screenblocks
 
+
     // width, height of map in pixels
     int width, height;
     switch (bgcnt.size)

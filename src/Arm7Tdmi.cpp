@@ -569,7 +569,7 @@ void Arm7Tdmi::UpdateFlagsSubtraction(u32 op1, u32 op2, u32 result)
 {
     // C flag will be set to the carry out of bit 31 of the ALU
     // ARM uses an inverted carry flag for borrow
-    if (result > op1)
+    if (result > op1 || (result == op1 && op2 != 0))
         SetConditionCodeFlag(ConditionFlag::C, 0);
     else
         SetConditionCodeFlag(ConditionFlag::C, 1);

@@ -5,5 +5,5 @@ catch.hpp
 *.o
 *.gba
 gba_bios.bin
-test.cpp
+test.c*
 a.out

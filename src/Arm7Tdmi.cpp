@@ -552,8 +552,8 @@ void Arm7Tdmi::UpdateFlagsAddition(u32 op1, u32 op2, u32 result)
     SetConditionCodeFlag(ConditionFlag::N, new_n); // 0x80000000 is 1 followed by 31 zeros in binary
 
     // V flag will be set overflow occurs into bit 31 of the result
-    u8 op1_msb = op1 & 0x80000000 ? 1 : 0;
-    u8 op2_msb = op2 & 0x80000000 ? 1 : 0;
+    u8 op1_msb    = op1    & 0x80000000 ? 1 : 0;
+    u8 op2_msb    = op2    & 0x80000000 ? 1 : 0;
     u8 result_msb = result & 0x80000000 ? 1 : 0;
 
     if (op1_msb == 0 && op2_msb == 0 && result_msb == 1)
@@ -583,8 +583,8 @@ void Arm7Tdmi::UpdateFlagsSubtraction(u32 op1, u32 op2, u32 result)
     SetConditionCodeFlag(ConditionFlag::N, new_n); // 0x80000000 is 1 followed by 31 zeros in binary
 
     // V flag will be set overflow occurs into bit 31 of the result
-    u8 op1_msb = op1 & 0x80000000 ? 1 : 0;
-    u8 op2_msb = op2 & 0x80000000 ? 1 : 0;
+    u8 op1_msb    =    op1 & 0x80000000 ? 1 : 0;
+    u8 op2_msb    =    op2 & 0x80000000 ? 1 : 0;
     u8 result_msb = result & 0x80000000 ? 1 : 0;
 
     if (op1_msb == 0 && op2_msb == 1 && result_msb == 1)
@@ -874,7 +874,7 @@ void Arm7Tdmi::HandleInterrupt()
             if (interrupts_enabled & (1 << i) && interrupts_requested & (1 << i))
             {
                 // emulate how BIOS handles interrupts
-                //std::cout << "interrupt handling! " << i << "\n";
+                std::cout << "interrupt handling! " << i << "\n";
 
                 u32 old_cpsr = GetRegister(cpsr);
                 // switch to IRQ

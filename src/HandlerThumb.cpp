@@ -204,10 +204,22 @@ void Arm7Tdmi::AluThumb(u16 instruction)
             break;
 
         case 0b1101: // MUL
+        {
             result = op2 * op1;
             SetRegister(Rd, result);
-            UpdateFlagsAddition(op1, op2, result);
+            
+            // mul uses slightly different cpsr updates than addition
+
+            u8 new_n_flag = result & 0x80000000 ? 1 : 0; // bit 31 of result
+            SetConditionCodeFlag(ConditionFlag::N, new_n_flag);
+
+            u8 new_z_flag = result == 0 ? 1 : 0;
+            SetConditionCodeFlag(ConditionFlag::Z, new_z_flag);
+
+            // C destroyed
+            SetConditionCodeFlag(ConditionFlag::C, 0);
             break;
+        }
 
         case 0b1110: // BIC
             result = op2 & ~op1;

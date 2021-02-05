@@ -355,7 +355,7 @@ void Arm7Tdmi::MultiplyLong(u32 instruction)
         s64 op1 = (s32) GetRegister(Rm);
         s64 op2 = (s32) GetRegister(Rs);
         s64 result, temp;
-        temp = result = op1 * op2; // 64 bit result
+        result = op1 * op2; // 64 bit result
 
         // Add contents of RdHi, RdLo to result
         if (accumulate)
@@ -365,11 +365,12 @@ void Arm7Tdmi::MultiplyLong(u32 instruction)
             acc <<= 16;
             acc |= GetRegister(RdLo);
             result += (s64) acc; // C++ casting...
-            temp = result;
             
             // +1 m cycles for accumulate
             m++;
         }
+
+        temp = result;
 
         s32 lo = result & 0xFFFFFFFF; // lower 32 bits of result
         result >>= 16;
@@ -389,9 +390,8 @@ void Arm7Tdmi::MultiplyLong(u32 instruction)
             u8 new_z_flag = result == 0 ? 1 : 0;
             SetConditionCodeFlag(ConditionFlag::Z, new_z_flag);
 
-            // C, V are set to meaningless values
-            SetConditionCodeFlag(ConditionFlag::C, 1);
-            SetConditionCodeFlag(ConditionFlag::V, 1);
+            // C destroyed
+            SetConditionCodeFlag(ConditionFlag::C, 0);
         }
 
         // determine how many m cycles
@@ -411,7 +411,7 @@ void Arm7Tdmi::MultiplyLong(u32 instruction)
         u64 op1 = GetRegister(Rm);
         u64 op2 = GetRegister(Rs);
         u64 result, temp;
-        temp = result = op1 * op2; // 64 bit result
+        result = op1 * op2; // 64 bit result
 
         // Add contents of RdHi, RdLo to result
         if (accumulate)
@@ -426,6 +426,8 @@ void Arm7Tdmi::MultiplyLong(u32 instruction)
             m++;
         }
 
+        temp = result;
+
         u32 lo = result & 0xFFFFFFFF; // lower 32 bits of result
         result >>= 16;
         result >>= 16;
@@ -438,15 +440,14 @@ void Arm7Tdmi::MultiplyLong(u32 instruction)
 
         if (set_condition_code)
         {
-            u8 new_n_flag = result & 0x8000000000000000; // bit 63 of result
+            u8 new_n_flag = result & 0x8000000000000000 ? 1 : 0; // bit 63 of result
             SetConditionCodeFlag(ConditionFlag::N, new_n_flag);
 
             u8 new_z_flag = result == 0 ? 1 : 0;
             SetConditionCodeFlag(ConditionFlag::Z, new_z_flag);
 
-            // C, V are set to meaningless values
-            SetConditionCodeFlag(ConditionFlag::C, 1);
-            SetConditionCodeFlag(ConditionFlag::V, 1);
+            // C destroyed
+            SetConditionCodeFlag(ConditionFlag::C, 0);
         }
 
         // determine how many m cycles

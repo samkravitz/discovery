@@ -853,15 +853,15 @@ void Arm7Tdmi::HandleInterrupt()
         //set_state(SYS);
 
         // clear bit from REG_IF to show that interrupt has been serviced
-        u32 reg_if = mem->Read32Unsafe(REG_IF) & ~current_interrupt;
-        mem->Write32Unsafe(REG_IF, reg_if);
+        //u32 reg_if = mem->Read32Unsafe(REG_IF) & ~current_interrupt;
+        //mem->Write32Unsafe(REG_IF, reg_if);
 
         //std::cout << "interrupt handled! " << std::hex << registers.r15 << "\n";
         return;
     }
 
     // check if master interrupts are enabled
-    if ((mem->Read32Unsafe(REG_IME) & 1) && registers.cpsr.flags.i == 0) 
+    if (mem->Read32Unsafe(REG_IME) && registers.cpsr.flags.i == 0) 
     {
         // get enabled interrupts and requested interrupts
         u16 interrupts_enabled   = mem->Read16Unsafe(REG_IE);
@@ -874,7 +874,7 @@ void Arm7Tdmi::HandleInterrupt()
             if (interrupts_enabled & (1 << i) && interrupts_requested & (1 << i))
             {
                 // emulate how BIOS handles interrupts
-                std::cout << "interrupt handling! " << i << "\n";
+                // std::cout << "interrupt handling! " << i << "\n";
 
                 u32 old_cpsr = GetRegister(cpsr);
                 // switch to IRQ

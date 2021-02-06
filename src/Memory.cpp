@@ -771,6 +771,12 @@ void Memory::Write8(u32 address, u8 value)
                 case 3: timers[3]->actual_freq = 1024; break;
             }
             break;
+        
+        // REG_IF
+        case REG_IF:
+        case REG_IF + 1:
+            memory[address] &= ~value;
+            break;
     }
 }
 
@@ -832,9 +838,9 @@ void Memory::Dma0()
     src_ptr  = original_src  = Read32Unsafe(REG_DMA0SAD) & 0x7FFFFFF; // 27 bit
     dest_ptr = original_dest = Read32Unsafe(REG_DMA0DAD) & 0x7FFFFFF; // 27 bit;
 
-    LOG(LogLevel::Debug, "DMA 0 start addr: 0x{x}\n", src_ptr);
-    LOG(LogLevel::Debug, "DMA 0 dest  addr: 0x{x}\n", dest_ptr);
-    LOG(LogLevel::Debug, "DMA 0 num transfers: {}\n", dma[0].num_transfers);
+    // LOG(LogLevel::Debug, "DMA 0 start addr: 0x{x}\n", src_ptr);
+    // LOG(LogLevel::Debug, "DMA 0 dest  addr: 0x{x}\n", dest_ptr);
+    // LOG(LogLevel::Debug, "DMA 0 num transfers: {}\n", dma[0].num_transfers);
 
     // increment for destination, src
     int dest_inc, src_inc;

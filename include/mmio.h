@@ -91,3 +91,6 @@ constexpr u32 REG_IE       = 0x4000200; // interrupt enable register
 constexpr u32 REG_IF       = 0x4000202; // interrupt request flags
 constexpr u32 WAITCNT      = 0x4000204; // waitstate control
 constexpr u32 REG_IME      = 0x4000208; // master interrupt enable
+
+// GBA System control
+constexpr u32 REG_HALTCNT  = 0x4000301;

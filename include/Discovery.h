@@ -31,10 +31,14 @@ class Discovery
         Timer     *timers[4];
 
         long system_cycles;
+        bool running;
+
+        SDL_Event e;
 
         std::vector<std::string> argv;
 
         void GameLoop();
+        void Tick();
         void ParseArgs();
         void ShutDown();
 };

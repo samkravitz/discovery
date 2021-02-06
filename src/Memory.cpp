@@ -62,6 +62,8 @@ void Memory::Reset()
         dma[i].dest_address     = 0;
     }
 
+    haltcnt = 0;
+
     // write all 1s to keypad (all keys cleared)
     Write32Unsafe(REG_KEYINPUT, 0b1111111111);
 }
@@ -776,6 +778,10 @@ void Memory::Write8(u32 address, u8 value)
         case REG_IF:
         case REG_IF + 1:
             memory[address] &= ~value;
+            break;
+        
+        case REG_HALTCNT:
+            haltcnt = 1;
             break;
     }
 }

@@ -82,6 +82,8 @@ class Memory
         u8 n_cycles;
         u8 s_cycles;
 
+        u8 haltcnt;
+
         void Reset();
         bool LoadRom(const std::string &);
         bool LoadBios(const std::string &);

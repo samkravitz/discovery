@@ -293,7 +293,6 @@ u8 Memory::Read8(u32 address)
             return timers[3]->data & 0xFF;
         case REG_TM3D + 1:
             return (timers[3]->data >> 8) & 0xFF;
-
         default:
             return memory[address];
     }

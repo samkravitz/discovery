@@ -413,8 +413,8 @@ void PPU::RenderScanlineAffine(int bg)
             break;
     }
 
-    dx = (dx_raw >> 8 & 0x7FFFF) + ((dx_raw & 0xFF) / 256.0);
-    dy = (dy_raw >> 8 & 0x7FFFF) + ((dy_raw & 0xFF) / 256.0);
+    dx = (float) (dx_raw >> 8 & 0x7FFFF) + ((dx_raw & 0xFF) / 256.0);
+    dy = (float) (dy_raw >> 8 & 0x7FFFF) + ((dy_raw & 0xFF) / 256.0);
 
     if (dx_raw & 0x8000000)
         dx *= -1.0;
@@ -422,7 +422,7 @@ void PPU::RenderScanlineAffine(int bg)
         dy *= -1.0;
     
 
-    //LOG("{} {} {} {}\n", dx, dx_raw, dy, dy_raw);
+    LOG("{} {} {} {}\n", (float) dx, dx_raw, (float) dy, dy_raw);
     
 
     int px0 = width / 2;

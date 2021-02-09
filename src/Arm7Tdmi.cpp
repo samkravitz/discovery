@@ -20,7 +20,7 @@
 Arm7Tdmi::Arm7Tdmi(Memory *mem) : mem(mem)
 {
     registers = {0}; // zero out registers
-    registers.r15 = 0x8000000; // starting address of gamepak flash rom
+    registers.r15 = 0;//0x8000000; // starting address of gamepak flash rom
 
     registers.r13     = 0x3007F00; // starting address of user stack
     registers.r13_svc = 0x3007FE0; // starting address of swi stack
@@ -821,34 +821,34 @@ void Arm7Tdmi::Tick(u8 n, u8 s, u8 i)
 void Arm7Tdmi::HandleInterrupt()
 {
     // exit interrupt
-    if (in_interrupt && GetRegister(r15) == 0x138)
+    if (in_interrupt && GetRegister(r15) == 0x12C)
     {
-        //std::cout << "Handled interrupt!\n";
+        std::cout << "Handled interrupt!\n";
 
         // restore registers from stack
         // ldmfd r13! r0-r3, r12, r14
-        u32 sp = GetRegister(r13);
-        SetRegister(r0,  mem->Read32(sp)); sp += 4;
-        SetRegister(r1,  mem->Read32(sp)); sp += 4;
-        SetRegister(r2,  mem->Read32(sp)); sp += 4;
-        SetRegister(r3,  mem->Read32(sp)); sp += 4;
-        SetRegister(r12, mem->Read32(sp)); sp += 4;
-        SetRegister(r14, mem->Read32(sp)); sp += 4;
-        SetRegister(r13, sp);
+        // u32 sp = GetRegister(r13);
+        // SetRegister(r0,  mem->Read32(sp)); sp += 4;
+        // SetRegister(r1,  mem->Read32(sp)); sp += 4;
+        // SetRegister(r2,  mem->Read32(sp)); sp += 4;
+        // SetRegister(r3,  mem->Read32(sp)); sp += 4;
+        // SetRegister(r12, mem->Read32(sp)); sp += 4;
+        // SetRegister(r14, mem->Read32(sp)); sp += 4;
+        // SetRegister(r13, sp);
 
-        // return from IRQ
-        // subs r15, r14, 4
-        SetRegister(r15, GetRegister(r14) - 4);
+        // // return from IRQ
+        // // subs r15, r14, 4
+        // SetRegister(r15, GetRegister(r14) - 4);
 
-        // restore CPSR
-        SetRegister(cpsr, GetRegister(spsr));
+        // // restore CPSR
+        // SetRegister(cpsr, GetRegister(spsr));
 
-        // re-enable interrupts
-        registers.cpsr.flags.i = 0;
-        mem->Write32Unsafe(REG_IME, 1);
+        // // re-enable interrupts
+        // registers.cpsr.flags.i = 0;
+        // mem->Write32Unsafe(REG_IME, 1);
 
-        pipeline_full = false;
-        in_interrupt  = false;
+        // pipeline_full = false;
+        // in_interrupt  = false;
         
         //set_state(SYS);
 
@@ -864,73 +864,88 @@ void Arm7Tdmi::HandleInterrupt()
     if (mem->Read32Unsafe(REG_IME) && registers.cpsr.flags.i == 0) 
     {
         // get enabled interrupts and requested interrupts
-        u16 interrupts_enabled   = mem->Read16Unsafe(REG_IE);
-        u16 interrupts_requested = mem->Read16Unsafe(REG_IF);
+        // u16 interrupts_enabled   = mem->Read16Unsafe(REG_IE);
+        // u16 interrupts_requested = mem->Read16Unsafe(REG_IF);
+        auto irq_mask = mem->Read16Unsafe(REG_IE) & mem->Read16Unsafe(REG_IF);
 
         // get first identical set bit in enabled/requested interrupts
         for (int i = 0; i < 14; ++i) // 14 interrupts available
         {
             // handle interrupt at position i
-            if (interrupts_enabled & (1 << i) && interrupts_requested & (1 << i))
+            if (irq_mask & (1 << i))
             {
-                // emulate how BIOS handles interrupts
+                // LLE interrupts through BIOS
+                registers.spsr_irq = registers.cpsr;
+
+                if (GetState() == State::ARM)
+                    SetRegister(r14, GetRegister(r15) - 4);
+                else 
+                    SetRegister(r14, GetRegister(r15) - 2);
+
+                SetMode(Mode::IRQ);
+                SetState(State::ARM);
+                registers.cpsr.flags.i = 1;
+                SetRegister(r15, 0x18);
+                pipeline_full = false;
+                in_interrupt = true;
+
+                // emulate how BIOS handles interrupts - HLE
                 //std::cout << "interrupt handling! " << i << "\n";
 
-                u32 old_cpsr = GetRegister(cpsr);
-                // switch to IRQ
-                SetMode(Mode::IRQ);
+                // u32 old_cpsr = GetRegister(cpsr);
+                // // switch to IRQ
+                // SetMode(Mode::IRQ);
 
-                // save CPSR to SPSR
-                UpdateSPSR(old_cpsr, false);
+                // // save CPSR to SPSR
+                // UpdateSPSR(old_cpsr, false);
                 
-                // no branch
-                if (pipeline_full)
-                {
-                    if (GetState() == State::ARM) {
-                        //std::cout << "arm interrupt\n";
-                        SetRegister(r14, GetRegister(r15) - 4);
-                    }
-                    else {
-                        //std::cout << "thumb interrupt\n";
-                        SetRegister(r14, GetRegister(r15));
-                    }
-                }
+                // // no branch
+                // if (pipeline_full)
+                // {
+                //     if (GetState() == State::ARM) {
+                //         //std::cout << "arm interrupt\n";
+                //         SetRegister(r14, GetRegister(r15) - 4);
+                //     }
+                //     else {
+                //         //std::cout << "thumb interrupt\n";
+                //         SetRegister(r14, GetRegister(r15));
+                //     }
+                // }
 
-                // branch
-                else
-                {
-                    //std::cout << "Caution: interrupt after a branch\n";
-                    SetRegister(r14, GetRegister(r15) + 4);
-                }
+                // // branch
+                // else
+                // {
+                //     //std::cout << "Caution: interrupt after a branch\n";
+                //     SetRegister(r14, GetRegister(r15) + 4);
+                // }
 
-                // save registers to SP_irq
-                // stmfd  r13!, r0-r3, r12, r14
-                u32 sp = GetRegister(r13);
-                sp -= 4; mem->Write32(sp, GetRegister(r14)); 
-                sp -= 4; mem->Write32(sp, GetRegister(r12));
-                sp -= 4; mem->Write32(sp, GetRegister(r3));
-                sp -= 4; mem->Write32(sp, GetRegister(r2));
-                sp -= 4; mem->Write32(sp, GetRegister(r1));
-                sp -= 4; mem->Write32(sp, GetRegister(r0));
-                SetRegister(r13, sp);
+                // // save registers to SP_irq
+                // // stmfd  r13!, r0-r3, r12, r14
+                // u32 sp = GetRegister(r13);
+                // sp -= 4; mem->Write32(sp, GetRegister(r14)); 
+                // sp -= 4; mem->Write32(sp, GetRegister(r12));
+                // sp -= 4; mem->Write32(sp, GetRegister(r3));
+                // sp -= 4; mem->Write32(sp, GetRegister(r2));
+                // sp -= 4; mem->Write32(sp, GetRegister(r1));
+                // sp -= 4; mem->Write32(sp, GetRegister(r0));
+                // SetRegister(r13, sp);
 
-                // mov r0, 0x4000000
-                SetRegister(r0, 0x4000000);
+                // // mov r0, 0x4000000
+                // SetRegister(r0, 0x4000000);
 
-                // address where BIOS returns from IRQ handler
-                SetRegister(r14, 0x138);
+                // // address where BIOS returns from IRQ handler
+                // SetRegister(r14, 0x138);
 
-                // ldr r15, [r0, -0x4]
-                SetRegister(r15, mem->Read32(GetRegister(r0) - 0x4) & ~0x3);
+                // // ldr r15, [r0, -0x4]
+                // SetRegister(r15, mem->Read32(GetRegister(r0) - 0x4) & ~0x3);
 
-                registers.cpsr.flags.i = 1; // disable interrupts
-                SetState(State::ARM);
-                pipeline_full = false;
-                in_interrupt  = true;
-                mem->Write32Unsafe(REG_IME, 0);
+                // registers.cpsr.flags.i = 1; // disable interrupts
+                // SetState(State::ARM);
+                // pipeline_full = false;
+                // in_interrupt  = true;
+                // mem->Write32Unsafe(REG_IME, 0);
 
                 // save the current interrupt so we can clear it after it's been serviced
-                current_interrupt = interrupts_requested & (1 << i);
                 return;
             }
         }
@@ -942,7 +957,7 @@ u8 Arm7Tdmi::Read8(u32 address)
     // reading from BIOS memory
     if (address <= 0x3FFF && registers.r15 > 0x3FFF)
     {
-        LOG(LogLevel::Error, "Invalid read from BIOS u8: 0x{x}\n", last_read_bios);
+        //LOG(LogLevel::Error, "Invalid read from BIOS u8: 0x{x}\n", last_read_bios);
         // u32 value = last_read_bios;
         
         // switch (address & 0x3)

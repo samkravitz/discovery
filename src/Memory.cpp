@@ -176,6 +176,15 @@ u16 Memory::Read16(u32 address)
 
 u8 Memory::Read8(u32 address)
 {
+    if (address == 0xE000000)
+    {
+        return 0x1b;
+    }
+
+    if (address == 0xE000001)
+    {
+        return 0x32;
+    }
     // get memory region for mirrors
     switch (address >> 24)
     {

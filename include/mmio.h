@@ -55,6 +55,32 @@ constexpr u32 REG_WINOUT   = 0x400004A;
 constexpr u32 REG_MOSAIC   = 0x400004C;
 
 // Sound registers
+constexpr u32 REG_SOUND1CNT_L = 0x04000060;
+constexpr u32 REG_SOUND1CNT_H = 0x04000062;
+constexpr u32 REG_SOUND1CNT_X = 0x04000064;
+constexpr u32 REG_SOUND2CNT_L = 0x04000068;
+constexpr u32 REG_SOUND2CNT_H = 0x0400006C;
+constexpr u32 REG_SOUND3CNT_L = 0x04000070;
+constexpr u32 REG_SOUND3CNT_H = 0x04000072;
+constexpr u32 REG_SOUND3CNT_X = 0x04000074;
+constexpr u32 REG_SOUND4CNT_L = 0x04000078;
+constexpr u32 REG_SOUND4CNT_H = 0x0400007C;
+constexpr u32 REG_SOUNDCNT_L = 0x04000080;
+constexpr u32 REG_SOUNDCNT_H = 0x04000082;
+constexpr u32 REG_SOUNDCNT_X = 0x04000084;
+constexpr u32 REG_SOUNDBIAS = 0x04000088;
+constexpr u32 REG_WAVE_RAM0_L = 0x04000090;
+constexpr u32 REG_WAVE_RAM0_H = 0x04000092;
+constexpr u32 REG_WAVE_RAM1_L = 0x04000094;
+constexpr u32 REG_WAVE_RAM1_H = 0x04000096;
+constexpr u32 REG_WAVE_RAM2_L = 0x04000098;
+constexpr u32 REG_WAVE_RAM2_H = 0x0400009A;
+constexpr u32 REG_WAVE_RAM3_L = 0x0400009C;
+constexpr u32 REG_WAVE_RAM3_H = 0x0400009E;
+constexpr u32 REG_FIFO_A_L = 0x040000A0;
+constexpr u32 REG_FIFO_A_H = 0x040000A2;
+constexpr u32 REG_FIFO_B_L = 0x040000A4;
+constexpr u32 REG_FIFO_B_H = 0x040000A6;
 
 // DMA Transfer Channels
 constexpr u32 REG_DMA0SAD  = 0x40000B0;

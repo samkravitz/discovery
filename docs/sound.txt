@@ -1,0 +1,2 @@
+Register details
+http://www.belogic.com/gba/registers.shtml

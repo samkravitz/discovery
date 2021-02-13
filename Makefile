@@ -25,3 +25,4 @@ mov:
 .PHONY: clean
 clean:
 	rm -f discovery *.o bin/*
+	

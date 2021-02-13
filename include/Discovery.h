@@ -40,5 +40,6 @@ class Discovery
         void GameLoop();
         void Tick();
         void ParseArgs();
+        void PrintArgHelp();
         void ShutDown();
 };

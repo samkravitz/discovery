@@ -14,6 +14,7 @@ namespace config
 {
     std::string rom_name = "";
     std::string bios_name = "gba_bios.bin";
+    bool show_help = false;
 
     bool debug = false;
 }

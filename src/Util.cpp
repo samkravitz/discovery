@@ -8,6 +8,7 @@
  */
 
 #include "Util.h"
+#include <fstream>
 
 // determine which type of operation the instruction is
 // see docs/arm_instruction_set_bitfield.png to see a visual of the different types of instructions
@@ -157,4 +158,13 @@ ThumbInstruction Util::GetInstructionFormat(u16 instruction)
 
     else
         return ThumbInstruction::UND;
+}
+
+bool Util::PathExists(std::string path)
+{
+	std::fstream fin(path);
+	if(fin.fail())
+		return false;
+	else
+		return true;
 }

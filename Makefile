@@ -1,10 +1,10 @@
 CC = g++
 LIBARIES = -lstdc++fs -lSDL2 -DFMT_HEADER_ONLY
-CPPFLAGS = -g -I $(INCLUDEDIR) #-O2
+CPPFLAGS = -g -I $(INCLUDEDIR) -O2 -std=c++2a
 BIN = bin/
 SOURCEDIR = src/
 INCLUDEDIR = include/
-OBJECTS = Arm7Tdmi.o Util.o Memory.o PPU.o Gamepad.o HandlerArm.o HandlerThumb.o swi.o
+OBJECTS = Arm7Tdmi.o Util.o Memory.o PPU.o Gamepad.o # HandlerArm.o HandlerThumb.o swi.o
 VPATH = $(SOURCEDIR)
 TESTS = $(SOURCEDIR)tests/tests.cpp $(SOURCEDIR)tests/instruction_tests.cpp $(SOURCEDIR)tests/data_processing_tests.cpp
 

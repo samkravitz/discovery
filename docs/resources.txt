@@ -11,3 +11,5 @@ https://www.cs.rit.edu/~tjh8300/CowBite/CowBiteSpec.htm
 https://www.cs.waikato.ac.nz/~tcs/COMP317/bitpacking.html
 
 https://www.kinematicsoup.com/news/2016/9/6/data-compression-bit-packing-101
+
+http://www.belogic.com/gba/index.php

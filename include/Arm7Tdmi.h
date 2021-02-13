@@ -13,6 +13,7 @@
 #include "Memory.h"
 #include "Util.h"
 #include "PPU.h"
+#include "APU.h"
 #include "mmio.h"
 
 class Arm7Tdmi

@@ -850,7 +850,7 @@ void Arm7Tdmi::HandleInterrupt()
         pipeline_full = false;
         in_interrupt  = false;
         
-        set_state(SYS);
+        // set_state(SYS);
 
         // clear bit from REG_IF to show that interrupt has been serviced
         u32 reg_if = mem->Read32Unsafe(REG_IF) & ~current_interrupt;
@@ -1378,6 +1378,6 @@ bool Arm7Tdmi::CheckState()
     return valid;
 }
 
-// #include "HandlerArm.cpp"
-// #include "HandlerThumb.cpp"
-// #include "swi.cpp"
+#include "HandlerArm.cpp"
+#include "HandlerThumb.cpp"
+#include "swi.cpp"

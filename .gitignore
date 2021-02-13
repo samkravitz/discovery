@@ -7,3 +7,5 @@ catch.hpp
 gba_bios.bin
 test.c*
 a.out
+roms/
+third_party/fmt

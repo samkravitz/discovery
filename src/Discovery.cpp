@@ -9,13 +9,11 @@
  */
 #include <iostream>
 #include <iomanip>
-
 #include "Discovery.h"
+#include "Util.h"
 
 int main(int argc, char **argv)
 {
-    LOG("Welcome to Discovery!\n");
-
     Discovery emulator;
 
     if (argc < 2)
@@ -33,6 +31,16 @@ int main(int argc, char **argv)
 
     // parse command line args
     emulator.ParseArgs();
+	if(config::show_help)
+	{
+		emulator.PrintArgHelp();
+		return 0;
+	}
+	else
+	{
+		LOG("Welcome to Discovery!\n");
+	}
+
 
     // load bios, rom, and launch game loop
     emulator.mem->LoadBios(config::bios_name);
@@ -177,18 +185,35 @@ void Discovery::ParseArgs()
     for (int i = 0; i < argv.size(); ++i)
     {
         // ROM name
-        if (i == 0)
+        if (i == 0 && Util::PathExists(argv[i]))
             config::rom_name = argv[i];
-
-        else if (argv[i] == "-b" && i != argv.size() - 1)
+		else if ((argv[i] == "-i" || argv[i] == "--input") && i != argv.size() -1)
+			config::rom_name = argv[++i];
+        else if ((argv[i] == "-b" || argv[i] == "--bios") && i != argv.size() - 1)
             config::bios_name = argv[++i];
+		else if ((argv[i] == "-h" || argv[i] == "--help") && i == 0)
+			config::show_help = true;
     }
+}
+
+void Discovery::PrintArgHelp()
+{
+	LOG("Usage:\n");
+	LOG("./discovery ./path/to/rom.gba\n");
+	LOG("\n");
+	LOG("Flags:\n");
+	LOG("-i, --input\n");
+	LOG("  Specifies input file for rom\n");
+	LOG("-b, --bios\n");
+	LOG("  Specifies GBA bios file\n");
+	LOG("-h, --help\n");
+	LOG("  Show help...\n");
 }
 
 void Discovery::ShutDown()
 {
     // free resources and shutdown
-    delete cpu;
+	delete cpu;
     delete ppu;
     delete mem;
     delete stat;

@@ -83,7 +83,6 @@ Discovery::Discovery()
 void Discovery::GameLoop()
 {
     u32 old_cycles = 0;
-
     while (running)
     {
         // tick hardware (not cpu) if in halt state

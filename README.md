@@ -1,10 +1,10 @@
-# discovery 
+# discovery
 A Gameboy Advance emulator written in C++
 
 ![discovery](assets/discovery.png)
 
 ## Preamble
-When I was 10 years old, I vividly remember watching people on YouTube play Gameboy games on their PC, using a mysterious program called an 'emulator'. Although I didn't have the technical knowhow at the time to install one myself, this experience sparked my curiosity about computer systems. While I learned more and more about how computers worked, the technical details of how a machine could emulate another machine remained unknown to me. I resolved very early in my programming career that I would eventually build an emulator myself. This project represents over a decade of Discovery.
+When I was 10 years old, I vividly remember watching people on YouTube play Gameboy games on their PC, using a mysterious program called an 'emulator'. Although I didn't have the technical knowhow at the time to install one myself, this experience sparked my curiosity about computer systems. While I learned more and more about how computers worked, the technical details of how a machine could emulate another machine remained unknown to me. I resolved very early in my programming career that I would eventually build an emulator myself. This project represents over a decade of *~Discovery~*.
 
 ![kirby](assets/kirby_gameplay.png)
 
@@ -32,7 +32,9 @@ If fmt is already installed on your system, simply run `make` to build.
 
 Otherwise, follow the instructions from fmt to install it.
 
-Coming soon: cmake build process to automatically install fmt
+Coming soon:
+- cmake build process to automatically install fmt
+- C++20 std::format support to make fmt library obsolete 
 
 ## Building on MacOS & Windows
 As the only dependencies are make & SDL, discovery should be just as easy to build on non-Linux systems. However, I do not develop for these systems, so you're on your own there ;)

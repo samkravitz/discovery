@@ -1,6 +1,6 @@
 CC = g++
 LIBARIES = -lstdc++fs -lSDL2 -DFMT_HEADER_ONLY
-CPPFLAGS = -g -I $(INCLUDEDIR) -O2 -std=c++2a
+CPPFLAGS = -g -I $(INCLUDEDIR) -O2
 BIN = bin/
 SOURCEDIR = src/
 INCLUDEDIR = include/
@@ -25,4 +25,3 @@ mov:
 .PHONY: clean
 clean:
 	rm -f discovery *.o bin/*
-	

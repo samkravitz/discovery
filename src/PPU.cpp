@@ -2,7 +2,7 @@
  * License: GPLv2
  * See LICENSE.txt for full license text
  * Author: Sam Kravitz
- * 
+ *
  * FILE: PPU.cpp
  * DATE: January 6th, 2021
  * DESCRIPTION: Implementation of PPU class
@@ -43,7 +43,7 @@ PPU::PPU(Memory *mem, LcdStat *stat) : mem(mem), stat(stat)
         LOG(LogLevel::Error, "Could not load discovery logo!\n");
         exit(2);
     }
-    
+
     SDL_SetWindowIcon(window, logo);
 
     final_screen = SDL_GetWindowSurface(window);
@@ -126,7 +126,7 @@ void PPU::Tick()
             mem->memory[REG_IF] |= IRQ_HBLANK;
             //LOG(LogLevel::Debug, "HBlank interrupt\n");
         }
-            
+
 
         // check for DMA HBlank requests
         // TODO - Don't fire DMA Hblank in VBlank
@@ -138,7 +138,7 @@ void PPU::Tick()
                 LOG(LogLevel::Debug, "DMA {} HBLANK\n", i);
             }
         }
-        
+
         // start VBlank
         if (scanline == VDRAW)
         {
@@ -151,7 +151,7 @@ void PPU::Tick()
                 //LOG(LogLevel::Debug, "VBlank interrupt\n");
                 mem->memory[REG_IF] |= IRQ_VBLANK;
             }
-                
+
             // check for DMA VBLANK requests
             for (int i = 0; i < 4; ++i)
             {
@@ -205,22 +205,22 @@ void PPU::Tick()
         {
             // set trigger status
             stat->displaystat.vcs = 1;
-            
+
             // scanline interrupt is triggered if requested
             if (stat->displaystat.vci)
             {
                 mem->memory[REG_IF] |= IRQ_VCOUNT;
                 //std::cout << "Scanline interrupt\n";
             }
-                
+
         }
-        
+
         // scanline is not equal to trigger value, reset this bit
         else
         {
             stat->displaystat.vcs = 0;
         }
-        
+
         cycles = 0;
         stat->displaystat.in_hBlank = false;
     }
@@ -237,21 +237,21 @@ void PPU::Render()
         RenderObj();
         //std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
     }
-    
+
     // copy pixel buffer over to surface pixels
     if (SDL_MUSTLOCK(final_screen))
         SDL_LockSurface(final_screen);
 
     u32 *screen_pixels = (u32 *) original_screen->pixels;
-    
+
     std::memcpy(screen_pixels, screen_buffer, sizeof(screen_buffer));
 
     if (SDL_MUSTLOCK(final_screen))
         SDL_UnlockSurface(final_screen);
 
-    // scale screen buffer 
+    // scale screen buffer
     SDL_BlitScaled(original_screen, NULL, final_screen, &scale_rect);
-    
+
     // draw final_screen pixels on screen
     SDL_UpdateWindowSurface(window);
 
@@ -303,7 +303,6 @@ void PPU::RenderScanlineText(int bg)
 
     int pitch; // pitch of screenblocks
 
-
     // width, height of map in pixels
     int width, height;
     switch (bgcnt.size)
@@ -318,8 +317,8 @@ void PPU::RenderScanlineText(int bg)
     int map_x, map_y = (scanline + bgcnt.voff) % height;
 
     // tile coordinates (in map)
-    int tile_x, tile_y = map_y / 8; // 8 px per tile 
-    
+    int tile_x, tile_y = map_y / 8; // 8 px per tile
+
     int screenblock, screenentry, se_index;
     int tile_id, hflip, vflip, palbank; // screenentry properties
     int pixel;
@@ -347,7 +346,7 @@ void PPU::RenderScanlineText(int bg)
 
         if (hflip)
             grid_x = 7 - grid_x;
-        
+
         if (vflip)
             grid_y = 7 - grid_y;
 
@@ -397,7 +396,7 @@ void PPU::RenderScanlineAffine(int bg)
             dx_raw = mem->Read32(REG_BG2X);
             dy_raw = mem->Read32(REG_BG2Y);
 
-            pa = (s16) mem->Read32(REG_BG2PA) / 256.0; 
+            pa = (s16) mem->Read32(REG_BG2PA) / 256.0;
             pb = (s16) mem->Read32(REG_BG2PB) / 256.0;
             pc = (s16) mem->Read32(REG_BG2PC) / 256.0;
             pd = (s16) mem->Read32(REG_BG2PD) / 256.0;
@@ -407,7 +406,7 @@ void PPU::RenderScanlineAffine(int bg)
             dx_raw = mem->Read32(REG_BG3X);
             dy_raw = mem->Read32(REG_BG3Y);
 
-            pa = (s16) mem->Read32(REG_BG3PA) / 256.0; 
+            pa = (s16) mem->Read32(REG_BG3PA) / 256.0;
             pb = (s16) mem->Read32(REG_BG3PB) / 256.0;
             pc = (s16) mem->Read32(REG_BG3PC) / 256.0;
             pd = (s16) mem->Read32(REG_BG3PD) / 256.0;
@@ -421,10 +420,10 @@ void PPU::RenderScanlineAffine(int bg)
         dx *= -1.0;
     if (dy_raw & 0x8000000)
         dy *= -1.0;
-    
+
 
     LOG("{} {} {} {}\n", (float) dx, dx_raw, (float) dy, dy_raw);
-    
+
 
     int px0 = width / 2;
     int px, py;
@@ -434,8 +433,8 @@ void PPU::RenderScanlineAffine(int bg)
     int map_x, map_y = scanline;
 
     // tile coordinates (in map)
-    int tile_x, tile_y = map_y / 8; // 8 px per tile 
-    
+    int tile_x, tile_y = map_y / 8; // 8 px per tile
+
     int se_index;
     int pixel;
     u32 tile_addr;
@@ -448,7 +447,7 @@ void PPU::RenderScanlineAffine(int bg)
         // transformmed coordinate is out of bounds
         if (px >= SCREEN_WIDTH || py >= SCREEN_HEIGHT) continue;
         if (px < 0             || py < 0)              continue;
-    
+
         map_x = x;
         tile_x = map_x / 8; // 8 px per tile
 
@@ -481,7 +480,7 @@ void PPU::RenderScanlineBitmap(int mode)
                 scanline_buffer[i] = U16ToU32Color(pixel);
             }
             break;
-        
+
         case 4:
             pal_ptr = MEM_VRAM_START + (scanline * SCREEN_WIDTH);
 
@@ -498,7 +497,7 @@ void PPU::RenderScanlineBitmap(int mode)
             }
 
             break;
-        
+
         case 5:
             if (scanline >= 128) return; // mode 5 has 160 x 128 resolution
 
@@ -533,7 +532,7 @@ void PPU::RenderObj()
         // skip hidden object
         if (attr->obj_mode == 2)
             continue;
-        
+
         int px0 = attr->hwidth; // center of sprite texture
         int qx0 = attr->x;      // center of sprite screen space
 
@@ -561,13 +560,13 @@ void PPU::RenderObj()
                 // horizontal / vertical flip
                 if (attr->h_flip) px = attr->width  - px - 1;
                 if (attr->v_flip) py = attr->height - py - 1;
-                
+
                 // transformed coordinate is out of bounds
                 if (px >= attr->width || py >= attr->height) continue;
                 if (px < 0            || py < 0            ) continue;
                 if (qx0 + ix < 0      || qx0 + ix >= 240   ) continue;
                 if (qy0 + iy < 0      || qy0 + iy >= 160   ) continue;
-                
+
                 int tile_x  = px % 8; // x coordinate of pixel within tile
                 int tile_y  = py % 8; // y coordinate of pixel within tile
                 int block_x = px / 8; // x coordinate of tile in vram
@@ -587,7 +586,7 @@ void PPU::RenderObj()
                     {
                         tileno = (tileno & ~1) + block_y * 32;
                     }
-                    
+
                     tileno += block_x * 2;
 
                     pixel = GetObjPixel8BPP(LOWER_SPRITE_BLOCK + tileno * 32, tile_x, tile_y);
@@ -609,7 +608,7 @@ void PPU::RenderObj()
 
                     pixel = GetObjPixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
                 }
-                
+
                 if (pixel != TRANSPARENT)
                     screen_buffer[qy0 + iy][qx0 + ix] = U16ToU32Color(pixel);
             }
@@ -621,10 +620,10 @@ void PPU::UpdateAttr()
 {
     u32 oam_ptr = MEM_OAM_START;
     u16 attr0, attr1, attr2;
-    
+
     // loop through all objs
     for (int i = 0; i < NUM_OBJS; ++i)
-    {   
+    {
         ObjAttr &obj = objs[i];
 
         attr0 = mem->Read16Unsafe(oam_ptr); oam_ptr += 2;
@@ -704,7 +703,7 @@ void PPU::UpdateAttr()
             // transform P matrix from 8.8f to float
             // P = [pa pb]
             //     [pc pd]
-            obj.pa = (s16) mem->Read16(matrix_ptr +  0x6) / 256.0; 
+            obj.pa = (s16) mem->Read16(matrix_ptr +  0x6) / 256.0;
             obj.pb = (s16) mem->Read16(matrix_ptr +  0xE) / 256.0;
             obj.pc = (s16) mem->Read16(matrix_ptr + 0x16) / 256.0;
             obj.pd = (s16) mem->Read16(matrix_ptr + 0x1E) / 256.0;
@@ -714,7 +713,7 @@ void PPU::UpdateAttr()
             {
                 obj.x += obj.hwidth;
                 obj.y += obj.hheight;
-                
+
                 obj.hwidth  *= 2;
                 obj.hheight *= 2;
             }
@@ -733,7 +732,7 @@ void PPU::UpdateAttr()
 u16 PPU::GetObjPixel4BPP(u32 addr, int palbank, int x, int y)
 {
     addr += (y * 4) + (x / 2);
-    
+
     u16 palette_index = mem->Read8(addr);
 
     // use top nybble for odd x, even otherwise
@@ -741,7 +740,7 @@ u16 PPU::GetObjPixel4BPP(u32 addr, int palbank, int x, int y)
 
     palette_index &= 0xF;
 
-    if (palette_index == 0) 
+    if (palette_index == 0)
         return TRANSPARENT;
 
     return mem->Read16(SPRITE_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
@@ -750,10 +749,10 @@ u16 PPU::GetObjPixel4BPP(u32 addr, int palbank, int x, int y)
 u16 PPU::GetObjPixel8BPP(u32 addr, int x, int y)
 {
     addr += (y * 8) + x;
-    
+
     u16 palette_index = mem->Read8(addr);
 
-    if (palette_index == 0) 
+    if (palette_index == 0)
         return TRANSPARENT;
 
     return mem->Read16(SPRITE_PALETTE + palette_index * sizeof(u16));
@@ -762,7 +761,7 @@ u16 PPU::GetObjPixel8BPP(u32 addr, int x, int y)
 u16 PPU::GetBGPixel4BPP(u32 addr, int palbank, int x, int y)
 {
     addr += (y * 4) + (x / 2);
-    
+
     u16 palette_index = mem->Read8(addr);
 
     // use top nybble for odd x, even otherwise
@@ -770,7 +769,7 @@ u16 PPU::GetBGPixel4BPP(u32 addr, int palbank, int x, int y)
 
     palette_index &= 0xF;
 
-    if (palette_index == 0) 
+    if (palette_index == 0)
         return TRANSPARENT;
 
     return mem->Read16(BG_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
@@ -779,10 +778,10 @@ u16 PPU::GetBGPixel4BPP(u32 addr, int palbank, int x, int y)
 u16 PPU::GetBGPixel8BPP(u32 addr, int x, int y)
 {
     addr += (y * 8) + x;
-    
+
     u16 palette_index = mem->Read8(addr);
 
-    if (palette_index == 0) 
+    if (palette_index == 0)
         return TRANSPARENT;
 
     return mem->Read16(BG_PALETTE + palette_index * sizeof(u16));

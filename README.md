@@ -4,7 +4,7 @@ A Gameboy Advance emulator written in C++
 ![discovery](assets/discovery.png)
 
 ## Preamble
-When I was 10 years old, I vividly remember watching people on YouTube play Gameboy games on their PC, using a mysterious program called an 'emulator'. Although I didn't have the technical knowhow at the time to install one myself, this experience sparked my curiosity about computer systems. While I learned more and more about how computers worked, the technical details of how a machine could emulate another machine remained unknown to me. I resolved very early in my programming career that I would eventually build an emulator myself. This project represents over a decade of *~Discovery~*.
+When I was 10 years old, I vividly remember watching people on YouTube play Gameboy games on their PC, using a mysterious program called an 'emulator'. Although I didn't have the technical knowhow at the time to install one myself, this experience sparked my curiosity about computer systems. While I learned more and more about how computers worked, the technical details of how a machine could emulate another machine remained unknown to me. I resolved very early in my programming career that I would eventually build an emulator myself. This project represents over a decade of *Discovery*.
 
 ![kirby](assets/kirby_gameplay.png)
 

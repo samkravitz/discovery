@@ -230,6 +230,7 @@ void PPU::Render()
 {
     //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
 
+
     // update objs data structure
     if (stat->dispcnt.obj_enabled)
     {

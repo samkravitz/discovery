@@ -11,6 +11,7 @@
 #include <ctime>
 #include <sstream>
 #include <iomanip>
+#include <cstring>
 
 #include "PPU.h"
 
@@ -73,7 +74,7 @@ void PPU::Reset()
     fps       = 0;
     old_time  = clock();
 
-    memset(screen_buffer, 0, sizeof(screen_buffer));
+    std::memset(screen_buffer, 0, sizeof(screen_buffer));
 
     // zero oam data structure
     for (int i = 0; i < NUM_OBJS; ++i)

@@ -15,7 +15,6 @@
 
 #include "PPU.h"
 
-
 // transparent pixel color
 #define TRANSPARENT 0x8000
 

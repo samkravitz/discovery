@@ -9,3 +9,4 @@ test.c*
 a.out
 roms/
 third_party/fmt
+bios.bin

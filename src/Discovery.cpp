@@ -153,7 +153,7 @@ void Discovery::Tick()
 
                 // cascade
                 // timer 4 can't cascade any other timer
-                if (j == 4)
+                if (j == 3)
                     continue;
 
                 if (timers[j + 1]->enable && timers[j + 1]->cascade)

@@ -15,7 +15,7 @@
 // uncomment this if running tests
 //#define TEST
 
-//#define PRINT
+int PRINT = 0;
 
 Arm7Tdmi::Arm7Tdmi(Memory *mem) : mem(mem)
 {
@@ -194,11 +194,13 @@ void Arm7Tdmi::Decode(u32 instruction) { }
 
 void Arm7Tdmi::Execute(u32 instruction)
 {  
-    #ifdef PRINT
+    if (PRINT) {
     std::cout << "Executing: " << std::hex << instruction << "\n";
     if (instruction == 0)
         exit(5);
-    #endif
+    }
+
+    //std::cout << std::hex << registers.r15 << "\n";
     
     switch (GetState())
     {
@@ -263,7 +265,7 @@ void Arm7Tdmi::Execute(u32 instruction)
     if (pipeline_full)
         IncrementPC();
 
-    #ifdef PRINT
+    if (PRINT) {
     std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << GetRegister(0) << 
 				" -- R4  : 0x" << std::setw(8) << std::setfill('0') << GetRegister(4) << 
 				" -- R8  : 0x" << std::setw(8) << std::setfill('0') << GetRegister(8) << 
@@ -296,7 +298,7 @@ void Arm7Tdmi::Execute(u32 instruction)
                 std::cout << "V";
             std::cout << "\n";
             //std:: cout << std::dec << ii << " instructions\n";
-    #endif
+    }
 }
 
 u32 Arm7Tdmi::GetRegister(u32 reg)
@@ -850,13 +852,6 @@ void Arm7Tdmi::HandleInterrupt()
         pipeline_full = false;
         in_interrupt  = false;
         
-        // set_state(SYS);
-
-        // clear bit from REG_IF to show that interrupt has been serviced
-        u32 reg_if = mem->Read32Unsafe(REG_IF) & ~current_interrupt;
-        mem->Write32Unsafe(REG_IF, reg_if);
-
-        //std::cout << "interrupt handled! " << std::hex << registers.r15 << "\n";
         return;
     }
 
@@ -874,7 +869,7 @@ void Arm7Tdmi::HandleInterrupt()
             // handle interrupt at position i
             if (irq_mask & (1 << i))
             {
-                // LLE interrupts through BIOS
+                //LLE interrupts through BIOS
                 // registers.spsr_irq = registers.cpsr;
 
                 // if (GetState() == State::ARM)
@@ -885,7 +880,8 @@ void Arm7Tdmi::HandleInterrupt()
                 // SetMode(Mode::IRQ);
                 // SetState(State::ARM);
                 // registers.cpsr.flags.i = 1;
-                // SetRegister(r15, 0x18);
+                // mem->Write32Unsafe(REG_IME, 0);
+                // SetRegister(r15, 0x1C);
                 // pipeline_full = false;
                 // in_interrupt = true;
 
@@ -903,11 +899,11 @@ void Arm7Tdmi::HandleInterrupt()
                 if (pipeline_full)
                 {
                     if (GetState() == State::ARM) {
-                        //std::cout << "arm interrupt\n";
+                        std::cout << "arm interrupt\n";
                         SetRegister(r14, GetRegister(r15) - 4);
                     }
                     else {
-                        //std::cout << "thumb interrupt\n";
+                        std::cout << "thumb interrupt\n";
                         SetRegister(r14, GetRegister(r15));
                     }
                 }
@@ -1180,7 +1176,7 @@ u32 Arm7Tdmi::Read32(u32 address, bool ldr)
         // case REG_DMA3SAD:
         // case REG_DMA3DAD:
         case REG_DMA3CNT:
-            std::cout << "u32 sadkjflsadfkjsdaflkj\n";
+            //std::cout << "u32 sadkjflsadfkjsdaflkj\n";
             //return 0;
         default:
             break;

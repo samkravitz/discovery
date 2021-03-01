@@ -731,7 +731,7 @@ void PPU::UpdateAttr()
     }
 }
 
-u16 PPU::GetObjPixel4BPP(u32 addr, int palbank, int x, int y)
+inline u16 PPU::GetObjPixel4BPP(u32 addr, int palbank, int x, int y)
 {
     addr += (y * 4) + (x / 2);
 
@@ -748,7 +748,7 @@ u16 PPU::GetObjPixel4BPP(u32 addr, int palbank, int x, int y)
     return mem->Read16(SPRITE_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
 }
 
-u16 PPU::GetObjPixel8BPP(u32 addr, int x, int y)
+inline u16 PPU::GetObjPixel8BPP(u32 addr, int x, int y)
 {
     addr += (y * 8) + x;
 
@@ -760,7 +760,7 @@ u16 PPU::GetObjPixel8BPP(u32 addr, int x, int y)
     return mem->Read16(SPRITE_PALETTE + palette_index * sizeof(u16));
 }
 
-u16 PPU::GetBGPixel4BPP(u32 addr, int palbank, int x, int y)
+inline u16 PPU::GetBGPixel4BPP(u32 addr, int palbank, int x, int y)
 {
     addr += (y * 4) + (x / 2);
 
@@ -777,7 +777,7 @@ u16 PPU::GetBGPixel4BPP(u32 addr, int palbank, int x, int y)
     return mem->Read16(BG_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
 }
 
-u16 PPU::GetBGPixel8BPP(u32 addr, int x, int y)
+inline u16 PPU::GetBGPixel8BPP(u32 addr, int x, int y)
 {
     addr += (y * 8) + x;
 

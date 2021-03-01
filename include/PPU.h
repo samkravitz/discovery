@@ -123,9 +123,9 @@ class PPU
         void DrawBackgroundAffine(int);
 
         // misc
-        u16 GetObjPixel4BPP(u32, int, int, int);
-        u16 GetObjPixel8BPP(u32, int, int);
-        u16 GetBGPixel4BPP(u32, int, int, int);
-        u16 GetBGPixel8BPP(u32, int, int);
+        inline u16 GetObjPixel4BPP(u32, int, int, int);
+        inline u16 GetObjPixel8BPP(u32, int, int);
+        inline u16 GetBGPixel4BPP(u32, int, int, int);
+        inline u16 GetBGPixel8BPP(u32, int, int);
         void UpdateAttr();
 };

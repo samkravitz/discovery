@@ -16,15 +16,13 @@
 
 namespace fs = std::experimental::filesystem;
 
-Memory::Memory(LcdStat *stat) : stat(stat)
+Memory::Memory(LcdStat *stat, Timer *timer) :
+    stat(stat),
+    timer(timer)
 {
     // cart_rom  = NULL;
     cart_ram  = NULL;
 
-    timers[0] = NULL;
-    timers[1] = NULL;
-    timers[2] = NULL;
-    timers[3] = NULL;
     Reset();
 }
 
@@ -280,28 +278,21 @@ u8 Memory::Read8(u32 address)
             return stat->scanline;
 
         // REG_TM0D
-        case REG_TM0D:
-            return timers[0]->data & 0xFF;
-        case REG_TM0D + 1:
-            return (timers[0]->data >> 8) & 0xFF;
+        case REG_TM0D    : return timer->Read(0) >> 0 & 0xFF;
+        case REG_TM0D + 1: return timer->Read(0) >> 8 & 0xFF;
 
         // REG_TM1D
-        case REG_TM1D:
-            return timers[1]->data & 0xFF;
-        case REG_TM1D + 1:
-            return (timers[1]->data >> 8) & 0xFF;
+        case REG_TM1D    : return timer->Read(1) >> 0 & 0xFF;
+        case REG_TM1D + 1: return timer->Read(1) >> 8 & 0xFF;
 
         // REG_TM2D
-        case REG_TM2D:
-            return timers[2]->data & 0xFF;
-        case REG_TM2D + 1:
-            return (timers[2]->data >> 8) & 0xFF;
+        case REG_TM2D    : return timer->Read(2) >> 0 & 0xFF;
+        case REG_TM2D + 1: return timer->Read(2) >> 8 & 0xFF;
 
         // REG_TM3D
-        case REG_TM3D:
-            return timers[3]->data & 0xFF;
-        case REG_TM3D + 1:
-            return (timers[3]->data >> 8) & 0xFF;
+        case REG_TM3D    : return timer->Read(3) >> 0 & 0xFF;
+        case REG_TM3D + 1: return timer->Read(3) >> 8 & 0xFF;
+
         default:
             return memory[address];
     }
@@ -689,97 +680,45 @@ void Memory::Write8(u32 address, u8 value)
         // REG_TM0D
         case REG_TM0D:
         case REG_TM0D + 1:
-            timers[0]->data       = (memory[REG_TM0D + 1] << 8) | (memory[REG_TM0D]);
-            timers[0]->start_data = (memory[REG_TM0D + 1] << 8) | (memory[REG_TM0D]);
+            timer->Write(0, memory[REG_TM0D + 1] << 8 | memory[REG_TM0D]);
             break;
-
+        
         // REG_TM1D
         case REG_TM1D:
         case REG_TM1D + 1:
-            timers[1]->data       = (memory[REG_TM1D + 1] << 8) | (memory[REG_TM1D]);
-            timers[1]->start_data = (memory[REG_TM1D + 1] << 8) | (memory[REG_TM1D]);
+            timer->Write(1, memory[REG_TM1D + 1] << 8 | memory[REG_TM1D]);
             break;
-
+        
         // REG_TM2D
         case REG_TM2D:
         case REG_TM2D + 1:
-            timers[2]->data       = (memory[REG_TM2D + 1] << 8) | (memory[REG_TM2D]);
-            timers[2]->start_data = (memory[REG_TM2D + 1] << 8) | (memory[REG_TM2D]);
+            timer->Write(2, memory[REG_TM2D + 1] << 8 | memory[REG_TM2D]);
             break;
-
+        
         // REG_TM3D
         case REG_TM3D:
         case REG_TM3D + 1:
-            timers[3]->data       = (memory[REG_TM3D + 1] << 8) | (memory[REG_TM3D]);
-            timers[3]->start_data = (memory[REG_TM3D + 1] << 8) | (memory[REG_TM3D]);
+            timer->Write(3, memory[REG_TM3D + 1] << 8 | memory[REG_TM3D]);
             break;
 
         // REG_TM0CNT
         case REG_TM0CNT:
-            timers[0]->freq       = value      & 0x3;
-            timers[0]->cascade    = value >> 2 & 0x1;
-            timers[0]->irq        = value >> 6 & 0x1;
-            timers[0]->enable     = value >> 7 & 0x1;
-
-            // get actual freq
-            switch(timers[0]->freq)
-            {
-                case 0: timers[0]->actual_freq = 1;    break;
-                case 1: timers[0]->actual_freq = 64;   break;
-                case 2: timers[0]->actual_freq = 256;  break;
-                case 3: timers[0]->actual_freq = 1024; break;
-            }
+            timer->WriteCnt(0, memory[REG_TM0CNT]);
             break;
-
+        
         // REG_TM1CNT
         case REG_TM1CNT:
-            timers[1]->freq       = value      & 0x3;
-            timers[1]->cascade    = value >> 2 & 0x1;
-            timers[1]->irq        = value >> 6 & 0x1;
-            timers[1]->enable     = value >> 7 & 0x1;
-
-            // get actual freq
-            switch(timers[1]->freq)
-            {
-                case 0: timers[1]->actual_freq = 1;    break;
-                case 1: timers[1]->actual_freq = 64;   break;
-                case 2: timers[1]->actual_freq = 256;  break;
-                case 3: timers[1]->actual_freq = 1024; break;
-            }
+            timer->WriteCnt(1, memory[REG_TM1CNT]);
             break;
-
+        
         // REG_TM2CNT
         case REG_TM2CNT:
-            timers[2]->freq       = value      & 0x3;
-            timers[2]->cascade    = value >> 2 & 0x1;
-            timers[2]->irq        = value >> 6 & 0x1;
-            timers[2]->enable     = value >> 7 & 0x1;
-
-            // get actual freq
-            switch(timers[2]->freq)
-            {
-                case 0: timers[2]->actual_freq = 1;    break;
-                case 1: timers[2]->actual_freq = 64;   break;
-                case 2: timers[2]->actual_freq = 256;  break;
-                case 3: timers[2]->actual_freq = 1024; break;
-            }
+            timer->WriteCnt(2, memory[REG_TM2CNT]);
             break;
-
+        
         // REG_TM3CNT
         case REG_TM3CNT:
-            timers[3]->freq       = value      & 0x3;
-            timers[3]->cascade    = value >> 2 & 0x1;
-            timers[3]->irq        = value >> 6 & 0x1;
-            timers[3]->enable     = value >> 7 & 0x1;
-
-            // get actual freq
-            switch(timers[3]->freq)
-            {
-                case 0: timers[3]->actual_freq = 1;    break;
-                case 1: timers[3]->actual_freq = 64;   break;
-                case 2: timers[3]->actual_freq = 256;  break;
-                case 3: timers[3]->actual_freq = 1024; break;
-            }
+            timer->WriteCnt(3, memory[REG_TM3CNT]);
             break;
         
         // REG_IF

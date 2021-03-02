@@ -56,28 +56,12 @@ Discovery::Discovery()
     running = true;
 
     stat    = new LcdStat();
-    mem     = new Memory(stat);
+    timer   = new Timer();
+    mem     = new Memory(stat, timer);
 
     cpu     = new Arm7Tdmi(mem);
     ppu     = new PPU(mem, stat);
     gamepad = new Gamepad();
-
-    // initialize timers
-    Timer *t0 = new Timer();
-    Timer *t1 = new Timer();
-    Timer *t2 = new Timer();
-    Timer *t3 = new Timer();
-
-    timers[0] = t0;
-    timers[1] = t1;
-    timers[2] = t2;
-    timers[3] = t3;
-
-    // link system's timers to memory's
-    mem->timers[0] = timers[0];
-    mem->timers[1] = timers[1];
-    mem->timers[2] = timers[2];
-    mem->timers[3] = timers[3];
 }
 
 void Discovery::GameLoop()
@@ -122,51 +106,7 @@ void Discovery::GameLoop()
 void Discovery::Tick()
 {
     ppu->Tick();
-
-    // clock timers
-    for (int j = 0; j < 4; ++j)
-    {
-        // ignore if timer is disabled
-        if (!timers[j]->enable)
-            continue;
-
-        // ignore if cascade bit is set (timer will be incremented by previous timer)
-        if (timers[j]->cascade)
-            continue;
-
-        // increment counter by 1
-        if (system_cycles % timers[j]->actual_freq == 0)
-        {
-            timers[j]->data += 1; // increment timer
-
-            // timer overflowed
-            if (timers[j]->data == 0x0000)
-            {
-                // reset timer
-                timers[j]->data = timers[j]->start_data;
-
-                //std::cout << "Timer " << j << " overflow\n";
-
-                // overflow irq
-                if (timers[j]->irq)
-                    LOG("Timer {} overflow IRQ request\n");
-
-                // cascade
-                // timer 4 can't cascade any other timer
-                if (j == 3)
-                    continue;
-
-                if (timers[j + 1]->enable && timers[j + 1]->cascade)
-                {
-                    timers[j + 1]->data += 1;
-
-                    // cascade caused overflow (deal with this later)
-                    if (timers[j + 1]->data == 0x0000)
-                        LOG("Timer {} cascade overflow\n", j + 1);
-                }
-            }
-        }
-    }
+    timer->Tick();
 
     // poll for key presses at start of vblank
     if (stat->scanline == VDRAW && SDL_PollEvent(&e))
@@ -217,7 +157,5 @@ void Discovery::ShutDown()
     delete mem;
     delete stat;
     delete gamepad;
-
-    for (int i = 0; i < 4; ++i)
-        delete timers[i];
+    delete timer;
 }

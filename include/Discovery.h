@@ -28,7 +28,7 @@ class Discovery
         Memory    *mem;
         LcdStat   *stat;
         Gamepad   *gamepad;
-        Timer     *timers[4];
+        Timer     *timer;
 
         long system_cycles;
         bool running;

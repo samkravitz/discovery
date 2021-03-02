@@ -528,6 +528,7 @@ void PPU::RenderObj()
 
     while (!oam_update->empty())
     {
+        std::cout << "hi\n";
         attr = &objs[oam_update->top()];
         oam_update->pop();
 

@@ -1025,6 +1025,8 @@ void Arm7Tdmi::SoftwareInterruptArm(u32 instruction)
     SetRegister(r15, 0x08);
     pipeline_full = false;
 
+    last_read_bios = bios_read_state[3];
+
     // bits 23 - 16 determine which interrupt
     // switch (instruction >> 16 & 0xFF)
     // {

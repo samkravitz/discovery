@@ -135,6 +135,11 @@ bool Memory::LoadRom(const std::string &name)
                 LOG(LogLevel::Message, "Cart RAM EEPROM detected\n");
             }
         }
+
+        if (*rom_temp == 0xc2 && *(rom_temp + 1) == 0x32)
+        {
+            exit(32);
+        }
     }
 
     // no cart RAM detected
@@ -177,12 +182,12 @@ u8 Memory::Read8(u32 address)
 {
     if (address == 0xE000000)
     {
-        return 0x1b;
+        return 0x62;
     }
 
     if (address == 0xE000001)
     {
-        return 0x32;
+        return 0x13;
     }
     // get memory region for mirrors
     switch (address >> 24)
@@ -244,7 +249,7 @@ u8 Memory::Read8(u32 address)
             return cart_ram[address - 0xE000000];
 
         default:
-            //LOG(LogLevel::Error, "Invalid address to read: 0x{x}\n", address);
+            LOG(LogLevel::Error, "Invalid address to read: 0x{x}\n", address);
             return 0;
     }
 

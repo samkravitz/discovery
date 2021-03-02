@@ -178,6 +178,7 @@ class Arm7Tdmi
         void Write16(u32, u16);
         void Write32(u32, u32);
 
+        u32 bios_read_state[4];
         u32 last_read_bios;
 
         // misc

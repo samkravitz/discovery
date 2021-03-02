@@ -16,9 +16,10 @@
 
 namespace fs = std::experimental::filesystem;
 
-Memory::Memory(LcdStat *stat, Timer *timer) :
+Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad) :
     stat(stat),
-    timer(timer)
+    timer(timer),
+    gamepad(gamepad)
 {
     // cart_rom  = NULL;
     cart_ram  = NULL;
@@ -292,6 +293,10 @@ u8 Memory::Read8(u32 address)
         // REG_TM3D
         case REG_TM3D    : return timer->Read(3) >> 0 & 0xFF;
         case REG_TM3D + 1: return timer->Read(3) >> 8 & 0xFF;
+
+        // REG_KEYINPUT
+        case REG_KEYINPUT    : return gamepad->keys.raw >> 0 & 0xFF;
+        case REG_KEYINPUT + 1: return gamepad->keys.raw >> 8 & 0xFF;
 
         default:
             return memory[address];

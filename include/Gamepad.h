@@ -44,6 +44,6 @@ class Gamepad
             
         } keys;
 
-        u16 Poll(const SDL_Event &);
+        void Poll();
         void Print();
 };

@@ -55,13 +55,13 @@ Discovery::Discovery()
     system_cycles = 0;
     running = true;
 
+    gamepad = new Gamepad();
     stat    = new LcdStat();
     timer   = new Timer();
-    mem     = new Memory(stat, timer);
 
+    mem     = new Memory(stat, timer, gamepad);
     cpu     = new Arm7Tdmi(mem);
     ppu     = new PPU(mem, stat);
-    gamepad = new Gamepad();
 }
 
 void Discovery::GameLoop()
@@ -78,9 +78,7 @@ void Discovery::GameLoop()
             auto interrupts_requested = mem->Read16Unsafe(REG_IF);
 
             if (interrupts_enabled & interrupts_requested != 0)
-            {
                 mem->haltcnt = 0;
-            }
         }
 
         cpu->Fetch();
@@ -94,8 +92,8 @@ void Discovery::GameLoop()
         cpu->pipeline[1] = cpu->pipeline[2];
 
         // run hardware for as many clock cycles as cpu used
-        system_cycles = cpu->cycles;
-        while (old_cycles++ < system_cycles)
+        old_cycles = cpu->cycles;
+        while (system_cycles < old_cycles)
             Tick();
     }
 
@@ -105,16 +103,18 @@ void Discovery::GameLoop()
 // clock hardware components
 void Discovery::Tick()
 {
+    system_cycles++;
     ppu->Tick();
     timer->Tick();
 
     // poll for key presses at start of vblank
-    if (stat->scanline == VDRAW && SDL_PollEvent(&e))
+    if (system_cycles % 197120 == 0)
     {
+        SDL_PollEvent(&e);
         if (e.type == SDL_QUIT)
-            running = false;
-        if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)
-            mem->Write32Unsafe(REG_KEYINPUT, gamepad->Poll(e));
+           running = false;
+
+        gamepad->Poll();
     }
 }
 

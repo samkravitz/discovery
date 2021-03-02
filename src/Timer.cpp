@@ -105,38 +105,3 @@ void Timer::Cascade(int ch)
             
     }
 }
-
-// struct Timer
-// {
-//     public:
-//         Timer();
-//         ~Timer();
-
-//         long ticks;
-
-//         struct channel
-//         {
-//             union
-//             {
-//                 struct 
-//                 {
-//                     u8 freq    : 2;
-//                     u8 cascade : 1;
-//                     u8 unused1 : 3;
-//                     u8 irq     : 1;
-//                     u8 enable  : 1;
-//                     u8 unused2 : 8;
-//                 };
-
-//                 u16 cnt; 
-                
-//             };
-
-//             u16 initial;
-//             u16 data;
-//         } channel[4];
-
-//         u16  Read(int);
-//         void Write(int, u16);
-//         void WriteCnt(int, u16);
-// };

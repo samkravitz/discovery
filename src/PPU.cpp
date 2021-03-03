@@ -528,7 +528,6 @@ void PPU::RenderObj()
 
     while (!oam_update->empty())
     {
-        std::cout << "hi\n";
         attr = &objs[oam_update->top()];
         oam_update->pop();
 
@@ -743,8 +742,8 @@ inline u16 PPU::GetObjPixel4BPP(u32 addr, int palbank, int x, int y)
 
     palette_index &= 0xF;
 
-    if (palette_index == 0)
-        return TRANSPARENT;
+    //if (palette_index == 0)
+        //return TRANSPARENT;
 
     return mem->Read16(SPRITE_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
 }
@@ -755,8 +754,8 @@ inline u16 PPU::GetObjPixel8BPP(u32 addr, int x, int y)
 
     u16 palette_index = mem->Read8(addr);
 
-    if (palette_index == 0)
-        return TRANSPARENT;
+   // if (palette_index == 0)
+        //return TRANSPARENT;
 
     return mem->Read16(SPRITE_PALETTE + palette_index * sizeof(u16));
 }
@@ -772,8 +771,8 @@ inline u16 PPU::GetBGPixel4BPP(u32 addr, int palbank, int x, int y)
 
     palette_index &= 0xF;
 
-    if (palette_index == 0)
-        return TRANSPARENT;
+    //if (palette_index == 0)
+       // return TRANSPARENT;
 
     return mem->Read16(BG_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
 }
@@ -784,8 +783,8 @@ inline u16 PPU::GetBGPixel8BPP(u32 addr, int x, int y)
 
     u16 palette_index = mem->Read8(addr);
 
-    if (palette_index == 0)
-        return TRANSPARENT;
+    //if (palette_index == 0)
+       // return TRANSPARENT;
 
     return mem->Read16(BG_PALETTE + palette_index * sizeof(u16));
 }
@@ -802,4 +801,12 @@ inline u32 U16ToU32Color (u16 color_u16)
     b = color_u16 & 0x1F; color_u16 >>= 5; // bits 11 - 15
 
     return r << 19 | g << 11 | b << 3;
+}
+
+void PPU::PrintPalette()
+{
+    for (int i = 0; i < 256; i++)
+    {
+        LOG("{}: {:x}\n", i, mem->Read16Unsafe(MEM_PALETTE_RAM_START + 2 * i));
+    }
 }

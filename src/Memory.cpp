@@ -589,7 +589,7 @@ void Memory::Write8(u32 address, u8 value)
 
             if (dma[0].enable && dma[0].mode == 0) // immediate mode
             {
-                LOG(LogLevel::Message, "DMA0 immediate\n");
+                //LOG(LogLevel::Message, "DMA0 immediate\n");
                 _Dma(0);
 
                 // disable DMA after immediate transfer
@@ -618,7 +618,7 @@ void Memory::Write8(u32 address, u8 value)
 
             if (dma[1].enable && dma[1].mode == 0) // immediate mode
             {
-                LOG(LogLevel::Message, "DMA1 immediate\n");
+                //LOG(LogLevel::Message, "DMA1 immediate\n");
                 _Dma(1);
 
                 // disable DMA after immediate transfer
@@ -647,7 +647,7 @@ void Memory::Write8(u32 address, u8 value)
 
             if (dma[2].enable && dma[2].mode == 0) // immediate mode
             {
-                LOG(LogLevel::Message, "DMA2 immediate\n");
+                //(LogLevel::Message, "DMA2 immediate\n");
                 _Dma(2);
 
                 // disable DMA after immediate transfer
@@ -676,7 +676,7 @@ void Memory::Write8(u32 address, u8 value)
 
             if (dma[3].enable && dma[3].mode == 0) // immediate mode
             {
-                LOG(LogLevel::Message, "DMA3 immediate\n");
+                //LOG(LogLevel::Message, "DMA3 immediate\n");
                 _Dma(3);
 
                 // disable DMA after immediate transfer
@@ -878,12 +878,12 @@ void Memory::Dma0()
     if (dma[0].irq)
         LOG(LogLevel::Debug, "DMA0 IRQ request\n");
 
-    LOG(LogLevel::Debug, "DMA 0 Done\n");
+    //LOG(LogLevel::Debug, "DMA 0 Done\n");
 }
 
 void Memory::Dma1()
 {
-    LOG(LogLevel::Debug, "DMA 1\n");
+    //LOG(LogLevel::Debug, "DMA 1\n");
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = Read32Unsafe(REG_DMA1SAD) & 0xFFFFFFF; // 28 bit
     dest_ptr = original_dest = Read32Unsafe(REG_DMA1DAD) & 0x7FFFFFF; // 27 bit
@@ -965,12 +965,12 @@ void Memory::Dma1()
     if (dma[1].irq)
         LOG(LogLevel::Debug, "DMA1 IRQ request\n");
 
-    LOG(LogLevel::Debug, "DMA 1 Done\n");
+    //LOG(LogLevel::Debug, "DMA 1 Done\n");
 }
 
 void Memory::Dma2()
 {
-    LOG(LogLevel::Debug, "DMA 2\n");
+    //LOG(LogLevel::Debug, "DMA 2\n");
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = Read32Unsafe(REG_DMA2SAD) & 0xFFFFFFF; // 28 bit
     dest_ptr = original_dest = Read32Unsafe(REG_DMA2DAD) & 0x7FFFFFF; // 27 bit;
@@ -1052,7 +1052,7 @@ void Memory::Dma2()
     if (dma[2].irq)
         LOG(LogLevel::Debug, "DMA3 IRQ request\n");
 
-    LOG(LogLevel::Debug, "DMA 2 Done\n");
+    //LOG(LogLevel::Debug, "DMA 2 Done\n");
 }
 
 void Memory::Dma3()
@@ -1144,7 +1144,7 @@ void Memory::Dma3()
     if (dma[3].irq)
         LOG(LogLevel::Debug, "DMA3 IRQ request\n");
 
-    LOG(LogLevel::Debug, "DMA 3 Done\n");
+    //LOG(LogLevel::Debug, "DMA 3 Done\n");
 }
 
 // std::cout << "([a-zA-Z0-9 \\n]+)"

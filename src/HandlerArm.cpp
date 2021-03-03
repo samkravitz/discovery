@@ -1014,7 +1014,7 @@ void Arm7Tdmi::SingleDataSwap(u32 instruction)
 
 void Arm7Tdmi::SoftwareInterruptArm(u32 instruction)
 {
-    LOG(LogLevel::Debug, "ARM SWI: {}\n", instruction >> 16 & 0xFF);
+    //LOG(LogLevel::Debug, "ARM SWI: {}\n", instruction >> 16 & 0xFF);
 
     // LLE BIOS calls - handle thru BIOS
     u32 old_cpsr = GetRegister(cpsr);

@@ -888,7 +888,7 @@ void Arm7Tdmi::ConditionalBranch(u16 instruction)
 
 void Arm7Tdmi::SoftwareInterruptThumb(u16 instruction)
 {
-    LOG(LogLevel::Debug, "Thumb SWI: {}\n", instruction & 0xFF);
+    //LOG(LogLevel::Debug, "Thumb SWI: {}\n", instruction & 0xFF);
 
     // HLE BIOS calls
     // bits 7 - 0 determine which interrupt

@@ -68,11 +68,12 @@ PPU::~PPU()
 
 void PPU::Reset()
 {
-    cycles    = 0;
-    scanline  = 0;
-    frame     = 0;
-    fps       = 0;
-    old_time  = clock();
+    cycles         = 0;
+    scanline       = 0;
+    frame          = 0;
+    fps            = 0;
+    backdrop_color = 0;
+    old_time       = clock();
 
     std::memset(screen_buffer, 0, sizeof(screen_buffer));
 
@@ -256,17 +257,16 @@ void PPU::Render()
 
     // draw final_screen pixels on screen
     SDL_UpdateWindowSurface(window);
-
-    // zero screen buffer for next frame
-    if (stat->dispcnt.fb)
-        memset(screen_buffer, 0xFF, sizeof(screen_buffer)); // white
-    else
-       memset(screen_buffer,    0, sizeof(screen_buffer));    // black
 }
 
 void PPU::RenderScanline()
 {
-    std::memset(scanline_buffer, 0, sizeof(scanline_buffer));
+    // index 0 in BG palette
+    backdrop_color = U16ToU32Color(mem->Read16Unsafe(MEM_PALETTE_RAM_START));
+
+    // "zero" scanline buffer with backdrop color
+    for (int i = 0; i < SCREEN_WIDTH; ++i)
+        scanline_buffer[i] = backdrop_color;
 
     switch (stat->dispcnt.mode)
     {
@@ -742,8 +742,8 @@ inline u16 PPU::GetObjPixel4BPP(u32 addr, int palbank, int x, int y)
 
     palette_index &= 0xF;
 
-    //if (palette_index == 0)
-        //return TRANSPARENT;
+    if (palette_index == 0)
+        return TRANSPARENT;
 
     return mem->Read16(SPRITE_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
 }
@@ -754,8 +754,8 @@ inline u16 PPU::GetObjPixel8BPP(u32 addr, int x, int y)
 
     u16 palette_index = mem->Read8(addr);
 
-   // if (palette_index == 0)
-        //return TRANSPARENT;
+   if (palette_index == 0)
+        return TRANSPARENT;
 
     return mem->Read16(SPRITE_PALETTE + palette_index * sizeof(u16));
 }
@@ -771,8 +771,8 @@ inline u16 PPU::GetBGPixel4BPP(u32 addr, int palbank, int x, int y)
 
     palette_index &= 0xF;
 
-    //if (palette_index == 0)
-       // return TRANSPARENT;
+    if (palette_index == 0)
+        return TRANSPARENT;
 
     return mem->Read16(BG_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
 }
@@ -783,8 +783,8 @@ inline u16 PPU::GetBGPixel8BPP(u32 addr, int x, int y)
 
     u16 palette_index = mem->Read8(addr);
 
-    //if (palette_index == 0)
-       // return TRANSPARENT;
+    if (palette_index == 0)
+       return TRANSPARENT;
 
     return mem->Read16(BG_PALETTE + palette_index * sizeof(u16));
 }

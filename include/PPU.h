@@ -73,6 +73,8 @@ class PPU
 
         u32 screen_buffer[SCREEN_HEIGHT][SCREEN_WIDTH];
 
+        u32 backdrop_color;
+
         // oam data structure
         struct ObjAttr
         {

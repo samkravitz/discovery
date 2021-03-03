@@ -44,8 +44,6 @@ class Arm7Tdmi
         u32  pipeline[3];
         bool pipeline_full;
         bool in_interrupt;
-        bool swi_vblank_intr;
-        u32  current_interrupt;
         u32  cycles;
 
         struct registers

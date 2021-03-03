@@ -424,7 +424,7 @@ void PPU::RenderScanlineAffine(int bg)
         dy *= -1.0;
 
 
-    LOG("{} {} {} {}\n", (float) dx, dx_raw, (float) dy, dy_raw);
+    //LOG("{} {} {} {}\n", (float) dx, dx_raw, (float) dy, dy_raw);
 
 
     int px0 = width / 2;
@@ -557,6 +557,7 @@ void PPU::RenderObj()
                 {
                     px = (attr->pa * ix + attr->pb * iy) + (attr->width  / 2);
                     py = (attr->pc * ix + attr->pd * iy) + (attr->height / 2);
+                    LOG("Hello World\n");
                 }
 
                 // horizontal / vertical flip

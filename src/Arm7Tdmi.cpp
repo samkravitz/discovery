@@ -210,14 +210,14 @@ void Arm7Tdmi::Execute(u32 instruction)
     switch (GetState())
     {
         case State::ARM:
-            if (!ConditionMet((Condition) Util::bitseq<31, 28>(instruction)))
+            if (!ConditionMet((Condition) util::bitseq<31, 28>(instruction)))
             {
                 IncrementPC();
                 Tick(0, 0, 1); // 1I
                 return;
             }
             
-            switch(Util::GetInstructionFormat(instruction))
+            switch(util::GetInstructionFormat(instruction))
             {
                 case ArmInstruction::BEX:  BranchExchange(instruction);       break;
                 case ArmInstruction::B:    BranchLink(instruction);           break;
@@ -238,7 +238,7 @@ void Arm7Tdmi::Execute(u32 instruction)
 
         case State::THUMB:
             u16 instr = (u16) instruction;
-            switch(Util::GetInstructionFormat((u16) instruction))
+            switch(util::GetInstructionFormat((u16) instruction))
             {
                 case ThumbInstruction::MSR:    MoveShiftedRegister(instr);     break;
                 case ThumbInstruction::ADDSUB: AddSubtract(instr);             break;

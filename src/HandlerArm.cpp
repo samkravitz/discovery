@@ -16,7 +16,7 @@
  */
 void Arm7Tdmi::BranchExchange(u32 instruction)
 {
-    u32 Rn = Util::bitseq<3, 0>(instruction);
+    u32 Rn = util::bitseq<3, 0>(instruction);
 
     if (Rn == r15)
     {
@@ -46,8 +46,8 @@ void Arm7Tdmi::BranchExchange(u32 instruction)
 
 void Arm7Tdmi::BranchLink(u32 instruction)
 {
-    bool link  = Util::bitseq<24, 24>(instruction);
-    u32 offset = Util::bitseq<23, 0>(instruction);
+    bool link  = util::bitseq<24, 24>(instruction);
+    u32 offset = util::bitseq<23, 0>(instruction);
     bool is_neg = offset >> 23 == 0x1;
     u32 new_address;
 
@@ -79,8 +79,8 @@ void Arm7Tdmi::BranchLink(u32 instruction)
 
  void Arm7Tdmi::DataProcessing(u32 instruction)
  {
-    u32 Rd = Util::bitseq<15, 12>(instruction); // destination register
-    u32 Rn = Util::bitseq<19, 16>(instruction); // source register
+    u32 Rd = util::bitseq<15, 12>(instruction); // destination register
+    u32 Rn = util::bitseq<19, 16>(instruction); // source register
     u32 op1 = GetRegister(Rn);
     u32 op2;
     u32 result;
@@ -90,8 +90,8 @@ void Arm7Tdmi::BranchLink(u32 instruction)
     u8 s = 1; // 1S cycles for normal data processing
     u8 i = 0;
 
-    bool immediate = Util::bitseq<25, 25>(instruction) == 0x1;
-    bool set_condition_code = Util::bitseq<20, 20>(instruction) == 0x1;
+    bool immediate = util::bitseq<25, 25>(instruction) == 0x1;
+    bool set_condition_code = util::bitseq<20, 20>(instruction) == 0x1;
     
     if (Rd == r15)
     {
@@ -105,8 +105,8 @@ void Arm7Tdmi::BranchLink(u32 instruction)
     // determine op2 based on whether it's encoded as an immeidate value or register shift
     if (immediate)
     {
-        op2 = Util::bitseq<7, 0>(instruction);
-        u32 rotate = Util::bitseq<11, 8>(instruction);
+        op2 = util::bitseq<7, 0>(instruction);
+        u32 rotate = util::bitseq<11, 8>(instruction);
         rotate *= 2; // rotate by twice the value in the rotate field
 
         // perform right rotation
@@ -116,8 +116,8 @@ void Arm7Tdmi::BranchLink(u32 instruction)
     // op2 is shifted register
     else
     { 
-        u32 shift = Util::bitseq<11, 4>(instruction);
-        u8 shift_type = Util::bitseq<6, 5>(instruction);
+        u32 shift = util::bitseq<11, 4>(instruction);
+        u8 shift_type = util::bitseq<6, 5>(instruction);
         u32 shift_amount;
         u32 Rm = instruction & 0b1111; // bitseq<> 3-0 
         op2 = GetRegister(Rm);
@@ -129,7 +129,7 @@ void Arm7Tdmi::BranchLink(u32 instruction)
         // get shift amount
         if ((shift & 1) == 1) // shift amount contained in bottom byte of Rs
         { 
-            u32 Rs = Util::bitseq<11, 8>(instruction);
+            u32 Rs = util::bitseq<11, 8>(instruction);
             shift_amount = GetRegister(Rs) & 0xFF;
 
             // must add 4 bytes to r15 to account for prefetch
@@ -139,7 +139,7 @@ void Arm7Tdmi::BranchLink(u32 instruction)
         
         else // shift contained in immediate value in instruction
         {
-            shift_amount = Util::bitseq<11, 7>(instruction);
+            shift_amount = util::bitseq<11, 7>(instruction);
 
             // encodings of LSR #0, ASR #0, and ROR #0 should be interpreted as LSR #32, ASR #32, and RRX
             if (shift_amount == 0 && shift_type != 0) // shift_type == 0 is LSL
@@ -166,7 +166,7 @@ void Arm7Tdmi::BranchLink(u32 instruction)
     u8 carry = carry_out == 2 ? GetConditionCodeFlag(ConditionFlag::C) : carry_out;
 
     // decode opcode (bits 24-21)
-    switch((DataProcessingOpcodes) Util::bitseq<24, 21>(instruction))
+    switch((DataProcessingOpcodes) util::bitseq<24, 21>(instruction))
     {
         case AND: 
             result = op1 & op2;
@@ -245,7 +245,7 @@ void Arm7Tdmi::BranchLink(u32 instruction)
             if (set_condition_code) UpdateFlagsLogical(result, carry);
             break;
         default:
-            LOG(LogLevel::Error, "Unrecognized data processing opcode: {}\n", Util::bitseq<24, 21>(instruction));
+            LOG(LogLevel::Error, "Unrecognized data processing opcode: {}\n", util::bitseq<24, 21>(instruction));
             break;
     }
 
@@ -266,12 +266,12 @@ void Arm7Tdmi::BranchLink(u32 instruction)
 void Arm7Tdmi::Multiply(u32 instruction)
 {
     // assign registers
-    u32 Rm = Util::bitseq<3, 0>(instruction);   // first operand
-    u32 Rs = Util::bitseq<11, 8>(instruction);  // source register
-    u32 Rn = Util::bitseq<15, 12>(instruction); // second operand
-    u32 Rd = Util::bitseq<19, 16>(instruction); // destination register
-    bool accumulate = Util::bitseq<21, 21>(instruction) == 1;    
-    bool set_condition_code_flags = Util::bitseq<20, 20>(instruction) == 1;
+    u32 Rm = util::bitseq<3, 0>(instruction);   // first operand
+    u32 Rs = util::bitseq<11, 8>(instruction);  // source register
+    u32 Rn = util::bitseq<15, 12>(instruction); // second operand
+    u32 Rd = util::bitseq<19, 16>(instruction); // destination register
+    bool accumulate = util::bitseq<21, 21>(instruction) == 1;    
+    bool set_condition_code_flags = util::bitseq<20, 20>(instruction) == 1;
 
     // Conflicting sources about this
     // if (Rd == Rm) {
@@ -326,13 +326,13 @@ void Arm7Tdmi::Multiply(u32 instruction)
 
 void Arm7Tdmi::MultiplyLong(u32 instruction)
 {
-    u32 RdHi                = Util::bitseq<19, 16>(instruction);
-    u32 RdLo                = Util::bitseq<15, 12>(instruction);
-    u32 Rs                  = Util::bitseq<11, 8>(instruction);
-    u32 Rm                  = Util::bitseq<3, 0>(instruction);
-    bool set_condition_code = Util::bitseq<20, 20>(instruction) == 1;
-    bool accumulate         = Util::bitseq<21, 21>(instruction) == 1;
-    bool sign               = Util::bitseq<22, 22>(instruction) == 1;
+    u32 RdHi                = util::bitseq<19, 16>(instruction);
+    u32 RdLo                = util::bitseq<15, 12>(instruction);
+    u32 Rs                  = util::bitseq<11, 8>(instruction);
+    u32 Rm                  = util::bitseq<3, 0>(instruction);
+    bool set_condition_code = util::bitseq<20, 20>(instruction) == 1;
+    bool accumulate         = util::bitseq<21, 21>(instruction) == 1;
+    bool sign               = util::bitseq<22, 22>(instruction) == 1;
 
     if (RdHi == r15 || RdLo == r15 || Rm == r15 || Rs == r15)
     {
@@ -468,13 +468,13 @@ void Arm7Tdmi::MultiplyLong(u32 instruction)
 // allow access to CPSR and SPSR registers
  void Arm7Tdmi::PSRTransfer(u32 instruction)
  {
-    bool use_spsr = Util::bitseq<22, 22>(instruction) == 1;
-    u32 opcode    = Util::bitseq<21, 21>(instruction);
+    bool use_spsr = util::bitseq<22, 22>(instruction) == 1;
+    u32 opcode    = util::bitseq<21, 21>(instruction);
 
     // MRS (transfer PSR contents to register)
     if (opcode == 0)
     {
-        u32 Rd = Util::bitseq<15, 12>(instruction);
+        u32 Rd = util::bitseq<15, 12>(instruction);
         if (Rd == r15) 
         {
             LOG(LogLevel::Error, "Can't use r15 as an MRS destination register\n");
@@ -490,15 +490,15 @@ void Arm7Tdmi::MultiplyLong(u32 instruction)
     // MSR (transfer register contents to PSR)
     else
     {
-        bool immediate  = Util::bitseq<25, 25>(instruction) == 1;
-        bool flags_only = Util::bitseq<16, 16>(instruction) == 0;
+        bool immediate  = util::bitseq<25, 25>(instruction) == 1;
+        bool flags_only = util::bitseq<16, 16>(instruction) == 0;
         u32 new_value;
 
         // rotate on immediate value 
         if (immediate)
         { 
-            new_value  = Util::bitseq<7, 0>(instruction);
-            u32 rotate = Util::bitseq<11, 8>(instruction);
+            new_value  = util::bitseq<7, 0>(instruction);
+            u32 rotate = util::bitseq<11, 8>(instruction);
             rotate *= 2; // rotate by twice the value in the rotate field
 
             // perform right rotation
@@ -508,7 +508,7 @@ void Arm7Tdmi::MultiplyLong(u32 instruction)
         // use value in register
         else
         {
-            u32 Rm = Util::bitseq<3, 0>(instruction);
+            u32 Rm = util::bitseq<3, 0>(instruction);
             if (Rm == r15)
             {
                 LOG(LogLevel::Error, "Can't use r15 as an MSR source register\n");
@@ -531,15 +531,15 @@ void Arm7Tdmi::MultiplyLong(u32 instruction)
 // store or load single value to/from memory
 void Arm7Tdmi::SingleDataTransfer(u32 instruction)
 {
-    bool immediate  = Util::bitseq<25, 25>(instruction) == 0;
-    bool pre_index  = Util::bitseq<24, 24>(instruction) == 1;  // bit 24 set = pre index, bit 24 0 = post index
-    bool up         = Util::bitseq<23, 23>(instruction) == 1;         // bit 23 set = up, bit 23 0 = down
-    bool byte       = Util::bitseq<22, 22>(instruction) == 1;       // bit 22 set = byte, bit 23 0 = word
-    bool write_back = Util::bitseq<21, 21>(instruction) == 1; // bit 21 set = write address into base, bit 21 0 = no write back
-    bool load       = Util::bitseq<20, 20>(instruction) == 1;       // bit 20 set = load, bit 20 0 = store
-    u32 Rn          = Util::bitseq<19, 16>(instruction);
-    u32 Rd          = Util::bitseq<15, 12>(instruction);
-    u32 offset_encoding = Util::bitseq<11, 0>(instruction);
+    bool immediate  = util::bitseq<25, 25>(instruction) == 0;
+    bool pre_index  = util::bitseq<24, 24>(instruction) == 1;  // bit 24 set = pre index, bit 24 0 = post index
+    bool up         = util::bitseq<23, 23>(instruction) == 1;         // bit 23 set = up, bit 23 0 = down
+    bool byte       = util::bitseq<22, 22>(instruction) == 1;       // bit 22 set = byte, bit 23 0 = word
+    bool write_back = util::bitseq<21, 21>(instruction) == 1; // bit 21 set = write address into base, bit 21 0 = no write back
+    bool load       = util::bitseq<20, 20>(instruction) == 1;       // bit 20 set = load, bit 20 0 = store
+    u32 Rn          = util::bitseq<19, 16>(instruction);
+    u32 Rd          = util::bitseq<15, 12>(instruction);
+    u32 offset_encoding = util::bitseq<11, 0>(instruction);
     u32 offset; // the actual amount to offset
 
     // cycles
@@ -552,8 +552,8 @@ void Arm7Tdmi::SingleDataTransfer(u32 instruction)
 
     // op2 is a shifted register
     else {
-        u32 shift_amount = Util::bitseq<11, 7>(instruction);
-        u32 offset_register = Util::bitseq<3, 0>(instruction);
+        u32 shift_amount = util::bitseq<11, 7>(instruction);
+        u32 offset_register = util::bitseq<3, 0>(instruction);
 
         if (offset_register == r15)
         {
@@ -561,7 +561,7 @@ void Arm7Tdmi::SingleDataTransfer(u32 instruction)
             return;
         }
 
-        u8 shift_type = Util::bitseq<6, 5>(instruction);
+        u8 shift_type = util::bitseq<6, 5>(instruction);
         offset = GetRegister(offset_register);
 
         // encodings of LSR #0, ASR #0, and ROR #0 should be interpreted as LSR #32, ASR #32, and RRX
@@ -651,14 +651,14 @@ void Arm7Tdmi::SingleDataTransfer(u32 instruction)
 // transfer halfword and signed data
 void Arm7Tdmi::HalfwordDataTransfer(u32 instruction)
 {
-    bool pre_index  = Util::bitseq<24, 24>(instruction) == 1; // bit 24 set = pre index, bit 24 0 = post index
-    bool up         = Util::bitseq<23, 23>(instruction) == 1; // bit 23 set = up, bit 23 0 = down
-    bool immediate  = Util::bitseq<22, 22>(instruction) == 1;
-    bool write_back = Util::bitseq<21, 21>(instruction) == 1; // bit 21 set = write address into base, bit 21 0 = no write back
-    bool load       = Util::bitseq<20, 20>(instruction) == 1; // bit 20 set = load, bit 20 0 = store
-    u32 Rn          = Util::bitseq<19, 16>(instruction);      // base register
-    u32 Rd          = Util::bitseq<15, 12>(instruction);      // src/dest register
-    u32 Rm          = Util::bitseq<3, 0>(instruction);        // offset register
+    bool pre_index  = util::bitseq<24, 24>(instruction) == 1; // bit 24 set = pre index, bit 24 0 = post index
+    bool up         = util::bitseq<23, 23>(instruction) == 1; // bit 23 set = up, bit 23 0 = down
+    bool immediate  = util::bitseq<22, 22>(instruction) == 1;
+    bool write_back = util::bitseq<21, 21>(instruction) == 1; // bit 21 set = write address into base, bit 21 0 = no write back
+    bool load       = util::bitseq<20, 20>(instruction) == 1; // bit 20 set = load, bit 20 0 = store
+    u32 Rn          = util::bitseq<19, 16>(instruction);      // base register
+    u32 Rd          = util::bitseq<15, 12>(instruction);      // src/dest register
+    u32 Rm          = util::bitseq<3, 0>(instruction);        // offset register
     u32 offset;
     u32 base = GetRegister(Rn);
 
@@ -675,8 +675,8 @@ void Arm7Tdmi::HalfwordDataTransfer(u32 instruction)
 
     if (immediate)
     {
-        u32 high_nibble = Util::bitseq<11, 8>(instruction);
-        u32 low_nibble  = Util::bitseq<3, 0>(instruction);
+        u32 high_nibble = util::bitseq<11, 8>(instruction);
+        u32 low_nibble  = util::bitseq<3, 0>(instruction);
         offset = (high_nibble << 4) | low_nibble;
     }
     
@@ -693,7 +693,7 @@ void Arm7Tdmi::HalfwordDataTransfer(u32 instruction)
     }
 
     // transfer
-    switch (Util::bitseq<6, 5>(instruction)) // SH bitseq<>
+    switch (util::bitseq<6, 5>(instruction)) // SH bitseq<>
     {
         case 0b01: // unsigned halfwords
             if (load)
@@ -774,13 +774,13 @@ void Arm7Tdmi::HalfwordDataTransfer(u32 instruction)
 
 void Arm7Tdmi::BlockDataTransfer(u32 instruction)
 {
-    bool pre_index    = Util::bitseq<24, 24>(instruction) == 1; // bit 24 set = pre index, bit 24 0 = post index
-    bool up           = Util::bitseq<23, 23>(instruction) == 1; // bit 23 set = up, bit 23 0 = down
-    bool load_psr     = Util::bitseq<22, 22>(instruction) == 1; // bit 22 set = load PSR or force user mode
-    bool write_back   = Util::bitseq<21, 21>(instruction) == 1; // bit 21 set = write address into base, bit 21 0 = no write back
-    bool load         = Util::bitseq<20, 20>(instruction) == 1; // bit 20 set = load, bit 20 0 = store
-    u32 Rb            = Util::bitseq<19, 16>(instruction);      // base register
-    u32 register_list = Util::bitseq<15, 0>(instruction);
+    bool pre_index    = util::bitseq<24, 24>(instruction) == 1; // bit 24 set = pre index, bit 24 0 = post index
+    bool up           = util::bitseq<23, 23>(instruction) == 1; // bit 23 set = up, bit 23 0 = down
+    bool load_psr     = util::bitseq<22, 22>(instruction) == 1; // bit 22 set = load PSR or force user mode
+    bool write_back   = util::bitseq<21, 21>(instruction) == 1; // bit 21 set = write address into base, bit 21 0 = no write back
+    bool load         = util::bitseq<20, 20>(instruction) == 1; // bit 20 set = load, bit 20 0 = store
+    u32 Rb            = util::bitseq<19, 16>(instruction);      // base register
+    u32 register_list = util::bitseq<15, 0>(instruction);
     u32 base          = GetRegister(Rb);
     int num_registers = 0; // number of set bitseq<> in the register list, should be between 0-16
     int set_registers[16];
@@ -977,10 +977,10 @@ void Arm7Tdmi::BlockDataTransfer(u32 instruction)
 
 void Arm7Tdmi::SingleDataSwap(u32 instruction)
 {
-    bool byte = Util::bitseq<22, 22>(instruction);
-    u32 Rn    = Util::bitseq<19, 16>(instruction); // base register
-    u32 Rd    = Util::bitseq<15, 12>(instruction); // destination register
-    u32 Rm    = Util::bitseq<3, 0>(instruction);   // source register
+    bool byte = util::bitseq<22, 22>(instruction);
+    u32 Rn    = util::bitseq<19, 16>(instruction); // base register
+    u32 Rd    = util::bitseq<15, 12>(instruction); // destination register
+    u32 Rm    = util::bitseq<3, 0>(instruction);   // source register
 
     if (Rn == r15 || Rd == r15 || Rm == r15)
     {

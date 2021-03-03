@@ -10,7 +10,7 @@
 #include <iostream>
 #include <iomanip>
 #include "Discovery.h"
-#include "Util.h"
+#include "util.h"
 
 int main(int argc, char **argv)
 {
@@ -124,7 +124,7 @@ void Discovery::ParseArgs()
     for (int i = 0; i < argv.size(); ++i)
     {
         // ROM name
-        if (i == 0 && Util::PathExists(argv[i]))
+        if (i == 0 && util::PathExists(argv[i]))
             config::rom_name = argv[i];
 		else if ((argv[i] == "-i" || argv[i] == "--input") && i != argv.size() -1)
 			config::rom_name = argv[++i];

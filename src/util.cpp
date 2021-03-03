@@ -7,14 +7,14 @@
  * DESCRIPTION: utility function implementations
  */
 
-#include "Util.h"
+#include "util.h"
 #include <fstream>
 
 // determine which type of operation the instruction is
 // see docs/arm_instruction_set_bitfield.png to see a visual of the different types of instructions
 // basically each instruction has its own required bits that need to be set, this function just looks for those bits
 // a lot of this code is taken from shonumi's GBE+ (https://github.com/shonumi/gbe-plus/blob/master/src/gba/arm7.cpp)
-ArmInstruction Util::GetInstructionFormat(u32 instruction)
+ArmInstruction util::GetInstructionFormat(u32 instruction)
 {
     if ((instruction >> 4 & 0b111111111111111111111111) == 0b000100101111111111110001)
         return ArmInstruction::BEX; // BEX
@@ -89,7 +89,7 @@ ArmInstruction Util::GetInstructionFormat(u32 instruction)
 }
 
 // determine which type of thumb operation an instruction is
-ThumbInstruction Util::GetInstructionFormat(u16 instruction)
+ThumbInstruction util::GetInstructionFormat(u16 instruction)
 {
     if ((instruction >> 13 & 0b111) == 0)
     {
@@ -160,7 +160,7 @@ ThumbInstruction Util::GetInstructionFormat(u16 instruction)
         return ThumbInstruction::UND;
 }
 
-bool Util::PathExists(std::string path)
+bool util::PathExists(std::string path)
 {
 	std::fstream fin(path);
 	if(fin.fail())

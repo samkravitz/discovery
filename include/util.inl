@@ -13,16 +13,10 @@ inline u32 bitseq(u32 val)
 	if (end < start)
 		return 0;
 
-	std::bitset<32> bits(val);
-	u32 subset = 0;
-
-	for (int i = end; i >= start; --i)
-	{
-		subset <<= 1;
-		subset |= bits[i];
-	}
-
-	return subset;
+	static u32 mask = ~0;
+    val &= mask >> (31 - end);
+    val >>= start;
+    return val;
 }
 
 template <int end, int start>
@@ -31,14 +25,8 @@ inline u16 bitseq(u16 val)
 	if (end < start)
 		return 0;
 
-	std::bitset<16> bits(val);
-	u16 subset = 0;
-
-	for (int i = end; i >= start; --i)
-	{
-		subset <<= 1;
-		subset |= bits[i];
-	}
-
-	return subset;
+	static u16 mask = ~0;
+    val &= mask >> (15 - end);
+    val >>= start;
+    return val;
 }

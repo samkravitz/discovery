@@ -11,7 +11,7 @@
 #pragma once
 
 #include "Memory.h"
-#include "Util.h"
+#include "util.h"
 #include "PPU.h"
 #include "mmio.h"
 

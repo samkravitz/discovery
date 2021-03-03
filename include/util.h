@@ -12,7 +12,7 @@
 #include <bitset>
 #include "common.h"
 
-namespace Util
+namespace util
 {
     // determine which type of operation the instruction is
     ArmInstruction GetInstructionFormat(u32 instruction);
@@ -23,6 +23,6 @@ namespace Util
     bool PathExists(std::string);
 
     // util inline functions
-    #include "Util.inl"
+    #include "util.inl"
 }
 

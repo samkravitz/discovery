@@ -325,6 +325,11 @@ void Memory::Write16(u32 address, u16 value)
 void Memory::Write8(u32 address, u8 value)
 {
 
+    if (address == REG_BG2X || address == REG_BG2Y)
+    {
+        //LOG("HI\n");
+    }
+
     switch (address >> 24)
     {
         case 0x0:

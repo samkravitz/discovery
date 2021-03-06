@@ -478,7 +478,7 @@ void PPU::RenderScanlineAffine(int bg)
 
         if (bgcnt.affine_wrap == 1)
         {
-            //if (px >= width || py >= height) continue;
+            if (px >= width || py >= height) continue;
             px = (std::abs(px) + width) % width;
             py = (std::abs(py) + height) % height;
             //px = std::abs(px % width);

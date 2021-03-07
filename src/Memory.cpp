@@ -16,15 +16,14 @@
 
 namespace fs = std::experimental::filesystem;
 
-Memory::Memory(LcdStat *stat) : stat(stat)
+Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad) :
+    stat(stat),
+    timer(timer),
+    gamepad(gamepad)
 {
     // cart_rom  = NULL;
     cart_ram  = NULL;
 
-    timers[0] = NULL;
-    timers[1] = NULL;
-    timers[2] = NULL;
-    timers[3] = NULL;
     Reset();
 }
 
@@ -136,6 +135,11 @@ bool Memory::LoadRom(const std::string &name)
                 LOG(LogLevel::Message, "Cart RAM EEPROM detected\n");
             }
         }
+
+        if (*rom_temp == 0xc2 && *(rom_temp + 1) == 0x32)
+        {
+            exit(32);
+        }
     }
 
     // no cart RAM detected
@@ -178,12 +182,12 @@ u8 Memory::Read8(u32 address)
 {
     if (address == 0xE000000)
     {
-        return 0x1b;
+        return 0x62;
     }
 
     if (address == 0xE000001)
     {
-        return 0x32;
+        return 0x13;
     }
     // get memory region for mirrors
     switch (address >> 24)
@@ -245,7 +249,7 @@ u8 Memory::Read8(u32 address)
             return cart_ram[address - 0xE000000];
 
         default:
-            //LOG(LogLevel::Error, "Invalid address to read: 0x{x}\n", address);
+            LOG(LogLevel::Error, "Invalid address to read: 0x{x}\n", address);
             return 0;
     }
 
@@ -280,28 +284,25 @@ u8 Memory::Read8(u32 address)
             return stat->scanline;
 
         // REG_TM0D
-        case REG_TM0D:
-            return timers[0]->data & 0xFF;
-        case REG_TM0D + 1:
-            return (timers[0]->data >> 8) & 0xFF;
+        case REG_TM0D    : return timer->Read(0) >> 0 & 0xFF;
+        case REG_TM0D + 1: return timer->Read(0) >> 8 & 0xFF;
 
         // REG_TM1D
-        case REG_TM1D:
-            return timers[1]->data & 0xFF;
-        case REG_TM1D + 1:
-            return (timers[1]->data >> 8) & 0xFF;
+        case REG_TM1D    : return timer->Read(1) >> 0 & 0xFF;
+        case REG_TM1D + 1: return timer->Read(1) >> 8 & 0xFF;
 
         // REG_TM2D
-        case REG_TM2D:
-            return timers[2]->data & 0xFF;
-        case REG_TM2D + 1:
-            return (timers[2]->data >> 8) & 0xFF;
+        case REG_TM2D    : return timer->Read(2) >> 0 & 0xFF;
+        case REG_TM2D + 1: return timer->Read(2) >> 8 & 0xFF;
 
         // REG_TM3D
-        case REG_TM3D:
-            return timers[3]->data & 0xFF;
-        case REG_TM3D + 1:
-            return (timers[3]->data >> 8) & 0xFF;
+        case REG_TM3D    : return timer->Read(3) >> 0 & 0xFF;
+        case REG_TM3D + 1: return timer->Read(3) >> 8 & 0xFF;
+
+        // REG_KEYINPUT
+        case REG_KEYINPUT    : return gamepad->keys.raw >> 0 & 0xFF;
+        case REG_KEYINPUT + 1: return gamepad->keys.raw >> 8 & 0xFF;
+
         default:
             return memory[address];
     }
@@ -588,7 +589,7 @@ void Memory::Write8(u32 address, u8 value)
 
             if (dma[0].enable && dma[0].mode == 0) // immediate mode
             {
-                LOG(LogLevel::Message, "DMA0 immediate\n");
+                //LOG(LogLevel::Message, "DMA0 immediate\n");
                 _Dma(0);
 
                 // disable DMA after immediate transfer
@@ -617,7 +618,7 @@ void Memory::Write8(u32 address, u8 value)
 
             if (dma[1].enable && dma[1].mode == 0) // immediate mode
             {
-                LOG(LogLevel::Message, "DMA1 immediate\n");
+                //LOG(LogLevel::Message, "DMA1 immediate\n");
                 _Dma(1);
 
                 // disable DMA after immediate transfer
@@ -646,7 +647,7 @@ void Memory::Write8(u32 address, u8 value)
 
             if (dma[2].enable && dma[2].mode == 0) // immediate mode
             {
-                LOG(LogLevel::Message, "DMA2 immediate\n");
+                //(LogLevel::Message, "DMA2 immediate\n");
                 _Dma(2);
 
                 // disable DMA after immediate transfer
@@ -675,7 +676,7 @@ void Memory::Write8(u32 address, u8 value)
 
             if (dma[3].enable && dma[3].mode == 0) // immediate mode
             {
-                LOG(LogLevel::Message, "DMA3 immediate\n");
+                //LOG(LogLevel::Message, "DMA3 immediate\n");
                 _Dma(3);
 
                 // disable DMA after immediate transfer
@@ -689,97 +690,45 @@ void Memory::Write8(u32 address, u8 value)
         // REG_TM0D
         case REG_TM0D:
         case REG_TM0D + 1:
-            timers[0]->data       = (memory[REG_TM0D + 1] << 8) | (memory[REG_TM0D]);
-            timers[0]->start_data = (memory[REG_TM0D + 1] << 8) | (memory[REG_TM0D]);
+            timer->Write(0, memory[REG_TM0D + 1] << 8 | memory[REG_TM0D]);
             break;
-
+        
         // REG_TM1D
         case REG_TM1D:
         case REG_TM1D + 1:
-            timers[1]->data       = (memory[REG_TM1D + 1] << 8) | (memory[REG_TM1D]);
-            timers[1]->start_data = (memory[REG_TM1D + 1] << 8) | (memory[REG_TM1D]);
+            timer->Write(1, memory[REG_TM1D + 1] << 8 | memory[REG_TM1D]);
             break;
-
+        
         // REG_TM2D
         case REG_TM2D:
         case REG_TM2D + 1:
-            timers[2]->data       = (memory[REG_TM2D + 1] << 8) | (memory[REG_TM2D]);
-            timers[2]->start_data = (memory[REG_TM2D + 1] << 8) | (memory[REG_TM2D]);
+            timer->Write(2, memory[REG_TM2D + 1] << 8 | memory[REG_TM2D]);
             break;
-
+        
         // REG_TM3D
         case REG_TM3D:
         case REG_TM3D + 1:
-            timers[3]->data       = (memory[REG_TM3D + 1] << 8) | (memory[REG_TM3D]);
-            timers[3]->start_data = (memory[REG_TM3D + 1] << 8) | (memory[REG_TM3D]);
+            timer->Write(3, memory[REG_TM3D + 1] << 8 | memory[REG_TM3D]);
             break;
 
         // REG_TM0CNT
         case REG_TM0CNT:
-            timers[0]->freq       = value      & 0x3;
-            timers[0]->cascade    = value >> 2 & 0x1;
-            timers[0]->irq        = value >> 6 & 0x1;
-            timers[0]->enable     = value >> 7 & 0x1;
-
-            // get actual freq
-            switch(timers[0]->freq)
-            {
-                case 0: timers[0]->actual_freq = 1;    break;
-                case 1: timers[0]->actual_freq = 64;   break;
-                case 2: timers[0]->actual_freq = 256;  break;
-                case 3: timers[0]->actual_freq = 1024; break;
-            }
+            timer->WriteCnt(0, memory[REG_TM0CNT]);
             break;
-
+        
         // REG_TM1CNT
         case REG_TM1CNT:
-            timers[1]->freq       = value      & 0x3;
-            timers[1]->cascade    = value >> 2 & 0x1;
-            timers[1]->irq        = value >> 6 & 0x1;
-            timers[1]->enable     = value >> 7 & 0x1;
-
-            // get actual freq
-            switch(timers[1]->freq)
-            {
-                case 0: timers[1]->actual_freq = 1;    break;
-                case 1: timers[1]->actual_freq = 64;   break;
-                case 2: timers[1]->actual_freq = 256;  break;
-                case 3: timers[1]->actual_freq = 1024; break;
-            }
+            timer->WriteCnt(1, memory[REG_TM1CNT]);
             break;
-
+        
         // REG_TM2CNT
         case REG_TM2CNT:
-            timers[2]->freq       = value      & 0x3;
-            timers[2]->cascade    = value >> 2 & 0x1;
-            timers[2]->irq        = value >> 6 & 0x1;
-            timers[2]->enable     = value >> 7 & 0x1;
-
-            // get actual freq
-            switch(timers[2]->freq)
-            {
-                case 0: timers[2]->actual_freq = 1;    break;
-                case 1: timers[2]->actual_freq = 64;   break;
-                case 2: timers[2]->actual_freq = 256;  break;
-                case 3: timers[2]->actual_freq = 1024; break;
-            }
+            timer->WriteCnt(2, memory[REG_TM2CNT]);
             break;
-
+        
         // REG_TM3CNT
         case REG_TM3CNT:
-            timers[3]->freq       = value      & 0x3;
-            timers[3]->cascade    = value >> 2 & 0x1;
-            timers[3]->irq        = value >> 6 & 0x1;
-            timers[3]->enable     = value >> 7 & 0x1;
-
-            // get actual freq
-            switch(timers[3]->freq)
-            {
-                case 0: timers[3]->actual_freq = 1;    break;
-                case 1: timers[3]->actual_freq = 64;   break;
-                case 2: timers[3]->actual_freq = 256;  break;
-                case 3: timers[3]->actual_freq = 1024; break;
-            }
+            timer->WriteCnt(3, memory[REG_TM3CNT]);
             break;
         
         // REG_IF
@@ -929,12 +878,12 @@ void Memory::Dma0()
     if (dma[0].irq)
         LOG(LogLevel::Debug, "DMA0 IRQ request\n");
 
-    LOG(LogLevel::Debug, "DMA 0 Done\n");
+    //LOG(LogLevel::Debug, "DMA 0 Done\n");
 }
 
 void Memory::Dma1()
 {
-    LOG(LogLevel::Debug, "DMA 1\n");
+    //LOG(LogLevel::Debug, "DMA 1\n");
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = Read32Unsafe(REG_DMA1SAD) & 0xFFFFFFF; // 28 bit
     dest_ptr = original_dest = Read32Unsafe(REG_DMA1DAD) & 0x7FFFFFF; // 27 bit
@@ -1016,12 +965,12 @@ void Memory::Dma1()
     if (dma[1].irq)
         LOG(LogLevel::Debug, "DMA1 IRQ request\n");
 
-    LOG(LogLevel::Debug, "DMA 1 Done\n");
+    //LOG(LogLevel::Debug, "DMA 1 Done\n");
 }
 
 void Memory::Dma2()
 {
-    LOG(LogLevel::Debug, "DMA 2\n");
+    //LOG(LogLevel::Debug, "DMA 2\n");
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = Read32Unsafe(REG_DMA2SAD) & 0xFFFFFFF; // 28 bit
     dest_ptr = original_dest = Read32Unsafe(REG_DMA2DAD) & 0x7FFFFFF; // 27 bit;
@@ -1103,7 +1052,7 @@ void Memory::Dma2()
     if (dma[2].irq)
         LOG(LogLevel::Debug, "DMA3 IRQ request\n");
 
-    LOG(LogLevel::Debug, "DMA 2 Done\n");
+    //LOG(LogLevel::Debug, "DMA 2 Done\n");
 }
 
 void Memory::Dma3()
@@ -1195,7 +1144,7 @@ void Memory::Dma3()
     if (dma[3].irq)
         LOG(LogLevel::Debug, "DMA3 IRQ request\n");
 
-    LOG(LogLevel::Debug, "DMA 3 Done\n");
+    //LOG(LogLevel::Debug, "DMA 3 Done\n");
 }
 
 // std::cout << "([a-zA-Z0-9 \\n]+)"

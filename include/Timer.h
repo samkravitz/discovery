@@ -2,7 +2,7 @@
  * License: GPLv2
  * See LICENSE.txt for full license text
  * 
- * FILE: timer.h
+ * FILE: Timer.h
  * DATE: November 4th, 2020
  * DESCRIPTION: timer definition
  */
@@ -14,26 +14,39 @@
 struct Timer
 {
     public:
-        Timer()
+        Timer();
+        ~Timer();
+
+        long ticks;
+
+        struct channel
         {
-            // zero time
-            data = 0;
-            start_data;
-            freq = 0;
-            cascade = 0;
-            irq = 0;
-            enable = 0;
-            actual_freq = 0;
-        }
+            union
+            {
+                struct 
+                {
+                    u8 freq    : 2;
+                    u8 cascade : 1;
+                    u8 unused1 : 3;
+                    u8 irq     : 1;
+                    u8 enable  : 1;
+                    u8 unused2 : 8;
+                };
 
-        ~Timer() { }
+                u16 cnt; 
+                
+            };
 
-        u16 data;
-        u16 start_data;
-        u8 freq;
-        u8 cascade;
-        u8 irq;
-        u8 enable;
-        u16 actual_freq;
+            u16 initial;
+            u16 data;
+            int prescalar;
+        } channel[4];
+        
+        void Tick();
+        u16  Read(int);
+        void Write(int, u16);
+        void WriteCnt(int, u16);
 
+    private:
+        void Cascade(int);
 };

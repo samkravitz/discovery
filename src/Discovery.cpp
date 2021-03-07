@@ -10,7 +10,7 @@
 #include <iostream>
 #include <iomanip>
 #include "Discovery.h"
-#include "Util.h"
+#include "util.h"
 
 int main(int argc, char **argv)
 {
@@ -55,9 +55,11 @@ Discovery::Discovery()
     system_cycles = 0;
     running = true;
 
+    gamepad = new Gamepad();
     stat    = new LcdStat();
-    mem     = new Memory(stat);
+    timer   = new Timer();
 
+    mem     = new Memory(stat, timer, gamepad);
     cpu     = new Arm7Tdmi(mem);
     ppu     = new PPU(mem, stat);
     apu     = new APU(mem);
@@ -86,7 +88,6 @@ Discovery::Discovery()
 void Discovery::GameLoop()
 {
     u32 old_cycles = 0;
-
     while (running)
     {
         // tick hardware (not cpu) if in halt state
@@ -98,9 +99,7 @@ void Discovery::GameLoop()
             auto interrupts_requested = mem->Read16Unsafe(REG_IF);
 
             if (interrupts_enabled & interrupts_requested != 0)
-            {
                 mem->haltcnt = 0;
-            }
         }
 
         cpu->Fetch();
@@ -114,8 +113,8 @@ void Discovery::GameLoop()
         cpu->pipeline[1] = cpu->pipeline[2];
 
         // run hardware for as many clock cycles as cpu used
-        system_cycles = cpu->cycles;
-        while (old_cycles++ < system_cycles)
+        old_cycles = cpu->cycles;
+        while (system_cycles < old_cycles)
             Tick();
     }
 
@@ -125,61 +124,18 @@ void Discovery::GameLoop()
 // clock hardware components
 void Discovery::Tick()
 {
+    system_cycles++;
     ppu->Tick();
-    apu->GenerateChannel1();
-
-    // clock timers
-    for (int j = 0; j < 4; ++j)
-    {
-        // ignore if timer is disabled
-        if (!timers[j]->enable)
-            continue;
-
-        // ignore if cascade bit is set (timer will be incremented by previous timer)
-        if (timers[j]->cascade)
-            continue;
-
-        // increment counter by 1
-        if (system_cycles % timers[j]->actual_freq == 0)
-        {
-            timers[j]->data += 1; // increment timer
-
-            // timer overflowed
-            if (timers[j]->data == 0x0000)
-            {
-                // reset timer
-                timers[j]->data = timers[j]->start_data;
-
-                //std::cout << "Timer " << j << " overflow\n";
-
-                // overflow irq
-                if (timers[j]->irq)
-                    LOG("Timer {} overflow IRQ request\n");
-
-                // cascade
-                // timer 4 can't cascade any other timer
-                if (j == 4)
-                    continue;
-
-                if (timers[j + 1]->enable && timers[j + 1]->cascade)
-                {
-                    timers[j + 1]->data += 1;
-
-                    // cascade caused overflow (deal with this later)
-                    if (timers[j + 1]->data == 0x0000)
-                        LOG("Timer {} cascade overflow\n", j + 1);
-                }
-            }
-        }
-    }
+    timer->Tick();
 
     // poll for key presses at start of vblank
-    if (stat->scanline == VDRAW && SDL_PollEvent(&e))
+    if (system_cycles % 197120 == 0)
     {
+        SDL_PollEvent(&e);
         if (e.type == SDL_QUIT)
-            running = false;
-        if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)
-            mem->Write32Unsafe(REG_KEYINPUT, gamepad->Poll(e));
+           running = false;
+
+        gamepad->Poll();
     }
 }
 
@@ -189,7 +145,7 @@ void Discovery::ParseArgs()
     for (int i = 0; i < argv.size(); ++i)
     {
         // ROM name
-        if (i == 0 && Util::PathExists(argv[i]))
+        if (i == 0 && util::PathExists(argv[i]))
             config::rom_name = argv[i];
 		else if ((argv[i] == "-i" || argv[i] == "--input") && i != argv.size() -1)
 			config::rom_name = argv[++i];
@@ -222,7 +178,5 @@ void Discovery::ShutDown()
     delete mem;
     delete stat;
     delete gamepad;
-
-    for (int i = 0; i < 4; ++i)
-        delete timers[i];
+    delete timer;
 }

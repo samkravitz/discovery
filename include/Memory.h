@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <vector>
 
+#include "Gamepad.h"
 #include "LcdStat.h"
 #include "common.h"
 #include "Timer.h"
@@ -49,12 +50,14 @@ constexpr u32 MEM_SIZE             = 0x8000000;
 class Memory
 {
     public:
-        Memory(LcdStat *);
+        Memory(LcdStat *, Timer *, Gamepad *);
         ~Memory();
 
         u8 memory[MEM_SIZE];
 
         LcdStat *stat;
+        Timer *timer;
+        Gamepad *gamepad;
 
         // cart buffers & sizes
         u8  cart_rom[0x2000000];
@@ -76,8 +79,6 @@ class Memory
             u32 src_address;
             u32 dest_address;
         } dma[4];
-
-        Timer *timers[4];
 
         u8 n_cycles;
         u8 s_cycles;

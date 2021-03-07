@@ -10,7 +10,7 @@
 #include "Gamepad.h"
 
 // get current key state
-u16 Gamepad::Poll(const SDL_Event &e)
+void Gamepad::Poll()
 {
     /*
      * Order of keys in KEYINPUT is as follows:
@@ -25,44 +25,23 @@ u16 Gamepad::Poll(const SDL_Event &e)
      * r: 8
      * l: 9
      */
-    // poll button presses
-    if (e.type == SDL_KEYDOWN)
-    {
-        switch(e.key.keysym.sym)
-        {
-            case SDLK_x:         keys.a     = 0; break;
-            case SDLK_z:         keys.b     = 0; break;
-            case SDLK_BACKSPACE: keys.sel   = 0; break;
-            case SDLK_RETURN:    keys.start = 0; break;
-            case SDLK_RIGHT:     keys.right = 0; break;
-            case SDLK_LEFT:      keys.left  = 0; break;
-            case SDLK_UP:        keys.up    = 0; break;
-            case SDLK_DOWN:      keys.down  = 0; break;
-            case SDLK_s:         keys.r     = 0; break;
-            case SDLK_a:         keys.l     = 0; break;
-            case SDLK_ESCAPE:    exit(0); // escape
-        }
-    }
 
-    // poll button releases
-    if (e.type == SDL_KEYUP)
-    {
-        switch(e.key.keysym.sym)
-        {
-            case SDLK_x:         keys.a     = 1; break;
-            case SDLK_z:         keys.b     = 1; break;
-            case SDLK_BACKSPACE: keys.sel   = 1; break;
-            case SDLK_RETURN:    keys.start = 1; break;
-            case SDLK_RIGHT:     keys.right = 1; break;
-            case SDLK_LEFT:      keys.left  = 1; break;
-            case SDLK_UP:        keys.up    = 1; break;
-            case SDLK_DOWN:      keys.down  = 1; break;
-            case SDLK_s:         keys.r     = 1; break;
-            case SDLK_a:         keys.l     = 1; break;
-        }
-    }
+    //SDL_PumpEvents();
+    auto *state = SDL_GetKeyboardState(nullptr);
 
-    return keys.raw;
+    keys.a     = state[SDL_SCANCODE_X]         ? 0 : 1;
+    keys.b     = state[SDL_SCANCODE_Z]         ? 0 : 1;
+    keys.sel   = state[SDL_SCANCODE_BACKSPACE] ? 0 : 1;
+    keys.start = state[SDL_SCANCODE_RETURN]    ? 0 : 1;
+    keys.right = state[SDL_SCANCODE_RIGHT]     ? 0 : 1;
+    keys.left  = state[SDL_SCANCODE_LEFT]      ? 0 : 1;
+    keys.up    = state[SDL_SCANCODE_UP]        ? 0 : 1;
+    keys.down  = state[SDL_SCANCODE_DOWN]      ? 0 : 1;
+    keys.r     = state[SDL_SCANCODE_S]         ? 0 : 1;
+    keys.l     = state[SDL_SCANCODE_A]         ? 0 : 1;
+
+    if (state[SDL_SCANCODE_ESCAPE])
+        exit(0);
 
     // // check for key interrupt
     // u16 keycnt = mem->Read16Unsafe(REG_KEYCNT);
@@ -98,9 +77,6 @@ u16 Gamepad::Poll(const SDL_Event &e)
     //         mem->Write16Unsafe(REG_IF, reg_if);
     //     }
     // }
-
-    // // store gamepad result back into the KEYINPUT address
-    // mem->Write32Unsafe(REG_KEYINPUT, gamepad_result);
 }
 
 void Gamepad::Print()

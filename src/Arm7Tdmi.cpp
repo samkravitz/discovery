@@ -15,7 +15,7 @@
 // uncomment this if running tests
 //#define TEST
 
-//#define PRINT
+int PRINT = 0;
 
 Arm7Tdmi::Arm7Tdmi(Memory *mem) : mem(mem)
 {
@@ -38,7 +38,12 @@ Arm7Tdmi::Arm7Tdmi(Memory *mem) : mem(mem)
     current_interrupt = 0;
     in_interrupt  = false;
     swi_vblank_intr = false;
-    last_read_bios = 0xE129F000;
+
+    bios_read_state[0] = 0xE129F000; // 0xDC  + 8 startup 
+    bios_read_state[1] = 0xE25EF004; // 0x134 + 8 irq execute
+    bios_read_state[2] = 0xE55EC002; // 0x13C + 8 irq finish
+    bios_read_state[3] = 0xE3A02004; // 0x188 + 8 swi finish
+    last_read_bios     = bios_read_state[0];
     
     // different initialization for the testing environment
     #ifdef TEST
@@ -194,23 +199,25 @@ void Arm7Tdmi::Decode(u32 instruction) { }
 
 void Arm7Tdmi::Execute(u32 instruction)
 {  
-    #ifdef PRINT
+    if (PRINT) {
     std::cout << "Executing: " << std::hex << instruction << "\n";
     if (instruction == 0)
         exit(5);
-    #endif
+    }
+
+    //std::cout << std::hex << registers.r15 << "\n";
     
     switch (GetState())
     {
         case State::ARM:
-            if (!ConditionMet((Condition) Util::bitseq<31, 28>(instruction)))
+            if (!ConditionMet((Condition) util::bitseq<31, 28>(instruction)))
             {
                 IncrementPC();
                 Tick(0, 0, 1); // 1I
                 return;
             }
             
-            switch(Util::GetInstructionFormat(instruction))
+            switch(util::GetInstructionFormat(instruction))
             {
                 case ArmInstruction::BEX:  BranchExchange(instruction);       break;
                 case ArmInstruction::B:    BranchLink(instruction);           break;
@@ -231,7 +238,7 @@ void Arm7Tdmi::Execute(u32 instruction)
 
         case State::THUMB:
             u16 instr = (u16) instruction;
-            switch(Util::GetInstructionFormat((u16) instruction))
+            switch(util::GetInstructionFormat((u16) instruction))
             {
                 case ThumbInstruction::MSR:    MoveShiftedRegister(instr);     break;
                 case ThumbInstruction::ADDSUB: AddSubtract(instr);             break;
@@ -263,7 +270,7 @@ void Arm7Tdmi::Execute(u32 instruction)
     if (pipeline_full)
         IncrementPC();
 
-    #ifdef PRINT
+    if (PRINT) {
     std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << GetRegister(0) << 
 				" -- R4  : 0x" << std::setw(8) << std::setfill('0') << GetRegister(4) << 
 				" -- R8  : 0x" << std::setw(8) << std::setfill('0') << GetRegister(8) << 
@@ -296,7 +303,7 @@ void Arm7Tdmi::Execute(u32 instruction)
                 std::cout << "V";
             std::cout << "\n";
             //std:: cout << std::dec << ii << " instructions\n";
-    #endif
+    }
 }
 
 u32 Arm7Tdmi::GetRegister(u32 reg)
@@ -823,7 +830,7 @@ void Arm7Tdmi::HandleInterrupt()
     // exit interrupt
     if (in_interrupt && GetRegister(r15) == 0x138)
     {
-        std::cout << "Handled interrupt!\n";
+        //std::cout << "Handled interrupt!\n";
 
         // restore registers from stack
         // ldmfd r13! r0-r3, r12, r14
@@ -849,14 +856,9 @@ void Arm7Tdmi::HandleInterrupt()
 
         pipeline_full = false;
         in_interrupt  = false;
+
+        last_read_bios = bios_read_state[2];
         
-        // set_state(SYS);
-
-        // clear bit from REG_IF to show that interrupt has been serviced
-        u32 reg_if = mem->Read32Unsafe(REG_IF) & ~current_interrupt;
-        mem->Write32Unsafe(REG_IF, reg_if);
-
-        //std::cout << "interrupt handled! " << std::hex << registers.r15 << "\n";
         return;
     }
 
@@ -874,7 +876,7 @@ void Arm7Tdmi::HandleInterrupt()
             // handle interrupt at position i
             if (irq_mask & (1 << i))
             {
-                // LLE interrupts through BIOS
+                //LLE interrupts through BIOS
                 // registers.spsr_irq = registers.cpsr;
 
                 // if (GetState() == State::ARM)
@@ -885,12 +887,13 @@ void Arm7Tdmi::HandleInterrupt()
                 // SetMode(Mode::IRQ);
                 // SetState(State::ARM);
                 // registers.cpsr.flags.i = 1;
-                // SetRegister(r15, 0x18);
+                // mem->Write32Unsafe(REG_IME, 0);
+                // SetRegister(r15, 0x1C);
                 // pipeline_full = false;
                 // in_interrupt = true;
 
                 // emulate how BIOS handles interrupts - HLE
-                std::cout << "interrupt handling! " << i << "\n";
+                //std::cout << "interrupt handling! " << i << "\n";
 
                 u32 old_cpsr = GetRegister(cpsr);
                 // switch to IRQ
@@ -945,6 +948,8 @@ void Arm7Tdmi::HandleInterrupt()
                 in_interrupt  = true;
                 mem->Write32Unsafe(REG_IME, 0);
 
+                last_read_bios = bios_read_state[1];
+
                 // save the current interrupt so we can clear it after it's been serviced
                 return;
             }
@@ -957,8 +962,9 @@ u8 Arm7Tdmi::Read8(u32 address)
     // reading from BIOS memory
     if (address <= 0x3FFF && registers.r15 > 0x3FFF)
     {
-        //LOG(LogLevel::Error, "Invalid read from BIOS u8: 0x{x}\n", last_read_bios);
-        // u32 value = last_read_bios;
+        LOG(LogLevel::Error, "Invalid read from BIOS u8: {0:#x}\n", last_read_bios);
+
+        //u32 value = last_read_bios;
         
         // switch (address & 0x3)
         // {
@@ -968,7 +974,7 @@ u8 Arm7Tdmi::Read8(u32 address)
         //     case 3: value >>= 24; break;
         // }
 
-        // return value & 0xFF;
+        return last_read_bios & 0xFF;
     }
 
     if ((address >= 0x4000 && address <= 0x1FFFFFF) || address >= 0x10000000)
@@ -978,7 +984,7 @@ u8 Arm7Tdmi::Read8(u32 address)
         {
             case State::ARM: return mem->Read32(registers.r15);
             case State::THUMB:
-                exit(0);
+                return mem->Read32(registers.r15);
                 break;
         }
     }
@@ -1009,12 +1015,6 @@ u32 Arm7Tdmi::Read16(u32 address, bool sign)
         LOG(LogLevel::Error, "Invalid read from BIOS u16: 0x{x}\n", last_read_bios);
 
         u32 value = last_read_bios;
-        switch (address & 0x1)
-        {
-            case 0: value >>= 0;  break;
-            case 1: value >>= 16;  break;
-        }
-
         return value & 0xFFFF;
     }
 
@@ -1180,7 +1180,7 @@ u32 Arm7Tdmi::Read32(u32 address, bool ldr)
         // case REG_DMA3SAD:
         // case REG_DMA3DAD:
         case REG_DMA3CNT:
-            std::cout << "u32 sadkjflsadfkjsdaflkj\n";
+            //std::cout << "u32 sadkjflsadfkjsdaflkj\n";
             //return 0;
         default:
             break;

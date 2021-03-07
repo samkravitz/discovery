@@ -13,6 +13,7 @@
 
 #include "Arm7Tdmi.h"
 #include "PPU.h"
+#include "APU.h"
 #include "Memory.h"
 #include "Timer.h"
 #include "Gamepad.h"
@@ -25,6 +26,7 @@ class Discovery
 
         Arm7Tdmi  *cpu;
         PPU       *ppu;
+        APU       *apu;
         Memory    *mem;
         LcdStat   *stat;
         Gamepad   *gamepad;

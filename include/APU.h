@@ -18,7 +18,7 @@ constexpr int DS_MODE_INTERRUPT = 1;
 class APU
 {
   	public:
-		APU(Memory *);
+		APU(Memory *mem);
 		~APU();
 
 		Memory *mem;

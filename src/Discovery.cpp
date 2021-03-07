@@ -60,7 +60,10 @@ Discovery::Discovery()
 
     cpu     = new Arm7Tdmi(mem);
     ppu     = new PPU(mem, stat);
+    apu     = new APU(mem);
     gamepad = new Gamepad();
+
+    
 
     // initialize timers
     Timer *t0 = new Timer();
@@ -123,6 +126,7 @@ void Discovery::GameLoop()
 void Discovery::Tick()
 {
     ppu->Tick();
+    apu->GenerateChannel1();
 
     // clock timers
     for (int j = 0; j < 4; ++j)

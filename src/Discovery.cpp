@@ -62,27 +62,7 @@ Discovery::Discovery()
     mem     = new Memory(stat, timer, gamepad);
     cpu     = new Arm7Tdmi(mem);
     ppu     = new PPU(mem, stat);
-    apu     = new APU(mem);
-    gamepad = new Gamepad();
-
-    
-
-    // initialize timers
-    Timer *t0 = new Timer();
-    Timer *t1 = new Timer();
-    Timer *t2 = new Timer();
-    Timer *t3 = new Timer();
-
-    timers[0] = t0;
-    timers[1] = t1;
-    timers[2] = t2;
-    timers[3] = t3;
-
-    // link system's timers to memory's
-    mem->timers[0] = timers[0];
-    mem->timers[1] = timers[1];
-    mem->timers[2] = timers[2];
-    mem->timers[3] = timers[3];
+    // apu     = new APU(mem);
 }
 
 void Discovery::GameLoop()

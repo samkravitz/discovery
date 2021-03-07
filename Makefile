@@ -1,6 +1,6 @@
 CC = g++
 LIBARIES = -lstdc++fs -lSDL2 -DFMT_HEADER_ONLY
-CPPFLAGS = -g -std=c++20 -I $(INCLUDEDIR) #-O2
+CPPFLAGS = -g -std=c++2a -I $(INCLUDEDIR) #-O2
 BIN = bin/
 SOURCEDIR = src/
 INCLUDEDIR = include/

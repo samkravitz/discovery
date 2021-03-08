@@ -572,6 +572,38 @@ void Memory::Write8(u32 address, u8 value)
 
         break;
 
+        // REG_BG2X
+        case REG_BG2X + 0:
+        case REG_BG2X + 1:
+        case REG_BG2X + 2:
+        case REG_BG2X + 3:
+            stat->bgcnt[2].dx = (memory[REG_BG2X + 3] << 24) | (memory[REG_BG2X + 2] << 16) | (memory[REG_BG2X + 1] << 8) | (memory[REG_BG2X]);
+            break;
+
+        // REG_BG2Y
+        case REG_BG2Y + 0:
+        case REG_BG2Y + 1:
+        case REG_BG2Y + 2:
+        case REG_BG2Y + 3:
+            stat->bgcnt[2].dy = (memory[REG_BG2Y + 3] << 24) | (memory[REG_BG2Y + 2] << 16) | (memory[REG_BG2Y + 1] << 8) | (memory[REG_BG2Y]);
+            break;
+
+        // REG_BG3X
+        case REG_BG3X + 0:
+        case REG_BG3X + 1:
+        case REG_BG3X + 2:
+        case REG_BG3X + 3:
+            stat->bgcnt[3].dx = (memory[REG_BG3X + 3] << 24) | (memory[REG_BG3X + 2] << 16) | (memory[REG_BG3X + 1] << 8) | (memory[REG_BG3X]);
+            break;
+
+        // REG_BG3Y
+        case REG_BG3Y + 0:
+        case REG_BG3Y + 1:
+        case REG_BG3Y + 2:
+        case REG_BG3Y + 3:
+            stat->bgcnt[3].dy = (memory[REG_BG3Y + 3] << 24) | (memory[REG_BG3Y + 2] << 16) | (memory[REG_BG3Y + 1] << 8) | (memory[REG_BG3Y]);
+            break;
+
         // DMA
 
         // REG_DMA0CNT

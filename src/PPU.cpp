@@ -395,28 +395,32 @@ void PPU::RenderScanlineAffine(int bg)
     switch (bg)
     {
         case 2:
-            dx_raw = mem->Read32(REG_BG2X);
-            dy_raw = mem->Read32(REG_BG2Y);
+            dx_raw = bgcnt.dx;
+            dy_raw = bgcnt.dy;
+            //dx_raw = mem->Read32Unsafe(REG_BG2X);
+            //dy_raw = mem->Read32Unsafe(REG_BG2Y);
 
-            pa = (s16) mem->Read32(REG_BG2PA) / 256.0;
-            pb = (s16) mem->Read32(REG_BG2PB) / 256.0;
-            pc = (s16) mem->Read32(REG_BG2PC) / 256.0;
-            pd = (s16) mem->Read32(REG_BG2PD) / 256.0;
+            pa = (s16) mem->Read32Unsafe(REG_BG2PA) / 256.0;
+            pb = (s16) mem->Read32Unsafe(REG_BG2PB) / 256.0;
+            pc = (s16) mem->Read32Unsafe(REG_BG2PC) / 256.0;
+            pd = (s16) mem->Read32Unsafe(REG_BG2PD) / 256.0;
             break;
 
         case 3:
-            dx_raw = mem->Read32(REG_BG3X);
-            dy_raw = mem->Read32(REG_BG3Y);
+            //dx_raw = bgcnt.dx;
+            //dy_raw = bgcnt.dy;
+            dx_raw = mem->Read32Unsafe(REG_BG3X);
+            dy_raw = mem->Read32Unsafe(REG_BG3Y);
 
-            pa = (s16) mem->Read32(REG_BG3PA) / 256.0;
-            pb = (s16) mem->Read32(REG_BG3PB) / 256.0;
-            pc = (s16) mem->Read32(REG_BG3PC) / 256.0;
-            pd = (s16) mem->Read32(REG_BG3PD) / 256.0;
+            pa = (s16) mem->Read32Unsafe(REG_BG3PA) / 256.0;
+            pb = (s16) mem->Read32Unsafe(REG_BG3PB) / 256.0;
+            pc = (s16) mem->Read32Unsafe(REG_BG3PC) / 256.0;
+            pd = (s16) mem->Read32Unsafe(REG_BG3PD) / 256.0;
             break;
     }
 
+    //LOG("{}\n", pd);
     //int dx2, dy2;
-
 
     dx = (float) (dx_raw >> 8) + ((dx_raw & 0xFF) / 256.0f);
     dy = (float) (dy_raw >> 8) + ((dx_raw & 0xff) / 256.0f);
@@ -424,28 +428,15 @@ void PPU::RenderScanlineAffine(int bg)
     //dx += pb * scanline;
     //dy += pd * scanline;
 
-    // dx = (float) (dx_raw >> 8 & 0x7FFFF) + ((dx_raw & 0xFF) / 256.0);
-    // dy = (float) (dy_raw >> 8 & 0x7FFFF) + ((dy_raw & 0xFF) / 256.0);
-
-    //if (dx_raw & 0x8000000)
-       // dx *= -1.0;
-    //if (dy_raw & 0x8000000)
-        //dy *= -1.0;
-
-
-    //LOG("{} {} {:x} {:x}\n", dx, dy, dx_raw, dy_raw);
-
-    int px0 = width / 2;
-    int px, py;
-    int qx0 = SCREEN_WIDTH / 2 + dx;
-    int qy0 = SCREEN_HEIGHT / 2 + dy;
-    //int x0 = dx, y0 = dy;
-
+    float x0 = dx, y0 = dy;
+    int   x1,      y1 = scanline + dy;
+    int   px,      py;
+    
     // map position
     int map_x, map_y;
 
     // tile coordinates (in map)
-    int tile_x, tile_y;// = map_y / 8; // 8 px per tile
+    int tile_x, tile_y;
 
     int se_index;
     int pixel;
@@ -453,53 +444,36 @@ void PPU::RenderScanlineAffine(int bg)
 
     for (int x = 0; x < SCREEN_WIDTH; ++x)
     {
-        int px0 = width / 2; 
-        int py0 = height / 2;
+        x1 = x + dx;
 
-        //px = px0 + x;
-        //py = py0 + scanline;
+        // affine transform
+        px = pa * (x1 - x0) + pb * (y1 - y0) + x0;
+        py = pc * (x1 - x0) + pd * (y1 - y0) + y0;
 
-        int x1 = dx + x;
-        int y1 = dy + scanline;
-
-        //int old_x = 
-        //int py0 = scanline;
-        //qx0 = x + dy;
-        //px = pa * (x + x0) + pb * (scanline + y0) + x0;
-        //py = pc * (x + x0) + pd * (scanline + y0) + y0;
-
-        //px = x + dx;
-        //py = scanline + dy;
-
-        px = pa * (x1 - qx0) + pb * (y1 - qy0) + qx0;
-        py = pc * (x1 - qx0) + pd * (y1 - qy0) + qy0;
-
-        // transformmed coordinate is out of bounds
 
         if (bgcnt.affine_wrap == 1)
         {
-            if (px >= width || py >= height) continue;
-            px = (std::abs(px) + width) % width;
-            py = (std::abs(py) + height) % height;
-            //px = std::abs(px % width);
-            //py = std::abs(py % height);
+            if (px < 0)
+                px = width  - std::abs(px);
+            if (py < 0)
+                py = height - std::abs(py);
+
+            px %=  width;
+            py %=  height;
         }
 
-        //else
-        //{
+        // no wrap
+        else
+        {
+            // transformmed coordinate is out of bounds
             if (px >= width || py >= height) continue;
-            if (px < 0             || py < 0)              continue;
-            //if (x1  < 0      || x1 >= 240   ) continue;
-                //if (qy0 + scanline < 0      || qy0 + scanline >= 160   ) continue;
-            //if (px )
-
-            
-        //}
+            if (px < 0      || py < 0)       continue;
+        }
         
 
         map_x = px;
-        tile_x = map_x / 8; // 8 px per tile
         map_y = py;
+        tile_x = map_x / 8; // 8 px per tile
         tile_y = map_y / 8;
 
         se_index = mem->Read8((MEM_VRAM_START + bgcnt.sbb * SCREENBLOCK_LEN) + tile_y * (width / 8) + tile_x);
@@ -511,6 +485,9 @@ void PPU::RenderScanlineAffine(int bg)
         if (pixel != TRANSPARENT)
             scanline_buffer[x] = U16ToU32Color(pixel);
     }
+
+    mem->Write32Unsafe(REG_BG2X, mem->Read32Unsafe(REG_BG2X) + pb);
+    mem->Write32Unsafe(REG_BG2Y, mem->Read32Unsafe(REG_BG2Y) + pd);
 }
 
 // render the current scanline for bitmap modes

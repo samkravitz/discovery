@@ -55,6 +55,9 @@ struct LcdStat
         u8 size        : 2;
         u8 enabled     : 1;
 
+        u32 dx;
+        u32 dy;
+
         int width, height; // dimensions of map in pixels
         int voff,  hoff;   // vertical, horizontal offsets
     } bgcnt[4]; // backgrounds 0-3

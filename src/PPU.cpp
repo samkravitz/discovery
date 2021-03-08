@@ -120,10 +120,10 @@ void PPU::Tick()
         if (scanline < SCREEN_HEIGHT)
             RenderScanline();
 
-        stat->displaystat.in_hBlank = true;
+        stat->dispstat.in_hBlank = true;
 
         // fire HBlank interrupt if necessary
-        if (stat->displaystat.hbi)
+        if (stat->dispstat.hbi)
         {
             mem->memory[REG_IF] |= IRQ_HBLANK;
             //LOG(LogLevel::Debug, "HBlank interrupt\n");
@@ -145,10 +145,10 @@ void PPU::Tick()
         if (scanline == VDRAW)
         {
             Render();
-            stat->displaystat.in_vBlank = true;
+            stat->dispstat.in_vBlank = true;
 
             // fire Vblank interrupt if necessary
-            if (stat->displaystat.vbi)
+            if (stat->dispstat.vbi)
             {
                 //LOG(LogLevel::Debug, "VBlank interrupt\n");
                 mem->memory[REG_IF] |= IRQ_VBLANK;
@@ -191,7 +191,7 @@ void PPU::Tick()
         // completed full refresh
         if (scanline == VDRAW + VBLANK)
         {
-            stat->displaystat.in_vBlank = false;
+            stat->dispstat.in_vBlank = false;
             scanline = 0;
             stat->scanline = 0;
         }
@@ -203,13 +203,13 @@ void PPU::Tick()
         }
 
         // scanline has reached trigger value
-        if (scanline == stat->displaystat.vct)
+        if (scanline == stat->dispstat.vct)
         {
             // set trigger status
-            stat->displaystat.vcs = 1;
+            stat->dispstat.vcs = 1;
 
             // scanline interrupt is triggered if requested
-            if (stat->displaystat.vci)
+            if (stat->dispstat.vci)
             {
                 mem->memory[REG_IF] |= IRQ_VCOUNT;
                 //std::cout << "Scanline interrupt\n";
@@ -220,11 +220,11 @@ void PPU::Tick()
         // scanline is not equal to trigger value, reset this bit
         else
         {
-            stat->displaystat.vcs = 0;
+            stat->dispstat.vcs = 0;
         }
 
         cycles = 0;
-        stat->displaystat.in_hBlank = false;
+        stat->dispstat.in_hBlank = false;
     }
 }
 

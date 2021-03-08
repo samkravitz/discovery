@@ -192,10 +192,10 @@ u8 Memory::Read8(u32 address)
     // get memory region for mirrors
     switch (address >> 24)
     {
-        case 0x0:
-        case 0x1:
-        case 0x4:
-        case 0x8:
+        case 0x0: [[fallthrough]];
+        case 0x1: [[fallthrough]];
+        case 0x4: [[fallthrough]];
+        case 0x8: [[fallthrough]];
         case 0x9:
             break;
 
@@ -263,44 +263,31 @@ u8 Memory::Read8(u32 address)
         return cart_rom[address - MEM_SIZE];
     }
 
-
-    u8 result = 0;
     switch (address)
     {
-        // IO reg
-        case REG_DISPSTAT:
-            result |= stat->displaystat.in_vBlank ? 0b1      : 0b0;       // bit 0 set in vblank, clear in vdraw
-            result |= stat->displaystat.in_hBlank ? 0b10     : 0b00;      // bit 1 set in hblank, clear in hdraw
-            result |= stat->displaystat.vcs       ? 0b100    : 0b000;     // bit 2
-            result |= stat->displaystat.vbi       ? 0b1000   : 0b0000;    // bit 3
-            result |= stat->displaystat.hbi       ? 0b10000  : 0b00000;   // bit 4
-            result |= stat->displaystat.vci       ? 0b100000 : 0b000000;  // bit 5
-            return result;
+        case REG_DISPSTAT:     return stat->dispstat.raw >> 0 & 0xFF;
+        case REG_DISPSTAT + 1: return stat->dispstat.vct >> 8 & 0xFF;
 
-        case REG_DISPSTAT + 1:
-            return stat->displaystat.vct;
-
-        case REG_VCOUNT:
-            return stat->scanline;
+        case REG_VCOUNT:       return stat->scanline;
 
         // REG_TM0D
-        case REG_TM0D    : return timer->Read(0) >> 0 & 0xFF;
-        case REG_TM0D + 1: return timer->Read(0) >> 8 & 0xFF;
+        case REG_TM0D:         return timer->Read(0) >> 0 & 0xFF;
+        case REG_TM0D + 1:     return timer->Read(0) >> 8 & 0xFF;
 
         // REG_TM1D
-        case REG_TM1D    : return timer->Read(1) >> 0 & 0xFF;
-        case REG_TM1D + 1: return timer->Read(1) >> 8 & 0xFF;
+        case REG_TM1D:         return timer->Read(1) >> 0 & 0xFF;
+        case REG_TM1D + 1:     return timer->Read(1) >> 8 & 0xFF;
 
         // REG_TM2D
-        case REG_TM2D    : return timer->Read(2) >> 0 & 0xFF;
-        case REG_TM2D + 1: return timer->Read(2) >> 8 & 0xFF;
+        case REG_TM2D:         return timer->Read(2) >> 0 & 0xFF;
+        case REG_TM2D + 1:     return timer->Read(2) >> 8 & 0xFF;
 
         // REG_TM3D
-        case REG_TM3D    : return timer->Read(3) >> 0 & 0xFF;
-        case REG_TM3D + 1: return timer->Read(3) >> 8 & 0xFF;
+        case REG_TM3D:         return timer->Read(3) >> 0 & 0xFF;
+        case REG_TM3D + 1:     return timer->Read(3) >> 8 & 0xFF;
 
         // REG_KEYINPUT
-        case REG_KEYINPUT    : return gamepad->keys.raw >> 0 & 0xFF;
+        case REG_KEYINPUT:     return gamepad->keys.raw >> 0 & 0xFF;
         case REG_KEYINPUT + 1: return gamepad->keys.raw >> 8 & 0xFF;
 
         default:
@@ -362,7 +349,7 @@ void Memory::Write8(u32 address, u8 value)
         case 0x7:
             address &= MEM_OAM_END;
 
-            if (!stat->dispcnt.hb && stat->displaystat.in_hBlank)
+            if (!stat->dispcnt.hb && stat->dispstat.in_hBlank)
                 return;
 
             break;
@@ -414,137 +401,97 @@ void Memory::Write8(u32 address, u8 value)
 
     switch (address)
     {
-        // REG_DISPCNT
-        case REG_DISPCNT:
-            stat->dispcnt.mode                  = value >> 0 & 0x7; // bits 0-2
-            stat->dispcnt.gb                    = value >> 3 & 0x1; // bit 3
-            stat->dispcnt.ps                    = value >> 4 & 0x1; // bit 4
-            stat->dispcnt.hb                    = value >> 5 & 0x1; // bit 5
-            stat->dispcnt.obj_map_mode          = value >> 6 & 0x1; // bit 6
-            stat->dispcnt.fb                    = value >> 7 & 0x1; // bit 7
-        break;
-
+        case REG_DISPCNT:   [[fallthrough]];
         case REG_DISPCNT + 1:
-            stat->bgcnt[0].enabled             = value >> 0 & 0x1; // bit 8
-            stat->bgcnt[1].enabled             = value >> 1 & 0x1; // bit 9
-            stat->bgcnt[2].enabled             = value >> 2 & 0x1; // bit A
-            stat->bgcnt[3].enabled             = value >> 3 & 0x1; // bit B
-            stat->dispcnt.obj_enabled           = value >> 4 & 0x1; // bit C
-            stat->dispcnt.win_enabled           = value >> 5 & 0x7; // bits D-F
-        break;
+            stat->dispcnt.raw = (memory[REG_DISPCNT + 1] << 8) | (memory[REG_DISPCNT]);
+
+            // bgs enabled
+            stat->bgcnt[0].enabled = stat->dispcnt.bg_enabled & 0x1;
+            stat->bgcnt[1].enabled = stat->dispcnt.bg_enabled & 0x2;
+            stat->bgcnt[2].enabled = stat->dispcnt.bg_enabled & 0x4;
+            stat->bgcnt[3].enabled = stat->dispcnt.bg_enabled & 0x8;
+            break;
 
         // REG_DISPSTAT
         case REG_DISPSTAT:
             // skip bits 0-2, unwritable
-            stat->displaystat.vbi = value >> 3 & 1;
-            stat->displaystat.hbi = value >> 4 & 1;
-            stat->displaystat.vci = value >> 5 & 1;
-        break;
+            stat->dispstat.vbi = value >> 3 & 1;
+            stat->dispstat.hbi = value >> 4 & 1;
+            stat->dispstat.vci = value >> 5 & 1;
+            break;
 
         case REG_DISPSTAT + 1:
-            stat->displaystat.vct = value;
-        break;
+            stat->dispstat.vct = value;
+            break;
 
         // REG_BG0CNT
-        case REG_BG0CNT:
-            stat->bgcnt[0].priority      = value >> 0 & 0x3; // bits 0-1
-            stat->bgcnt[0].cbb           = value >> 2 & 0x3; // bits 2-3
-            stat->bgcnt[0].mosaic        = value >> 6 & 0x1; // bit  6
-            stat->bgcnt[0].color_mode    = value >> 7 & 0x1; // bit  7
-        break;
-
+        case REG_BG0CNT:    [[fallthrough]];
         case REG_BG0CNT + 1:
-            stat->bgcnt[0].sbb           = value >> 0 & 0x1F; // bits 8-C
-            stat->bgcnt[0].affine_wrap   = value >> 5 & 0x1;  // bit  D
-            stat->bgcnt[0].size          = value >> 6 & 0x3;  // bits E-F
-        break;
+            stat->bgcnt[0].raw = (memory[REG_BG0CNT + 1] << 8) | (memory[REG_BG0CNT]);
+            break;
 
         // REG_BG1CNT
-        case REG_BG1CNT:
-            stat->bgcnt[1].priority      = value >> 0 & 0x3; // bits 0-1
-            stat->bgcnt[1].cbb           = value >> 2 & 0x3; // bits 2-3
-            stat->bgcnt[1].mosaic        = value >> 6 & 0x1; // bit  6
-            stat->bgcnt[1].color_mode    = value >> 7 & 0x1; // bit  7
-        break;
-
+        case REG_BG1CNT:    [[fallthrough]];
         case REG_BG1CNT + 1:
-            stat->bgcnt[1].sbb           = value >> 0 & 0x1F; // bits 8-C
-            stat->bgcnt[1].affine_wrap   = value >> 5 & 0x1;  // bit  D
-            stat->bgcnt[1].size          = value >> 6 & 0x3;  // bits E-F
-        break;
+            stat->bgcnt[1].raw = (memory[REG_BG1CNT + 1] << 8) | (memory[REG_BG1CNT]);
+            break;
 
         // REG_BG2CNT
-        case REG_BG2CNT:
-            stat->bgcnt[2].priority      = value >> 0 & 0x3; // bits 0-1
-            stat->bgcnt[2].cbb           = value >> 2 & 0x3; // bits 2-3
-            stat->bgcnt[2].mosaic        = value >> 6 & 0x1; // bit  6
-            stat->bgcnt[2].color_mode    = value >> 7 & 0x1; // bit  7
-        break;
-
+        case REG_BG2CNT:    [[fallthrough]];
         case REG_BG2CNT + 1:
-            stat->bgcnt[2].sbb           = value >> 0 & 0x1F; // bits 8-C
-            stat->bgcnt[2].affine_wrap   = value >> 5 & 0x1;  // bit  D
-            stat->bgcnt[2].size          = value >> 6 & 0x3;  // bits E-F
-        break;
+            stat->bgcnt[2].raw = (memory[REG_BG2CNT + 1] << 8) | (memory[REG_BG2CNT]);
+            break;
 
         // REG_BG3CNT
-        case REG_BG3CNT:
-            stat->bgcnt[3].priority      = value >> 0 & 0x3; // bits 0-1
-            stat->bgcnt[3].cbb           = value >> 2 & 0x3; // bits 2-3
-            stat->bgcnt[3].mosaic        = value >> 6 & 0x1; // bit  6
-            stat->bgcnt[3].color_mode    = value >> 7 & 0x1; // bit  7
-        break;
-
+        case REG_BG3CNT:    [[fallthrough]];
         case REG_BG3CNT + 1:
-            stat->bgcnt[3].sbb           = value >> 0 & 0x1F; // bits 8-C
-            stat->bgcnt[3].affine_wrap   = value >> 5 & 0x1;  // bit  D
-            stat->bgcnt[3].size          = value >> 6 & 0x3;  // bits E-F
-        break;
+            stat->bgcnt[3].raw = (memory[REG_BG3CNT + 1] << 8) | (memory[REG_BG3CNT]);
+            break;
 
         // REG_BG0HOFS
-        case REG_BG0HOFS:
+        case REG_BG0HOFS:   [[fallthrough]];
         case REG_BG0HOFS + 1:
             stat->bgcnt[0].hoff = (memory[REG_BG0HOFS + 1] << 8) | (memory[REG_BG0HOFS]);
             break;
 
         // REG_BG0VOFS
-        case REG_BG0VOFS:
+        case REG_BG0VOFS:   [[fallthrough]];
         case REG_BG0VOFS + 1:
             stat->bgcnt[0].voff = (memory[REG_BG0VOFS + 1] << 8) | (memory[REG_BG0VOFS]);
             break;
 
         // REG_BG1HOFS
-        case REG_BG1HOFS:
+        case REG_BG1HOFS:   [[fallthrough]];
         case REG_BG1HOFS + 1:
             stat->bgcnt[1].hoff = (memory[REG_BG1HOFS + 1] << 8) | (memory[REG_BG1HOFS]);
             break;
 
         // REG_BG1VOFS
-        case REG_BG1VOFS:
+        case REG_BG1VOFS:   [[fallthrough]];
         case REG_BG1VOFS + 1:
             stat->bgcnt[1].voff = (memory[REG_BG1VOFS + 1] << 8) | (memory[REG_BG1VOFS]);
             break;
 
         // REG_BG2HOFS
-        case REG_BG2HOFS:
+        case REG_BG2HOFS:   [[fallthrough]];
         case REG_BG2HOFS + 1:
             stat->bgcnt[2].hoff = (memory[REG_BG2HOFS + 1] << 8) | (memory[REG_BG2HOFS]);
             break;
 
         // REG_BG2VOFS
-        case REG_BG2VOFS:
+        case REG_BG2VOFS:   [[fallthrough]];
         case REG_BG2VOFS + 1:
             stat->bgcnt[2].voff = (memory[REG_BG2VOFS + 1] << 8) | (memory[REG_BG2VOFS]);
             break;
 
         // REG_BG3HOFS
-        case REG_BG3HOFS:
+        case REG_BG3HOFS:   [[fallthrough]];
         case REG_BG3HOFS + 1:
             stat->bgcnt[3].hoff = (memory[REG_BG3HOFS + 1] << 8) | (memory[REG_BG3HOFS]);
             break;
 
         // REG_BG3VOFS
-        case REG_BG3VOFS:
+        case REG_BG3VOFS:   [[fallthrough]];
         case REG_BG3VOFS + 1:
             stat->bgcnt[3].voff = (memory[REG_BG3VOFS + 1] << 8) | (memory[REG_BG3VOFS]);
             break;
@@ -565,36 +512,36 @@ void Memory::Write8(u32 address, u8 value)
                 case 1: s_cycles = 1; break;
             }
 
-        break;
+            break;
 
         // REG_BG2X
-        case REG_BG2X + 0:
-        case REG_BG2X + 1:
-        case REG_BG2X + 2:
+        case REG_BG2X + 0:  [[fallthrough]];
+        case REG_BG2X + 1:  [[fallthrough]];
+        case REG_BG2X + 2:  [[fallthrough]];
         case REG_BG2X + 3:
             stat->bgcnt[2].dx = (memory[REG_BG2X + 3] << 24) | (memory[REG_BG2X + 2] << 16) | (memory[REG_BG2X + 1] << 8) | (memory[REG_BG2X]);
             break;
 
         // REG_BG2Y
-        case REG_BG2Y + 0:
-        case REG_BG2Y + 1:
-        case REG_BG2Y + 2:
+        case REG_BG2Y + 0:  [[fallthrough]];
+        case REG_BG2Y + 1:  [[fallthrough]];
+        case REG_BG2Y + 2:  [[fallthrough]];
         case REG_BG2Y + 3:
             stat->bgcnt[2].dy = (memory[REG_BG2Y + 3] << 24) | (memory[REG_BG2Y + 2] << 16) | (memory[REG_BG2Y + 1] << 8) | (memory[REG_BG2Y]);
             break;
 
         // REG_BG3X
-        case REG_BG3X + 0:
-        case REG_BG3X + 1:
-        case REG_BG3X + 2:
+        case REG_BG3X + 0:  [[fallthrough]];
+        case REG_BG3X + 1:  [[fallthrough]];
+        case REG_BG3X + 2:  [[fallthrough]];
         case REG_BG3X + 3:
             stat->bgcnt[3].dx = (memory[REG_BG3X + 3] << 24) | (memory[REG_BG3X + 2] << 16) | (memory[REG_BG3X + 1] << 8) | (memory[REG_BG3X]);
             break;
 
         // REG_BG3Y
-        case REG_BG3Y + 0:
-        case REG_BG3Y + 1:
-        case REG_BG3Y + 2:
+        case REG_BG3Y + 0:  [[fallthrough]];
+        case REG_BG3Y + 1:  [[fallthrough]];
+        case REG_BG3Y + 2:  [[fallthrough]];
         case REG_BG3Y + 3:
             stat->bgcnt[3].dy = (memory[REG_BG3Y + 3] << 24) | (memory[REG_BG3Y + 2] << 16) | (memory[REG_BG3Y + 1] << 8) | (memory[REG_BG3Y]);
             break;
@@ -602,7 +549,7 @@ void Memory::Write8(u32 address, u8 value)
         // DMA
 
         // REG_DMA0CNT
-        case REG_DMA0CNT:
+        case REG_DMA0CNT:   [[fallthrough]];
         case REG_DMA0CNT + 1:
             dma[0].num_transfers = (memory[REG_DMA0CNT + 1] << 8) | (memory[REG_DMA0CNT]);
             break;
@@ -631,7 +578,7 @@ void Memory::Write8(u32 address, u8 value)
             break;
 
         // REG_DMA1CNT
-        case REG_DMA1CNT:
+        case REG_DMA1CNT:   [[fallthrough]];
         case REG_DMA1CNT + 1:
             dma[1].num_transfers = (memory[REG_DMA1CNT + 1] << 8) | (memory[REG_DMA1CNT]);
             break;
@@ -660,7 +607,7 @@ void Memory::Write8(u32 address, u8 value)
             break;
 
         // REG_DMA2CNT
-        case REG_DMA2CNT:
+        case REG_DMA2CNT:   [[fallthrough]];
         case REG_DMA2CNT + 1:
             dma[2].num_transfers = (memory[REG_DMA2CNT + 1] << 8) | (memory[REG_DMA2CNT]);
             break;
@@ -689,7 +636,7 @@ void Memory::Write8(u32 address, u8 value)
             break;
 
         // REG_DMA3CNT
-        case REG_DMA3CNT:
+        case REG_DMA3CNT:   [[fallthrough]];
         case REG_DMA3CNT + 1:
             dma[3].num_transfers = (memory[REG_DMA3CNT + 1] << 8) | (memory[REG_DMA3CNT]);
             break;
@@ -720,25 +667,25 @@ void Memory::Write8(u32 address, u8 value)
         // timers
 
         // REG_TM0D
-        case REG_TM0D:
+        case REG_TM0D:  [[fallthrough]];
         case REG_TM0D + 1:
             timer->Write(0, memory[REG_TM0D + 1] << 8 | memory[REG_TM0D]);
             break;
         
         // REG_TM1D
-        case REG_TM1D:
+        case REG_TM1D:  [[fallthrough]];
         case REG_TM1D + 1:
             timer->Write(1, memory[REG_TM1D + 1] << 8 | memory[REG_TM1D]);
             break;
         
         // REG_TM2D
-        case REG_TM2D:
+        case REG_TM2D:  [[fallthrough]];
         case REG_TM2D + 1:
             timer->Write(2, memory[REG_TM2D + 1] << 8 | memory[REG_TM2D]);
             break;
         
         // REG_TM3D
-        case REG_TM3D:
+        case REG_TM3D:  [[fallthrough]];
         case REG_TM3D + 1:
             timer->Write(3, memory[REG_TM3D + 1] << 8 | memory[REG_TM3D]);
             break;
@@ -764,7 +711,7 @@ void Memory::Write8(u32 address, u8 value)
             break;
         
         // REG_IF
-        case REG_IF:
+        case REG_IF:    [[fallthrough]];
         case REG_IF + 1:
             memory[address] &= ~value;
             break;

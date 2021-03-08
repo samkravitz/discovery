@@ -184,7 +184,7 @@ void Arm7Tdmi::AluThumb(u16 instruction)
         case 0b1001: // NEG
             result = 0 - op1;
             SetRegister(Rd, result);
-            UpdateFlagsSubtraction(op2, op1, result);
+            UpdateFlagsSubtraction(0, op1, result);
             break;
 
         case 0b1010: // CMP

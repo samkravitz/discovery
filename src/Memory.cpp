@@ -303,15 +303,6 @@ u8 Memory::Read8(u32 address)
         case REG_KEYINPUT    : return gamepad->keys.raw >> 0 & 0xFF;
         case REG_KEYINPUT + 1: return gamepad->keys.raw >> 8 & 0xFF;
 
-        // REG_BG3Y
-        case REG_BG2Y + 0:
-        case REG_BG2Y + 1:
-        case REG_BG2Y + 2:
-        case REG_BG2Y + 3:
-            std::cout << "HI\n";
-            return memory[address];
-            break;
-
         default:
             return memory[address];
     }
@@ -333,11 +324,6 @@ void Memory::Write16(u32 address, u16 value)
 
 void Memory::Write8(u32 address, u8 value)
 {
-
-    if (address == REG_BG2X || address == REG_BG2Y)
-    {
-        //LOG("HI\n");
-    }
 
     switch (address >> 24)
     {

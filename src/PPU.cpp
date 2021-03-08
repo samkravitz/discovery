@@ -389,17 +389,13 @@ void PPU::RenderScanlineAffine(int bg)
         case 0b11: width = height = 1024; break;
     }
 
-    int dx_raw, dy_raw;
+    int dx_raw = bgcnt.dx;
+    int dy_raw = bgcnt.dy;
     float dx, dy; // displacement vector
     float pa, pb, pc, pd; // P matrix
     switch (bg)
     {
         case 2:
-            dx_raw = bgcnt.dx;
-            dy_raw = bgcnt.dy;
-            //dx_raw = mem->Read32Unsafe(REG_BG2X);
-            //dy_raw = mem->Read32Unsafe(REG_BG2Y);
-
             pa = (s16) mem->Read32Unsafe(REG_BG2PA) / 256.0;
             pb = (s16) mem->Read32Unsafe(REG_BG2PB) / 256.0;
             pc = (s16) mem->Read32Unsafe(REG_BG2PC) / 256.0;
@@ -407,11 +403,6 @@ void PPU::RenderScanlineAffine(int bg)
             break;
 
         case 3:
-            //dx_raw = bgcnt.dx;
-            //dy_raw = bgcnt.dy;
-            dx_raw = mem->Read32Unsafe(REG_BG3X);
-            dy_raw = mem->Read32Unsafe(REG_BG3Y);
-
             pa = (s16) mem->Read32Unsafe(REG_BG3PA) / 256.0;
             pb = (s16) mem->Read32Unsafe(REG_BG3PB) / 256.0;
             pc = (s16) mem->Read32Unsafe(REG_BG3PC) / 256.0;
@@ -420,10 +411,9 @@ void PPU::RenderScanlineAffine(int bg)
     }
 
     //LOG("{}\n", pd);
-    //int dx2, dy2;
 
     dx = (float) (dx_raw >> 8) + ((dx_raw & 0xFF) / 256.0f);
-    dy = (float) (dy_raw >> 8) + ((dx_raw & 0xff) / 256.0f);
+    dy = (float) (dy_raw >> 8) + ((dx_raw & 0xFF) / 256.0f);
 
     //dx += pb * scanline;
     //dy += pd * scanline;
@@ -485,9 +475,6 @@ void PPU::RenderScanlineAffine(int bg)
         if (pixel != TRANSPARENT)
             scanline_buffer[x] = U16ToU32Color(pixel);
     }
-
-    mem->Write32Unsafe(REG_BG2X, mem->Read32Unsafe(REG_BG2X) + pb);
-    mem->Write32Unsafe(REG_BG2Y, mem->Read32Unsafe(REG_BG2Y) + pd);
 }
 
 // render the current scanline for bitmap modes

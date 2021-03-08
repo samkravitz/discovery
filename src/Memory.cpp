@@ -266,7 +266,7 @@ u8 Memory::Read8(u32 address)
     switch (address)
     {
         case REG_DISPSTAT:     return stat->dispstat.raw >> 0 & 0xFF;
-        case REG_DISPSTAT + 1: return stat->dispstat.vct >> 8 & 0xFF;
+        case REG_DISPSTAT + 1: return stat->dispstat.raw >> 8 & 0xFF;
 
         case REG_VCOUNT:       return stat->scanline;
 

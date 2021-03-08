@@ -450,7 +450,7 @@ void PPU::RenderScanlineAffine(int bg)
         px = pa * (x1 - x0) + pb * (y1 - y0) + x0;
         py = pc * (x1 - x0) + pd * (y1 - y0) + y0;
 
-
+        // wrap
         if (bgcnt.affine_wrap == 1)
         {
             if (px < 0)

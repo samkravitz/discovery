@@ -303,6 +303,15 @@ u8 Memory::Read8(u32 address)
         case REG_KEYINPUT    : return gamepad->keys.raw >> 0 & 0xFF;
         case REG_KEYINPUT + 1: return gamepad->keys.raw >> 8 & 0xFF;
 
+        // REG_BG3Y
+        case REG_BG2Y + 0:
+        case REG_BG2Y + 1:
+        case REG_BG2Y + 2:
+        case REG_BG2Y + 3:
+            std::cout << "HI\n";
+            return memory[address];
+            break;
+
         default:
             return memory[address];
     }

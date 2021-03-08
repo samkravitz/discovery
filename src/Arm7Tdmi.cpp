@@ -35,9 +35,7 @@ Arm7Tdmi::Arm7Tdmi(Memory *mem) : mem(mem)
 
     pipeline_full = false;
     cycles = 0;
-    current_interrupt = 0;
     in_interrupt  = false;
-    swi_vblank_intr = false;
 
     bios_read_state[0] = 0xE129F000; // 0xDC  + 8 startup 
     bios_read_state[1] = 0xE25EF004; // 0x134 + 8 irq execute
@@ -1349,7 +1347,7 @@ inline bool Arm7Tdmi::MemCheckWrite(u32 &address)
     // add cycles for expensive memory accesses
 
     // +1 cycles for VRAM accress while not in v-blank
-    if (address >= MEM_PALETTE_RAM_START && address <= MEM_OAM_END && !mem->stat->displaystat.in_vBlank)
+    if (address >= MEM_PALETTE_RAM_START && address <= MEM_OAM_END && !mem->stat->dispstat.in_vBlank)
         cycles++;
     
     // bios write
@@ -1378,6 +1376,6 @@ bool Arm7Tdmi::CheckState()
     return valid;
 }
 
-#include "HandlerArm.cpp"
-#include "HandlerThumb.cpp"
-#include "swi.cpp"
+// #include "HandlerArm.cpp"
+// #include "HandlerThumb.cpp"
+// #include "swi.cpp"

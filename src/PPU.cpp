@@ -120,10 +120,10 @@ void PPU::Tick()
         if (scanline < SCREEN_HEIGHT)
             RenderScanline();
 
-        stat->displaystat.in_hBlank = true;
+        stat->dispstat.in_hBlank = true;
 
         // fire HBlank interrupt if necessary
-        if (stat->displaystat.hbi)
+        if (stat->dispstat.hbi)
         {
             mem->memory[REG_IF] |= IRQ_HBLANK;
             //LOG(LogLevel::Debug, "HBlank interrupt\n");
@@ -145,10 +145,10 @@ void PPU::Tick()
         if (scanline == VDRAW)
         {
             Render();
-            stat->displaystat.in_vBlank = true;
+            stat->dispstat.in_vBlank = true;
 
             // fire Vblank interrupt if necessary
-            if (stat->displaystat.vbi)
+            if (stat->dispstat.vbi)
             {
                 //LOG(LogLevel::Debug, "VBlank interrupt\n");
                 mem->memory[REG_IF] |= IRQ_VBLANK;
@@ -191,7 +191,7 @@ void PPU::Tick()
         // completed full refresh
         if (scanline == VDRAW + VBLANK)
         {
-            stat->displaystat.in_vBlank = false;
+            stat->dispstat.in_vBlank = false;
             scanline = 0;
             stat->scanline = 0;
         }
@@ -203,13 +203,13 @@ void PPU::Tick()
         }
 
         // scanline has reached trigger value
-        if (scanline == stat->displaystat.vct)
+        if (scanline == stat->dispstat.vct)
         {
             // set trigger status
-            stat->displaystat.vcs = 1;
+            stat->dispstat.vcs = 1;
 
             // scanline interrupt is triggered if requested
-            if (stat->displaystat.vci)
+            if (stat->dispstat.vci)
             {
                 mem->memory[REG_IF] |= IRQ_VCOUNT;
                 //std::cout << "Scanline interrupt\n";
@@ -220,11 +220,11 @@ void PPU::Tick()
         // scanline is not equal to trigger value, reset this bit
         else
         {
-            stat->displaystat.vcs = 0;
+            stat->dispstat.vcs = 0;
         }
 
         cycles = 0;
-        stat->displaystat.in_hBlank = false;
+        stat->dispstat.in_hBlank = false;
     }
 }
 
@@ -389,53 +389,44 @@ void PPU::RenderScanlineAffine(int bg)
         case 0b11: width = height = 1024; break;
     }
 
-    u32 dx_raw, dy_raw;
+    int dx_raw = bgcnt.dx;
+    int dy_raw = bgcnt.dy;
     float dx, dy; // displacement vector
     float pa, pb, pc, pd; // P matrix
     switch (bg)
     {
         case 2:
-            dx_raw = mem->Read32(REG_BG2X);
-            dy_raw = mem->Read32(REG_BG2Y);
-
-            pa = (s16) mem->Read32(REG_BG2PA) / 256.0;
-            pb = (s16) mem->Read32(REG_BG2PB) / 256.0;
-            pc = (s16) mem->Read32(REG_BG2PC) / 256.0;
-            pd = (s16) mem->Read32(REG_BG2PD) / 256.0;
+            pa = (s16) mem->Read32Unsafe(REG_BG2PA) / 256.0;
+            pb = (s16) mem->Read32Unsafe(REG_BG2PB) / 256.0;
+            pc = (s16) mem->Read32Unsafe(REG_BG2PC) / 256.0;
+            pd = (s16) mem->Read32Unsafe(REG_BG2PD) / 256.0;
             break;
 
         case 3:
-            dx_raw = mem->Read32(REG_BG3X);
-            dy_raw = mem->Read32(REG_BG3Y);
-
-            pa = (s16) mem->Read32(REG_BG3PA) / 256.0;
-            pb = (s16) mem->Read32(REG_BG3PB) / 256.0;
-            pc = (s16) mem->Read32(REG_BG3PC) / 256.0;
-            pd = (s16) mem->Read32(REG_BG3PD) / 256.0;
+            pa = (s16) mem->Read32Unsafe(REG_BG3PA) / 256.0;
+            pb = (s16) mem->Read32Unsafe(REG_BG3PB) / 256.0;
+            pc = (s16) mem->Read32Unsafe(REG_BG3PC) / 256.0;
+            pd = (s16) mem->Read32Unsafe(REG_BG3PD) / 256.0;
             break;
     }
 
-    dx = (float) (dx_raw >> 8 & 0x7FFFF) + ((dx_raw & 0xFF) / 256.0);
-    dy = (float) (dy_raw >> 8 & 0x7FFFF) + ((dy_raw & 0xFF) / 256.0);
+    //LOG("{}\n", pd);
 
-    if (dx_raw & 0x8000000)
-        dx *= -1.0;
-    if (dy_raw & 0x8000000)
-        dy *= -1.0;
+    dx = (float) (dx_raw >> 8) + ((dx_raw & 0xFF) / 256.0f);
+    dy = (float) (dy_raw >> 8) + ((dx_raw & 0xFF) / 256.0f);
 
+    //dx += pb * scanline;
+    //dy += pd * scanline;
 
-    LOG("{} {} {} {}\n", (float) dx, dx_raw, (float) dy, dy_raw);
-
-
-    int px0 = width / 2;
-    int px, py;
-    int x0 = dx, y0 = dy;
-
+    float x0 = dx, y0 = dy;
+    int   x1,      y1 = scanline + dy;
+    int   px,      py;
+    
     // map position
-    int map_x, map_y = scanline;
+    int map_x, map_y;
 
     // tile coordinates (in map)
-    int tile_x, tile_y = map_y / 8; // 8 px per tile
+    int tile_x, tile_y;
 
     int se_index;
     int pixel;
@@ -443,15 +434,37 @@ void PPU::RenderScanlineAffine(int bg)
 
     for (int x = 0; x < SCREEN_WIDTH; ++x)
     {
-        px = pa * (x - x0) + pb * (map_y - y0) + x0;
-        py = pc * (x - x0) + pd * (map_y - y0) + y0;
+        x1 = x + dx;
 
-        // transformmed coordinate is out of bounds
-        if (px >= SCREEN_WIDTH || py >= SCREEN_HEIGHT) continue;
-        if (px < 0             || py < 0)              continue;
+        // affine transform
+        px = pa * (x1 - x0) + pb * (y1 - y0) + x0;
+        py = pc * (x1 - x0) + pd * (y1 - y0) + y0;
 
-        map_x = x;
+        // wrap
+        if (bgcnt.affine_wrap == 1)
+        {
+            if (px < 0)
+                px = width  - std::abs(px);
+            if (py < 0)
+                py = height - std::abs(py);
+
+            px %=  width;
+            py %=  height;
+        }
+
+        // no wrap
+        else
+        {
+            // transformmed coordinate is out of bounds
+            if (px >= width || py >= height) continue;
+            if (px < 0      || py < 0)       continue;
+        }
+        
+
+        map_x = px;
+        map_y = py;
         tile_x = map_x / 8; // 8 px per tile
+        tile_y = map_y / 8;
 
         se_index = mem->Read8((MEM_VRAM_START + bgcnt.sbb * SCREENBLOCK_LEN) + tile_y * (width / 8) + tile_x);
         tile_addr = (MEM_VRAM_START + bgcnt.cbb * CHARBLOCK_LEN) + (se_index * 0x40);

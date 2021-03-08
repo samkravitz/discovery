@@ -21,30 +21,30 @@ constexpr u32 REG_BG2CNT   = 0x400000C;
 constexpr u32 REG_BG3CNT   = 0x400000E;
 
 constexpr u32 REG_BG0HOFS  = 0x4000010;
-constexpr u32 REG_BG1HOFS  = 0x4000014;
-constexpr u32 REG_BG2HOFS  = 0x4000018;
-constexpr u32 REG_BG3HOFS  = 0x400001C;
-
 constexpr u32 REG_BG0VOFS  = 0x4000012;
+constexpr u32 REG_BG1HOFS  = 0x4000014;
 constexpr u32 REG_BG1VOFS  = 0x4000016;
+constexpr u32 REG_BG2HOFS  = 0x4000018;
 constexpr u32 REG_BG2VOFS  = 0x400001A;
+constexpr u32 REG_BG3HOFS  = 0x400001C;
 constexpr u32 REG_BG3VOFS  = 0x400001E;
 
 // affine BG registers
-constexpr u32 REG_BG2X     = 0x4000028;
-constexpr u32 REG_BG2Y     = 0x400002C;
 constexpr u32 REG_BG2PA    = 0x4000020;
 constexpr u32 REG_BG2PB    = 0x4000022;
 constexpr u32 REG_BG2PC    = 0x4000024;
 constexpr u32 REG_BG2PD    = 0x4000026;
+constexpr u32 REG_BG2X     = 0x4000028;
+constexpr u32 REG_BG2Y     = 0x400002C;
 
-constexpr u32 REG_BG3X     = 0x4000038;
-constexpr u32 REG_BG3Y     = 0x400003C;
 constexpr u32 REG_BG3PA    = 0x4000030;
 constexpr u32 REG_BG3PB    = 0x4000032;
 constexpr u32 REG_BG3PC    = 0x4000034;
 constexpr u32 REG_BG3PD    = 0x4000036;
+constexpr u32 REG_BG3X     = 0x4000038;
+constexpr u32 REG_BG3Y     = 0x400003C;
 
+// window registers
 constexpr u32 REG_WIN0H    = 0x4000040;
 constexpr u32 REG_WIN1H    = 0x4000042;
 constexpr u32 REG_WIN0V    = 0x4000044;

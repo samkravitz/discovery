@@ -9,6 +9,10 @@
  */
 
 #pragma once
+
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_audio.h>
+
 #include "Memory.h"
 
 // Direct Sound modes
@@ -17,16 +21,18 @@ constexpr int DS_MODE_INTERRUPT = 1;
 
 class APU
 {
-  	public:
-		APU(Memory *mem);
-		~APU();
+	public:
+	APU(Memory *mem);
+	~APU();
 
-		Memory *mem;
+	Memory *mem;
 
-		void GenerateChannel1();
-		void GenerateChannel2();
-		void GenerateChannel3();
-		void GenerateChannel4();
-		void GenerateDirectSoundA();
-		void GenerateDirectSoundB();
+	void GenerateChannel1();
+	void GenerateChannel2();
+	void GenerateChannel3();
+	void GenerateChannel4();
+	void GenerateDirectSoundA();
+	void GenerateDirectSoundB();
 };
+
+void AudioCallback(void*, unsigned char*, int);

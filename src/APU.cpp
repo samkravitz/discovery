@@ -16,14 +16,12 @@
 #include "APU.h"
 #include "util.h"
 
+const int AMPLITUDE = 28000;
+
 APU::APU(Memory *mem)
 :mem(mem)
 {
 	SDL_Init(SDL_INIT_AUDIO);
-	for(int i = 0; i < SDL_GetNumAudioDrivers(); ++i) {
-		const char *driver_name = SDL_GetAudioDriver(i);
-		std::cout << "driver: " << driver_name << std::endl;
-	}
 
 	SDL_AudioSpec requested;
 	requested.freq = 44100;
@@ -35,17 +33,20 @@ APU::APU(Memory *mem)
 
 	SDL_AudioSpec obtained;
 
-	int driver_id;
-	if((driver_id = SDL_OpenAudioDevice(nullptr, 0, &requested, &obtained, SDL_AUDIO_ALLOW_ANY_CHANGE)) <= 0) {
-		std::cout << "SDL Error: " << SDL_GetError() << std::endl;
-	}
-	std::cout << "selected driver: " << driver_id << std::endl;
-
+	s8 driver_id = SDL_OpenAudioDevice( nullptr, 0, &requested, &obtained, SDL_AUDIO_ALLOW_ANY_CHANGE);
+	if(driver_id <= 0) std::cout << "SDL Error: " << SDL_GetError() << std::endl;
 	SDL_PauseAudioDevice(driver_id, 0);
-	// for(int freq = 440; freq < 880; freq += 10)
-	// 	SDL_Delay(10);
-	// for(int freq = 870; freq > 450; freq -= 10)
-	// 	SDL_Delay(10);
+
+	// sound output control
+	u16 sound_cnt_l = this->mem->Read16(REG_SOUNDCNT_L);
+	u16 sound_cnt_h = this->mem->Read16(REG_SOUNDCNT_H);
+	u16 sound_cnt_x = this->mem->Read8(REG_SOUNDCNT_X);
+
+	std::cout << "sound_cnt_l: " << sound_cnt_l << std::endl;
+	std::cout << "sound_cnt_h: " << sound_cnt_h << std::endl;
+	std::cout << "sound_cnt_x: " << sound_cnt_x << std::endl;
+	std::cout << "SDL_SOUNDISPLAYING: " << SDL_AUDIO_PLAYING << std::endl;
+	
 }
 
 APU::~APU()
@@ -93,18 +94,11 @@ void APU::GenerateChannel1(s16 *stream, int buffer_len)
 	std::cout << "timed_mode: " << timed_mode << std::endl;
 	std::cout << "sound_reset: " << sound_reset << std::endl;
 
-	bool is_playing = false;
-	
-	if(timed_mode) {
-		is_playing = false;
-	} else {
-		is_playing = true;
-	}
+	std::cout << "generate stream: " << stream << std::endl;
 
-	if(is_playing) {
-		std::cout << "audio should be playing i think" << std::endl;
-		SDL_PauseAudio(0);
-		SDL_Delay(2000);
+
+	for(int i = 0; i < buffer_len; i++) {
+		std::cout << "stream[" << i << "]: " << stream[i] << std::endl;
 	}
 }
 
@@ -115,11 +109,18 @@ void AudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len)
 	s16 *stream = (s16*) _stream_buffer;
 	int buffer_len = _buffer_len / 2;
 	APU *apu = (APU*) _apu_ref;
-	std::cout << "stream buff:" << _stream_buffer << std::endl;
+	std::cout << "apu buff:" << apu << std::endl;
+	std::cout << "stream buff:" << stream << std::endl;
+	std::cout << "length of buff:" << buffer_len << std::endl;
 	std::vector<s16> ch1_stream(buffer_len);
 	std::vector<s16> ch2_stream(buffer_len);
 	std::vector<s16> ch3_stream(buffer_len);
 	std::vector<s16> ch4_stream(buffer_len);
 
 	apu->GenerateChannel1(&ch1_stream[0], buffer_len);
+
+	for(int i = 0; i < buffer_len; i++) {
+		s32 merged_stream_data = ch1_stream[i];
+		stream[i] = merged_stream_data;
+	}
 }

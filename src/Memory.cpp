@@ -775,7 +775,7 @@ void Memory::_Dma(int n)
 
 void Memory::Dma0()
 {
-    LOG(LogLevel::Message, "DMA 0\n");
+    // LOG(LogLevel::Message, "DMA 0\n");
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = Read32Unsafe(REG_DMA0SAD) & 0x7FFFFFF; // 27 bit
     dest_ptr = original_dest = Read32Unsafe(REG_DMA0DAD) & 0x7FFFFFF; // 27 bit;

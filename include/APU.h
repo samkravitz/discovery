@@ -27,7 +27,7 @@ class APU
 
 	Memory *mem;
 
-	void GenerateChannel1();
+	void GenerateChannel1(s16*, int);
 	void GenerateChannel2();
 	void GenerateChannel3();
 	void GenerateChannel4();

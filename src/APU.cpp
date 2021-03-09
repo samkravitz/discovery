@@ -29,7 +29,6 @@ APU::APU(Memory *mem)
 	SDL_AudioSpec obtained;
 	SDL_OpenAudio(&requested, &obtained);
 	SDL_PauseAudio(0);
-	std::cout << "initialised APU" << std::endl;
 }
 
 APU::~APU()

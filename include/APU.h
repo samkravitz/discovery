@@ -28,11 +28,11 @@ class APU
 	Memory *mem;
 
 	void GenerateChannel1(s16*, int);
-	void GenerateChannel2();
-	void GenerateChannel3();
-	void GenerateChannel4();
-	void GenerateDirectSoundA();
-	void GenerateDirectSoundB();
+	void GenerateChannel2(s16*, int);
+	void GenerateChannel3(s16*, int);
+	void GenerateChannel4(s16*, int);
+	void GenerateDirectSoundA(s16*, int);
+	void GenerateDirectSoundB(s16*, int);
 };
 
 void AudioCallback(void*, unsigned char*, int);

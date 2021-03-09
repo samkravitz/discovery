@@ -39,16 +39,39 @@ APU::~APU()
 
 void APU::GenerateChannel1(s16 *stream, int buffer_len) 
 {
+	// dmg channel 1 sweep control
 	u16 ch1_l = (s16) this->mem->Read8(REG_SOUND1CNT_L);
-	
 	u16 sweep_shifts = util::bitseq<2,0>(ch1_l);
 	u16 sweep_asc_desc = util::bitseq<3,3>(ch1_l);
 	u16 sweep_time = util::bitseq<6,4>(ch1_l);
 	
-	std::cout << "ch1_l: " << ch1_l << std::endl;
 	std::cout << "sweep_shift: " << sweep_shifts << std::endl;
 	std::cout << "sweep_asc_desc: " << sweep_asc_desc << std::endl;
 	std::cout << "sweep_time: " << sweep_time << std::endl;
+
+	// dmg channel 1 wave and envelope control
+	u16 ch1_h = (s16) this->mem->Read16(REG_SOUND1CNT_H);
+	u16 sound_len = util::bitseq<5,0>(ch1_h);
+	u16 wave_duty_cycle = util::bitseq<7,6>(ch1_h);
+	u16 envelope_step_time = util::bitseq<0xA,8>(ch1_h);
+	u16 envelope_mode = util::bitseq<0xB,0xB>(ch1_h);
+	u16 envelope_init_value = util::bitseq<0xF,0xC>(ch1_h);
+
+	std::cout << "sound_len: " << sound_len << std::endl;
+	std::cout << "wave_duty_cycle: " << wave_duty_cycle << std::endl;
+	std::cout << "envelope_step_time: " << envelope_step_time << std::endl;
+	std::cout << "envelope_mode: " << envelope_mode << std::endl;
+	std::cout << "envelope_init_value: " << envelope_init_value << std::endl;
+
+	// dmg channel 1 frequency, reset, loop control
+	u16 ch1_x = (s16) this->mem->Read16(REG_SOUND1CNT_X);
+	u16 sound_freq = util::bitseq<0xA,0>(ch1_x);
+	u16 timed_mode = util::bitseq<0xE,0xE>(ch1_x);
+	u16 sound_reset = util::bitseq<0xF,0xF>(ch1_x);
+
+	std::cout << "sound_freq: " << sound_freq << std::endl;
+	std::cout << "timed_mode: " << timed_mode << std::endl;
+	std::cout << "sound_reset: " << sound_reset << std::endl;
 }
 
 void AudioCallback(void *_apu_ref, unsigned char *_stream, int _buffer_len) 

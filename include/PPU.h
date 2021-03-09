@@ -78,9 +78,12 @@ class PPU
         // oam data structure
         struct ObjAttr
         {
-            // coordinate of top left (x0, y0) & origin 
+            // coordinate of top left (x, y) & origin (x0, y0)
             int x,  y;
             int x0, y0;
+            int qxmin, qxmax;
+            int qx0, qy0;
+            int pxmax, pymax;
 
             int obj_mode;     // 0 - normal render, 1 - affine, 2 - hidden, 3 - double-wide affine
             int gfx_mode;     // 0 - normal, 1 - semi-transparent, 2 - obj window, 3 - illegal

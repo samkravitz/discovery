@@ -27,6 +27,8 @@ class APU
 
 	Memory *mem;
 
+	bool Init();
+	bool Close();
 	void GenerateChannel1(s16*, int);
 	void GenerateChannel2(s16*, int);
 	void GenerateChannel3(s16*, int);
@@ -35,4 +37,4 @@ class APU
 	void GenerateDirectSoundB(s16*, int);
 };
 
-void AudioCallback(void*, unsigned char*, int);
+void AudioCallback(void*, Uint8*, int);

@@ -80,32 +80,8 @@ void PPU::Reset()
     // zero oam data structure
     for (int i = 0; i < NUM_OBJS; ++i)
     {
-        objs[i].obj_mode     = 2; // hidden
-
-        objs[i].x            = 0;
-        objs[i].y            = 0;
-        objs[i].x0           = 0;
-        objs[i].y0           = 0;
-        objs[i].gfx_mode     = 0;
-        objs[i].mosaic       = 0;
-        objs[i].color_mode   = 0;
-        objs[i].size         = 0;
-        objs[i].affine_index = 0;
-        objs[i].h_flip       = 0;
-        objs[i].v_flip       = 0;
-        objs[i].shape        = 0;
-        objs[i].tileno       = 0;
-        objs[i].priority     = 0;
-        objs[i].palbank      = 0;
-        objs[i].width        = 0;
-        objs[i].height       = 0;
-        objs[i].hwidth       = 0;
-        objs[i].hheight      = 0;
-
-        objs[i].pa           = 0.0;
-        objs[i].pb           = 0.0;
-        objs[i].pc           = 0.0;
-        objs[i].pd           = 0.0;
+        std::memset(&objs[i], 0, sizeof(ObjAttr));
+        objs[i].obj_mode = 2; // hidden
     }
 }
 
@@ -551,30 +527,28 @@ void PPU::RenderObj()
             continue;
 
         // obj exists outside current scanline
-        if (scanline < attr->y - attr->height || scanline >= attr->y + attr->height)
-            continue;
+        if (scanline < attr->qy0 - attr->hheight || scanline >= attr->qy0 + attr->hheight)
+             continue;
         
-        int px0 = attr->hwidth; // center of sprite texture
         int qx0 = attr->qx0;      // center of sprite screen space
 
         // x, y coordinate of texture after transformation
         int px, py;
-        int iy = scanline - attr->y;
+        int iy = -attr->hheight + (scanline - attr->y);
 
-        LOG("{} {} {} {}\n", attr->x, attr->y, attr->hheight, attr->hwidth);
-        LOG("{} {} {} {}\n", attr->x0, attr->y0, attr->hheight, attr->hwidth);
+        //LOG("{} {} {} {}\n", attr->x, attr->y, attr->hheight, attr->hwidth);
+        //LOG("{} {} {} {}\n", attr->x0, attr->y0, attr->hheight, attr->hwidth);
 
-        for (int ix = -attr->qxmin; ix < attr->qxmax; ++ix)
+        for (int ix = -attr->hwidth; ix < attr->hwidth; ++ix)
         {
-            px = px0 + ix;
-            py = scanline - attr->y;
-            int x1 = ix + attr->hwidth;
+            px = ix + attr->hwidth;
+            py = iy + attr->hheight;
 
             // transform affine & double wide affine
             if (attr->obj_mode == 1 || attr->obj_mode == 3)
             {
-                px = attr->pa * (x1 - attr->height / 2) + attr->pb * (iy - attr->height / 2) + attr->height / 2;
-                py = attr->pc * (x1 - attr->height / 2) + attr->pd * (iy - attr->height / 2) + attr->height / 2;
+                px = attr->pa * ix + attr->pb * iy + attr->px0;
+                py = attr->pc * ix + attr->pd * iy + attr->py0;
             }
 
             // horizontal / vertical flip
@@ -582,9 +556,10 @@ void PPU::RenderObj()
             if (attr->v_flip) py = attr->height - py - 1;
             
             // transformed coordinate is out of bounds
-            if (px >= attr->pxmax || py >= attr->pymax) continue;
-            if (px < 0            || py < 0            ) continue;
-            if (qx0 + ix < 0      || qx0 + ix >= 240   ) continue;
+            if (px >= attr->width || py  >= attr->height) continue;
+            if (px       < 0      || py  < 0            ) continue;
+            if (qx0 + ix < 0      || qx0 + ix >= 240    ) continue;
+
             
             int tile_x  = px % 8; // x coordinate of pixel within tile
             int tile_y  = py % 8; // y coordinate of pixel within tile
@@ -648,14 +623,14 @@ void PPU::UpdateAttr()
         attr1 = mem->Read16Unsafe(oam_ptr); oam_ptr += 2;
         attr2 = mem->Read16Unsafe(oam_ptr); oam_ptr += 4;
 
-        obj.y           = attr0 >>  0 & 0xFF;
+        obj.y            = attr0 >>  0 & 0xFF;
         obj.obj_mode     = attr0 >>  8 & 0x3;
         obj.gfx_mode     = attr0 >> 10 & 0x3;
         obj.mosaic       = attr0 >> 12 & 0x1;
         obj.color_mode   = attr0 >> 13 & 0x1;
         obj.shape        = attr0 >> 14 & 0x3;
 
-        obj.x           = attr1 >>  0 & 0x1FF;
+        obj.x            = attr1 >>  0 & 0x1FF;
         obj.affine_index = attr1 >>  9 & 0x1F;
         obj.h_flip       = attr1 >> 12 & 0x1;
         obj.v_flip       = attr1 >> 13 & 0x1;
@@ -709,29 +684,15 @@ void PPU::UpdateAttr()
         obj.hwidth  = obj.width / 2;
         obj.hheight = obj.height / 2;
 
-        // x, y of sprite origin
-        obj.x0 = obj.x + obj.hwidth;
-        obj.y0 = obj.y + obj.hheight;
-
-        obj.qxmin =  obj.hwidth;
-        obj.qxmax =  obj.hwidth;
-
-        obj.pxmax =  obj.width;
-        obj.pymax =  obj.height;
-
-        obj.qx0 = obj.x0;
-        obj.qy0 = obj.y0;
+        obj.qx0 = obj.x + obj.hwidth;
+        obj.qy0 = obj.y + obj.hheight;
+        obj.px0 = obj.hwidth;
+        obj.py0 = obj.hheight;
 
         // get affine matrix if necessary
         if (obj.obj_mode == 1 || obj.obj_mode == 3) // affine
         {
             u32 matrix_ptr = MEM_OAM_START + obj.affine_index * 32; // each affine entry is 32 bytes across
-
-            // origin and top left are flipped for affine
-            //obj.x0 = obj.x;
-            //obj.y0 = obj.y;
-            //obj.x  = obj.x0 - obj.hwidth;
-            //obj.y  = obj.y0 - obj.hwidth;
 
             // transform P matrix from 8.8f to float
             // P = [pa pb]
@@ -741,21 +702,14 @@ void PPU::UpdateAttr()
             obj.pc = (s16) mem->Read16(matrix_ptr + 0x16) / 256.0;
             obj.pd = (s16) mem->Read16(matrix_ptr + 0x1E) / 256.0;
 
-           obj.obj_mode = 3;
             // double wide affine
             if (obj.obj_mode == 3)
             {
-                obj.x += obj.hwidth;
-                obj.y += obj.hheight;
                 obj.qx0 += obj.hwidth;
                 obj.qy0 += obj.hheight;
-                obj.pxmax +=  obj.hwidth;
-                obj.pymax +=  obj.hwidth;
-                //obj.x0 += obj.hwidth;
-                //obj.y0 += obj.hheight;
-                //obj.hwidth  *= 2;
-                //obj.hheight *= 2;
-                   
+
+                obj.hwidth  *= 2;
+                obj.hheight *= 2;
             }
 
             // make sure flips are set to zero

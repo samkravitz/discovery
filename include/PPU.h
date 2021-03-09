@@ -78,12 +78,12 @@ class PPU
         // oam data structure
         struct ObjAttr
         {
-            // coordinate of top left (x, y) & origin (x0, y0)
-            int x,  y;
-            int x0, y0;
-            int qxmin, qxmax;
+            // coordinate of top left of sprite
+            int x, y;
+
+            // origin in screen space (q) and texture space (p)
             int qx0, qy0;
-            int pxmax, pymax;
+            int px0, py0;
 
             int obj_mode;     // 0 - normal render, 1 - affine, 2 - hidden, 3 - double-wide affine
             int gfx_mode;     // 0 - normal, 1 - semi-transparent, 2 - obj window, 3 - illegal

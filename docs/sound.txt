@@ -12,3 +12,12 @@ https://web.archive.org/web/20130724194546/http://www.libsdl.org:80/intro.en/usi
 
 tone generator reference
 https://github.com/psycotica0/tone-generator/blob/master/generator.c
+
+// gba audio in depth
+https://www.coranac.com/tonc/text/sndsqr.htm#sec-intro
+
+sdl sine wave generator
+// https://gist.github.com/MasterQ32/46ffd78a6cf261c73a1fddb93a478ebe
+
+sponge bob square wave 
+https://davidgow.net/handmadepenguin/ch8.html

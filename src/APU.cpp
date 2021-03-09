@@ -38,8 +38,15 @@ APU::~APU()
 
 void APU::GenerateChannel1(s16 *stream, int buffer_len) 
 {
-	float ch1_l = (s16) this->mem->Read8(REG_SOUND1CNT_L);
+	int ch1_l = (s16) this->mem->Read8(REG_SOUND1CNT_L);
+	int sweep_shifts = ch1_l & ((1 << 2) - 1);
+	int sweep_asc_desc = ch1_l & ((1 << 3) - 1);
+	int sweep_time = ch1_l & ((1 << 6) - 1);
+	
 	std::cout << "ch1_l: " << ch1_l << std::endl;
+	std::cout << "sweep_shift: " << sweep_shifts << std::endl;
+	std::cout << "sweep_asc_desc: " << sweep_asc_desc << std::endl;
+	std::cout << "sweep_time: " << sweep_time << std::endl;
 }
 
 void AudioCallback(void *_apu_ref, unsigned char *_stream, int _buffer_len) 

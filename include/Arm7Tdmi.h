@@ -21,30 +21,34 @@ class Arm7Tdmi
         Arm7Tdmi(Memory *mem);
         ~Arm7Tdmi();
         
-        // data type for special registers
-        union StatusRegister
-        {
-            struct flags
-            {
-                u8 mode : 5;
-                u8 t : 1;
-                u8 f : 1;
-                u8 i : 1;
-                u32 reserved : 20;
-                u8 v : 1;
-                u8 c : 1;
-                u8 z : 1;
-                u8 n : 1;
-            } flags;
-            u32 raw;
-        };
-
         Memory *mem;
 
         u32  pipeline[3];
         bool pipeline_full;
         bool in_interrupt;
         u32  cycles;
+
+        // data type for special registers
+        struct StatusRegister
+        {
+            union
+            {
+                struct
+                {
+                    u8 mode : 5;
+                    u8 t : 1;
+                    u8 f : 1;
+                    u8 i : 1;
+                    u32 reserved : 20;
+                    u8 v : 1;
+                    u8 c : 1;
+                    u8 z : 1;
+                    u8 n : 1;
+                };
+
+                u32 raw;
+            };
+        };
 
         struct registers
         {
@@ -164,8 +168,8 @@ class Arm7Tdmi
         Mode GetMode();
         void SetMode(Mode);
 
-        State GetState()           { return registers.cpsr.flags.t == 1 ? State::THUMB : State::ARM; }
-        void SetState(State state) { registers.cpsr.flags.t = state == State::THUMB ? 1 : 0; }
+        State GetState()           { return registers.cpsr.t == 1 ? State::THUMB : State::ARM; }
+        void SetState(State state) { registers.cpsr.t = state == State::THUMB ? 1 : 0; }
         
     private:
         // safely interface with memory

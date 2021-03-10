@@ -1020,7 +1020,7 @@ void Arm7Tdmi::SoftwareInterruptArm(u32 instruction)
     u32 old_cpsr = GetRegister(cpsr);
     SetMode(Mode::SVC);
     SetRegister(r14, GetRegister(r15) - 4);
-    registers.cpsr.flags.i = 1;
+    registers.cpsr.i = 1;
     UpdateSPSR(old_cpsr, false); // move up
     SetRegister(r15, 0x08);
     pipeline_full = false;

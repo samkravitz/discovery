@@ -30,8 +30,8 @@ Arm7Tdmi::Arm7Tdmi(Memory *mem) : mem(mem)
     SetState(State::ARM);
 
     // initialize cpsr
-    registers.cpsr.flags.f = 1;
-    registers.cpsr.flags.i = 1;
+    registers.cpsr.f = 1;
+    registers.cpsr.i = 1;
 
     pipeline_full = false;
     cycles = 0;
@@ -55,7 +55,7 @@ Arm7Tdmi::~Arm7Tdmi() { }
 
 Mode Arm7Tdmi::GetMode()
 {
-    switch (registers.cpsr.flags.mode)
+    switch (registers.cpsr.mode)
     {
         case 0b10000: return Mode::USR;
         case 0b10001: return Mode::FIQ;
@@ -65,7 +65,7 @@ Mode Arm7Tdmi::GetMode()
         case 0b11111: return Mode::SYS;
         case 0b11011: return Mode::UND;
         default:
-            LOG(LogLevel::Error, "Undefined mode {}\n", (int) registers.cpsr.flags.mode);
+            LOG(LogLevel::Error, "Undefined mode {}\n", (int) registers.cpsr.mode);
             exit(21);
     } 
 }
@@ -88,13 +88,13 @@ void Arm7Tdmi::SetMode(Mode mode)
 
     switch (mode)
     {
-        case Mode::USR: registers.cpsr.flags.mode = 0b10000; break;
-        case Mode::FIQ: registers.cpsr.flags.mode = 0b10001; break;
-        case Mode::IRQ: registers.cpsr.flags.mode = 0b10010; break;
-        case Mode::SVC: registers.cpsr.flags.mode = 0b10011; break;
-        case Mode::ABT: registers.cpsr.flags.mode = 0b10111; break;
-        case Mode::SYS: registers.cpsr.flags.mode = 0b11111; break;
-        case Mode::UND: registers.cpsr.flags.mode = 0b11011; break;
+        case Mode::USR: registers.cpsr.mode = 0b10000; break;
+        case Mode::FIQ: registers.cpsr.mode = 0b10001; break;
+        case Mode::IRQ: registers.cpsr.mode = 0b10010; break;
+        case Mode::SVC: registers.cpsr.mode = 0b10011; break;
+        case Mode::ABT: registers.cpsr.mode = 0b10111; break;
+        case Mode::SYS: registers.cpsr.mode = 0b11111; break;
+        case Mode::UND: registers.cpsr.mode = 0b11011; break;
     }
 }
 
@@ -102,10 +102,10 @@ u8 Arm7Tdmi::GetConditionCodeFlag(ConditionFlag flag)
 {
     switch (flag)
     {
-        case ConditionFlag::N: return registers.cpsr.flags.n; 
-        case ConditionFlag::Z: return registers.cpsr.flags.z;
-        case ConditionFlag::C: return registers.cpsr.flags.c;
-        case ConditionFlag::V: return registers.cpsr.flags.v;
+        case ConditionFlag::N: return registers.cpsr.n; 
+        case ConditionFlag::Z: return registers.cpsr.z;
+        case ConditionFlag::C: return registers.cpsr.c;
+        case ConditionFlag::V: return registers.cpsr.v;
         default:
             std::cerr << "Unrecognized condition code flag\n";
             return 0;
@@ -123,10 +123,10 @@ void Arm7Tdmi::SetConditionCodeFlag(ConditionFlag flag, u8 bit)
 
     switch (flag)
     {
-        case ConditionFlag::N: registers.cpsr.flags.n = bit; break;
-        case ConditionFlag::Z: registers.cpsr.flags.z = bit; break;
-        case ConditionFlag::C: registers.cpsr.flags.c = bit; break;
-        case ConditionFlag::V: registers.cpsr.flags.v = bit; break;
+        case ConditionFlag::N: registers.cpsr.n = bit; break;
+        case ConditionFlag::Z: registers.cpsr.z = bit; break;
+        case ConditionFlag::C: registers.cpsr.c = bit; break;
+        case ConditionFlag::V: registers.cpsr.v = bit; break;
         default:
             std::cerr << "Unrecognized condition code flag\n";
             return;
@@ -708,16 +708,16 @@ void Arm7Tdmi::UpdateCPSR(u32 value, bool flags_only)
     // in user mode, only condition bits can be changed
     if (flags_only || GetMode() == Mode::USR)
     {
-        registers.cpsr.flags.n = sr.flags.n;
-        registers.cpsr.flags.z = sr.flags.z;
-        registers.cpsr.flags.c = sr.flags.c;
-        registers.cpsr.flags.v = sr.flags.v;
+        registers.cpsr.n = sr.n;
+        registers.cpsr.z = sr.z;
+        registers.cpsr.c = sr.c;
+        registers.cpsr.v = sr.v;
         return;
     }
 
     registers.cpsr.raw = value;
 
-    if (registers.cpsr.flags.t != sr.flags.t)
+    if (registers.cpsr.t != sr.t)
         LOG(LogLevel::Warning, "Software is changing T-Bit in CPSR!\n");
 
     // TODO - validate CPSR was appropriately changed
@@ -738,8 +738,8 @@ void Arm7Tdmi::UpdateCPSR(u32 value, bool flags_only)
     if (!valid)
         std::cerr << "Invalid state being set to cpsr: " << value << "\n";
 
-    // if (sr.flags.state == IRQ && registers.cpsr.flags.i == 1) return; // irq disabled bit set
-    // if (sr.flags.state == FIQ && registers.cpsr.flags.f == 1) return; // fiq disabled bit set
+    // if (sr.state == IRQ && registers.cpsr.i == 1) return; // irq disabled bit set
+    // if (sr.state == FIQ && registers.cpsr.f == 1) return; // fiq disabled bit set
 }
 
 /*
@@ -769,10 +769,10 @@ void Arm7Tdmi::UpdateSPSR(u32 value, bool flags_only)
     // don't have to check for USR mode b/c that was done above
     if (flags_only)
     {
-        old_spsr.flags.n = new_spsr.flags.n;
-        old_spsr.flags.z = new_spsr.flags.z;
-        old_spsr.flags.c = new_spsr.flags.c;
-        old_spsr.flags.v = new_spsr.flags.v;
+        old_spsr.n = new_spsr.n;
+        old_spsr.z = new_spsr.z;
+        old_spsr.c = new_spsr.c;
+        old_spsr.v = new_spsr.v;
 
         // set updated spsr_<mode>
         switch (GetMode())
@@ -849,7 +849,7 @@ void Arm7Tdmi::HandleInterrupt()
         SetRegister(cpsr, GetRegister(spsr));
 
         // re-enable interrupts
-        registers.cpsr.flags.i = 0;
+        registers.cpsr.i = 0;
         mem->Write32Unsafe(REG_IME, 1);
 
         pipeline_full = false;
@@ -861,7 +861,7 @@ void Arm7Tdmi::HandleInterrupt()
     }
 
     // check if master interrupts are enabled
-    if (mem->Read32Unsafe(REG_IME) && registers.cpsr.flags.i == 0) 
+    if (mem->Read32Unsafe(REG_IME) && registers.cpsr.i == 0) 
     {
         // get enabled interrupts and requested interrupts
         // u16 interrupts_enabled   = mem->Read16Unsafe(REG_IE);
@@ -884,7 +884,7 @@ void Arm7Tdmi::HandleInterrupt()
 
                 // SetMode(Mode::IRQ);
                 // SetState(State::ARM);
-                // registers.cpsr.flags.i = 1;
+                // registers.cpsr.i = 1;
                 // mem->Write32Unsafe(REG_IME, 0);
                 // SetRegister(r15, 0x1C);
                 // pipeline_full = false;
@@ -940,7 +940,7 @@ void Arm7Tdmi::HandleInterrupt()
                 // ldr r15, [r0, -0x4]
                 SetRegister(r15, mem->Read32(GetRegister(r0) - 0x4) & ~0x3);
 
-                registers.cpsr.flags.i = 1; // disable interrupts
+                registers.cpsr.i = 1; // disable interrupts
                 SetState(State::ARM);
                 pipeline_full = false;
                 in_interrupt  = true;

@@ -914,7 +914,7 @@ void Arm7Tdmi::SoftwareInterruptThumb(u16 instruction)
     u32 old_cpsr = GetRegister(cpsr);
     SetMode(Mode::SVC);
     SetRegister(r14, GetRegister(r15) - 2);
-    registers.cpsr.flags.i = 1;
+    registers.cpsr.i = 1;
     UpdateSPSR(old_cpsr, false);
     SetState(State::ARM);
     SetRegister(r15, 0x08);

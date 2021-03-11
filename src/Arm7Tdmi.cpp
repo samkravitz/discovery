@@ -29,6 +29,7 @@ Arm7Tdmi::Arm7Tdmi(Memory *mem) : mem(mem)
     SetMode(Mode::SVC);
     SetState(State::ARM);
 
+
     // initialize cpsr
     registers.cpsr.flags.f = 1;
     registers.cpsr.flags.i = 1;

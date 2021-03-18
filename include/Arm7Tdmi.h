@@ -35,15 +35,15 @@ class Arm7Tdmi
             {
                 struct
                 {
-                    u8 mode : 5;
-                    u8 t : 1;
-                    u8 f : 1;
-                    u8 i : 1;
+                    u8 mode      :  5;
+                    u8 t         :  1;
+                    u8 f         :  1;
+                    u8 i         :  1;
                     u32 reserved : 20;
-                    u8 v : 1;
-                    u8 c : 1;
-                    u8 z : 1;
-                    u8 n : 1;
+                    u8 v         :  1;
+                    u8 c         :  1;
+                    u8 z         :  1;
+                    u8 n         :  1;
                 };
 
                 u32 raw;
@@ -180,7 +180,14 @@ class Arm7Tdmi
         void Write16(u32, u16);
         void Write32(u32, u32);
 
-        u32 bios_read_state[4];
+        static constexpr u32 bios_read_state[4] =
+        {
+            0xE129F000, // 0xDC  + 8 startup 
+            0xE25EF004, // 0x134 + 8 irq execute
+            0xE55EC002, // 0x13C + 8 irq finish
+            0xE3A02004, // 0x188 + 8 swi finish}
+        };
+
         u32 last_read_bios;
 
         // misc

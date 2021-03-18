@@ -37,11 +37,7 @@ Arm7Tdmi::Arm7Tdmi(Memory *mem) : mem(mem)
     cycles = 0;
     in_interrupt  = false;
 
-    bios_read_state[0] = 0xE129F000; // 0xDC  + 8 startup 
-    bios_read_state[1] = 0xE25EF004; // 0x134 + 8 irq execute
-    bios_read_state[2] = 0xE55EC002; // 0x13C + 8 irq finish
-    bios_read_state[3] = 0xE3A02004; // 0x188 + 8 swi finish
-    last_read_bios     = bios_read_state[0];
+    last_read_bios = bios_read_state[0];
     
     // different initialization for the testing environment
     #ifdef TEST

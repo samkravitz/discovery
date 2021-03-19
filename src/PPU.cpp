@@ -387,8 +387,6 @@ void PPU::RenderScanlineAffine(int bg)
             break;
     }
 
-    //LOG("{}\n", pd);
-
     dx = (float) (dx_raw >> 8) + ((dx_raw & 0xFF) / 256.0f);
     dy = (float) (dy_raw >> 8) + ((dx_raw & 0xFF) / 256.0f);
 
@@ -436,7 +434,6 @@ void PPU::RenderScanlineAffine(int bg)
             if (px >= width || py >= height) continue;
             if (px < 0      || py < 0)       continue;
         }
-        
 
         map_x = px;
         map_y = py;

@@ -569,14 +569,10 @@ void PPU::RenderObj()
             if (attr->color_mode == 1) // 8bpp
             {
                 if (stat->dispcnt.obj_map_mode == 1) // 1d
-                {
                     tileno += block_y * (attr->width / 4);
-                }
 
                 else // 2d
-                {
                     tileno = (tileno & ~1) + block_y * 32;
-                }
                 
                 tileno += block_x * 2;
 
@@ -586,14 +582,10 @@ void PPU::RenderObj()
             else // 4bpp
             {
                 if (stat->dispcnt.obj_map_mode == 1) // 1d
-                {
                     tileno += block_y * (attr->width / 8);
-                }
 
                 else // 2d
-                {
                     tileno += block_y * 32;
-                }
 
                 tileno += block_x;
 

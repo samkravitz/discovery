@@ -532,11 +532,11 @@ void Arm7Tdmi::MultiplyLong(u32 instruction)
 void Arm7Tdmi::SingleDataTransfer(u32 instruction)
 {
     bool immediate  = util::bitseq<25, 25>(instruction) == 0;
-    bool pre_index  = util::bitseq<24, 24>(instruction) == 1;  // bit 24 set = pre index, bit 24 0 = post index
-    bool up         = util::bitseq<23, 23>(instruction) == 1;         // bit 23 set = up, bit 23 0 = down
-    bool byte       = util::bitseq<22, 22>(instruction) == 1;       // bit 22 set = byte, bit 23 0 = word
+    bool pre_index  = util::bitseq<24, 24>(instruction) == 1; // bit 24 set = pre index, bit 24 0 = post index
+    bool up         = util::bitseq<23, 23>(instruction) == 1; // bit 23 set = up, bit 23 0 = down
+    bool byte       = util::bitseq<22, 22>(instruction) == 1; // bit 22 set = byte, bit 23 0 = word
     bool write_back = util::bitseq<21, 21>(instruction) == 1; // bit 21 set = write address into base, bit 21 0 = no write back
-    bool load       = util::bitseq<20, 20>(instruction) == 1;       // bit 20 set = load, bit 20 0 = store
+    bool load       = util::bitseq<20, 20>(instruction) == 1; // bit 20 set = load, bit 20 0 = store
     u32 Rn          = util::bitseq<19, 16>(instruction);
     u32 Rd          = util::bitseq<15, 12>(instruction);
     u32 offset_encoding = util::bitseq<11, 0>(instruction);

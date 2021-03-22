@@ -235,7 +235,11 @@ void PPU::RenderScanline()
     for (int i = 0; i < SCREEN_WIDTH; ++i)
         scanline_buffer[i] = backdrop_color;
 
-    // reder bg
+    // init windows if enabled
+    if (stat->dispcnt.win_enabled != 0)
+        ComposeWindow();
+
+    // render bg
     switch (stat->dispcnt.mode)
     {
         case 0: // reg bg 0-3
@@ -280,6 +284,10 @@ void PPU::RenderScanlineText(int bg)
 {
     auto const &bgcnt = stat->bgcnt[bg];
 
+    // scanline outside of window
+    if (scanline < bgcnt.miny || scanline > bgcnt.maxy)
+        return;
+
     int pitch; // pitch of screenblocks
 
     // width, height of map in pixels
@@ -306,7 +314,8 @@ void PPU::RenderScanlineText(int bg)
     // used for vflip / hflip
     int grid_x, grid_y;
 
-    for (int x = 0; x < SCREEN_WIDTH; ++x)
+    // conver only where bg is inside its window
+    for (int x = bgcnt.minx; x < bgcnt.maxx; ++x)
     {
         map_x = (x + bgcnt.hoff) % width;
         tile_x = map_x / 8; // 8 px per tile
@@ -711,6 +720,195 @@ void PPU::UpdateAttr()
         if (obj.obj_mode != 2)
             oam_update->push(i);
     }
+}
+
+void PPU::ComposeWindow()
+{
+    // keep track of smallest and largest coordinate to find dimension of winout
+    int maxx =   0, maxy =   0;
+    int minx = 239, miny = 179;
+
+    // win0 enabled
+    if (stat->dispcnt.win_enabled & 1)
+    {
+        u16 win0v  = mem->Read16Unsafe(REG_WIN0V);
+        u16 win0h  = mem->Read16Unsafe(REG_WIN0H);
+        int left   = win0h >> 8;
+        int right  = win0h & 0xFF;
+        int top    = win0v >> 8;
+        int bottom = win0v & 0xFF;
+
+        // illegal values
+        if (right > 240 || left > right)
+            right = 240;
+
+        if (bottom > 160 || top > bottom)
+            bottom = 160;
+
+        // exlude rightmost and bottommost coordinate given
+        // ie coordinates given are [left, right) & [top, bottom)
+        left   -= 1;
+        bottom -= 1;
+
+        if (left < minx)
+            minx = left;
+        if (right > maxx)
+            maxx = right;
+        if (bottom < miny)
+            miny = bottom;
+        if (top > maxy)
+            maxy = top;
+
+        // window content
+        u8 win0content = mem->Read16Unsafe(REG_WININ) & 0xFF;
+
+        // bg0 in win0
+        if (win0content & 1)
+        {
+            stat->bgcnt[0].minx = left;
+            stat->bgcnt[0].maxx = right;
+            stat->bgcnt[0].miny = top;
+            stat->bgcnt[0].maxy = bottom;
+        }
+
+        // bg1 in win0
+        if (win0content & 2)
+        {
+            stat->bgcnt[1].minx = left;
+            stat->bgcnt[1].maxx = right;
+            stat->bgcnt[1].miny = top;
+            stat->bgcnt[1].maxy = bottom;
+        }
+
+        // bg2 in win0
+        if (win0content & 4)
+        {
+            stat->bgcnt[2].minx = left;
+            stat->bgcnt[2].maxx = right;
+            stat->bgcnt[2].miny = top;
+            stat->bgcnt[2].maxy = bottom;
+        }
+
+        // bg3 in win0
+        if (win0content & 8)
+        {
+            stat->bgcnt[3].minx = left;
+            stat->bgcnt[3].maxx = right;
+            stat->bgcnt[3].miny = top;
+            stat->bgcnt[3].maxy = bottom;
+        }
+    }
+
+    // win1 enabled
+    if (stat->dispcnt.win_enabled & 2)
+    {
+        u16 win1v  = mem->Read16Unsafe(REG_WIN1V);
+        u16 win1h  = mem->Read16Unsafe(REG_WIN1H);
+        int left   = win1h >> 8;
+        int right  = win1h & 0xFF;
+        int top    = win1v >> 8;
+        int bottom = win1v & 0xFF;
+
+        // illegal values
+        if (right > 240 || left > right)
+            right = 240;
+
+        if (bottom > 160 || top > bottom)
+            bottom = 160;
+
+        if (left < minx)
+            minx = left;
+        if (right > maxx)
+            maxx = right;
+        if (bottom < miny)
+            miny = bottom;
+        if (top > maxy)
+            maxy = top;
+
+        // exlude rightmost and bottommost coordinate given
+        // ie coordinates given are [left, right) & [top, bottom)
+        left   -= 1;
+        bottom -= 1;
+
+        // window content
+        u8 win1content = mem->Read16Unsafe(REG_WININ) >> 8;
+
+        // bg0 in win1
+        if (win1content & 1)
+        {
+            stat->bgcnt[0].minx = left;
+            stat->bgcnt[0].maxx = right;
+            stat->bgcnt[0].miny = top;
+            stat->bgcnt[0].maxy = bottom;
+        }
+
+        // bg1 in win1
+        if (win1content & 2)
+        {
+            stat->bgcnt[1].minx = left;
+            stat->bgcnt[1].maxx = right;
+            stat->bgcnt[1].miny = top;
+            stat->bgcnt[1].maxy = bottom;
+        }
+
+        // bg2 in win1
+        if (win1content & 4)
+        {
+            stat->bgcnt[2].minx = left;
+            stat->bgcnt[2].maxx = right;
+            stat->bgcnt[2].miny = top;
+            stat->bgcnt[2].maxy = bottom;
+        }
+
+        // bg3 in win1
+        if (win1content & 8)
+        {
+            stat->bgcnt[3].minx = left;
+            stat->bgcnt[3].maxx = right;
+            stat->bgcnt[3].miny = top;
+            stat->bgcnt[3].maxy = bottom;
+        }
+    }
+
+    // winout
+    // window content
+    u8 winoutcontent = mem->Read16Unsafe(REG_WINOUT) & 0xFF;
+
+    // bg0 in win0
+    // if (winoutcontent & 1)
+    // {
+    //     stat->bgcnt[0].minx = left;
+    //     stat->bgcnt[0].maxx = right;
+    //     stat->bgcnt[0].miny = top;
+    //     stat->bgcnt[0].maxy = bottom;
+    // }
+
+    // // bg1 in win0
+    // if (winoutcontent & 2)
+    // {
+    //     stat->bgcnt[1].minx = left;
+    //     stat->bgcnt[1].maxx = right;
+    //     stat->bgcnt[1].miny = top;
+    //     stat->bgcnt[1].maxy = bottom;
+    // }
+
+    // // bg2 in win0
+    // if (winoutcontent & 4)
+    // {
+    //     stat->bgcnt[2].minx = left;
+    //     stat->bgcnt[2].maxx = right;
+    //     stat->bgcnt[2].miny = top;
+    //     stat->bgcnt[2].maxy = bottom;
+    // }
+
+    // // bg3 in win0
+    // if (winoutcontent & 8)
+    // {
+    //     stat->bgcnt[3].minx = left;
+    //     stat->bgcnt[3].maxx = right;
+    //     stat->bgcnt[3].miny = top;
+    //     stat->bgcnt[3].maxy = bottom;
+    // }
 }
 
 inline u16 PPU::GetObjPixel4BPP(u32 addr, int palbank, int x, int y)

@@ -55,7 +55,6 @@ class PPU
         u8 scanline;
 
         void Tick();
-        
         void Reset();
 
     private:
@@ -133,6 +132,7 @@ class PPU
         inline u16 GetBGPixel4BPP(u32, int, int, int);
         inline u16 GetBGPixel8BPP(u32, int, int);
         void UpdateAttr();
+        void ComposeWindow();
 
         void PrintPalette();
 };

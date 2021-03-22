@@ -533,6 +533,7 @@ void PPU::RenderObj()
         int px, py;
         int iy = -attr->hheight + (scanline - attr->y);
 
+
         //LOG("{} {} {} {}\n", attr->x, attr->y, attr->hheight, attr->hwidth);
         //LOG("{} {} {} {}\n", attr->x0, attr->y0, attr->hheight, attr->hwidth);
 

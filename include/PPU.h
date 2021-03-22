@@ -89,6 +89,7 @@ class PPU
         int objminy;
         int objmaxx;
         int objmaxy;
+        int obj_in_winout;
 
         // oam data structure
         struct ObjAttr
@@ -149,7 +150,7 @@ class PPU
         inline u16 GetBGPixel8BPP(u32, int, int);
         void UpdateAttr();
         void ComposeWindow();
-        inline bool IsNotInWinOut(int, int);
+        inline bool IsInWinOut(int, int);
 
         void PrintPalette();
 };

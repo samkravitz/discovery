@@ -78,6 +78,7 @@ void PPU::Reset()
     objminy        = 0;
     objmaxx        = 240;
     objmaxy        = 180;
+    obj_in_winout  = false;
 
     std::memset(screen_buffer, 0, sizeof(screen_buffer));
 
@@ -121,12 +122,15 @@ void PPU::Tick()
 
         // check for DMA HBlank requests
         // TODO - Don't fire DMA Hblank in VBlank
-        for (int i = 0; i < 4; ++i)
+        if (!stat->dispstat.in_vBlank)
         {
-            if (mem->dma[i].enable && mem->dma[i].mode == 2) // start at HBLANK
+            for (int i = 0; i < 4; ++i)
             {
-                mem->_Dma(i);
-                //LOG(LogLevel::Debug, "DMA {} HBLANK\n", i);
+                if (mem->dma[i].enable && mem->dma[i].mode == 2) // start at HBLANK
+                {
+                    mem->_Dma(i);
+                    //LOG(LogLevel::Debug, "DMA {} HBLANK\n", i);
+                }
             }
         }
 
@@ -262,6 +266,7 @@ void PPU::Render()
     objminy = 0;
     objmaxx = 240;
     objmaxy = 180;
+    obj_in_winout = false;
 }
 
 void PPU::RenderScanline()
@@ -363,15 +368,9 @@ void PPU::RenderScanlineText(int bg)
 {
     auto const &bgcnt = stat->bgcnt[bg];
 
-    LOG("{} {} {} {} {}\n", bg, bgcnt.minx, bgcnt.miny, bgcnt.maxx, bgcnt.maxy);
-
     // scanline outside of window
     if (scanline < bgcnt.miny || scanline > bgcnt.maxy)
         return;
-
-    // layer is in winout
-    // if (bgcnt.in_winout && !IsInWinOut(0, scanline))
-    //     return;
 
     int pitch; // pitch of screenblocks
 
@@ -403,8 +402,8 @@ void PPU::RenderScanlineText(int bg)
     for (int x = bgcnt.minx; x < bgcnt.maxx; ++x)
     {
         // layer is in winout
-        if (bgcnt.in_winout && IsNotInWinOut(x, scanline))
-            continue;
+        if (bgcnt.in_winout && !IsInWinOut(x, scanline))
+           continue;
 
         map_x = (x + bgcnt.hoff) % width;
         tile_x = map_x / 8; // 8 px per tile
@@ -511,6 +510,10 @@ void PPU::RenderScanlineAffine(int bg)
 
     for (int x = bgcnt.minx; x < bgcnt.miny; ++x)
     {
+        // layer is in winout
+        if (bgcnt.in_winout && !IsInWinOut(x, scanline))
+            continue;
+
         x1 = x + dx;
 
         // affine transform
@@ -645,6 +648,10 @@ void PPU::RenderObj()
 
         for (int ix = -attr->hwidth; ix < attr->hwidth; ++ix)
         {
+            // objs in winout
+            if (obj_in_winout && !IsInWinOut(qx0 + ix, scanline))
+                continue;
+
             px = ix + attr->hwidth;
             py = iy + attr->hheight;
 
@@ -846,8 +853,10 @@ void PPU::ComposeWindow()
 
         // exlude rightmost and bottommost coordinate given
         // ie coordinates given are [left, right) & [top, bottom)
-        window.right  -= 1;
-        window.bottom -= 1;
+        if (window.right > 0)
+            window.right -= 1;
+        if (window.bottom > 0)
+            window.bottom -= 1;
 
         // window content
         u8 win0content = mem->Read16Unsafe(REG_WININ) & 0xFF;
@@ -919,8 +928,10 @@ void PPU::ComposeWindow()
 
         // exlude rightmost and bottommost coordinate given
         // ie coordinates given are [left, right) & [top, bottom)
-        window.right   -= 1;
-        window.bottom  -= 1;
+        if (window.right > 0)
+            window.right -= 1;
+        if (window.bottom > 0)
+            window.bottom -= 1;
 
         // window content
         u8 win1content = mem->Read16Unsafe(REG_WININ) >> 8;
@@ -977,22 +988,47 @@ void PPU::ComposeWindow()
 
     // bg0 in winout
     if (winoutcontent & 1)
+    {
+        stat->bgcnt[0].minx = 0;
+        stat->bgcnt[0].miny = 0;
+        stat->bgcnt[0].maxx = 240;
+        stat->bgcnt[0].maxy = 180;
         stat->bgcnt[0].in_winout = true;
+    }
 
     // bg1 in winout
     if (winoutcontent & 2)
+    {
+        stat->bgcnt[1].minx = 0;
+        stat->bgcnt[1].miny = 0;
+        stat->bgcnt[1].maxx = 240;
+        stat->bgcnt[1].maxy = 180;
         stat->bgcnt[1].in_winout = true;
+    }
 
     // bg2 in winout
     if (winoutcontent & 4)
+    {
+        stat->bgcnt[2].minx = 0;
+        stat->bgcnt[2].miny = 0;
+        stat->bgcnt[2].maxx = 240;
+        stat->bgcnt[2].maxy = 180;
         stat->bgcnt[2].in_winout = true;
+    }
 
     // bg3 in winout
     if (winoutcontent & 8)
+    {
+        stat->bgcnt[3].minx = 0;
+        stat->bgcnt[3].miny = 0;
+        stat->bgcnt[3].maxx = 240;
+        stat->bgcnt[3].maxy = 180;
         stat->bgcnt[3].in_winout = true;
+    }
 
     // objs in winout
-    // TODO
+    if (winoutcontent & 0x10)
+        obj_in_winout = true;
 }
 
 inline u16 PPU::GetObjPixel4BPP(u32 addr, int palbank, int x, int y)
@@ -1067,7 +1103,7 @@ inline u32 U16ToU32Color (u16 color_u16)
     return r << 19 | g << 11 | b << 3;
 }
 
-inline bool PPU::IsNotInWinOut(int x, int y)
+bool PPU::IsInWinOut(int x, int y)
 {
     // TODO: figure out proper way to return a compound boolean
     // return  (x < win[0].left)   &&
@@ -1079,15 +1115,10 @@ inline bool PPU::IsNotInWinOut(int x, int y)
     //         y < win[1].top)    &&
     //         y > win[1].bottom);
 
-    if (x < win[0].left)   return false;
-    if (x > win[0].right)  return false;
-    if (y < win[0].top)    return false;
-    if (y > win[0].bottom) return false;
-    if (x < win[1].left)   return false;
-    if (x > win[1].right)  return false;
-    if (y < win[1].top)    return false;
-    if (y > win[1].bottom) return false;
 
+    if ((stat->dispcnt.win_enabled & 1) && x > win[0].left && x <= win[0].right && y > win[0].top && y <= win[0].bottom) return false;
+    if ((stat->dispcnt.win_enabled & 2) && x > win[1].left && x <= win[1].right && y > win[1].top && y <= win[1].bottom) return false;
+    
     return true;
 }
 

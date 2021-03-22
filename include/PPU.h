@@ -74,6 +74,16 @@ class PPU
 
         u32 backdrop_color;
 
+        // window data structure
+        // window 0, window 1, obj window
+        struct win
+        {
+            int left;
+            int right;
+            int top;
+            int bottom;
+        } win[3];
+
         // where objs can be drawn in the window
         int objminx;
         int objminy;
@@ -139,6 +149,7 @@ class PPU
         inline u16 GetBGPixel8BPP(u32, int, int);
         void UpdateAttr();
         void ComposeWindow();
+        inline bool IsNotInWinOut(int, int);
 
         void PrintPalette();
 };

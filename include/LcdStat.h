@@ -94,6 +94,7 @@ struct LcdStat
         // window parameters
         int minx, maxx;
         int miny, maxy;
+        bool in_winout;
     } bgcnt[4]; // backgrounds 0-3
 
     LcdStat()
@@ -118,9 +119,11 @@ struct LcdStat
             bgcnt[i].voff    = 0;
             bgcnt[i].hoff    = 0;
 
-            bgcnt[i].minx = bgcnt[i].miny = 0;
+            bgcnt[i].minx = 0;
+            bgcnt[i].miny = 0;
             bgcnt[i].maxx = 240;
             bgcnt[i].maxy = 160;
+            bgcnt[i].in_winout = false;
         }
     }
 

@@ -87,6 +87,15 @@ void PPU::Reset()
         std::memset(&objs[i], 0, sizeof(ObjAttr));
         objs[i].obj_mode = 2; // hidden
     }
+
+    // reset window parameters
+    for (int i = 0; i < 3; ++i)
+    {
+        win[i].left   = 0;
+        win[i].right  = 240;
+        win[i].top    = 0;
+        win[i].bottom = 180;
+    }
 }
 
 // 1 clock cycle of the PPU
@@ -236,6 +245,16 @@ void PPU::Render()
         stat->bgcnt[i].miny = 0;
         stat->bgcnt[i].maxx = 240;
         stat->bgcnt[i].maxy = 160;
+        stat->bgcnt[i].in_winout = false;
+    }
+
+    // reset window parameters
+    for (int i = 0; i < 3; ++i)
+    {
+        win[i].left   = 0;
+        win[i].right  = 240;
+        win[i].top    = 0;
+        win[i].bottom = 180;
     }
 
     // reset obj layer window parameters
@@ -344,9 +363,15 @@ void PPU::RenderScanlineText(int bg)
 {
     auto const &bgcnt = stat->bgcnt[bg];
 
+    LOG("{} {} {} {} {}\n", bg, bgcnt.minx, bgcnt.miny, bgcnt.maxx, bgcnt.maxy);
+
     // scanline outside of window
     if (scanline < bgcnt.miny || scanline > bgcnt.maxy)
         return;
+
+    // layer is in winout
+    // if (bgcnt.in_winout && !IsInWinOut(0, scanline))
+    //     return;
 
     int pitch; // pitch of screenblocks
 
@@ -377,6 +402,10 @@ void PPU::RenderScanlineText(int bg)
     // conver only where bg is inside its window
     for (int x = bgcnt.minx; x < bgcnt.maxx; ++x)
     {
+        // layer is in winout
+        if (bgcnt.in_winout && IsNotInWinOut(x, scanline))
+            continue;
+
         map_x = (x + bgcnt.hoff) % width;
         tile_x = map_x / 8; // 8 px per tile
 
@@ -423,6 +452,10 @@ void PPU::RenderScanlineText(int bg)
 void PPU::RenderScanlineAffine(int bg)
 {
     auto const &bgcnt = stat->bgcnt[bg];
+
+    // scanline outside of window
+    if (scanline < bgcnt.miny || scanline > bgcnt.maxy)
+        return;
 
     // displacement vector
     // width, height of map in pixels
@@ -476,7 +509,7 @@ void PPU::RenderScanlineAffine(int bg)
     int pixel;
     u32 tile_addr;
 
-    for (int x = 0; x < SCREEN_WIDTH; ++x)
+    for (int x = bgcnt.minx; x < bgcnt.miny; ++x)
     {
         x1 = x + dx;
 
@@ -792,40 +825,29 @@ void PPU::UpdateAttr()
 
 void PPU::ComposeWindow()
 {
-    // keep track of smallest and largest coordinate to find dimension of winout
-    int maxx =   0, maxy =   0;
-    int minx = 239, miny = 179;
-
     // win0 enabled
     if (stat->dispcnt.win_enabled & 1)
     {
         u16 win0v  = mem->Read16Unsafe(REG_WIN0V);
         u16 win0h  = mem->Read16Unsafe(REG_WIN0H);
-        int left   = win0h >> 8;
-        int right  = win0h & 0xFF;
-        int top    = win0v >> 8;
-        int bottom = win0v & 0xFF;
+
+        auto &window = win[0];
+        window.left   = win0h >> 8;
+        window.right  = win0h & 0xFF;
+        window.top    = win0v >> 8;
+        window.bottom = win0v & 0xFF;
 
         // illegal values
-        if (right > 240 || left > right)
-            right = 240;
+        if (window.right > 240 || window.left > window.right)
+            window.right = 240;
 
-        if (bottom > 160 || top > bottom)
-            bottom = 160;
+        if (window.bottom > 160 || window.top > window.bottom)
+            window.bottom = 160;
 
         // exlude rightmost and bottommost coordinate given
         // ie coordinates given are [left, right) & [top, bottom)
-        left   -= 1;
-        bottom -= 1;
-
-        if (left < minx)
-            minx = left;
-        if (right > maxx)
-            maxx = right;
-        if (bottom < miny)
-            miny = bottom;
-        if (top > maxy)
-            maxy = top;
+        window.right  -= 1;
+        window.bottom -= 1;
 
         // window content
         u8 win0content = mem->Read16Unsafe(REG_WININ) & 0xFF;
@@ -833,46 +855,46 @@ void PPU::ComposeWindow()
         // bg0 in win0
         if (win0content & 1)
         {
-            stat->bgcnt[0].minx = left;
-            stat->bgcnt[0].maxx = right;
-            stat->bgcnt[0].miny = top;
-            stat->bgcnt[0].maxy = bottom;
+            stat->bgcnt[0].minx = window.left;
+            stat->bgcnt[0].maxx = window.right;
+            stat->bgcnt[0].miny = window.top;
+            stat->bgcnt[0].maxy = window.bottom;
         }
 
         // bg1 in win0
         if (win0content & 2)
         {
-            stat->bgcnt[1].minx = left;
-            stat->bgcnt[1].maxx = right;
-            stat->bgcnt[1].miny = top;
-            stat->bgcnt[1].maxy = bottom;
+            stat->bgcnt[1].minx = window.left;
+            stat->bgcnt[1].maxx = window.right;
+            stat->bgcnt[1].miny = window.top;
+            stat->bgcnt[1].maxy = window.bottom;
         }
 
         // bg2 in win0
         if (win0content & 4)
         {
-            stat->bgcnt[2].minx = left;
-            stat->bgcnt[2].maxx = right;
-            stat->bgcnt[2].miny = top;
-            stat->bgcnt[2].maxy = bottom;
+            stat->bgcnt[2].minx = window.left;
+            stat->bgcnt[2].maxx = window.right;
+            stat->bgcnt[2].miny = window.top;
+            stat->bgcnt[2].maxy = window.bottom;
         }
 
         // bg3 in win0
         if (win0content & 8)
         {
-            stat->bgcnt[3].minx = left;
-            stat->bgcnt[3].maxx = right;
-            stat->bgcnt[3].miny = top;
-            stat->bgcnt[3].maxy = bottom;
+            stat->bgcnt[3].minx = window.left;
+            stat->bgcnt[3].maxx = window.right;
+            stat->bgcnt[3].miny = window.top;
+            stat->bgcnt[3].maxy = window.bottom;
         }
 
         // objs in win0
         if (win0content & 0x10)
         {
-            objminx        = left;
-            objmaxx        = right;
-            objminy        = top;
-            objmaxy        = bottom;
+            objminx        = window.left;
+            objmaxx        = window.right;
+            objminy        = window.top;
+            objmaxy        = window.bottom;
         }
     }
 
@@ -881,31 +903,24 @@ void PPU::ComposeWindow()
     {
         u16 win1v  = mem->Read16Unsafe(REG_WIN1V);
         u16 win1h  = mem->Read16Unsafe(REG_WIN1H);
-        int left   = win1h >> 8;
-        int right  = win1h & 0xFF;
-        int top    = win1v >> 8;
-        int bottom = win1v & 0xFF;
+        
+        auto &window = win[1];
+        window.left   = win1h >> 8;
+        window.right  = win1h & 0xFF;
+        window.top    = win1v >> 8;
+        window.bottom = win1v & 0xFF;
 
         // illegal values
-        if (right > 240 || left > right)
-            right = 240;
+        if (window.right > 240 || window.left > window.right)
+            window.right = 240;
 
-        if (bottom > 160 || top > bottom)
-            bottom = 160;
-
-        if (left < minx)
-            minx = left;
-        if (right > maxx)
-            maxx = right;
-        if (bottom < miny)
-            miny = bottom;
-        if (top > maxy)
-            maxy = top;
+        if (window.bottom > 160 || window.top > window.bottom)
+            window.bottom = 160;
 
         // exlude rightmost and bottommost coordinate given
         // ie coordinates given are [left, right) & [top, bottom)
-        left   -= 1;
-        bottom -= 1;
+        window.right   -= 1;
+        window.bottom  -= 1;
 
         // window content
         u8 win1content = mem->Read16Unsafe(REG_WININ) >> 8;
@@ -913,46 +928,46 @@ void PPU::ComposeWindow()
         // bg0 in win1
         if (win1content & 1)
         {
-            stat->bgcnt[0].minx = left;
-            stat->bgcnt[0].maxx = right;
-            stat->bgcnt[0].miny = top;
-            stat->bgcnt[0].maxy = bottom;
+            stat->bgcnt[0].minx = window.left;
+            stat->bgcnt[0].maxx = window.right;
+            stat->bgcnt[0].miny = window.top;
+            stat->bgcnt[0].maxy = window.bottom;
         }
 
         // bg1 in win1
         if (win1content & 2)
         {
-            stat->bgcnt[1].minx = left;
-            stat->bgcnt[1].maxx = right;
-            stat->bgcnt[1].miny = top;
-            stat->bgcnt[1].maxy = bottom;
+            stat->bgcnt[1].minx = window.left;
+            stat->bgcnt[1].maxx = window.right;
+            stat->bgcnt[1].miny = window.top;
+            stat->bgcnt[1].maxy = window.bottom;
         }
 
         // bg2 in win1
         if (win1content & 4)
         {
-            stat->bgcnt[2].minx = left;
-            stat->bgcnt[2].maxx = right;
-            stat->bgcnt[2].miny = top;
-            stat->bgcnt[2].maxy = bottom;
+            stat->bgcnt[2].minx = window.left;
+            stat->bgcnt[2].maxx = window.right;
+            stat->bgcnt[2].miny = window.top;
+            stat->bgcnt[2].maxy = window.bottom;
         }
 
         // bg3 in win1
         if (win1content & 8)
         {
-            stat->bgcnt[3].minx = left;
-            stat->bgcnt[3].maxx = right;
-            stat->bgcnt[3].miny = top;
-            stat->bgcnt[3].maxy = bottom;
+            stat->bgcnt[3].minx = window.left;
+            stat->bgcnt[3].maxx = window.right;
+            stat->bgcnt[3].miny = window.top;
+            stat->bgcnt[3].maxy = window.bottom;
         }
 
         // objs in win1
         if (win1content & 0x10)
         {
-            objminx        = left;
-            objmaxx        = right;
-            objminy        = top;
-            objmaxy        = bottom;
+            objminx        = window.left;
+            objmaxx        = window.right;
+            objminy        = window.top;
+            objmaxy        = window.bottom;
         }
     }
 
@@ -960,41 +975,24 @@ void PPU::ComposeWindow()
     // window content
     u8 winoutcontent = mem->Read16Unsafe(REG_WINOUT) & 0xFF;
 
-    // bg0 in win0
-    // if (winoutcontent & 1)
-    // {
-    //     stat->bgcnt[0].minx = left;
-    //     stat->bgcnt[0].maxx = right;
-    //     stat->bgcnt[0].miny = top;
-    //     stat->bgcnt[0].maxy = bottom;
-    // }
+    // bg0 in winout
+    if (winoutcontent & 1)
+        stat->bgcnt[0].in_winout = true;
 
-    // // bg1 in win0
-    // if (winoutcontent & 2)
-    // {
-    //     stat->bgcnt[1].minx = left;
-    //     stat->bgcnt[1].maxx = right;
-    //     stat->bgcnt[1].miny = top;
-    //     stat->bgcnt[1].maxy = bottom;
-    // }
+    // bg1 in winout
+    if (winoutcontent & 2)
+        stat->bgcnt[1].in_winout = true;
 
-    // // bg2 in win0
-    // if (winoutcontent & 4)
-    // {
-    //     stat->bgcnt[2].minx = left;
-    //     stat->bgcnt[2].maxx = right;
-    //     stat->bgcnt[2].miny = top;
-    //     stat->bgcnt[2].maxy = bottom;
-    // }
+    // bg2 in winout
+    if (winoutcontent & 4)
+        stat->bgcnt[2].in_winout = true;
 
-    // // bg3 in win0
-    // if (winoutcontent & 8)
-    // {
-    //     stat->bgcnt[3].minx = left;
-    //     stat->bgcnt[3].maxx = right;
-    //     stat->bgcnt[3].miny = top;
-    //     stat->bgcnt[3].maxy = bottom;
-    // }
+    // bg3 in winout
+    if (winoutcontent & 8)
+        stat->bgcnt[3].in_winout = true;
+
+    // objs in winout
+    // TODO
 }
 
 inline u16 PPU::GetObjPixel4BPP(u32 addr, int palbank, int x, int y)
@@ -1067,6 +1065,30 @@ inline u32 U16ToU32Color (u16 color_u16)
     b = color_u16 & 0x1F; color_u16 >>= 5; // bits 11 - 15
 
     return r << 19 | g << 11 | b << 3;
+}
+
+inline bool PPU::IsNotInWinOut(int x, int y)
+{
+    // TODO: figure out proper way to return a compound boolean
+    // return  (x < win[0].left)   &&
+    //         x > win[0].right)  &&
+    //         y < win[0].top)    &&
+    //         y > win[0].bottom) &&
+    //         x < win[1].left)   &&
+    //         x > win[1].right)  &&
+    //         y < win[1].top)    &&
+    //         y > win[1].bottom);
+
+    if (x < win[0].left)   return false;
+    if (x > win[0].right)  return false;
+    if (y < win[0].top)    return false;
+    if (y > win[0].bottom) return false;
+    if (x < win[1].left)   return false;
+    if (x > win[1].right)  return false;
+    if (y < win[1].top)    return false;
+    if (y > win[1].bottom) return false;
+
+    return true;
 }
 
 void PPU::PrintPalette()

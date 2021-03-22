@@ -243,22 +243,63 @@ void PPU::RenderScanline()
     switch (stat->dispcnt.mode)
     {
         case 0: // reg bg 0-3
-            for (int i = 3; i >= 0; --i) // bg0 - bg3
+            // for (int i = 3; i >= 0; --i) // bg0 - bg3
+            // {
+            //     if (stat->bgcnt[i].enabled)
+            //         RenderScanlineText(i);
+            // }
+            for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
             {
-                if (stat->bgcnt[i].enabled)
-                    RenderScanlineText(i);
+                for (int i = 3; i >= 0; --i) // bg0 - bg3
+                {
+                    if (stat->bgcnt[i].enabled && stat->bgcnt[i].priority == priority)
+                    {
+                        RenderScanlineText(i);
+                    }
+                }
             }
 
             break;
         case 1: // reg bg 0-1, aff bg 2
-            if (stat->bgcnt[2].enabled) RenderScanlineAffine(2);
-            if (stat->bgcnt[1].enabled) RenderScanlineText(1);
-            if (stat->bgcnt[0].enabled) RenderScanlineText(0);
+            // if (stat->bgcnt[2].enabled) RenderScanlineAffine(2);
+            // if (stat->bgcnt[1].enabled) RenderScanlineText(1);
+            // if (stat->bgcnt[0].enabled) RenderScanlineText(0);
+            for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
+            {
+                for (int i = 2; i >= 0; --i) // bg0 - bg2
+                {
+                    if (stat->bgcnt[i].enabled && stat->bgcnt[i].priority == priority)
+                    {
+                        switch (i)
+                        {
+                            case 0:
+                            case 1:
+                                RenderScanlineText(i);
+                                break;
+                            case 2:
+                                RenderScanlineAffine(i);
+                                break;
+                            default: // should never happen
+                                std::cerr << "Error: trying to draw invalid background in mode 1: " << i << "\n";
+                        }
+                    }
+                }
+            }
 
             break;
         case 2: // aff bg 2-3
-            if (stat->bgcnt[3].enabled) RenderScanlineAffine(3);
-            if (stat->bgcnt[2].enabled) RenderScanlineAffine(2);
+            // if (stat->bgcnt[3].enabled) RenderScanlineAffine(3);
+            // if (stat->bgcnt[2].enabled) RenderScanlineAffine(2);
+            for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
+            {
+                for (int i = 3; i >= 2; --i) // bg3 - bg2
+                {
+                    if (stat->bgcnt[i].enabled && stat->bgcnt[i].priority == priority)
+                    {
+                       RenderScanlineAffine(i);
+                    }
+                }
+            }
 
             break;
         case 3:

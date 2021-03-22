@@ -74,6 +74,12 @@ class PPU
 
         u32 backdrop_color;
 
+        // where objs can be drawn in the window
+        int objminx;
+        int objminy;
+        int objmaxx;
+        int objmaxy;
+
         // oam data structure
         struct ObjAttr
         {

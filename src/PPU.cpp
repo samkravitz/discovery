@@ -74,6 +74,10 @@ void PPU::Reset()
     fps            = 0;
     backdrop_color = 0;
     old_time       = clock();
+    objminx        = 0;
+    objminy        = 0;
+    objmaxx        = 240;
+    objmaxy        = 180;
 
     std::memset(screen_buffer, 0, sizeof(screen_buffer));
 
@@ -224,6 +228,21 @@ void PPU::Render()
 
     // draw final_screen pixels on screen
     SDL_UpdateWindowSurface(window);
+
+    // reset bgcnt's window parameters
+    for (int i = 0; i < 4; ++i)
+    {
+        stat->bgcnt[i].minx = 0;
+        stat->bgcnt[i].miny = 0;
+        stat->bgcnt[i].maxx = 240;
+        stat->bgcnt[i].maxy = 160;
+    }
+
+    // reset obj layer window parameters
+    objminx = 0;
+    objminy = 0;
+    objmaxx = 240;
+    objmaxy = 180;
 }
 
 void PPU::RenderScanline()
@@ -576,6 +595,10 @@ void PPU::RenderObj()
         // obj exists outside current scanline
         if (scanline < attr->qy0 - attr->hheight || scanline >= attr->qy0 + attr->hheight)
              continue;
+
+        // obj exists outside current object layer
+        if (scanline < objminy || scanline >= objmaxy)
+            continue;
         
         int qx0 = attr->qx0;      // center of sprite screen space
 
@@ -591,6 +614,10 @@ void PPU::RenderObj()
         {
             px = ix + attr->hwidth;
             py = iy + attr->hheight;
+
+            // obj exists outside current object layer
+            if (qx0 + ix < objminx || qx0 + ix >= objmaxx)
+                continue;
 
             // transform affine & double wide affine
             if (attr->obj_mode == 1 || attr->obj_mode == 3)
@@ -838,6 +865,15 @@ void PPU::ComposeWindow()
             stat->bgcnt[3].miny = top;
             stat->bgcnt[3].maxy = bottom;
         }
+
+        // objs in win0
+        if (win0content & 0x10)
+        {
+            objminx        = left;
+            objmaxx        = right;
+            objminy        = top;
+            objmaxy        = bottom;
+        }
     }
 
     // win1 enabled
@@ -908,6 +944,15 @@ void PPU::ComposeWindow()
             stat->bgcnt[3].maxx = right;
             stat->bgcnt[3].miny = top;
             stat->bgcnt[3].maxy = bottom;
+        }
+
+        // objs in win1
+        if (win1content & 0x10)
+        {
+            objminx        = left;
+            objmaxx        = right;
+            objminy        = top;
+            objmaxy        = bottom;
         }
     }
 

@@ -77,7 +77,7 @@ void PPU::Reset()
     objminx        = 0;
     objminy        = 0;
     objmaxx        = 240;
-    objmaxy        = 180;
+    objmaxy        = 160;
     obj_in_winout  = false;
 
     std::memset(screen_buffer, 0, sizeof(screen_buffer));
@@ -95,7 +95,7 @@ void PPU::Reset()
         win[i].left   = 0;
         win[i].right  = 240;
         win[i].top    = 0;
-        win[i].bottom = 180;
+        win[i].bottom = 160;
     }
 }
 
@@ -259,14 +259,14 @@ void PPU::Render()
         win[i].left   = 0;
         win[i].right  = 240;
         win[i].top    = 0;
-        win[i].bottom = 180;
+        win[i].bottom = 160;
     }
 
     // reset obj layer window parameters
     objminx = 0;
     objminy = 0;
     objmaxx = 240;
-    objmaxy = 180;
+    objmaxy = 160;
     obj_in_winout = false;
 }
 
@@ -374,6 +374,8 @@ void PPU::RenderScanlineText(int bg)
        return;
 
     int pitch; // pitch of screenblocks
+
+    //LOG("({}, {}) ({}, {}) {}\n", bgcnt.minx, bgcnt.miny, bgcnt.maxx, bgcnt.maxy, scanline);
 
     // width, height of map in pixels
     int width, height;
@@ -852,54 +854,22 @@ void PPU::ComposeWindow()
         if (window.bottom > 160 || window.top > window.bottom)
             window.bottom = 160;
 
-        // exlude rightmost and bottommost coordinate given
-        // ie coordinates given are [left, right) & [top, bottom)
-        if (window.right > 0)
-            window.right -= 1;
-        if (window.bottom > 0)
-            window.bottom -= 1;
-
         // window content
         u8 win1content = mem->Read16Unsafe(REG_WININ) >> 8;
 
-        // bg0 in win1
-        if (win1content & 1)
+        // check if bgs are in window content
+        int mask;
+        for (int i = 0; i < 4; ++i)
         {
-            stat->bgcnt[0].minx = window.left;
-            stat->bgcnt[0].maxx = window.right;
-            stat->bgcnt[0].miny = window.top;
-            stat->bgcnt[0].maxy = window.bottom;
-            stat->bgcnt[0].in_winin = true;
-        }
-
-        // bg1 in win1
-        if (win1content & 2)
-        {
-            stat->bgcnt[1].minx = window.left;
-            stat->bgcnt[1].maxx = window.right;
-            stat->bgcnt[1].miny = window.top;
-            stat->bgcnt[1].maxy = window.bottom;
-            stat->bgcnt[1].in_winin = true;
-        }
-
-        // bg2 in win1
-        if (win1content & 4)
-        {
-            stat->bgcnt[2].minx = window.left;
-            stat->bgcnt[2].maxx = window.right;
-            stat->bgcnt[2].miny = window.top;
-            stat->bgcnt[2].maxy = window.bottom;
-            stat->bgcnt[2].in_winin = true;
-        }
-
-        // bg3 in win1
-        if (win1content & 8)
-        {
-            stat->bgcnt[3].minx = window.left;
-            stat->bgcnt[3].maxx = window.right;
-            stat->bgcnt[3].miny = window.top;
-            stat->bgcnt[3].maxy = window.bottom;
-            stat->bgcnt[3].in_winin = true;
+            mask = 1 << i;
+            if (win1content & mask)
+            {
+                stat->bgcnt[i].minx = window.left;
+                stat->bgcnt[i].maxx = window.right;
+                stat->bgcnt[i].miny = window.top;
+                stat->bgcnt[i].maxy = window.bottom;
+                stat->bgcnt[i].in_winin = true;
+            }
         }
 
         // objs in win1
@@ -932,54 +902,22 @@ void PPU::ComposeWindow()
         if (window.bottom > 160 || window.top > window.bottom)
             window.bottom = 160;
 
-        // exlude rightmost and bottommost coordinate given
-        // ie coordinates given are [left, right) & [top, bottom)
-        if (window.right > 0)
-            window.right -= 1;
-        if (window.bottom > 0)
-            window.bottom -= 1;
-
         // window content
         u8 win0content = mem->Read16Unsafe(REG_WININ) & 0xFF;
 
-        // bg0 in win0
-        if (win0content & 1)
+        // check if bgs are in window content
+        int mask;
+        for (int i = 0; i < 4; ++i)
         {
-            stat->bgcnt[0].minx = window.left;
-            stat->bgcnt[0].maxx = window.right;
-            stat->bgcnt[0].miny = window.top;
-            stat->bgcnt[0].maxy = window.bottom;
-            stat->bgcnt[0].in_winin = true;
-        }
-
-        // bg1 in win0
-        if (win0content & 2)
-        {
-            stat->bgcnt[1].minx = window.left;
-            stat->bgcnt[1].maxx = window.right;
-            stat->bgcnt[1].miny = window.top;
-            stat->bgcnt[1].maxy = window.bottom;
-            stat->bgcnt[1].in_winin = true;
-        }
-
-        // bg2 in win0
-        if (win0content & 4)
-        {
-            stat->bgcnt[2].minx = window.left;
-            stat->bgcnt[2].maxx = window.right;
-            stat->bgcnt[2].miny = window.top;
-            stat->bgcnt[2].maxy = window.bottom;
-            stat->bgcnt[2].in_winin = true;
-        }
-
-        // bg3 in win0
-        if (win0content & 8)
-        {
-            stat->bgcnt[3].minx = window.left;
-            stat->bgcnt[3].maxx = window.right;
-            stat->bgcnt[3].miny = window.top;
-            stat->bgcnt[3].maxy = window.bottom;
-            stat->bgcnt[3].in_winin = true;
+            mask = 1 << i;
+            if (win0content & mask)
+            {
+                stat->bgcnt[i].minx = window.left;
+                stat->bgcnt[i].maxx = window.right;
+                stat->bgcnt[i].miny = window.top;
+                stat->bgcnt[i].maxy = window.bottom;
+                stat->bgcnt[i].in_winin = true;
+            }
         }
 
         // objs in win0
@@ -996,49 +934,28 @@ void PPU::ComposeWindow()
     // winout
     u8 winoutcontent = mem->Read16Unsafe(REG_WINOUT) & 0xFF;
 
-    // bg0 in winout
-    if (winoutcontent & 1)
+    // check if bgs are in winout content
+    int mask;
+    for (int i = 0; i < 4; ++i)
     {
-        stat->bgcnt[0].minx = 0;
-        stat->bgcnt[0].miny = 0;
-        stat->bgcnt[0].maxx = 240;
-        stat->bgcnt[0].maxy = 180;
-        stat->bgcnt[0].in_winout = true;
-    }
-
-    // bg1 in winout
-    if (winoutcontent & 2)
-    {
-        stat->bgcnt[1].minx = 0;
-        stat->bgcnt[1].miny = 0;
-        stat->bgcnt[1].maxx = 240;
-        stat->bgcnt[1].maxy = 180;
-        stat->bgcnt[1].in_winout = true;
-    }
-
-    // bg2 in winout
-    if (winoutcontent & 4)
-    {
-        stat->bgcnt[2].minx = 0;
-        stat->bgcnt[2].miny = 0;
-        stat->bgcnt[2].maxx = 240;
-        stat->bgcnt[2].maxy = 180;
-        stat->bgcnt[2].in_winout = true;
-    }
-
-    // bg3 in winout
-    if (winoutcontent & 8)
-    {
-        stat->bgcnt[3].minx = 0;
-        stat->bgcnt[3].miny = 0;
-        stat->bgcnt[3].maxx = 240;
-        stat->bgcnt[3].maxy = 180;
-        stat->bgcnt[3].in_winout = true;
+        mask = 1 << i;
+        if (winoutcontent & mask)
+        {
+            stat->bgcnt[i].minx = 0;
+            stat->bgcnt[i].miny = 0;
+            stat->bgcnt[i].maxx = 240;
+            stat->bgcnt[i].maxy = 160;
+            stat->bgcnt[i].in_winout = true;
+        }
     }
 
     // objs in winout
     if (winoutcontent & 0x10)
         obj_in_winout = true;
+
+    // obj window enabled
+    if (stat->dispcnt.win_enabled & 4)
+        LOG(LogLevel::Warning, "Object window is enabled\n");
 }
 
 inline u16 PPU::GetObjPixel4BPP(u32 addr, int palbank, int x, int y)
@@ -1117,13 +1034,13 @@ inline u32 U16ToU32Color (u16 color_u16)
 // returns true if (x, y) is currently in winOut, true otherwise
 bool PPU::IsInWinOut(int x, int y)
 {
-    if ((stat->dispcnt.win_enabled & 1)        &&
-        x > win[0].left && x <= win[0].right   &&
-        y > win[0].top  && y <= win[0].bottom) return false;
+    if ((stat->dispcnt.win_enabled & 1)         &&
+        x >= win[0].left && x <= win[0].right   &&
+        y >= win[0].top  && y <= win[0].bottom) return false;
 
-    if ((stat->dispcnt.win_enabled & 2)       &&
-        x > win[1].left && x <= win[1].right  &&
-        y > win[1].top && y <= win[1].bottom) return false;
+    if ((stat->dispcnt.win_enabled & 2)         &&
+        x >= win[1].left && x <= win[1].right   &&
+        y >= win[1].top  && y <= win[1].bottom) return false;
     
     return true;
 }

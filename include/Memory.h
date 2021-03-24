@@ -85,33 +85,33 @@ class Memory
 
         u8 haltcnt;
 
-        void Reset();
-        bool LoadRom(const std::string &);
-        bool LoadBios(const std::string &);
+        void reset();
+        bool loadRom(const std::string &);
+        bool loadBios(const std::string &);
 
         // read / write from memory
-        u32  Read32(u32);
-        u16  Read16(u32);
-        u8   Read8(u32);
-        void Write8(u32, u8);
-        void Write16(u32, u16);
-        void Write32(u32, u32);
+        u32  read32(u32);
+        u16  read16(u32);
+        u8   read8(u32);
+        void write8(u32, u8);
+        void write16(u32, u16);
+        void write32(u32, u32);
 
         // unprotected read/write from memory
         // dangerous, but fast
-        u32  Read32Unsafe(u32);
-        u16  Read16Unsafe(u32);
-        u8   Read8Unsafe(u32);
-        void Write8Unsafe(u32, u8);
-        void Write16Unsafe(u32, u16);
-        void Write32Unsafe(u32, u32);
+        u32  read32Unsafe(u32);
+        u16  read16Unsafe(u32);
+        u8   read8Unsafe(u32);
+        void write8Unsafe(u32, u8);
+        void write16Unsafe(u32, u16);
+        void write32Unsafe(u32, u32);
 
         // DMA transfer routine
-        void _Dma(int);
+        void _dma(int);
 
     private:
-        void Dma0();
-        void Dma1();
-        void Dma2();
-        void Dma3();
+        void dma0();
+        void dma1();
+        void dma2();
+        void dma3();
 };

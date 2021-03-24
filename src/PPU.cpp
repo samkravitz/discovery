@@ -14,11 +14,10 @@
 #include <cstring>
 
 #include "PPU.h"
+#include "util.h"
 
 // transparent pixel color
 #define TRANSPARENT 0x8000
-
-u32 U16ToU32Color(u16);
 
 PPU::PPU(Memory *mem, LcdStat *stat) : mem(mem), stat(stat)
 {
@@ -108,7 +107,7 @@ void PPU::Tick()
     if (cycles == HDRAW)
     {
         if (scanline < SCREEN_HEIGHT)
-            RenderScanline();
+            renderScanline();
 
         stat->dispstat.in_hBlank = true;
 
@@ -128,7 +127,7 @@ void PPU::Tick()
             {
                 if (mem->dma[i].enable && mem->dma[i].mode == 2) // start at HBLANK
                 {
-                    mem->_Dma(i);
+                    mem->_dma(i);
                     //LOG(LogLevel::Debug, "DMA {} HBLANK\n", i);
                 }
             }
@@ -137,7 +136,7 @@ void PPU::Tick()
         // start VBlank
         if (scanline == VDRAW)
         {
-            Render();
+            render();
             stat->dispstat.in_vBlank = true;
 
             // fire Vblank interrupt if necessary
@@ -152,7 +151,7 @@ void PPU::Tick()
             {
                 if (mem->dma[i].enable && mem->dma[i].mode == 1) // start at VBLANK
                 {
-                    mem->_Dma(i);
+                    mem->_dma(i);
                     LOG(LogLevel::Debug, "DMA {} VBLANK\n", i);
                 }
             }
@@ -221,7 +220,7 @@ void PPU::Tick()
     }
 }
 
-void PPU::Render()
+void PPU::render()
 {
     //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
 
@@ -270,10 +269,10 @@ void PPU::Render()
     obj_in_winout = false;
 }
 
-void PPU::RenderScanline()
+void PPU::renderScanline()
 {
     // index 0 in BG palette
-    backdrop_color = U16ToU32Color(mem->Read16Unsafe(MEM_PALETTE_RAM_START));
+    backdrop_color = util::u16ToU32Color(mem->read16Unsafe(MEM_PALETTE_RAM_START));
 
     // "zero" scanline buffer with backdrop color
     for (int i = 0; i < SCREEN_WIDTH; ++i)
@@ -281,7 +280,7 @@ void PPU::RenderScanline()
 
     // init windows if enabled
     if (stat->dispcnt.win_enabled != 0)
-        ComposeWindow();
+        composeWindow();
 
     // render bg
     switch (stat->dispcnt.mode)
@@ -298,7 +297,7 @@ void PPU::RenderScanline()
                 {
                     if (stat->bgcnt[i].enabled && stat->bgcnt[i].priority == priority)
                     {
-                        RenderScanlineText(i);
+                        renderScanlineText(i);
                     }
                 }
             }
@@ -318,10 +317,10 @@ void PPU::RenderScanline()
                         {
                             case 0:
                             case 1:
-                                RenderScanlineText(i);
+                                renderScanlineText(i);
                                 break;
                             case 2:
-                                RenderScanlineAffine(i);
+                                renderScanlineAffine(i);
                                 break;
                             default: // should never happen
                                 std::cerr << "Error: trying to draw invalid background in mode 1: " << i << "\n";
@@ -340,7 +339,7 @@ void PPU::RenderScanline()
                 {
                     if (stat->bgcnt[i].enabled && stat->bgcnt[i].priority == priority)
                     {
-                       RenderScanlineAffine(i);
+                       renderScanlineAffine(i);
                     }
                 }
             }
@@ -349,7 +348,7 @@ void PPU::RenderScanline()
         case 3:
         case 4:
         case 5:
-            RenderScanlineBitmap(stat->dispcnt.mode);
+            renderScanlineBitmap(stat->dispcnt.mode);
             break;
     }
 
@@ -357,15 +356,15 @@ void PPU::RenderScanline()
     if (stat->dispcnt.obj_enabled)
     {
         // update objs list
-        UpdateAttr();
-        RenderObj();
+        updateAttr();
+        renderObj();
         //std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
     }
 
     std::memcpy(&screen_buffer[scanline], scanline_buffer, sizeof(scanline_buffer));
 }
 
-void PPU::RenderScanlineText(int bg)
+void PPU::renderScanlineText(int bg)
 {
     auto const &bgcnt = stat->bgcnt[bg];
 
@@ -405,7 +404,7 @@ void PPU::RenderScanlineText(int bg)
     for (int x = bgcnt.minx; x < bgcnt.maxx; ++x)
     {
         // layer is in winout & not winin
-        if (bgcnt.in_winout && !bgcnt.in_winin && !IsInWinOut(x, scanline))
+        if (bgcnt.in_winout && !bgcnt.in_winin && !isInWinOut(x, scanline))
           continue;
 
         map_x = (x + bgcnt.hoff) % width;
@@ -415,7 +414,7 @@ void PPU::RenderScanlineText(int bg)
         sb_addr = MEM_VRAM_START + SCREENBLOCK_LEN * (bgcnt.sbb);
         se_index = screenblock * 1024 + (tile_y % 32) * 32 + (tile_x % 32);
 
-        screenentry = mem->Read16(MEM_VRAM_START + 2 * se_index);
+        screenentry = mem->read16(MEM_VRAM_START + 2 * se_index);
         tile_id = screenentry >>  0 & 0x3FF;
         hflip  = screenentry >> 10 & 0x1;
         vflip  = screenentry >> 11 & 0x1;
@@ -434,24 +433,24 @@ void PPU::RenderScanlineText(int bg)
             palbank = screenentry >> 12 & 0xF;
 
             tile_addr = (MEM_VRAM_START + bgcnt.cbb * CHARBLOCK_LEN) + 0x20 * tile_id;
-            pixel = GetBGPixel4BPP(tile_addr, palbank, grid_x, grid_y);
+            pixel = getBGPixel4BPP(tile_addr, palbank, grid_x, grid_y);
         }
 
         else // 8BPP
         {
             tile_addr = (MEM_VRAM_START + bgcnt.cbb * CHARBLOCK_LEN) + 0x40 * tile_id;
-            pixel = GetBGPixel8BPP(tile_addr, grid_x, grid_y);
+            pixel = getBGPixel8BPP(tile_addr, grid_x, grid_y);
         }
 
 
         if (pixel != TRANSPARENT)
-            scanline_buffer[x] = U16ToU32Color(pixel);
+            scanline_buffer[x] = util::u16ToU32Color(pixel);
     }
 
 }
 
 // render the current scanline for affine bg modes
-void PPU::RenderScanlineAffine(int bg)
+void PPU::renderScanlineAffine(int bg)
 {
     auto const &bgcnt = stat->bgcnt[bg];
 
@@ -477,17 +476,17 @@ void PPU::RenderScanlineAffine(int bg)
     switch (bg)
     {
         case 2:
-            pa = (s16) mem->Read32Unsafe(REG_BG2PA) / 256.0;
-            pb = (s16) mem->Read32Unsafe(REG_BG2PB) / 256.0;
-            pc = (s16) mem->Read32Unsafe(REG_BG2PC) / 256.0;
-            pd = (s16) mem->Read32Unsafe(REG_BG2PD) / 256.0;
+            pa = (s16) mem->read32Unsafe(REG_BG2PA) / 256.0;
+            pb = (s16) mem->read32Unsafe(REG_BG2PB) / 256.0;
+            pc = (s16) mem->read32Unsafe(REG_BG2PC) / 256.0;
+            pd = (s16) mem->read32Unsafe(REG_BG2PD) / 256.0;
             break;
 
         case 3:
-            pa = (s16) mem->Read32Unsafe(REG_BG3PA) / 256.0;
-            pb = (s16) mem->Read32Unsafe(REG_BG3PB) / 256.0;
-            pc = (s16) mem->Read32Unsafe(REG_BG3PC) / 256.0;
-            pd = (s16) mem->Read32Unsafe(REG_BG3PD) / 256.0;
+            pa = (s16) mem->read32Unsafe(REG_BG3PA) / 256.0;
+            pb = (s16) mem->read32Unsafe(REG_BG3PB) / 256.0;
+            pc = (s16) mem->read32Unsafe(REG_BG3PC) / 256.0;
+            pd = (s16) mem->read32Unsafe(REG_BG3PD) / 256.0;
             break;
     }
 
@@ -514,7 +513,7 @@ void PPU::RenderScanlineAffine(int bg)
     for (int x = bgcnt.minx; x < bgcnt.miny; ++x)
     {
         // layer is in winout & not winin
-        if (bgcnt.in_winout && !bgcnt.in_winin && !IsInWinOut(x, scanline))
+        if (bgcnt.in_winout && !bgcnt.in_winin && !isInWinOut(x, scanline))
           continue;
 
         x1 = x + dx;
@@ -548,19 +547,19 @@ void PPU::RenderScanlineAffine(int bg)
         tile_x = map_x / 8; // 8 px per tile
         tile_y = map_y / 8;
 
-        se_index = mem->Read8((MEM_VRAM_START + bgcnt.sbb * SCREENBLOCK_LEN) + tile_y * (width / 8) + tile_x);
+        se_index = mem->read8((MEM_VRAM_START + bgcnt.sbb * SCREENBLOCK_LEN) + tile_y * (width / 8) + tile_x);
         tile_addr = (MEM_VRAM_START + bgcnt.cbb * CHARBLOCK_LEN) + (se_index * 0x40);
 
         // 8BPP only
-        pixel = GetBGPixel8BPP(tile_addr, map_x % 8, map_y % 8);
+        pixel = getBGPixel8BPP(tile_addr, map_x % 8, map_y % 8);
 
         if (pixel != TRANSPARENT)
-            scanline_buffer[x] = U16ToU32Color(pixel);
+            scanline_buffer[x] = util::u16ToU32Color(pixel);
     }
 }
 
 // render the current scanline for bitmap modes
-void PPU::RenderScanlineBitmap(int mode)
+void PPU::renderScanlineBitmap(int mode)
 {
     u8 palette_index;
     u16 pixel;
@@ -573,8 +572,8 @@ void PPU::RenderScanlineBitmap(int mode)
 
             for (int i = 0; i < SCREEN_WIDTH; ++i)
             {
-                pixel = mem->Read16Unsafe(pal_ptr); pal_ptr += 2;
-                scanline_buffer[i] = U16ToU32Color(pixel);
+                pixel = mem->read16Unsafe(pal_ptr); pal_ptr += 2;
+                scanline_buffer[i] = util::u16ToU32Color(pixel);
             }
             break;
 
@@ -587,10 +586,10 @@ void PPU::RenderScanlineBitmap(int mode)
 
             for (int i = 0; i < SCREEN_WIDTH; ++i)
             {
-                palette_index = mem->Read8Unsafe(pal_ptr++);
+                palette_index = mem->read8Unsafe(pal_ptr++);
                 // multiply by sizeof(u16) because each entry in palram is 2 bytes
-                pixel = mem->Read16Unsafe(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
-                scanline_buffer[i] = U16ToU32Color(pixel);
+                pixel = mem->read16Unsafe(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
+                scanline_buffer[i] = util::u16ToU32Color(pixel);
             }
 
             break;
@@ -606,10 +605,10 @@ void PPU::RenderScanlineBitmap(int mode)
 
             for (int i = 0; i < 160; ++i)
             {
-                palette_index = mem->Read8Unsafe(pal_ptr++);
+                palette_index = mem->read8Unsafe(pal_ptr++);
                 // multiply by sizeof(u16) because each entry in palram is 2 bytes
-                pixel = mem->Read16Unsafe(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
-                scanline_buffer[i] = U16ToU32Color(pixel);
+                pixel = mem->read16Unsafe(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
+                scanline_buffer[i] = util::u16ToU32Color(pixel);
             }
 
             break;
@@ -617,7 +616,7 @@ void PPU::RenderScanlineBitmap(int mode)
 }
 
 
-void PPU::RenderObj()
+void PPU::renderObj()
 {
     u16 pixel;
 
@@ -652,7 +651,7 @@ void PPU::RenderObj()
         for (int ix = -attr->hwidth; ix < attr->hwidth; ++ix)
         {
             // objs in winout
-            if (obj_in_winout && !IsInWinOut(qx0 + ix, scanline))
+            if (obj_in_winout && !isInWinOut(qx0 + ix, scanline))
                 continue;
 
             px = ix + attr->hwidth;
@@ -697,7 +696,7 @@ void PPU::RenderObj()
                 
                 tileno += block_x * 2;
 
-                pixel = GetObjPixel8BPP(LOWER_SPRITE_BLOCK + tileno * 32, tile_x, tile_y);
+                pixel = getObjPixel8BPP(LOWER_SPRITE_BLOCK + tileno * 32, tile_x, tile_y);
             }
 
             else // 4bpp
@@ -710,16 +709,16 @@ void PPU::RenderObj()
 
                 tileno += block_x;
 
-                pixel = GetObjPixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
+                pixel = getObjPixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
             }
             
             if (pixel != TRANSPARENT)
-                scanline_buffer[qx0 + ix] = U16ToU32Color(pixel);
+                scanline_buffer[qx0 + ix] = util::u16ToU32Color(pixel);
         }
     }
 }
 
-void PPU::UpdateAttr()
+void PPU::updateAttr()
 {
     u32 oam_ptr = MEM_OAM_START;
     u16 attr0, attr1, attr2;
@@ -729,9 +728,9 @@ void PPU::UpdateAttr()
     {
         ObjAttr &obj = objs[i];
 
-        attr0 = mem->Read16Unsafe(oam_ptr); oam_ptr += 2;
-        attr1 = mem->Read16Unsafe(oam_ptr); oam_ptr += 2;
-        attr2 = mem->Read16Unsafe(oam_ptr); oam_ptr += 4;
+        attr0 = mem->read16Unsafe(oam_ptr); oam_ptr += 2;
+        attr1 = mem->read16Unsafe(oam_ptr); oam_ptr += 2;
+        attr2 = mem->read16Unsafe(oam_ptr); oam_ptr += 4;
 
         obj.y            = attr0 >>  0 & 0xFF;
         obj.obj_mode     = attr0 >>  8 & 0x3;
@@ -807,10 +806,10 @@ void PPU::UpdateAttr()
             // transform P matrix from 8.8f to float
             // P = [pa pb]
             //     [pc pd]
-            obj.pa = (s16) mem->Read16(matrix_ptr +  0x6) / 256.0;
-            obj.pb = (s16) mem->Read16(matrix_ptr +  0xE) / 256.0;
-            obj.pc = (s16) mem->Read16(matrix_ptr + 0x16) / 256.0;
-            obj.pd = (s16) mem->Read16(matrix_ptr + 0x1E) / 256.0;
+            obj.pa = (s16) mem->read16(matrix_ptr +  0x6) / 256.0;
+            obj.pb = (s16) mem->read16(matrix_ptr +  0xE) / 256.0;
+            obj.pc = (s16) mem->read16(matrix_ptr + 0x16) / 256.0;
+            obj.pd = (s16) mem->read16(matrix_ptr + 0x1E) / 256.0;
 
             // double wide affine
             if (obj.obj_mode == 3)
@@ -833,13 +832,13 @@ void PPU::UpdateAttr()
     }
 }
 
-void PPU::ComposeWindow()
+void PPU::composeWindow()
 {
     // win1 enabled
     if (stat->dispcnt.win_enabled & 2)
     {
-        u16 win1v  = mem->Read16Unsafe(REG_WIN1V);
-        u16 win1h  = mem->Read16Unsafe(REG_WIN1H);
+        u16 win1v  = mem->read16Unsafe(REG_WIN1V);
+        u16 win1h  = mem->read16Unsafe(REG_WIN1H);
         
         auto &window = win[1];
         window.left   = win1h >> 8;
@@ -855,7 +854,7 @@ void PPU::ComposeWindow()
             window.bottom = 160;
 
         // window content
-        u8 win1content = mem->Read16Unsafe(REG_WININ) >> 8;
+        u8 win1content = mem->read16Unsafe(REG_WININ) >> 8;
 
         // check if bgs are in window content
         int mask;
@@ -886,8 +885,8 @@ void PPU::ComposeWindow()
     // win0 enabled
     if (stat->dispcnt.win_enabled & 1)
     {
-        u16 win0v  = mem->Read16Unsafe(REG_WIN0V);
-        u16 win0h  = mem->Read16Unsafe(REG_WIN0H);
+        u16 win0v  = mem->read16Unsafe(REG_WIN0V);
+        u16 win0h  = mem->read16Unsafe(REG_WIN0H);
 
         auto &window = win[0];
         window.left   = win0h >> 8;
@@ -903,7 +902,7 @@ void PPU::ComposeWindow()
             window.bottom = 160;
 
         // window content
-        u8 win0content = mem->Read16Unsafe(REG_WININ) & 0xFF;
+        u8 win0content = mem->read16Unsafe(REG_WININ) & 0xFF;
 
         // check if bgs are in window content
         int mask;
@@ -932,7 +931,7 @@ void PPU::ComposeWindow()
     }
 
     // winout
-    u8 winoutcontent = mem->Read16Unsafe(REG_WINOUT) & 0xFF;
+    u8 winoutcontent = mem->read16Unsafe(REG_WINOUT) & 0xFF;
 
     // check if bgs are in winout content
     int mask;
@@ -958,11 +957,11 @@ void PPU::ComposeWindow()
         LOG(LogLevel::Warning, "Object window is enabled\n");
 }
 
-inline u16 PPU::GetObjPixel4BPP(u32 addr, int palbank, int x, int y)
+inline u16 PPU::getObjPixel4BPP(u32 addr, int palbank, int x, int y)
 {
     addr += (y * 4) + (x / 2);
 
-    u16 palette_index = mem->Read8(addr);
+    u16 palette_index = mem->read8(addr);
 
     // use top nybble for odd x, even otherwise
     if (x & 1) { palette_index >>= 4; }
@@ -972,26 +971,26 @@ inline u16 PPU::GetObjPixel4BPP(u32 addr, int palbank, int x, int y)
     if (palette_index == 0)
         return TRANSPARENT;
 
-    return mem->Read16(SPRITE_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
+    return mem->read16(SPRITE_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
 }
 
-inline u16 PPU::GetObjPixel8BPP(u32 addr, int x, int y)
+inline u16 PPU::getObjPixel8BPP(u32 addr, int x, int y)
 {
     addr += (y * 8) + x;
 
-    u16 palette_index = mem->Read8(addr);
+    u16 palette_index = mem->read8(addr);
 
    if (palette_index == 0)
         return TRANSPARENT;
 
-    return mem->Read16(SPRITE_PALETTE + palette_index * sizeof(u16));
+    return mem->read16(SPRITE_PALETTE + palette_index * sizeof(u16));
 }
 
-inline u16 PPU::GetBGPixel4BPP(u32 addr, int palbank, int x, int y)
+inline u16 PPU::getBGPixel4BPP(u32 addr, int palbank, int x, int y)
 {
     addr += (y * 4) + (x / 2);
 
-    u16 palette_index = mem->Read8(addr);
+    u16 palette_index = mem->read8(addr);
 
     // use top nybble for odd x, even otherwise
     if (x & 1) { palette_index >>= 4; }
@@ -1001,38 +1000,23 @@ inline u16 PPU::GetBGPixel4BPP(u32 addr, int palbank, int x, int y)
     if (palette_index == 0)
         return TRANSPARENT;
 
-    return mem->Read16(BG_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
+    return mem->read16(BG_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
 }
 
-inline u16 PPU::GetBGPixel8BPP(u32 addr, int x, int y)
+inline u16 PPU::getBGPixel8BPP(u32 addr, int x, int y)
 {
     addr += (y * 8) + x;
 
-    u16 palette_index = mem->Read8(addr);
+    u16 palette_index = mem->read8(addr);
 
     if (palette_index == 0)
        return TRANSPARENT;
 
-    return mem->Read16(BG_PALETTE + palette_index * sizeof(u16));
+    return mem->read16(BG_PALETTE + palette_index * sizeof(u16));
 }
-
-// given a 16 bit GBA color, make it a 32 bit SDL color
-inline u32 U16ToU32Color (u16 color_u16)
-{
-    u8 a = 0x1F;
-    u32 r, g, b;
-    u32 color = 0; // alpha value 255 ?
-
-    r = color_u16 & 0x1F; color_u16 >>= 5; // bits  0 - 5
-    g = color_u16 & 0x1F; color_u16 >>= 5; // bits  6 - 10
-    b = color_u16 & 0x1F; color_u16 >>= 5; // bits 11 - 15
-
-    return r << 19 | g << 11 | b << 3;
-}
-
 
 // returns true if (x, y) is currently in winOut, true otherwise
-bool PPU::IsInWinOut(int x, int y)
+bool PPU::isInWinOut(int x, int y)
 {
     if ((stat->dispcnt.win_enabled & 1)         &&
         x >= win[0].left && x <= win[0].right   &&
@@ -1045,10 +1029,10 @@ bool PPU::IsInWinOut(int x, int y)
     return true;
 }
 
-void PPU::PrintPalette()
+void PPU::printPalette()
 {
     for (int i = 0; i < 256; i++)
     {
-        LOG("{}: {:x}\n", i, mem->Read16Unsafe(MEM_PALETTE_RAM_START + 2 * i));
+        LOG("{}: {:x}\n", i, mem->read16Unsafe(MEM_PALETTE_RAM_START + 2 * i));
     }
 }

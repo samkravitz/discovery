@@ -8,13 +8,13 @@
  */
 #include "Arm7Tdmi.h"
 
-void Arm7Tdmi::MoveShiftedRegister(u16 instruction)
+void Arm7Tdmi::moveShiftedRegister(u16 instruction)
 {
     u16 Rs         = util::bitseq<5, 3>(instruction);
     u16 Rd         = util::bitseq<2, 0>(instruction); 
     u32 offset5    = util::bitseq<10, 6>(instruction); // 5 bit immediate offset
     u16 shift_type = util::bitseq<12, 11>(instruction);
-    u32 op1 = GetRegister(Rs);
+    u32 op1 = getRegister(Rs);
 
     // encodings of LSR #0, ASR #0, and ROR #0 should be interpreted as #LSR #2, ASR #32, and ROR #32
     if (offset5 == 0 && shift_type != 0) // shift_type == 0 is LSL
@@ -25,15 +25,15 @@ void Arm7Tdmi::MoveShiftedRegister(u16 instruction)
             offset5 = 32;
     }
 
-    u8 carry_out = BarrelShift(offset5, op1, shift_type);
-    SetRegister(Rd, op1);
-    UpdateFlagsLogical(op1, carry_out);
+    u8 carry_out = barrelShift(offset5, op1, shift_type);
+    setRegister(Rd, op1);
+    updateFlagsLogical(op1, carry_out);
 
     // cycles: 1S
-    Tick(0, 1, 0);
+    tick(0, 1, 0);
 }
 
-void Arm7Tdmi::AddSubtract(u16 instruction)
+void Arm7Tdmi::addSubtract(u16 instruction)
 {
     u16 Rs         = util::bitseq<5, 3>(instruction);
     u16 Rd         = util::bitseq<2, 0>(instruction);
@@ -42,75 +42,75 @@ void Arm7Tdmi::AddSubtract(u16 instruction)
     bool add       = util::bitseq<9, 9>(instruction) == 0;
     u32 op1, op2, result;
 
-    op1 = GetRegister(Rs);
+    op1 = getRegister(Rs);
 
     if (immediate)
         op2 = Rn_offset3;
     else
-        op2 = GetRegister(Rn_offset3);
+        op2 = getRegister(Rn_offset3);
 
     if (add)
     {
         result = op1 + op2;
-        UpdateFlagsAddition(op1, op2, result);
+        updateFlagsAddition(op1, op2, result);
     }
     
     else
     {
         result = op1 - op2;
-        UpdateFlagsSubtraction(op1, op2, result);
+        updateFlagsSubtraction(op1, op2, result);
     }
 
-    SetRegister(Rd, result);
+    setRegister(Rd, result);
 
     // cycles: 1S
-    Tick(0, 1, 0);
+    tick(0, 1, 0);
 }
 
-void Arm7Tdmi::MoveImmediate(u16 instruction)
+void Arm7Tdmi::moveImmediate(u16 instruction)
 {
     u16 offset8 = util::bitseq<7, 0>(instruction);
     u16 Rd      = util::bitseq<10, 8>(instruction);
     u16 opcode  = util::bitseq<12, 11>(instruction);
     u32 result;
-    u8 carry = GetConditionCodeFlag(ConditionFlag::C);
-    u32 operand = GetRegister(Rd);
+    u8 carry = getConditionCodeFlag(ConditionFlag::C);
+    u32 operand = getRegister(Rd);
 
     switch (opcode)
     {
         case 0: // MOV
             result = offset8;
-            SetRegister(Rd, result);
-            UpdateFlagsLogical(result, carry);
+            setRegister(Rd, result);
+            updateFlagsLogical(result, carry);
             break;
         case 1: // CMP
             result = operand - offset8;
-            UpdateFlagsSubtraction(operand, offset8, result);
+            updateFlagsSubtraction(operand, offset8, result);
             break;
         case 2: // ADD
             result = operand + offset8;
-            SetRegister(Rd, result);
-            UpdateFlagsAddition(operand, offset8, result);
+            setRegister(Rd, result);
+            updateFlagsAddition(operand, offset8, result);
             break;
         case 3: // SUB
             result = operand - offset8;
-            SetRegister(Rd, result);
-            UpdateFlagsSubtraction(operand, offset8, result);
+            setRegister(Rd, result);
+            updateFlagsSubtraction(operand, offset8, result);
             break;
     }
 
     // cycles: 1S
-    Tick(0, 1, 0);
+    tick(0, 1, 0);
 }
 
-void Arm7Tdmi::AluThumb(u16 instruction)
+void Arm7Tdmi::aluThumb(u16 instruction)
 {
     u16 Rs     = util::bitseq<5, 3>(instruction);
     u16 Rd     = util::bitseq<2, 0>(instruction); 
     u16 opcode = util::bitseq<9, 6>(instruction);
-    u32 op1    = GetRegister(Rs);
-    u32 op2    = GetRegister(Rd);
-    u8 carry   = GetConditionCodeFlag(ConditionFlag::C);
+    u32 op1    = getRegister(Rs);
+    u32 op2    = getRegister(Rd);
+    u8 carry   = getConditionCodeFlag(ConditionFlag::C);
     u32 result;
 
     // cycles
@@ -122,115 +122,115 @@ void Arm7Tdmi::AluThumb(u16 instruction)
     {
         case 0b0000: // AND
             result = op1 & op2;
-            SetRegister(Rd, result);
-            UpdateFlagsLogical(result, carry);
+            setRegister(Rd, result);
+            updateFlagsLogical(result, carry);
             break;
 
         case 0b0001: // EOR
             result = op1 ^ op2;
-            SetRegister(Rd, result);
-            UpdateFlagsLogical(result, carry);
+            setRegister(Rd, result);
+            updateFlagsLogical(result, carry);
             break;
 
         case 0b0010: // LSL
-            carry = BarrelShift(op1 & 0xFF, op2, 0b00);
-            SetRegister(Rd, op2);
-            UpdateFlagsLogical(op2, carry);
+            carry = barrelShift(op1 & 0xFF, op2, 0b00);
+            setRegister(Rd, op2);
+            updateFlagsLogical(op2, carry);
 
             ++i; // 1I
             break;
 
         case 0b0011: // LSR
-            carry = BarrelShift(op1 & 0xFF, op2, 0b01);
-            SetRegister(Rd, op2);
-            UpdateFlagsLogical(op2, carry);
+            carry = barrelShift(op1 & 0xFF, op2, 0b01);
+            setRegister(Rd, op2);
+            updateFlagsLogical(op2, carry);
 
             ++i; // 1I
             break;
 
         case 0b0100: // ASR
-            carry = BarrelShift(op1 & 0xFF, op2, 0b10);
-            SetRegister(Rd, op2);
-            UpdateFlagsLogical(op2, carry);
+            carry = barrelShift(op1 & 0xFF, op2, 0b10);
+            setRegister(Rd, op2);
+            updateFlagsLogical(op2, carry);
 
             ++i; // 1I
             break;
 
         case 0b0101: // ADC
             result = op1 + op2 + carry;
-            SetRegister(Rd, result);
-            UpdateFlagsAddition(op1, op2, result);
+            setRegister(Rd, result);
+            updateFlagsAddition(op1, op2, result);
             break;
 
         case 0b0110: // SBC
             result = op2 - op1 - (~carry & 0x1); // Rd - Rs - NOT C-bit
-            SetRegister(Rd, result);
-            UpdateFlagsSubtraction(op2, op1, result);
+            setRegister(Rd, result);
+            updateFlagsSubtraction(op2, op1, result);
             break;
 
         case 0b0111: // ROR
-            carry = BarrelShift(op1 & 0xFF, op2, 0b11);
-            SetRegister(Rd, op2);
-            UpdateFlagsLogical(op2, carry);
+            carry = barrelShift(op1 & 0xFF, op2, 0b11);
+            setRegister(Rd, op2);
+            updateFlagsLogical(op2, carry);
 
             ++i; // 1I
             break;
 
         case 0b1000: // TST
             result = op1 & op2;
-            UpdateFlagsLogical(result, carry);
+            updateFlagsLogical(result, carry);
             break;
 
         case 0b1001: // NEG
             result = 0 - op1;
-            SetRegister(Rd, result);
-            UpdateFlagsSubtraction(0, op1, result);
+            setRegister(Rd, result);
+            updateFlagsSubtraction(0, op1, result);
             break;
 
         case 0b1010: // CMP
             result = op2 - op1;
-            UpdateFlagsSubtraction(op2, op1, result);
+            updateFlagsSubtraction(op2, op1, result);
             break;
 
         case 0b1011: // CMN
             result = op2 + op1;
-            UpdateFlagsAddition(op1, op2, result);
+            updateFlagsAddition(op1, op2, result);
             break;
 
         case 0b1100: // ORR
             result = op2 | op1;
-            SetRegister(Rd, result);
-            UpdateFlagsLogical(result, carry);
+            setRegister(Rd, result);
+            updateFlagsLogical(result, carry);
             break;
 
         case 0b1101: // MUL
         {
             result = op2 * op1;
-            SetRegister(Rd, result);
+            setRegister(Rd, result);
             
             // mul uses slightly different cpsr updates than addition
 
             u8 new_n_flag = result & 0x80000000 ? 1 : 0; // bit 31 of result
-            SetConditionCodeFlag(ConditionFlag::N, new_n_flag);
+            setConditionCodeFlag(ConditionFlag::N, new_n_flag);
 
             u8 new_z_flag = result == 0 ? 1 : 0;
-            SetConditionCodeFlag(ConditionFlag::Z, new_z_flag);
+            setConditionCodeFlag(ConditionFlag::Z, new_z_flag);
 
             // C destroyed
-            SetConditionCodeFlag(ConditionFlag::C, 0);
+            setConditionCodeFlag(ConditionFlag::C, 0);
             break;
         }
 
         case 0b1110: // BIC
             result = op2 & ~op1;
-            SetRegister(Rd, result);
-            UpdateFlagsLogical(result, carry);
+            setRegister(Rd, result);
+            updateFlagsLogical(result, carry);
             break;
 
         case 0b1111: // MVN
             result = ~op1;
-            SetRegister(Rd, result);
-            UpdateFlagsLogical(result, carry);
+            setRegister(Rd, result);
+            updateFlagsLogical(result, carry);
             break;
 
         default:
@@ -238,10 +238,10 @@ void Arm7Tdmi::AluThumb(u16 instruction)
             return;
     }
 
-    Tick(n, s, i);
+    tick(n, s, i);
 }
 
-void Arm7Tdmi::HiRegisterOps(u16 instruction)
+void Arm7Tdmi::hiRegisterOps(u16 instruction)
 {
     u16 Rs     = util::bitseq<5, 3>(instruction);
     u16 Rd     = util::bitseq<2, 0>(instruction); 
@@ -254,8 +254,8 @@ void Arm7Tdmi::HiRegisterOps(u16 instruction)
     if (H2) Rs |= 0b1000;
     if (H1) Rd |= 0b1000;
 
-    u32 op1 = GetRegister(Rs);
-    u32 op2 = GetRegister(Rd);
+    u32 op1 = getRegister(Rs);
+    u32 op2 = getRegister(Rd);
     u32 result;
 
     // cycles
@@ -277,7 +277,7 @@ void Arm7Tdmi::HiRegisterOps(u16 instruction)
                 op1 &= ~0x1;
 
             result = op1 + op2;
-            SetRegister(Rd, result);
+            setRegister(Rd, result);
 
             if (Rd == r15)
             {
@@ -298,7 +298,7 @@ void Arm7Tdmi::HiRegisterOps(u16 instruction)
             }
 
             result = op2 - op1;
-            UpdateFlagsSubtraction(op2, op1, result);
+            updateFlagsSubtraction(op2, op1, result);
             break;
         case 0b10: // MOV
             if (!H1 && !H2)
@@ -312,7 +312,7 @@ void Arm7Tdmi::HiRegisterOps(u16 instruction)
                 op1 &= ~0x1;
 
             result = op1;
-            SetRegister(Rd, result);
+            setRegister(Rd, result);
 
             if (Rd == r15)
             {
@@ -336,8 +336,8 @@ void Arm7Tdmi::HiRegisterOps(u16 instruction)
             {
                 // align to word boundary
                 op1 &= ~3;
-                SetRegister(r15, op1);
-                SetState(State::ARM);
+                setRegister(r15, op1);
+                setState(State::ARM);
             }
 
             else
@@ -346,7 +346,7 @@ void Arm7Tdmi::HiRegisterOps(u16 instruction)
                 op1 &= ~1;
             }
 
-            SetRegister(r15, op1);
+            setRegister(r15, op1);
 
             // flush pipeline for refill
             pipeline_full = false;
@@ -359,26 +359,26 @@ void Arm7Tdmi::HiRegisterOps(u16 instruction)
     // cycles:
     // 1S for ADD/MOV/CMP
     // 2S + 1N for Rd = 15 or BX
-    Tick(n, s, i);
+    tick(n, s, i);
 }
 
-void Arm7Tdmi::PcRelLoad(u16 instruction)
+void Arm7Tdmi::pcRelLoad(u16 instruction)
 {
     u16 Rd = util::bitseq<10, 8>(instruction); 
     u16 word8 = util::bitseq<7, 0>(instruction);
-    u32 base = GetRegister(r15);
+    u32 base = getRegister(r15);
     base &= ~2; // clear bit 1 for word alignment
 
     word8 <<= 2; // assembler places #imm >> 2 in word8
     base += word8;
 
-    SetRegister(Rd, Read32(base, true));
+    setRegister(Rd, read32(base, true));
     
     // cycles: 1S + 1N + 1I
-    Tick(1, 1, 1);
+    tick(1, 1, 1);
 }
 
-void Arm7Tdmi::LoadStoreRegOffset(u16 instruction)
+void Arm7Tdmi::loadStoreRegOffset(u16 instruction)
 {
     u16 Ro = util::bitseq<8, 6>(instruction); // offset register
     u16 Rb = util::bitseq<5, 3>(instruction); // base register
@@ -387,8 +387,8 @@ void Arm7Tdmi::LoadStoreRegOffset(u16 instruction)
     bool load = util::bitseq<11, 11>(instruction) == 1;
     bool byte = util::bitseq<10, 10>(instruction) == 1;
 
-    u32 base = GetRegister(Rb);
-    base += GetRegister(Ro); // add offset to base
+    u32 base = getRegister(Rb);
+    base += getRegister(Ro); // add offset to base
 
     // cycles
     u8 n = 0;
@@ -398,9 +398,9 @@ void Arm7Tdmi::LoadStoreRegOffset(u16 instruction)
     if (load)
     {
         if (byte)
-            SetRegister(Rd, Read8(base));
+            setRegister(Rd, read8(base));
         else
-            SetRegister(Rd, Read32(base, true));
+            setRegister(Rd, read32(base, true));
         
         n = 1;
         s = 1;
@@ -411,9 +411,9 @@ void Arm7Tdmi::LoadStoreRegOffset(u16 instruction)
     else
     {
         if (byte)
-            Write8(base, GetRegister(Rd) & 0xFF);
+            write8(base, getRegister(Rd) & 0xFF);
         else
-            Write32(base, GetRegister(Rd));
+            write32(base, getRegister(Rd));
 
         n = 2;    
     }
@@ -421,10 +421,10 @@ void Arm7Tdmi::LoadStoreRegOffset(u16 instruction)
     // cycles:
     // 1S + 1N + 1I for LDR
     // 2N for STR
-    Tick(n, s, i);
+    tick(n, s, i);
 }
 
-void Arm7Tdmi::LoadStoreSignedHalfword(u16 instruction)
+void Arm7Tdmi::loadStoreSignedHalfword(u16 instruction)
 {
     u16 Ro = util::bitseq<8, 6>(instruction); // offset register
     u16 Rb = util::bitseq<5, 3>(instruction); // base register
@@ -433,8 +433,8 @@ void Arm7Tdmi::LoadStoreSignedHalfword(u16 instruction)
     bool H = util::bitseq<11, 11>(instruction) == 1; // H flag
     bool S = util::bitseq<10, 10>(instruction) == 1; // sign extended flag
 
-    u32 base = GetRegister(Rb);
-    base += GetRegister(Ro); // add offset to base
+    u32 base = getRegister(Rb);
+    base += getRegister(Ro); // add offset to base
 
     // cycles
     u8 n = 0;
@@ -444,15 +444,15 @@ void Arm7Tdmi::LoadStoreSignedHalfword(u16 instruction)
     // store halfword
     if (!S && !H)
     {
-        Write16(base, GetRegister(Rd) & 0xFFFF);
+        write16(base, getRegister(Rd) & 0xFFFF);
         n = 2;
     }
     
     // load halfword
     else if (!S && H)
     {
-        u32 value = Read16(base, false);
-        SetRegister(Rd, value);
+        u32 value = read16(base, false);
+        setRegister(Rd, value);
         n = 1;
         s = 1;
         i = 1;
@@ -461,10 +461,10 @@ void Arm7Tdmi::LoadStoreSignedHalfword(u16 instruction)
     // load sign-extended byte
     else if (S && !H)
     {
-        u32 value = Read8(base);
+        u32 value = read8(base);
         if (value & 0x80)
             value |= 0xFFFFFF00; // bit 7 of byte is 1, so sign extend bits 31-8 of register
-        SetRegister(Rd, value);
+        setRegister(Rd, value);
         n = 1;
         s = 1;
         i = 1;
@@ -473,8 +473,8 @@ void Arm7Tdmi::LoadStoreSignedHalfword(u16 instruction)
     // load sign-extended halfword
     else
     {
-        u32 value = Read16(base, true);
-        SetRegister(Rd, value);
+        u32 value = read16(base, true);
+        setRegister(Rd, value);
         n = 1;
         s = 1;
         i = 1;
@@ -483,10 +483,10 @@ void Arm7Tdmi::LoadStoreSignedHalfword(u16 instruction)
     // cycles:
     // 1S + 1N + 1I for LDR
     // 2N for STR
-    Tick(n, s, i);
+    tick(n, s, i);
 }
 
-void Arm7Tdmi::LoadStoreImmediate(u16 instruction)
+void Arm7Tdmi::loadStoreImmediate(u16 instruction)
 {
     u16 Rb      = util::bitseq<5, 3>(instruction);  // base register
     u16 Rd      = util::bitseq<2, 0>(instruction);  // destination register
@@ -503,20 +503,20 @@ void Arm7Tdmi::LoadStoreImmediate(u16 instruction)
     if (!byte)
         offset5 <<= 2; // assembler places #imm >> 2 in word5 for word accesses
 
-    u32 base = GetRegister(Rb);
+    u32 base = getRegister(Rb);
     base += offset5; // add offset to base
 
     // store word
     if (!load && !byte)
     { 
-        Write32(base, GetRegister(Rd));
+        write32(base, getRegister(Rd));
         n = 2;
     }
     
     // load word
     else if (load && !byte)
     {
-        SetRegister(Rd,  Read32(base, true));
+        setRegister(Rd,  read32(base, true));
         n = 1;
         s = 1;
         i = 1;
@@ -525,13 +525,13 @@ void Arm7Tdmi::LoadStoreImmediate(u16 instruction)
     // store byte
     else if (!load && byte)
     {
-        Write8(base, GetRegister(Rd) & 0xFF);
+        write8(base, getRegister(Rd) & 0xFF);
         n = 2;
     }
     
     else
     { // load byte
-        SetRegister(Rd, Read8(base));
+        setRegister(Rd, read8(base));
         n = 1;
         s = 1;
         i = 1;
@@ -540,10 +540,10 @@ void Arm7Tdmi::LoadStoreImmediate(u16 instruction)
     // cycles:
     // 1S + 1N + 1I for LDR
     // 2N for STR
-    Tick(n, s, i);
+    tick(n, s, i);
 }
 
-void Arm7Tdmi::LoadStoreHalfword(u16 instruction)
+void Arm7Tdmi::loadStoreHalfword(u16 instruction)
 {
     u16 Rb      = util::bitseq<5, 3>(instruction);  // base register
     u16 Rd      = util::bitseq<2, 0>(instruction);  // destination register
@@ -557,12 +557,12 @@ void Arm7Tdmi::LoadStoreHalfword(u16 instruction)
     u8 s = 0;
     u8 i = 0;
 
-    u32 base = GetRegister(Rb);
+    u32 base = getRegister(Rb);
     base += offset5; // add offset to base
 
     if (load)
     {
-        SetRegister(Rd, Read16(base, false));
+        setRegister(Rd, read16(base, false));
         n = 1;
         s = 1;
         i = 1;
@@ -571,17 +571,17 @@ void Arm7Tdmi::LoadStoreHalfword(u16 instruction)
     // store
     else
     {
-        Write16(base, GetRegister(Rd) & 0xFFFF);
+        write16(base, getRegister(Rd) & 0xFFFF);
         n = 2;
     }
 
     // cycles:
     // 1S + 1N + 1I for LDR
     // 2N for STR
-    Tick(n, s, i);
+    tick(n, s, i);
 }
 
-void Arm7Tdmi::SpRelLoadStore(u16 instruction)
+void Arm7Tdmi::spRelLoadStore(u16 instruction)
 {
     u16 Rd    = util::bitseq<10, 8>(instruction); // destination register
     u16 word8 = util::bitseq<7, 0>(instruction);  // 8 bit immediate offset
@@ -594,12 +594,12 @@ void Arm7Tdmi::SpRelLoadStore(u16 instruction)
 
     word8 <<= 2; // assembler places #imm >> 2 in word8 to ensure word alignment
 
-    u32 base = GetRegister(r13); // current stack pointer is base address
+    u32 base = getRegister(r13); // current stack pointer is base address
     base += word8; // add offset to base
 
     if (load)
     {
-        SetRegister(Rd, Read32(base, true));
+        setRegister(Rd, read32(base, true));
         n = 1;
         s = 1;
         i = 1;
@@ -608,17 +608,17 @@ void Arm7Tdmi::SpRelLoadStore(u16 instruction)
     // store
     else
     {
-        Write32(base, GetRegister(Rd));
+        write32(base, getRegister(Rd));
         n = 2;
     }
 
     // cycles:
     // 1S + 1N + 1I for LDR
     // 2N for STR
-    Tick(n, s, i);
+    tick(n, s, i);
 }
 
-void Arm7Tdmi::LoadAddress(u16 instruction)
+void Arm7Tdmi::loadAddress(u16 instruction)
 {
     u16 Rd    = util::bitseq<10, 8>(instruction);       // destination register
     u16 word8 = util::bitseq<7, 0>(instruction);        // 8 bit immediate offset
@@ -629,49 +629,49 @@ void Arm7Tdmi::LoadAddress(u16 instruction)
 
     if (sp)
     {
-        base = GetRegister(r13);
+        base = getRegister(r13);
     }
     
     // pc
     else
     {
-        base = GetRegister(r15);
+        base = getRegister(r15);
         base &= ~2; // force bit 1 of PC to 0
     }
 
     base += word8;
 
-    SetRegister(Rd, base);
+    setRegister(Rd, base);
 
     // cycles: 1S
-    Tick(0, 1, 0);
+    tick(0, 1, 0);
 }
 
-void Arm7Tdmi::AddOffsetToSp(u16 instruction)
+void Arm7Tdmi::addOffsetToSp(u16 instruction)
 {
     u16 sword8 = util::bitseq<6, 0>(instruction); // 7 bit signed immediate value
     bool positive = util::bitseq<7, 7>(instruction) == 0; // sign bit of sword8
 
     sword8 <<= 2; // assembler places #imm >> 2 in word8 to ensure word alignment
 
-    u32 base = GetRegister(r13); // base address at SP
+    u32 base = getRegister(r13); // base address at SP
 
     if (positive)
         base += sword8;
     else
         base -= sword8;
 
-    SetRegister(r13, base);
+    setRegister(r13, base);
     
     // cycles: 1S
-    Tick(0, 1, 0);
+    tick(0, 1, 0);
 }
 
-void Arm7Tdmi::PushPop(u16 instruction)
+void Arm7Tdmi::pushPop(u16 instruction)
 {
     bool load = util::bitseq<11, 11>(instruction) == 1;
     bool R    = util::bitseq<8, 8>(instruction) == 1; // PC/LR bit
-    u32 base  = GetRegister(r13); // base address at SP
+    u32 base  = getRegister(r13); // base address at SP
 
     int num_registers = 0; // number of set bits in the register list, should be between 0-8
     int set_registers[8];
@@ -721,19 +721,19 @@ void Arm7Tdmi::PushPop(u16 instruction)
             base -= 4;
 
         // write base back into sp
-        SetRegister(r13, base);
+        setRegister(r13, base);
         
         // push registers
         for (int i = 0; i < num_registers; ++i)
         {
-            Write32(base, GetRegister(set_registers[i]));
+            write32(base, getRegister(set_registers[i]));
             base += 4; // increment stack pointer (4 bytes for word alignment)
             ++s;
         }
 
         if (R) // push LR
         {
-            Write32(base, GetRegister(r14));
+            write32(base, getRegister(r14));
             // base -= 4; // increment stack pointer (4 bytes for word alignment)
             ++s;
         }
@@ -745,14 +745,14 @@ void Arm7Tdmi::PushPop(u16 instruction)
         i = 1;
         for (int i = 0; i < num_registers; ++i)
         {
-            SetRegister(set_registers[i], Read32(base, false));
+            setRegister(set_registers[i], read32(base, false));
             base += 4; // decrement stack pointer (4 bytes for word alignment)
             ++s;
         }
 
         if (R) // pop pc
         {
-            SetRegister(r15, Read32(base, false) & ~1); // guaruntee halfword alignment
+            setRegister(r15, read32(base, false) & ~1); // guaruntee halfword alignment
             pipeline_full = false;
             base += 4; // decrement stack pointer (4 bytes for word alignment)
             ++s;
@@ -760,21 +760,21 @@ void Arm7Tdmi::PushPop(u16 instruction)
         }
 
         // write base back into sp
-        SetRegister(r13, base);
+        setRegister(r13, base);
     }
 
     // cycles:
     // nS + 1N + 1I (POP)
     // (n + 1)S + 2N + 1I (POP PC)
     // (n-1)S + 2N (PUSH).
-    Tick(n, s, i);
+    tick(n, s, i);
 }
 
-void Arm7Tdmi::MultipleLoadStore(u16 instruction)
+void Arm7Tdmi::multipleLoadStore(u16 instruction)
 {
     u16 Rb    = util::bitseq<10, 8>(instruction); // base register
     bool load = util::bitseq<11, 11>(instruction) == 1;
-    u32 base  = GetRegister(Rb);
+    u32 base  = getRegister(Rb);
 
     // cycles
     u8 n = 0;
@@ -799,17 +799,17 @@ void Arm7Tdmi::MultipleLoadStore(u16 instruction)
     {
         if (load) // load r15
         { 
-            SetRegister(r15, Read32(base, false));
+            setRegister(r15, read32(base, false));
             pipeline_full = false;
         }
 
         else // store r15
         {
-            Write32(base, registers.r15 + 4);
+            write32(base, registers.r15 + 4);
         }
 
         // store Rb = Rb +/- 0x40
-        SetRegister(Rb, base + 0x40);
+        setRegister(Rb, base + 0x40);
 
         return;
     }
@@ -818,7 +818,7 @@ void Arm7Tdmi::MultipleLoadStore(u16 instruction)
     { 
         for (int i = 0; i < num_registers; ++i)
         {
-            SetRegister(set_registers[i], Read32(base, false));
+            setRegister(set_registers[i], read32(base, false));
             base += 4; // decrement stack pointer (4 bytes for word alignment)
             ++s;
         }
@@ -831,7 +831,7 @@ void Arm7Tdmi::MultipleLoadStore(u16 instruction)
     {
         for (int i = 0; i < num_registers; ++i)
         {
-            Write32(base, GetRegister(set_registers[i]));
+            write32(base, getRegister(set_registers[i]));
             base += 4; // increment stack pointer (4 bytes for word alignment)
             ++s;
         }
@@ -840,24 +840,24 @@ void Arm7Tdmi::MultipleLoadStore(u16 instruction)
     }
 
     // write back address into Rb
-    SetRegister(Rb, base);
+    setRegister(Rb, base);
 
     // cycles:
     // nS + 1N + 1I for LDM
     // (n - 1)S + 2N for STM
-    Tick(n, s, i);
+    tick(n, s, i);
 }
 
-void Arm7Tdmi::ConditionalBranch(u16 instruction)
+void Arm7Tdmi::conditionalBranch(u16 instruction)
 {
     u16 soffset8 = util::bitseq<7, 0>(instruction); // signed 8 bit offset
     Condition condition = (Condition) util::bitseq<11, 8>(instruction);
-    u32 base = GetRegister(r15);
+    u32 base = getRegister(r15);
     u32 jump_address;
-    if (!ConditionMet(condition))
+    if (!conditionMet(condition))
     {
         // 1S
-        Tick(0, 1, 0);
+        tick(0, 1, 0);
         return;
     }
 
@@ -877,16 +877,16 @@ void Arm7Tdmi::ConditionalBranch(u16 instruction)
         jump_address = base + soffset8;
     }
 
-    SetRegister(r15, jump_address);
+    setRegister(r15, jump_address);
 
     // flush pipeline for refill
     pipeline_full = false;
 
     // cycles: 2S + 1N
-    Tick(1, 2, 0);
+    tick(1, 2, 0);
 }
 
-void Arm7Tdmi::SoftwareInterruptThumb(u16 instruction)
+void Arm7Tdmi::softwareInterruptThumb(u16 instruction)
 {
     //LOG(LogLevel::Debug, "Thumb SWI: {}\n", instruction & 0xFF);
 
@@ -911,25 +911,25 @@ void Arm7Tdmi::SoftwareInterruptThumb(u16 instruction)
     // }
 
     // LLE BIOS calls - handle thru BIOS
-    u32 old_cpsr = GetRegister(cpsr);
-    SetMode(Mode::SVC);
-    SetRegister(r14, GetRegister(r15) - 2);
+    u32 old_cpsr = getRegister(cpsr);
+    setMode(Mode::SVC);
+    setRegister(r14, getRegister(r15) - 2);
     registers.cpsr.i = 1;
-    UpdateSPSR(old_cpsr, false);
-    SetState(State::ARM);
-    SetRegister(r15, 0x08);
+    updateSPSR(old_cpsr, false);
+    setState(State::ARM);
+    setRegister(r15, 0x08);
     pipeline_full = false;
 
     last_read_bios = bios_read_state[3];
 
     // cycles: 2S + 1N
-    Tick(1, 2, 0);
+    tick(1, 2, 0);
 }
 
-void Arm7Tdmi::UnconditionalBranch(u16 instruction)
+void Arm7Tdmi::unconditionalBranch(u16 instruction)
 {
     u16 offset11 = util::bitseq<10, 0>(instruction); // signed 11 bit offset
-    u32 base = GetRegister(r15);
+    u32 base = getRegister(r15);
     u32 jump_address;
 
     offset11 <<= 1; // assembler places #imm >> 1 in offset11 to ensure halfword alignment
@@ -953,16 +953,16 @@ void Arm7Tdmi::UnconditionalBranch(u16 instruction)
         jump_address = base + offset11;
     }
 
-    SetRegister(r15, jump_address);
+    setRegister(r15, jump_address);
 
     // flush pipeline for refill
     pipeline_full = false;
 
     // cycles: 2S + 1N
-    Tick(1, 2, 0);
+    tick(1, 2, 0);
 }
 
-void Arm7Tdmi::LongBranchLink(u16 instruction)
+void Arm7Tdmi::longBranchLink(u16 instruction)
 {
     u32 offset = util::bitseq<10, 0>(instruction);       // long branch offset
     bool H     = util::bitseq<11, 11>(instruction) == 1; // high/low offset bit
@@ -970,27 +970,27 @@ void Arm7Tdmi::LongBranchLink(u16 instruction)
 
     if (H) // instruction 2
     {
-        base = GetRegister(r14); // LR
+        base = getRegister(r14); // LR
         offset <<= 1;
         base += offset;
 
         // get address of next instruction and set bit 0
-        u32 next_instruction_address = GetRegister(r15) - 2;
+        u32 next_instruction_address = getRegister(r15) - 2;
         next_instruction_address |= 0x1;
 
-        SetRegister(r15, base);
-        SetRegister(r14, next_instruction_address); // next instruction in link register
+        setRegister(r15, base);
+        setRegister(r14, next_instruction_address); // next instruction in link register
 
         // flush pipeline for refill
         pipeline_full = false;
         
         // cycles: 3S + 1N
-        Tick(1, 3, 0);
+        tick(1, 3, 0);
     }
     
     else // instruction 1
     {
-        base = GetRegister(r15); // PC
+        base = getRegister(r15); // PC
         offset <<= 12;
 
         if (offset >> 22)
@@ -1011,7 +1011,7 @@ void Arm7Tdmi::LongBranchLink(u16 instruction)
             base += offset;
         }
 
-        SetRegister(r14, base); // resulting address stored in LR
+        setRegister(r14, base); // resulting address stored in LR
     }
 }
 

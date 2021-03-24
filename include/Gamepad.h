@@ -44,6 +44,6 @@ class Gamepad
             
         } keys;
 
-        void Poll();
-        void Print();
+        void poll();
+        void print();
 };

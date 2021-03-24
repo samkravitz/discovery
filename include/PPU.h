@@ -133,24 +133,24 @@ class PPU
         std::unique_ptr<std::stack<int>> oam_update;
 
         // video mode renders
-        void Render();
-        void RenderObj();
-        void RenderScanline();
-        void RenderScanlineText(int);
-        void RenderScanlineAffine(int);
-        void RenderScanlineBitmap(int);
+        void render();
+        void renderObj();
+        void renderScanline();
+        void renderScanlineText(int);
+        void renderScanlineAffine(int);
+        void renderScanlineBitmap(int);
 
-        void DrawBackgroundReg(int);
-        void DrawBackgroundAffine(int);
+        void drawBackgroundReg(int);
+        void drawBackgroundAffine(int);
 
         // misc
-        inline u16 GetObjPixel4BPP(u32, int, int, int);
-        inline u16 GetObjPixel8BPP(u32, int, int);
-        inline u16 GetBGPixel4BPP(u32, int, int, int);
-        inline u16 GetBGPixel8BPP(u32, int, int);
-        void UpdateAttr();
-        void ComposeWindow();
-        inline bool IsInWinOut(int, int);
+        inline u16 getObjPixel4BPP(u32, int, int, int);
+        inline u16 getObjPixel8BPP(u32, int, int);
+        inline u16 getBGPixel4BPP(u32, int, int, int);
+        inline u16 getBGPixel8BPP(u32, int, int);
+        void updateAttr();
+        void composeWindow();
+        inline bool isInWinOut(int, int);
 
-        void PrintPalette();
+        void printPalette();
 };

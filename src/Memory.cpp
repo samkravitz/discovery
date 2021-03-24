@@ -24,12 +24,12 @@ Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad) :
     // cart_rom  = NULL;
     cart_ram  = NULL;
 
-    Reset();
+    reset();
 }
 
 Memory::~Memory() { }
 
-void Memory::Reset()
+void Memory::reset()
 {
     // default cycle accesses for wait statae
     n_cycles = 4;
@@ -64,10 +64,10 @@ void Memory::Reset()
     haltcnt = 0;
 
     // write all 1s to keypad (all keys cleared)
-    Write32Unsafe(REG_KEYINPUT, 0b1111111111);
+    write32Unsafe(REG_KEYINPUT, 0b1111111111);
 }
 
-bool Memory::LoadRom(const std::string &name)
+bool Memory::loadRom(const std::string &name)
 {
     std::ifstream rom(name, std::ios::in | std::ios::binary);
 
@@ -149,7 +149,7 @@ bool Memory::LoadRom(const std::string &name)
     return true;
 }
 
-bool Memory::LoadBios(const std::string &name)
+bool Memory::loadBios(const std::string &name)
 {
     // bios must be called gba_bios.bin
     std::ifstream bios(name, std::ios::in | std::ios::binary);
@@ -165,20 +165,20 @@ bool Memory::LoadBios(const std::string &name)
     return true;
 }
 
-u32 Memory::Read32(u32 address)
+u32 Memory::read32(u32 address)
 {
-    return (Read8(address + 3) << 24)
-    | (Read8(address + 2) << 16)
-    | (Read8(address + 1) << 8)
-    | Read8(address);
+    return (read8(address + 3) << 24)
+    | (read8(address + 2) << 16)
+    | (read8(address + 1) << 8)
+    | read8(address);
 }
 
-u16 Memory::Read16(u32 address)
+u16 Memory::read16(u32 address)
 {
-    return (Read8(address + 1) << 8) | Read8(address);
+    return (read8(address + 1) << 8) | read8(address);
 }
 
-u8 Memory::Read8(u32 address)
+u8 Memory::read8(u32 address)
 {
     if (address == 0xE000000)
     {
@@ -271,20 +271,20 @@ u8 Memory::Read8(u32 address)
         case REG_VCOUNT:       return stat->scanline;
 
         // REG_TM0D
-        case REG_TM0D:         return timer->Read(0) >> 0 & 0xFF;
-        case REG_TM0D + 1:     return timer->Read(0) >> 8 & 0xFF;
+        case REG_TM0D:         return timer->read(0) >> 0 & 0xFF;
+        case REG_TM0D + 1:     return timer->read(0) >> 8 & 0xFF;
 
         // REG_TM1D
-        case REG_TM1D:         return timer->Read(1) >> 0 & 0xFF;
-        case REG_TM1D + 1:     return timer->Read(1) >> 8 & 0xFF;
+        case REG_TM1D:         return timer->read(1) >> 0 & 0xFF;
+        case REG_TM1D + 1:     return timer->read(1) >> 8 & 0xFF;
 
         // REG_TM2D
-        case REG_TM2D:         return timer->Read(2) >> 0 & 0xFF;
-        case REG_TM2D + 1:     return timer->Read(2) >> 8 & 0xFF;
+        case REG_TM2D:         return timer->read(2) >> 0 & 0xFF;
+        case REG_TM2D + 1:     return timer->read(2) >> 8 & 0xFF;
 
         // REG_TM3D
-        case REG_TM3D:         return timer->Read(3) >> 0 & 0xFF;
-        case REG_TM3D + 1:     return timer->Read(3) >> 8 & 0xFF;
+        case REG_TM3D:         return timer->read(3) >> 0 & 0xFF;
+        case REG_TM3D + 1:     return timer->read(3) >> 8 & 0xFF;
 
         // REG_KEYINPUT
         case REG_KEYINPUT:     return gamepad->keys.raw >> 0 & 0xFF;
@@ -295,21 +295,21 @@ u8 Memory::Read8(u32 address)
     }
 }
 
-void Memory::Write32(u32 address, u32 value)
+void Memory::write32(u32 address, u32 value)
 {
-    Write8(address    , (value >>  0) & 0xFF);
-    Write8(address + 1, (value >>  8) & 0xFF);
-    Write8(address + 2, (value >> 16) & 0xFF);
-    Write8(address + 3, (value >> 24) & 0xFF);
+    write8(address    , (value >>  0) & 0xFF);
+    write8(address + 1, (value >>  8) & 0xFF);
+    write8(address + 2, (value >> 16) & 0xFF);
+    write8(address + 3, (value >> 24) & 0xFF);
 }
 
-void Memory::Write16(u32 address, u16 value)
+void Memory::write16(u32 address, u16 value)
 {
-    Write8(address    , (value >> 0) & 0xFF);
-    Write8(address + 1, (value >> 8) & 0xFF);
+    write8(address    , (value >> 0) & 0xFF);
+    write8(address + 1, (value >> 8) & 0xFF);
 }
 
-void Memory::Write8(u32 address, u8 value)
+void Memory::write8(u32 address, u8 value)
 {
 
     switch (address >> 24)
@@ -570,7 +570,7 @@ void Memory::Write8(u32 address, u8 value)
             if (dma[0].enable && dma[0].mode == 0) // immediate mode
             {
                 //LOG(LogLevel::Message, "DMA0 immediate\n");
-                _Dma(0);
+                _dma(0);
 
                 // disable DMA after immediate transfer
                 dma[0].enable = 0;
@@ -599,7 +599,7 @@ void Memory::Write8(u32 address, u8 value)
             if (dma[1].enable && dma[1].mode == 0) // immediate mode
             {
                 //LOG(LogLevel::Message, "DMA1 immediate\n");
-                _Dma(1);
+                _dma(1);
 
                 // disable DMA after immediate transfer
                 dma[1].enable = 0;
@@ -628,7 +628,7 @@ void Memory::Write8(u32 address, u8 value)
             if (dma[2].enable && dma[2].mode == 0) // immediate mode
             {
                 //(LogLevel::Message, "DMA2 immediate\n");
-                _Dma(2);
+                _dma(2);
 
                 // disable DMA after immediate transfer
                 dma[2].enable = 0;
@@ -657,7 +657,7 @@ void Memory::Write8(u32 address, u8 value)
             if (dma[3].enable && dma[3].mode == 0) // immediate mode
             {
                 //LOG(LogLevel::Message, "DMA3 immediate\n");
-                _Dma(3);
+                _dma(3);
 
                 // disable DMA after immediate transfer
                 dma[3].enable = 0;
@@ -670,45 +670,45 @@ void Memory::Write8(u32 address, u8 value)
         // REG_TM0D
         case REG_TM0D:  [[fallthrough]];
         case REG_TM0D + 1:
-            timer->Write(0, memory[REG_TM0D + 1] << 8 | memory[REG_TM0D]);
+            timer->write(0, memory[REG_TM0D + 1] << 8 | memory[REG_TM0D]);
             break;
         
         // REG_TM1D
         case REG_TM1D:  [[fallthrough]];
         case REG_TM1D + 1:
-            timer->Write(1, memory[REG_TM1D + 1] << 8 | memory[REG_TM1D]);
+            timer->write(1, memory[REG_TM1D + 1] << 8 | memory[REG_TM1D]);
             break;
         
         // REG_TM2D
         case REG_TM2D:  [[fallthrough]];
         case REG_TM2D + 1:
-            timer->Write(2, memory[REG_TM2D + 1] << 8 | memory[REG_TM2D]);
+            timer->write(2, memory[REG_TM2D + 1] << 8 | memory[REG_TM2D]);
             break;
         
         // REG_TM3D
         case REG_TM3D:  [[fallthrough]];
         case REG_TM3D + 1:
-            timer->Write(3, memory[REG_TM3D + 1] << 8 | memory[REG_TM3D]);
+            timer->write(3, memory[REG_TM3D + 1] << 8 | memory[REG_TM3D]);
             break;
 
         // REG_TM0CNT
         case REG_TM0CNT:
-            timer->WriteCnt(0, memory[REG_TM0CNT]);
+            timer->writeCnt(0, memory[REG_TM0CNT]);
             break;
         
         // REG_TM1CNT
         case REG_TM1CNT:
-            timer->WriteCnt(1, memory[REG_TM1CNT]);
+            timer->writeCnt(1, memory[REG_TM1CNT]);
             break;
         
         // REG_TM2CNT
         case REG_TM2CNT:
-            timer->WriteCnt(2, memory[REG_TM2CNT]);
+            timer->writeCnt(2, memory[REG_TM2CNT]);
             break;
         
         // REG_TM3CNT
         case REG_TM3CNT:
-            timer->WriteCnt(3, memory[REG_TM3CNT]);
+            timer->writeCnt(3, memory[REG_TM3CNT]);
             break;
         
         // REG_IF
@@ -723,63 +723,63 @@ void Memory::Write8(u32 address, u8 value)
     }
 }
 
-u32 Memory::Read32Unsafe(u32 address)
+u32 Memory::read32Unsafe(u32 address)
 {
-    return (Read8Unsafe(address + 3) << 24)
-    | (Read8Unsafe(address + 2) << 16)
-    | (Read8Unsafe(address + 1) << 8)
-    | Read8Unsafe(address);
+    return (read8Unsafe(address + 3) << 24)
+    | (read8Unsafe(address + 2) << 16)
+    | (read8Unsafe(address + 1) << 8)
+    | read8Unsafe(address);
 }
 
-u16 Memory::Read16Unsafe(u32 address)
+u16 Memory::read16Unsafe(u32 address)
 {
-    return (Read8Unsafe(address + 1) << 8) | Read8Unsafe(address);
+    return (read8Unsafe(address + 1) << 8) | read8Unsafe(address);
 }
 
-u8 Memory::Read8Unsafe(u32 address)
+u8 Memory::read8Unsafe(u32 address)
 {
     return memory[address];
 }
 
-void Memory::Write32Unsafe(u32 address, u32 value)
+void Memory::write32Unsafe(u32 address, u32 value)
 {
-    Write8Unsafe(address, value & 0xFF);
-    Write8Unsafe(address + 1, (value >> 8) & 0xFF);
-    Write8Unsafe(address + 2, (value >> 16) & 0xFF);
-    Write8Unsafe(address + 3, (value >> 24) & 0xFF);
+    write8Unsafe(address, value & 0xFF);
+    write8Unsafe(address + 1, (value >> 8) & 0xFF);
+    write8Unsafe(address + 2, (value >> 16) & 0xFF);
+    write8Unsafe(address + 3, (value >> 24) & 0xFF);
 }
 
-void Memory::Write16Unsafe(u32 address, u16 value)
+void Memory::write16Unsafe(u32 address, u16 value)
 {
-    Write8Unsafe(address, value & 0xFF);
-    Write8Unsafe(address + 1, (value >> 8) & 0xFF);
+    write8Unsafe(address, value & 0xFF);
+    write8Unsafe(address + 1, (value >> 8) & 0xFF);
 }
 
-void Memory::Write8Unsafe(u32 address, u8 value)
+void Memory::write8Unsafe(u32 address, u8 value)
 {
     memory[address] = value;
 }
 
-void Memory::_Dma(int n)
+void Memory::_dma(int n)
 {
     switch (n)
     {
-        case 0: Dma0(); break;
-        case 1: Dma1(); break;
-        case 2: Dma2(); break;
-        case 3: Dma3(); break;
+        case 0: dma0(); break;
+        case 1: dma1(); break;
+        case 2: dma2(); break;
+        case 3: dma3(); break;
 
         default: // should never happen
             LOG(LogLevel::Error, "Error: accessing unknown DMA: {}\n", n);
     }
 }
 
-void Memory::Dma0()
+void Memory::dma0()
 {
     // LOG(LogLevel::Message, "DMA 0\n");
     u32 dest_ptr, src_ptr, original_src, original_dest;
-    src_ptr  = original_src  = Read32Unsafe(REG_DMA0SAD) & 0x7FFFFFF; // 27 bit
-    dest_ptr = original_dest = Read32Unsafe(REG_DMA0DAD) & 0x7FFFFFF; // 27 bit;
+    src_ptr  = original_src  = read32Unsafe(REG_DMA0SAD) & 0x7FFFFFF; // 27 bit
+    dest_ptr = original_dest = read32Unsafe(REG_DMA0DAD) & 0x7FFFFFF; // 27 bit;
 
     // LOG(LogLevel::Debug, "DMA 0 start addr: 0x{x}\n", src_ptr);
     // LOG(LogLevel::Debug, "DMA 0 dest  addr: 0x{x}\n", dest_ptr);
@@ -817,7 +817,7 @@ void Memory::Dma0()
         for (int i = 0; i < dma[0].num_transfers; ++i)
         {
             // copy memory from src address to dest address
-            Write32(dest_ptr, Read32(src_ptr));
+            write32(dest_ptr, read32(src_ptr));
 
             // increment src, dest ptrs
             src_ptr  += src_inc  * sizeof(u32);
@@ -831,7 +831,7 @@ void Memory::Dma0()
         for (int i = 0; i < dma[0].num_transfers; ++i)
         {
             // copy memory from src address to dest address
-            Write16(dest_ptr, Read16(src_ptr));
+            write16(dest_ptr, read16(src_ptr));
 
             // increment src, dest ptrs
             src_ptr  += src_inc  * sizeof(u16);
@@ -844,10 +844,10 @@ void Memory::Dma0()
         dest_ptr = original_dest;
 
     // write back dest
-    Write32Unsafe(REG_DMA0DAD, dest_ptr);
+    write32Unsafe(REG_DMA0DAD, dest_ptr);
 
     // write back src
-    Write32Unsafe(REG_DMA0SAD, src_ptr);
+    write32Unsafe(REG_DMA0SAD, src_ptr);
 
 
     // turn off this transfer if repeat bit is not set
@@ -861,12 +861,12 @@ void Memory::Dma0()
     //LOG(LogLevel::Debug, "DMA 0 Done\n");
 }
 
-void Memory::Dma1()
+void Memory::dma1()
 {
     //LOG(LogLevel::Debug, "DMA 1\n");
     u32 dest_ptr, src_ptr, original_src, original_dest;
-    src_ptr  = original_src  = Read32Unsafe(REG_DMA1SAD) & 0xFFFFFFF; // 28 bit
-    dest_ptr = original_dest = Read32Unsafe(REG_DMA1DAD) & 0x7FFFFFF; // 27 bit
+    src_ptr  = original_src  = read32Unsafe(REG_DMA1SAD) & 0xFFFFFFF; // 28 bit
+    dest_ptr = original_dest = read32Unsafe(REG_DMA1DAD) & 0x7FFFFFF; // 27 bit
 
     // LOG(LogLevel::Debug, "DMA 1 start addr: 0x{x}\n", src_ptr);
     // LOG(LogLevel::Debug, "DMA 1 dest  addr: 0x{x}\n", dest_ptr);
@@ -904,7 +904,7 @@ void Memory::Dma1()
         for (int i = 0; i < dma[1].num_transfers; ++i)
         {
             // copy memory from src address to dest address
-            Write32(dest_ptr, Read32(src_ptr));
+            write32(dest_ptr, read32(src_ptr));
 
             // increment src, dest ptrs
             src_ptr  += src_inc  * sizeof(u32);
@@ -918,7 +918,7 @@ void Memory::Dma1()
         for (int i = 0; i < dma[1].num_transfers; ++i)
         {
             // copy memory from src address to dest address
-            Write16(dest_ptr, Read16(src_ptr));
+            write16(dest_ptr, read16(src_ptr));
 
             // increment src, dest ptrs
             src_ptr  += src_inc  * sizeof(u16);
@@ -931,10 +931,10 @@ void Memory::Dma1()
         dest_ptr = original_dest;
 
     // write back dest
-    Write32Unsafe(REG_DMA1DAD, dest_ptr);
+    write32Unsafe(REG_DMA1DAD, dest_ptr);
 
     // write back src
-    Write32Unsafe(REG_DMA1SAD, src_ptr);
+    write32Unsafe(REG_DMA1SAD, src_ptr);
 
 
     // turn off this transfer if repeat bit is not set
@@ -948,12 +948,12 @@ void Memory::Dma1()
     //LOG(LogLevel::Debug, "DMA 1 Done\n");
 }
 
-void Memory::Dma2()
+void Memory::dma2()
 {
     //LOG(LogLevel::Debug, "DMA 2\n");
     u32 dest_ptr, src_ptr, original_src, original_dest;
-    src_ptr  = original_src  = Read32Unsafe(REG_DMA2SAD) & 0xFFFFFFF; // 28 bit
-    dest_ptr = original_dest = Read32Unsafe(REG_DMA2DAD) & 0x7FFFFFF; // 27 bit;
+    src_ptr  = original_src  = read32Unsafe(REG_DMA2SAD) & 0xFFFFFFF; // 28 bit
+    dest_ptr = original_dest = read32Unsafe(REG_DMA2DAD) & 0x7FFFFFF; // 27 bit;
 
     // LOG(LogLevel::Debug, "DMA 2 start addr: 0x{x}\n", src_ptr);
     // LOG(LogLevel::Debug, "DMA 2 dest  addr: 0x{x}\n", dest_ptr);
@@ -991,7 +991,7 @@ void Memory::Dma2()
         for (int i = 0; i < dma[2].num_transfers; ++i)
         {
             // copy memory from src address to dest address
-            Write32(dest_ptr, Read32(src_ptr));
+            write32(dest_ptr, read32(src_ptr));
 
             // increment src, dest ptrs
             src_ptr  += src_inc  * sizeof(u32);
@@ -1005,7 +1005,7 @@ void Memory::Dma2()
         for (int i = 0; i < dma[2].num_transfers; ++i)
         {
             // copy memory from src address to dest address
-            Write16(dest_ptr, Read16(src_ptr));
+            write16(dest_ptr, read16(src_ptr));
 
             // increment src, dest ptrs
             src_ptr  += src_inc  * sizeof(u16);
@@ -1018,10 +1018,10 @@ void Memory::Dma2()
         dest_ptr = original_dest;
 
     // write back dest
-    Write32Unsafe(REG_DMA2DAD, dest_ptr);
+    write32Unsafe(REG_DMA2DAD, dest_ptr);
 
     // write back src
-    Write32Unsafe(REG_DMA2SAD, src_ptr);
+    write32Unsafe(REG_DMA2SAD, src_ptr);
 
 
     // turn off this transfer if repeat bit is not set
@@ -1035,12 +1035,12 @@ void Memory::Dma2()
     //LOG(LogLevel::Debug, "DMA 2 Done\n");
 }
 
-void Memory::Dma3()
+void Memory::dma3()
 {
     //std::cout << "DMA 3\n";
     u32 dest_ptr, src_ptr, original_src, original_dest;
-    src_ptr  = original_src  = Read32Unsafe(REG_DMA3SAD) & 0xFFFFFFF; // 28 bit
-    dest_ptr = original_dest = Read32Unsafe(REG_DMA3DAD) & 0xFFFFFFF; // 28 bit;
+    src_ptr  = original_src  = read32Unsafe(REG_DMA3SAD) & 0xFFFFFFF; // 28 bit
+    dest_ptr = original_dest = read32Unsafe(REG_DMA3DAD) & 0xFFFFFFF; // 28 bit;
 
     // increment for destination, src
     int dest_inc, src_inc;
@@ -1080,7 +1080,7 @@ void Memory::Dma3()
         for (int i = 0; i < dma[3].num_transfers; ++i)
         {
             // copy memory from src address to dest address
-            Write32(dest_ptr, Read32(src_ptr));
+            write32(dest_ptr, read32(src_ptr));
 
             // increment src, dest ptrs
             src_ptr  += src_inc  * sizeof(u32);
@@ -1097,7 +1097,7 @@ void Memory::Dma3()
         for (int i = 0; i < dma[3].num_transfers; ++i)
         {
             // copy memory from src address to dest address
-            Write16(dest_ptr, Read16(src_ptr));
+            write16(dest_ptr, read16(src_ptr));
 
             // increment src, dest ptrs
             src_ptr  += src_inc  * sizeof(u16);
@@ -1110,10 +1110,10 @@ void Memory::Dma3()
         dest_ptr = original_dest;
 
     // write back dest
-    Write32Unsafe(REG_DMA3DAD, dest_ptr);
+    write32Unsafe(REG_DMA3DAD, dest_ptr);
 
     // write back src
-    Write32Unsafe(REG_DMA3SAD, src_ptr);
+    write32Unsafe(REG_DMA3SAD, src_ptr);
 
 
     // turn off this transfer if repeat bit is not set

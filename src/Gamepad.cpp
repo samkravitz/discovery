@@ -10,7 +10,7 @@
 #include "Gamepad.h"
 
 // get current key state
-void Gamepad::Poll()
+void Gamepad::poll()
 {
     /*
      * Order of keys in KEYINPUT is as follows:
@@ -79,7 +79,7 @@ void Gamepad::Poll()
     // }
 }
 
-void Gamepad::Print()
+void Gamepad::print()
 {
     LOG("\n\n");
     if (keys.l     == 0) LOG("L is pressed\n");

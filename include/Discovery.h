@@ -37,9 +37,9 @@ class Discovery
 
         std::vector<std::string> argv;
 
-        void GameLoop();
-        void Tick();
-        void ParseArgs();
-        void PrintArgHelp();
-        void ShutDown();
+        void gameLoop();
+        void tick();
+        void parseArgs();
+        void printArgHelp();
+        void shutDown();
 };

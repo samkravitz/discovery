@@ -3,7 +3,7 @@
  * See LICENSE.txt for full license text
  * Author: Sam Kravitz
  * 
- * FILE: gpu.h
+ * FILE: PPU.h
  * DATE: July 13, 2020
  * DESCRIPTION: class definition for graphics processing unit (gpu)
  */

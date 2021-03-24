@@ -27,14 +27,21 @@ class APU
 
 	Memory *mem;
 
-	bool Init();
-	bool Close();
-	void GenerateChannel1(s16*, int);
-	void GenerateChannel2(s16*, int);
-	void GenerateChannel3(s16*, int);
-	void GenerateChannel4(s16*, int);
-	void GenerateDirectSoundA(s16*, int);
-	void GenerateDirectSoundB(s16*, int);
+	bool init(void);
+	bool close(void);
+	void generateChannel1(s16*, int);
+	void generateChannel2(s16*, int);
+	void generateChannel3(s16*, int);
+	void generateChannel4(s16*, int);
+	void generateDirectSoundA(s16*, int);
+	void generateDirectSoundB(s16*, int);
+	SDL_AudioCallback audioCallback(void*, Uint8*, int);
+
+	s8 getDriverID(void);
+
+	private:
+	// device audio driver
+	SDL_AudioDeviceID driver_id;
 };
 
-void AudioCallback(void*, Uint8*, int);
+void sdlAudioCallback(void*, Uint8*, int);

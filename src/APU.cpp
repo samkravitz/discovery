@@ -118,12 +118,13 @@ void APU::generateChannel1(s16 *stream, int buffer_len)
 
 
 	for(int i = 0; i < buffer_len; i++) {
+		stream[i] = i;
 		// std::cout << "stream[" << i << "]: " << stream[i] << std::endl;
 		
-		for(int j = 0; j < buffer_len; j++) {
-			// double time = (double) (stream / 44100);
-			stream[i] = AMPLITUDE * std::sin(2.0 * M_PI * 441.0);
-		}
+		// for(int j = 0; j < buffer_len; j++) {
+		// 	// double time = (double) (stream / 44100);
+		// 	stream[i] = AMPLITUDE * std::sin(2.0 * M_PI * 441.0);
+		// }
 	}
 }
 
@@ -135,22 +136,33 @@ void sdlAudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len)
 	std::cout << "apu buff:" << apu << std::endl;
 	std::cout << "stream buff:" << stream << std::endl;
 	std::cout << "length of buff:" << buffer_len << std::endl;
-	// std::vector<s16> ch1_stream(buffer_len);
-	// std::vector<s16> ch2_stream(buffer_len);
-	// std::vector<s16> ch3_stream(buffer_len);
-	// std::vector<s16> ch4_stream(buffer_len);
+	s16 *ch1_stream = new s16[buffer_len];
+	s16 *ch2_stream = new s16[buffer_len];
+	s16 *ch3_stream = new s16[buffer_len];
+	s16 *ch4_stream = new s16[buffer_len];
+
+	// initialize audio buffer with silence
+	for(int i = 0; i < buffer_len; i++) {
+		ch1_stream[i] = 0;
+		ch2_stream[i] = 0;
+		ch3_stream[i] = 0;
+		ch4_stream[i] = 0;
+	}
+
 	SDL_PauseAudioDevice(apu->getDriverID(), 0);
 
-
-	// apu->generateChannel1(&ch1_stream[0], buffer_len);
+	apu->generateChannel1(ch1_stream, buffer_len);
+	// apu->generateChannel2(&ch2_stream, buffer_len);
+	// apu->generateChannel3(&ch3_stream, buffer_len);
+	// apu->generateChannel4(&ch4_stream, buffer_len);
 
 	for(int i = 0; i < buffer_len; i++) {
-		// s32 merged_stream_data = ch1_stream[i];
-		// stream[i] = merged_stream_data;
-		if(i % 2 == 0)
-			stream[i] = 10000;
-		else
-			stream[i] = 60000;
+		s32 merged_stream_data = ch1_stream[i] + ch2_stream[i] + ch3_stream[i] + ch4_stream[i];
+		stream[i] = merged_stream_data;
+		// if(i % 2 == 0)
+			// stream[i] = 10000;
+		// else
+			// stream[i] = 60000;
 		std::cout << "stream[" << i << "]: " << stream[i] << std::endl;
 	}
 }

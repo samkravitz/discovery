@@ -90,6 +90,12 @@ struct LcdStat
 
         int width, height; // dimensions of map in pixels
         int voff,  hoff;   // vertical, horizontal offsets
+
+        // window parameters
+        int minx, maxx;
+        int miny, maxy;
+        bool in_winout, in_winin;
+
     } bgcnt[4]; // backgrounds 0-3
 
     LcdStat()
@@ -113,6 +119,13 @@ struct LcdStat
             bgcnt[i].height  = 0;
             bgcnt[i].voff    = 0;
             bgcnt[i].hoff    = 0;
+
+            bgcnt[i].minx = 0;
+            bgcnt[i].miny = 0;
+            bgcnt[i].maxx = 240;
+            bgcnt[i].maxy = 160;
+            bgcnt[i].in_winout = false;
+            bgcnt[i].in_winin  = false;
         }
     }
 

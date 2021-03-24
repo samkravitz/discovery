@@ -74,38 +74,28 @@ void PPU::Reset()
     fps            = 0;
     backdrop_color = 0;
     old_time       = clock();
+    objminx        = 0;
+    objminy        = 0;
+    objmaxx        = 240;
+    objmaxy        = 160;
+    obj_in_winout  = false;
 
     std::memset(screen_buffer, 0, sizeof(screen_buffer));
 
     // zero oam data structure
     for (int i = 0; i < NUM_OBJS; ++i)
     {
-        objs[i].obj_mode     = 2; // hidden
+        std::memset(&objs[i], 0, sizeof(ObjAttr));
+        objs[i].obj_mode = 2; // hidden
+    }
 
-        objs[i].x            = 0;
-        objs[i].y            = 0;
-        objs[i].x0           = 0;
-        objs[i].y0           = 0;
-        objs[i].gfx_mode     = 0;
-        objs[i].mosaic       = 0;
-        objs[i].color_mode   = 0;
-        objs[i].size         = 0;
-        objs[i].affine_index = 0;
-        objs[i].h_flip       = 0;
-        objs[i].v_flip       = 0;
-        objs[i].shape        = 0;
-        objs[i].tileno       = 0;
-        objs[i].priority     = 0;
-        objs[i].palbank      = 0;
-        objs[i].width        = 0;
-        objs[i].height       = 0;
-        objs[i].hwidth       = 0;
-        objs[i].hheight      = 0;
-
-        objs[i].pa           = 0.0;
-        objs[i].pb           = 0.0;
-        objs[i].pc           = 0.0;
-        objs[i].pd           = 0.0;
+    // reset window parameters
+    for (int i = 0; i < 3; ++i)
+    {
+        win[i].left   = 0;
+        win[i].right  = 240;
+        win[i].top    = 0;
+        win[i].bottom = 160;
     }
 }
 
@@ -132,12 +122,15 @@ void PPU::Tick()
 
         // check for DMA HBlank requests
         // TODO - Don't fire DMA Hblank in VBlank
-        for (int i = 0; i < 4; ++i)
+        if (!stat->dispstat.in_vBlank)
         {
-            if (mem->dma[i].enable && mem->dma[i].mode == 2) // start at HBLANK
+            for (int i = 0; i < 4; ++i)
             {
-                mem->_Dma(i);
-                LOG(LogLevel::Debug, "DMA {} HBLANK\n", i);
+                if (mem->dma[i].enable && mem->dma[i].mode == 2) // start at HBLANK
+                {
+                    mem->_Dma(i);
+                    //LOG(LogLevel::Debug, "DMA {} HBLANK\n", i);
+                }
             }
         }
 
@@ -232,15 +225,6 @@ void PPU::Render()
 {
     //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
 
-
-    // update objs data structure
-    if (stat->dispcnt.obj_enabled)
-    {
-        UpdateAttr();
-        RenderObj();
-        //std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
-    }
-
     // copy pixel buffer over to surface pixels
     if (SDL_MUSTLOCK(final_screen))
         SDL_LockSurface(final_screen);
@@ -257,6 +241,33 @@ void PPU::Render()
 
     // draw final_screen pixels on screen
     SDL_UpdateWindowSurface(window);
+
+    // reset bgcnt's window parameters
+    for (int i = 0; i < 4; ++i)
+    {
+        stat->bgcnt[i].minx = 0;
+        stat->bgcnt[i].miny = 0;
+        stat->bgcnt[i].maxx = 240;
+        stat->bgcnt[i].maxy = 160;
+        stat->bgcnt[i].in_winout = false;
+        stat->bgcnt[i].in_winin  = false;
+    }
+
+    // reset window parameters
+    for (int i = 0; i < 3; ++i)
+    {
+        win[i].left   = 0;
+        win[i].right  = 240;
+        win[i].top    = 0;
+        win[i].bottom = 160;
+    }
+
+    // reset obj layer window parameters
+    objminx = 0;
+    objminy = 0;
+    objmaxx = 240;
+    objmaxy = 160;
+    obj_in_winout = false;
 }
 
 void PPU::RenderScanline()
@@ -268,25 +279,71 @@ void PPU::RenderScanline()
     for (int i = 0; i < SCREEN_WIDTH; ++i)
         scanline_buffer[i] = backdrop_color;
 
+    // init windows if enabled
+    if (stat->dispcnt.win_enabled != 0)
+        ComposeWindow();
+
+    // render bg
     switch (stat->dispcnt.mode)
     {
         case 0: // reg bg 0-3
-            for (int i = 3; i >= 0; --i) // bg0 - bg3
+            // for (int i = 3; i >= 0; --i) // bg0 - bg3
+            // {
+            //     if (stat->bgcnt[i].enabled)
+            //         RenderScanlineText(i);
+            // }
+            for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
             {
-                if (stat->bgcnt[i].enabled)
-                    RenderScanlineText(i);
+                for (int i = 3; i >= 0; --i) // bg0 - bg3
+                {
+                    if (stat->bgcnt[i].enabled && stat->bgcnt[i].priority == priority)
+                    {
+                        RenderScanlineText(i);
+                    }
+                }
             }
 
             break;
         case 1: // reg bg 0-1, aff bg 2
-            if (stat->bgcnt[2].enabled) RenderScanlineAffine(2);
-            if (stat->bgcnt[1].enabled) RenderScanlineText(1);
-            if (stat->bgcnt[0].enabled) RenderScanlineText(0);
+            // if (stat->bgcnt[2].enabled) RenderScanlineAffine(2);
+            // if (stat->bgcnt[1].enabled) RenderScanlineText(1);
+            // if (stat->bgcnt[0].enabled) RenderScanlineText(0);
+            for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
+            {
+                for (int i = 2; i >= 0; --i) // bg0 - bg2
+                {
+                    if (stat->bgcnt[i].enabled && stat->bgcnt[i].priority == priority)
+                    {
+                        switch (i)
+                        {
+                            case 0:
+                            case 1:
+                                RenderScanlineText(i);
+                                break;
+                            case 2:
+                                RenderScanlineAffine(i);
+                                break;
+                            default: // should never happen
+                                std::cerr << "Error: trying to draw invalid background in mode 1: " << i << "\n";
+                        }
+                    }
+                }
+            }
 
             break;
         case 2: // aff bg 2-3
-            if (stat->bgcnt[3].enabled) RenderScanlineAffine(3);
-            if (stat->bgcnt[2].enabled) RenderScanlineAffine(2);
+            // if (stat->bgcnt[3].enabled) RenderScanlineAffine(3);
+            // if (stat->bgcnt[2].enabled) RenderScanlineAffine(2);
+            for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
+            {
+                for (int i = 3; i >= 2; --i) // bg3 - bg2
+                {
+                    if (stat->bgcnt[i].enabled && stat->bgcnt[i].priority == priority)
+                    {
+                       RenderScanlineAffine(i);
+                    }
+                }
+            }
 
             break;
         case 3:
@@ -296,6 +353,15 @@ void PPU::RenderScanline()
             break;
     }
 
+    // render sprites
+    if (stat->dispcnt.obj_enabled)
+    {
+        // update objs list
+        UpdateAttr();
+        RenderObj();
+        //std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
+    }
+
     std::memcpy(&screen_buffer[scanline], scanline_buffer, sizeof(scanline_buffer));
 }
 
@@ -303,7 +369,13 @@ void PPU::RenderScanlineText(int bg)
 {
     auto const &bgcnt = stat->bgcnt[bg];
 
+    // scanline outside of window
+    if (scanline < bgcnt.miny || scanline > bgcnt.maxy)
+       return;
+
     int pitch; // pitch of screenblocks
+
+    //LOG("({}, {}) ({}, {}) {}\n", bgcnt.minx, bgcnt.miny, bgcnt.maxx, bgcnt.maxy, scanline);
 
     // width, height of map in pixels
     int width, height;
@@ -329,8 +401,13 @@ void PPU::RenderScanlineText(int bg)
     // used for vflip / hflip
     int grid_x, grid_y;
 
-    for (int x = 0; x < SCREEN_WIDTH; ++x)
+    // conver only where bg is inside its window
+    for (int x = bgcnt.minx; x < bgcnt.maxx; ++x)
     {
+        // layer is in winout & not winin
+        if (bgcnt.in_winout && !bgcnt.in_winin && !IsInWinOut(x, scanline))
+          continue;
+
         map_x = (x + bgcnt.hoff) % width;
         tile_x = map_x / 8; // 8 px per tile
 
@@ -378,6 +455,10 @@ void PPU::RenderScanlineAffine(int bg)
 {
     auto const &bgcnt = stat->bgcnt[bg];
 
+    // scanline outside of window
+    if (scanline < bgcnt.miny || scanline > bgcnt.maxy)
+        return;
+
     // displacement vector
     // width, height of map in pixels
     int width, height;
@@ -410,8 +491,6 @@ void PPU::RenderScanlineAffine(int bg)
             break;
     }
 
-    //LOG("{}\n", pd);
-
     dx = (float) (dx_raw >> 8) + ((dx_raw & 0xFF) / 256.0f);
     dy = (float) (dy_raw >> 8) + ((dx_raw & 0xFF) / 256.0f);
 
@@ -432,8 +511,12 @@ void PPU::RenderScanlineAffine(int bg)
     int pixel;
     u32 tile_addr;
 
-    for (int x = 0; x < SCREEN_WIDTH; ++x)
+    for (int x = bgcnt.minx; x < bgcnt.miny; ++x)
     {
+        // layer is in winout & not winin
+        if (bgcnt.in_winout && !bgcnt.in_winin && !IsInWinOut(x, scanline))
+          continue;
+
         x1 = x + dx;
 
         // affine transform
@@ -459,7 +542,6 @@ void PPU::RenderScanlineAffine(int bg)
             if (px >= width || py >= height) continue;
             if (px < 0      || py < 0)       continue;
         }
-        
 
         map_x = px;
         map_y = py;
@@ -534,99 +616,105 @@ void PPU::RenderScanlineBitmap(int mode)
     }
 }
 
+
 void PPU::RenderObj()
 {
-    ObjAttr *attr;
     u16 pixel;
 
+    // loop through all objs
     while (!oam_update->empty())
     {
-        attr = &objs[oam_update->top()];
+        auto *attr = &objs[oam_update->top()];
         oam_update->pop();
 
         // skip hidden object
         if (attr->obj_mode == 2)
             continue;
 
-        int px0 = attr->hwidth; // center of sprite texture
-        int qx0 = attr->x;      // center of sprite screen space
+        // obj exists outside current scanline
+        if (scanline < attr->qy0 - attr->hheight || scanline >= attr->qy0 + attr->hheight)
+             continue;
 
-        int py0 = attr->hheight;
-        int qy0 = attr->y;
+        // obj exists outside current object layer
+        if (scanline < objminy || scanline >= objmaxy)
+            continue;
+        
+        int qx0 = attr->qx0;      // center of sprite screen space
 
         // x, y coordinate of texture after transformation
         int px, py;
-        int iy = scanline - attr->height;
+        int iy = -attr->hheight + (scanline - attr->y);
 
-        for (int iy = -attr->hheight; iy < attr->hheight; ++iy)
+
+        //LOG("{} {} {} {}\n", attr->x, attr->y, attr->hheight, attr->hwidth);
+        //LOG("{} {} {} {}\n", attr->x0, attr->y0, attr->hheight, attr->hwidth);
+
+        for (int ix = -attr->hwidth; ix < attr->hwidth; ++ix)
         {
-            for (int ix = -attr->hwidth; ix < attr->hwidth; ++ix)
+            // objs in winout
+            if (obj_in_winout && !IsInWinOut(qx0 + ix, scanline))
+                continue;
+
+            px = ix + attr->hwidth;
+            py = iy + attr->hheight;
+
+            // obj exists outside current object layer
+            if (qx0 + ix < objminx || qx0 + ix >= objmaxx)
+                continue;
+
+            // transform affine & double wide affine
+            if (attr->obj_mode == 1 || attr->obj_mode == 3)
             {
-                px = px0 + ix;
-                py = py0 + iy;
-
-                // transform affine & double wide affine
-                if (attr->obj_mode == 1 || attr->obj_mode == 3)
-                {
-                    px = (attr->pa * ix + attr->pb * iy) + (attr->width  / 2);
-                    py = (attr->pc * ix + attr->pd * iy) + (attr->height / 2);
-                }
-
-                // horizontal / vertical flip
-                if (attr->h_flip) px = attr->width  - px - 1;
-                if (attr->v_flip) py = attr->height - py - 1;
-
-                // transformed coordinate is out of bounds
-                if (px >= attr->width || py >= attr->height) continue;
-                if (px < 0            || py < 0            ) continue;
-                if (qx0 + ix < 0      || qx0 + ix >= 240   ) continue;
-                if (qy0 + iy < 0      || qy0 + iy >= 160   ) continue;
-
-                int tile_x  = px % 8; // x coordinate of pixel within tile
-                int tile_y  = py % 8; // y coordinate of pixel within tile
-                int block_x = px / 8; // x coordinate of tile in vram
-                int block_y = py / 8; // y coordinate of tile in vram
-
-                int tileno = attr->tileno;
-                int pixel;
-
-                if (attr->color_mode == 1) // 8bpp
-                {
-                    if (stat->dispcnt.obj_map_mode == 1) // 1d
-                    {
-                        tileno += block_y * (attr->width / 4);
-                    }
-
-                    else // 2d
-                    {
-                        tileno = (tileno & ~1) + block_y * 32;
-                    }
-
-                    tileno += block_x * 2;
-
-                    pixel = GetObjPixel8BPP(LOWER_SPRITE_BLOCK + tileno * 32, tile_x, tile_y);
-                }
-
-                else // 4bpp
-                {
-                    if (stat->dispcnt.obj_map_mode == 1) // 1d
-                    {
-                        tileno += block_y * (attr->width / 8);
-                    }
-
-                    else // 2d
-                    {
-                        tileno += block_y * 32;
-                    }
-
-                    tileno += block_x;
-
-                    pixel = GetObjPixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
-                }
-
-                if (pixel != TRANSPARENT)
-                    screen_buffer[qy0 + iy][qx0 + ix] = U16ToU32Color(pixel);
+                px = attr->pa * ix + attr->pb * iy + attr->px0;
+                py = attr->pc * ix + attr->pd * iy + attr->py0;
             }
+
+            // horizontal / vertical flip
+            if (attr->h_flip) px = attr->width  - px - 1;
+            if (attr->v_flip) py = attr->height - py - 1;
+            
+            // transformed coordinate is out of bounds
+            if (px >= attr->width || py  >= attr->height) continue;
+            if (px       < 0      || py  < 0            ) continue;
+            if (qx0 + ix < 0      || qx0 + ix >= 240    ) continue;
+
+            
+            int tile_x  = px % 8; // x coordinate of pixel within tile
+            int tile_y  = py % 8; // y coordinate of pixel within tile
+            int block_x = px / 8; // x coordinate of tile in vram
+            int block_y = py / 8; // y coordinate of tile in vram
+
+            int tileno = attr->tileno;
+            int pixel;
+
+            if (attr->color_mode == 1) // 8bpp
+            {
+                if (stat->dispcnt.obj_map_mode == 1) // 1d
+                    tileno += block_y * (attr->width / 4);
+
+                else // 2d
+                    tileno = (tileno & ~1) + block_y * 32;
+                
+                tileno += block_x * 2;
+
+                pixel = GetObjPixel8BPP(LOWER_SPRITE_BLOCK + tileno * 32, tile_x, tile_y);
+            }
+
+            else // 4bpp
+            {
+                if (stat->dispcnt.obj_map_mode == 1) // 1d
+                    tileno += block_y * (attr->width / 8);
+
+                else // 2d
+                    tileno += block_y * 32;
+
+                tileno += block_x;
+
+                pixel = GetObjPixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
+            }
+            
+            if (pixel != TRANSPARENT)
+                scanline_buffer[qx0 + ix] = U16ToU32Color(pixel);
         }
     }
 }
@@ -645,14 +733,14 @@ void PPU::UpdateAttr()
         attr1 = mem->Read16Unsafe(oam_ptr); oam_ptr += 2;
         attr2 = mem->Read16Unsafe(oam_ptr); oam_ptr += 4;
 
-        obj.y0           = attr0 >>  0 & 0xFF;
+        obj.y            = attr0 >>  0 & 0xFF;
         obj.obj_mode     = attr0 >>  8 & 0x3;
         obj.gfx_mode     = attr0 >> 10 & 0x3;
         obj.mosaic       = attr0 >> 12 & 0x1;
         obj.color_mode   = attr0 >> 13 & 0x1;
         obj.shape        = attr0 >> 14 & 0x3;
 
-        obj.x0           = attr1 >>  0 & 0x1FF;
+        obj.x            = attr1 >>  0 & 0x1FF;
         obj.affine_index = attr1 >>  9 & 0x1F;
         obj.h_flip       = attr1 >> 12 & 0x1;
         obj.v_flip       = attr1 >> 13 & 0x1;
@@ -662,8 +750,8 @@ void PPU::UpdateAttr()
         obj.priority     = attr2 >> 10 & 0x3;
         obj.palbank      = attr2 >> 12 & 0xF;
 
-        if (obj.x0 >= SCREEN_WIDTH)  obj.x0 -= 512;
-        if (obj.y0 >= SCREEN_HEIGHT) obj.y0 -= 256;
+        if (obj.x >= SCREEN_WIDTH)  obj.x -= 512;
+        if (obj.y >= SCREEN_HEIGHT) obj.y -= 256;
 
         // get actual dimensions of sprite
         switch (obj.shape)
@@ -703,12 +791,13 @@ void PPU::UpdateAttr()
         }
 
         // hwidth, hheight
-        obj.hwidth  = obj.width / 2;
+        obj.hwidth  = obj.width  / 2;
         obj.hheight = obj.height / 2;
 
-        // x, y of sprite origin
-        obj.x = obj.x0 + obj.hwidth;
-        obj.y = obj.y0 + obj.hheight;
+        obj.qx0 = obj.x + obj.hwidth;
+        obj.qy0 = obj.y + obj.hheight;
+        obj.px0 = obj.hwidth;
+        obj.py0 = obj.hheight;
 
         // get affine matrix if necessary
         if (obj.obj_mode == 1 || obj.obj_mode == 3) // affine
@@ -726,8 +815,8 @@ void PPU::UpdateAttr()
             // double wide affine
             if (obj.obj_mode == 3)
             {
-                obj.x += obj.hwidth;
-                obj.y += obj.hheight;
+                obj.qx0 += obj.hwidth;
+                obj.qy0 += obj.hheight;
 
                 obj.hwidth  *= 2;
                 obj.hheight *= 2;
@@ -742,6 +831,131 @@ void PPU::UpdateAttr()
         if (obj.obj_mode != 2)
             oam_update->push(i);
     }
+}
+
+void PPU::ComposeWindow()
+{
+    // win1 enabled
+    if (stat->dispcnt.win_enabled & 2)
+    {
+        u16 win1v  = mem->Read16Unsafe(REG_WIN1V);
+        u16 win1h  = mem->Read16Unsafe(REG_WIN1H);
+        
+        auto &window = win[1];
+        window.left   = win1h >> 8;
+        window.right  = win1h & 0xFF;
+        window.top    = win1v >> 8;
+        window.bottom = win1v & 0xFF;
+
+        // illegal values
+        if (window.right > 240 || window.left > window.right)
+            window.right = 240;
+
+        if (window.bottom > 160 || window.top > window.bottom)
+            window.bottom = 160;
+
+        // window content
+        u8 win1content = mem->Read16Unsafe(REG_WININ) >> 8;
+
+        // check if bgs are in window content
+        int mask;
+        for (int i = 0; i < 4; ++i)
+        {
+            mask = 1 << i;
+            if (win1content & mask)
+            {
+                stat->bgcnt[i].minx = window.left;
+                stat->bgcnt[i].maxx = window.right;
+                stat->bgcnt[i].miny = window.top;
+                stat->bgcnt[i].maxy = window.bottom;
+                stat->bgcnt[i].in_winin = true;
+            }
+        }
+
+        // objs in win1
+        if (win1content & 0x10)
+        {
+            objminx        = window.left;
+            objmaxx        = window.right;
+            objminy        = window.top;
+            objmaxy        = window.bottom;
+            obj_in_winout  = false;
+        }
+    }
+
+    // win0 enabled
+    if (stat->dispcnt.win_enabled & 1)
+    {
+        u16 win0v  = mem->Read16Unsafe(REG_WIN0V);
+        u16 win0h  = mem->Read16Unsafe(REG_WIN0H);
+
+        auto &window = win[0];
+        window.left   = win0h >> 8;
+        window.right  = win0h & 0xFF;
+        window.top    = win0v >> 8;
+        window.bottom = win0v & 0xFF;
+
+        // illegal values
+        if (window.right > 240 || window.left > window.right)
+            window.right = 240;
+
+        if (window.bottom > 160 || window.top > window.bottom)
+            window.bottom = 160;
+
+        // window content
+        u8 win0content = mem->Read16Unsafe(REG_WININ) & 0xFF;
+
+        // check if bgs are in window content
+        int mask;
+        for (int i = 0; i < 4; ++i)
+        {
+            mask = 1 << i;
+            if (win0content & mask)
+            {
+                stat->bgcnt[i].minx = window.left;
+                stat->bgcnt[i].maxx = window.right;
+                stat->bgcnt[i].miny = window.top;
+                stat->bgcnt[i].maxy = window.bottom;
+                stat->bgcnt[i].in_winin = true;
+            }
+        }
+
+        // objs in win0
+        if (win0content & 0x10)
+        {
+            objminx        = window.left;
+            objmaxx        = window.right;
+            objminy        = window.top;
+            objmaxy        = window.bottom;
+            obj_in_winout  = false;
+        }
+    }
+
+    // winout
+    u8 winoutcontent = mem->Read16Unsafe(REG_WINOUT) & 0xFF;
+
+    // check if bgs are in winout content
+    int mask;
+    for (int i = 0; i < 4; ++i)
+    {
+        mask = 1 << i;
+        if (winoutcontent & mask)
+        {
+            stat->bgcnt[i].minx = 0;
+            stat->bgcnt[i].miny = 0;
+            stat->bgcnt[i].maxx = 240;
+            stat->bgcnt[i].maxy = 160;
+            stat->bgcnt[i].in_winout = true;
+        }
+    }
+
+    // objs in winout
+    if (winoutcontent & 0x10)
+        obj_in_winout = true;
+
+    // obj window enabled
+    if (stat->dispcnt.win_enabled & 4)
+        LOG(LogLevel::Warning, "Object window is enabled\n");
 }
 
 inline u16 PPU::GetObjPixel4BPP(u32 addr, int palbank, int x, int y)
@@ -814,6 +1028,21 @@ inline u32 U16ToU32Color (u16 color_u16)
     b = color_u16 & 0x1F; color_u16 >>= 5; // bits 11 - 15
 
     return r << 19 | g << 11 | b << 3;
+}
+
+
+// returns true if (x, y) is currently in winOut, true otherwise
+bool PPU::IsInWinOut(int x, int y)
+{
+    if ((stat->dispcnt.win_enabled & 1)         &&
+        x >= win[0].left && x <= win[0].right   &&
+        y >= win[0].top  && y <= win[0].bottom) return false;
+
+    if ((stat->dispcnt.win_enabled & 2)         &&
+        x >= win[1].left && x <= win[1].right   &&
+        y >= win[1].top  && y <= win[1].bottom) return false;
+    
+    return true;
 }
 
 void PPU::PrintPalette()

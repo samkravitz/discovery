@@ -3,7 +3,7 @@
  * See LICENSE.txt for full license text
  * Author: Sam Kravitz
  * 
- * FILE: gpu.h
+ * FILE: PPU.h
  * DATE: July 13, 2020
  * DESCRIPTION: class definition for graphics processing unit (gpu)
  */
@@ -55,7 +55,6 @@ class PPU
         u8 scanline;
 
         void Tick();
-        
         void Reset();
 
     private:
@@ -75,12 +74,32 @@ class PPU
 
         u32 backdrop_color;
 
+        // window data structure
+        // window 0, window 1, obj window
+        struct win
+        {
+            int left;
+            int right;
+            int top;
+            int bottom;
+        } win[3];
+
+        // where objs can be drawn in the window
+        int objminx;
+        int objminy;
+        int objmaxx;
+        int objmaxy;
+        int obj_in_winout;
+
         // oam data structure
         struct ObjAttr
         {
-            // coordinate of top left (x0, y0) & origin 
-            int x,  y;
-            int x0, y0;
+            // coordinate of top left of sprite
+            int x, y;
+
+            // origin in screen space (q) and texture space (p)
+            int qx0, qy0;
+            int px0, py0;
 
             int obj_mode;     // 0 - normal render, 1 - affine, 2 - hidden, 3 - double-wide affine
             int gfx_mode;     // 0 - normal, 1 - semi-transparent, 2 - obj window, 3 - illegal
@@ -130,6 +149,8 @@ class PPU
         inline u16 GetBGPixel4BPP(u32, int, int, int);
         inline u16 GetBGPixel8BPP(u32, int, int);
         void UpdateAttr();
+        void ComposeWindow();
+        inline bool IsInWinOut(int, int);
 
         void PrintPalette();
 };

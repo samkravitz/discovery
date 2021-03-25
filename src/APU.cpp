@@ -71,9 +71,6 @@ s8 APU::getDriverID()
 
 void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count) 
 {
-	// prototypes
-	double calcSweepShifts(double, int);
-
 	// dmg channel 1 sweep control
 	// sweep shifts unit (s)
 	// sweep asc == 0, desc == 1

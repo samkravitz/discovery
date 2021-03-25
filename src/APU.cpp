@@ -64,7 +64,8 @@ bool APU::init() {
 
 }
 
-s8 APU::getDriverID() { 
+s8 APU::getDriverID() 
+{ 
 	return this->driver_id; 
 }
 
@@ -111,9 +112,6 @@ void sdlAudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len)
 	int buffer_len = _buffer_len/2;
 	int sample_count = 0;
 
-	// std::cout << "apu buff:" << apu << std::endl;
-	// std::cout << "stream buff:" << stream << std::endl;
-	// std::cout << "length of buff:" << buffer_len << std::endl;
 	s16 *ch1_stream = new s16[buffer_len];
 	s16 *ch2_stream = new s16[buffer_len];
 	s16 *ch3_stream = new s16[buffer_len];

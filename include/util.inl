@@ -43,6 +43,12 @@ inline u32 u16ToU32Color(u16 color_u16)
     return r << 19 | g << 11 | b << 3;
 }
 
+inline s8 signum(double val) 
+{
+    if(std::isnan(val)) throw std::invalid_argument("Invalid argument passed to util::signum");
+    else return (s8) (0. < val) - (val < 0.);
+}
+
 // inline bool pathExists(const std::string &path)
 // {
 // 	std::fstream fin(path);

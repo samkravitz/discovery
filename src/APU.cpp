@@ -16,7 +16,7 @@
 #include "APU.h"
 #include "util.h"
 
-const int AMPLITUDE = 28000;
+const int AMPLITUDE = 14000;
 const int SAMPLE_RATE = 44100;
 const int BUFFER_SIZE = 2048;
 
@@ -92,7 +92,7 @@ void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count)
 	// generate sound
 	for(int i = 0; i < sample_len; i++) {
 		double period = (double) sample_count / (double) SAMPLE_RATE;
-		double wave = (s16) AMPLITUDE * std::sin(2.0 * M_PI * sound_freq * period);
+		double wave = (s16) AMPLITUDE * util::signum(std::sin(2.0 * M_PI * sound_freq * period));
 		double sweep_shift = period + sweep_asc_desc
 			? (period / std::pow(2, sweep_shift_reg))
 			: -1 * (period / std::pow(2, sweep_shift_reg));

@@ -35,7 +35,7 @@ class APU
 	void generateDirectSoundA(s16*, int, int);
 	void generateDirectSoundB(s16*, int, int);
 
-	s8 getDriverID(void);
+	inline s8 getDriverID(void);
 	
 	private:
 	// device audio driver

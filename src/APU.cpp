@@ -24,8 +24,9 @@ APU::APU(Memory *mem)
 :mem(mem)
 {
 	SDL_Init(SDL_INIT_AUDIO);
-
-	SDL_AudioSpec requested;
+	
+	// define audio spec
+	SDL_AudioSpec requested, obtained;
 	requested.freq = SAMPLE_RATE;
 	requested.format = AUDIO_S16SYS;
 	requested.channels = 2;
@@ -33,8 +34,7 @@ APU::APU(Memory *mem)
 	requested.callback = sdlAudioCallback;
 	requested.userdata = this;
 
-	SDL_AudioSpec obtained;
-
+	// select primary sound driver, nullptr here selects system default
 	this->driver_id = SDL_OpenAudioDevice(nullptr, 0, &requested, &obtained, SDL_AUDIO_ALLOW_ANY_CHANGE);
 	if(this->driver_id <= 0) std::cout << "SDL Error: " << SDL_GetError() << std::endl;	
 	
@@ -60,25 +60,30 @@ APU::~APU()
 	SDL_CloseAudio();
 }
 
+// generate GBA channel 1 sounds, including square wave and frequency shifts
 void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count) 
 {
 	// dmg channel 1 sweep control
 	// sweep shifts unit (s)
-	// sweep_freq_direction asc == 0, desc == 1
+	// sweep_freq_direction => freq asc == 0, desc == 1
 	u16 ch1_l = (s16) this->mem->read8(REG_SOUND1CNT_L);
 	u16 n_sweep_shifts = util::bitseq<2,0>(ch1_l);
 	u16 sweep_freq_direction = util::bitseq<3,3>(ch1_l);
 	u16 sweep_time = util::bitseq<6,4>(ch1_l);
 	
 	// dmg channel 1 wave and envelope control
+	// envelope_mode => volume asc == 1, desc == 0
+	// init envelope value => 1111 max vol, 0000 silence
 	u16 ch1_h = (s16) this->mem->read16(REG_SOUND1CNT_H);
 	u16 sound_len_reg = util::bitseq<5,0>(ch1_h);
 	u16 sound_len = (64 - sound_len_reg)/256;
 	u16 wave_duty_cycle_reg = util::bitseq<7,6>(ch1_h);
-	u16 envelope_step_time = util::bitseq<0xA,8>(ch1_h);
+	u16 envelope_step_time_reg = util::bitseq<0xA,8>(ch1_h);
+	u16 envelope_step_time = envelope_step_time_reg / 64;
 	u16 envelope_mode = util::bitseq<0xB,0xB>(ch1_h);
 	u16 envelope_init_value = util::bitseq<0xF,0xC>(ch1_h);
 
+	// calculate quadrangular wave ratio
 	float wave_cycle_ratio;
 	switch(wave_duty_cycle_reg)
 	{
@@ -103,7 +108,7 @@ void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count)
 	// dmg channel 1 frequency, reset, loop control
 	u16 ch1_x = (s16) this->mem->read16(REG_SOUND1CNT_X);
 	u16 sound_freq_reg = util::bitseq<0xA,0>(ch1_x);
-	u16 sound_freq = 4194304 / (32 * (2048 - sound_freq_reg));
+	u16 sound_freq = 131072 / (2048 - sound_freq_reg);
 	bool timed_mode = (bool) util::bitseq<0xE,0xE>(ch1_x);
 	bool sound_reset = (bool) util::bitseq<0xF,0xF>(ch1_x);
 	

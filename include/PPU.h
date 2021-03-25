@@ -54,7 +54,7 @@ class PPU
         u32 cycles;
         u8 scanline;
 
-        void Tick();
+        void tick();
         void Reset();
 
     private:

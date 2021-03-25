@@ -99,7 +99,7 @@ void PPU::Reset()
 }
 
 // 1 clock cycle of the PPU
-void PPU::Tick()
+void PPU::tick()
 {
     cycles++;
 

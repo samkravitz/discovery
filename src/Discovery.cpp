@@ -73,7 +73,7 @@ void Discovery::gameLoop()
         // tick hardware (not cpu) if in halt state
         while (mem->haltcnt)
         {
-            tick();
+            this->tick();
 
             auto interrupts_enabled   = mem->read16Unsafe(REG_IE);
             auto interrupts_requested = mem->read16Unsafe(REG_IF);
@@ -95,7 +95,7 @@ void Discovery::gameLoop()
         // run hardware for as many clock cycles as cpu used
         old_cycles = cpu->cycles;
         while (system_cycles < old_cycles)
-            tick();
+            this->tick();
     }
 
     shutDown();
@@ -105,7 +105,7 @@ void Discovery::gameLoop()
 void Discovery::tick()
 {
     system_cycles++;
-    ppu->Tick();
+    ppu->tick();
     timer->tick();
 
     // poll for key presses at start of vblank

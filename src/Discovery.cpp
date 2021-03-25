@@ -155,6 +155,7 @@ void Discovery::shutDown()
     // free resources and shutdown
 	delete cpu;
     delete ppu;
+    delete apu;
     delete mem;
     delete stat;
     delete gamepad;

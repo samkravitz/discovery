@@ -20,6 +20,7 @@ namespace util
     // determine which type of thumb operation an instruction is
     ThumbInstruction GetInstructionFormat(u16 instruction);
 
+    // verify path exists
     bool PathExists(std::string);
 
     // util inline functions

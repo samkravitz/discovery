@@ -30,16 +30,16 @@ class APU
 
 	bool init(void);
 	bool close(void);
-	void generateChannel1(s16*, int);
-	void generateChannel2(s16*, int);
-	void generateChannel3(s16*, int);
-	void generateChannel4(s16*, int);
-	void generateDirectSoundA(s16*, int);
-	void generateDirectSoundB(s16*, int);
+	void generateChannel1(s16*, int, int);
+	void generateChannel2(s16*, int, int);
+	void generateChannel3(s16*, int, int);
+	void generateChannel4(s16*, int, int);
+	void generateDirectSoundA(s16*, int, int);
+	void generateDirectSoundB(s16*, int, int);
 	SDL_AudioCallback audioCallback(void*, Uint8*, int);
 
 	s8 getDriverID(void);
-
+	
 	private:
 	// device audio driver
 	SDL_AudioDeviceID driver_id;

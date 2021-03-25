@@ -60,15 +60,6 @@ APU::~APU()
 	SDL_CloseAudio();
 }
 
-bool APU::init() {
-
-}
-
-s8 APU::getDriverID() 
-{ 
-	return this->driver_id; 
-}
-
 void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count) 
 {
 	// dmg channel 1 sweep control

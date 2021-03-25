@@ -28,8 +28,6 @@ class APU
 
 	Memory *mem;
 
-	bool init(void);
-	bool close(void);
 	void generateChannel1(s16*, int, int);
 	void generateChannel2(s16*, int, int);
 	void generateChannel3(s16*, int, int);
@@ -45,3 +43,5 @@ class APU
 };
 
 void sdlAudioCallback(void*, Uint8*, int);
+
+#include "APU.inl"

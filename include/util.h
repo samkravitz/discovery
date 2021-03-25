@@ -30,4 +30,3 @@ namespace util
     // util inline functions
     #include "util.inl"
 }
-

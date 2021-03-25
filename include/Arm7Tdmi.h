@@ -104,82 +104,82 @@ class Arm7Tdmi
             StatusRegister spsr_und;
         } registers;
         
-        void Fetch();
-        void Decode(u32);
-        void Execute(u32);
+        void fetch();
+        void decode(u32);
+        void execute(u32);
 
-        void Tick(u8, u8, u8);
+        void tick(u8, u8, u8);
 
-        u32 GetRegister(u32);
-        void SetRegister(u32, u32);
+        u32  getRegister(u32);
+        void setRegister(u32, u32);
 
         // instruction execution
-        void BranchExchange(u32);
-        void BranchLink(u32);
-        void DataProcessing(u32);
-        void Multiply(u32);
-        void MultiplyLong(u32);
-        void PSRTransfer(u32);
-        void SingleDataTransfer(u32);
-        void HalfwordDataTransfer(u32);
-        void BlockDataTransfer(u32);
-        void SingleDataSwap(u32);
-        void SoftwareInterruptArm(u32);
+        void branchExchange(u32);
+        void branchLink(u32);
+        void dataProcessing(u32);
+        void multiply(u32);
+        void multiplyLong(u32);
+        void psrTransfer(u32);
+        void singleDataTransfer(u32);
+        void halfwordDataTransfer(u32);
+        void blockDataTransfer(u32);
+        void singleDataSwap(u32);
+        void softwareInterruptArm(u32);
 
         // thumb instructions
-        void MoveShiftedRegister(u16);
-        void AddSubtract(u16);
-        void MoveImmediate(u16);
-        void AluThumb(u16);
-        void HiRegisterOps(u16);
-        void PcRelLoad(u16);
-        void LoadStoreRegOffset(u16);
-        void LoadStoreSignedHalfword(u16);
-        void LoadStoreImmediate(u16);
-        void LoadStoreHalfword(u16);
-        void SpRelLoadStore(u16);
-        void LoadAddress(u16);
-        void AddOffsetToSp(u16);
-        void PushPop(u16);
-        void MultipleLoadStore(u16);
-        void ConditionalBranch(u16);
-        void SoftwareInterruptThumb(u16);
-        void UnconditionalBranch(u16);
-        void LongBranchLink(u16);
+        void moveShiftedRegister(u16);
+        void addSubtract(u16);
+        void moveImmediate(u16);
+        void aluThumb(u16);
+        void hiRegisterOps(u16);
+        void pcRelLoad(u16);
+        void loadStoreRegOffset(u16);
+        void loadStoreSignedHalfword(u16);
+        void loadStoreImmediate(u16);
+        void loadStoreHalfword(u16);
+        void spRelLoadStore(u16);
+        void loadAddress(u16);
+        void addOffsetToSp(u16);
+        void pushPop(u16);
+        void multipleLoadStore(u16);
+        void conditionalBranch(u16);
+        void softwareInterruptThumb(u16);
+        void unconditionalBranch(u16);
+        void longBranchLink(u16);
 
         // software interrupts (swi)
-        void SwiSoftReset();
-        void SwiRegisterRamReset();
-        void SwiVBlankIntrWait();
-        void SwiDivision();
-        void SwiSqrt();
-        void SwiArctan2();
-        void SwiCpuSet();
-        void SwiObjAffineSet();
-        void SwiBitUnpack();
-        void SwiRLUnCompVRAM();
+        void swiSoftReset();
+        void swiRegisterRamReset();
+        void swiVBlankIntrWait();
+        void swiDivision();
+        void swiSqrt();
+        void swiArctan2();
+        void swiCpuSet();
+        void swiObjAffineSet();
+        void swiBitUnpack();
+        void swiRLUnCompVRAM();
 
         // handle hardware interrupts
-        void HandleInterrupt();
+        void handleInterrupt();
 
         // getters / setters
-        u8   GetConditionCodeFlag(ConditionFlag);
-        void SetConditionCodeFlag(ConditionFlag, u8);
+        u8   getConditionCodeFlag(ConditionFlag);
+        void setConditionCodeFlag(ConditionFlag, u8);
 
-        Mode GetMode();
-        void SetMode(Mode);
+        Mode getMode();
+        void setMode(Mode);
 
-        State GetState()           { return registers.cpsr.t == 1 ? State::THUMB : State::ARM; }
-        void SetState(State state) { registers.cpsr.t = state == State::THUMB ? 1 : 0; }
+        State getState()           { return registers.cpsr.t == 1 ? State::THUMB : State::ARM; }
+        void setState(State state) { registers.cpsr.t = state == State::THUMB ? 1 : 0; }
         
     private:
         // safely interface with memory
-        u8   Read8(u32);
-        u32  Read16(u32, bool);
-        u32  Read32(u32, bool);
-        void Write8(u32, u8);
-        void Write16(u32, u16);
-        void Write32(u32, u32);
+        u8   read8(u32);
+        u32  read16(u32, bool);
+        u32  read32(u32, bool);
+        void write8(u32, u8);
+        void write16(u32, u16);
+        void write32(u32, u32);
 
         static constexpr u32 bios_read_state[4] =
         {
@@ -192,15 +192,15 @@ class Arm7Tdmi
         u32 last_read_bios;
 
         // misc
-        void UpdateFlagsLogical(u32, u8);
-        void UpdateFlagsAddition(u32, u32, u32);
-        void UpdateFlagsSubtraction(u32, u32, u32);
-        void IncrementPC();
-        void UpdateCPSR(u32, bool);
-        void UpdateSPSR(u32, bool);
-        bool ConditionMet(Condition);
-        bool MemCheckRead(u32 &);
-        bool MemCheckWrite(u32 &);
-        u8   BarrelShift(u32, u32 &, u8);
-        bool CheckState();
+        void updateFlagsLogical(u32, u8);
+        void updateFlagsAddition(u32, u32, u32);
+        void updateFlagsSubtraction(u32, u32, u32);
+        void incrementPC();
+        void updateCPSR(u32, bool);
+        void updateSPSR(u32, bool);
+        bool conditionMet(Condition);
+        bool memCheckRead(u32 &);
+        bool memCheckWrite(u32 &);
+        u8   barrelShift(u32, u32 &, u8);
+        bool checkState();
 };

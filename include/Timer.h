@@ -42,11 +42,11 @@ struct Timer
             int prescalar;
         } channel[4];
         
-        void Tick();
-        u16  Read(int);
-        void Write(int, u16);
-        void WriteCnt(int, u16);
+        void tick();
+        u16  read(int);
+        void write(int, u16);
+        void writeCnt(int, u16);
 
     private:
-        void Cascade(int);
+        void cascade(int);
 };

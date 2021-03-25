@@ -26,15 +26,15 @@ Timer::Timer()
 
 Timer::~Timer() { }
 
-u16 Timer::Read(int ch) { return channel[ch].data; }
+u16 Timer::read(int ch) { return channel[ch].data; }
 
-void Timer::Write(int ch, u16 value)
+void Timer::write(int ch, u16 value)
 {
     channel[ch].initial = value;
     channel[ch].data    = value;
 }
 
-void Timer::WriteCnt(int ch, u16 value)
+void Timer::writeCnt(int ch, u16 value)
 {
     channel[ch].cnt = value;
 
@@ -48,7 +48,7 @@ void Timer::WriteCnt(int ch, u16 value)
     }
 }
 
-void Timer::Tick()
+void Timer::tick()
 {
     ++ticks;
 
@@ -80,13 +80,13 @@ void Timer::Tick()
                     LOG("Timer {} overflow IRQ request\n");
 
                 // cascade
-                Cascade(j);
+                cascade(j);
             }
         }
     }
 }
 
-void Timer::Cascade(int ch)
+void Timer::cascade(int ch)
 {
     // timer 3 can't cascade any other timer
     if (ch == 3)
@@ -100,7 +100,7 @@ void Timer::Cascade(int ch)
         if (channel[ch + 1].data == 0x0000)
         {
             LOG("Timer {} cascade overflow\n", ch + 1);
-            Cascade(ch + 1);
+            cascade(ch + 1);
         }
             
     }

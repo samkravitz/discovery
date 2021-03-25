@@ -26,17 +26,16 @@ int main(int argc, char **argv)
 
     // collect command line args
     for (int i = 1; i < argc; ++i)
-    {
         emulator.argv.push_back(argv[i]);
-    }
 
     // parse command line args
-    emulator.ParseArgs();
+    emulator.parseArgs();
 	if(config::show_help)
 	{
-		emulator.PrintArgHelp();
+		emulator.printArgHelp();
 		return 0;
 	}
+
 	else
 	{
 		LOG("Welcome to Discovery!\n");
@@ -44,10 +43,10 @@ int main(int argc, char **argv)
 
 
     // load bios, rom, and launch game loop
-    emulator.mem->LoadBios(config::bios_name);
-    emulator.mem->LoadRom(config::rom_name);
+    emulator.mem->loadBios(config::bios_name);
+    emulator.mem->loadRom(config::rom_name);
 
-    emulator.GameLoop();
+    emulator.gameLoop();
     return 0;
 }
 
@@ -66,7 +65,7 @@ Discovery::Discovery()
     apu     = new APU(mem);
 }
 
-void Discovery::GameLoop()
+void Discovery::gameLoop()
 {
     u32 old_cycles = 0;
     while (running)
@@ -74,20 +73,20 @@ void Discovery::GameLoop()
         // tick hardware (not cpu) if in halt state
         while (mem->haltcnt)
         {
-            Tick();
+            tick();
 
-            auto interrupts_enabled   = mem->Read16Unsafe(REG_IE);
-            auto interrupts_requested = mem->Read16Unsafe(REG_IF);
+            auto interrupts_enabled   = mem->read16Unsafe(REG_IE);
+            auto interrupts_requested = mem->read16Unsafe(REG_IF);
 
             if (interrupts_enabled & interrupts_requested != 0)
                 mem->haltcnt = 0;
         }
 
-        cpu->Fetch();
-        cpu->Decode(cpu->pipeline[0]);
-        cpu->Execute(cpu->pipeline[0]);
+        cpu->fetch();
+        cpu->decode(cpu->pipeline[0]);
+        cpu->execute(cpu->pipeline[0]);
 
-        cpu->HandleInterrupt();
+        cpu->handleInterrupt();
 
         // update pipeline
         cpu->pipeline[0] = cpu->pipeline[1];
@@ -96,18 +95,18 @@ void Discovery::GameLoop()
         // run hardware for as many clock cycles as cpu used
         old_cycles = cpu->cycles;
         while (system_cycles < old_cycles)
-            Tick();
+            tick();
     }
 
-    ShutDown();
+    shutDown();
 }
 
 // clock hardware components
-void Discovery::Tick()
+void Discovery::tick()
 {
     system_cycles++;
     ppu->Tick();
-    timer->Tick();
+    timer->tick();
 
     // poll for key presses at start of vblank
     if (system_cycles % 197120 == 0)
@@ -116,17 +115,17 @@ void Discovery::Tick()
         if (e.type == SDL_QUIT)
            running = false;
 
-        gamepad->Poll();
+        gamepad->poll();
     }
 }
 
 // parse command line args
-void Discovery::ParseArgs()
+void Discovery::parseArgs()
 {
     for (int i = 0; i < argv.size(); ++i)
     {
         // ROM name
-        if (i == 0 && util::PathExists(argv[i]))
+        if (i == 0 && util::pathExists(argv[i]))
             config::rom_name = argv[i];
 		else if ((argv[i] == "-i" || argv[i] == "--input") && i != argv.size() -1)
 			config::rom_name = argv[++i];
@@ -137,7 +136,7 @@ void Discovery::ParseArgs()
     }
 }
 
-void Discovery::PrintArgHelp()
+void Discovery::printArgHelp()
 {
 	LOG("Usage:\n");
 	LOG("./discovery ./path/to/rom.gba\n");
@@ -151,7 +150,7 @@ void Discovery::PrintArgHelp()
 	LOG("  Show help...\n");
 }
 
-void Discovery::ShutDown()
+void Discovery::shutDown()
 {
     // free resources and shutdown
 	delete cpu;

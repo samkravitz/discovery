@@ -14,37 +14,37 @@
  * flushes the pipeline, and restarts execution from the address
  * contained in Rn. If bit 0 of Rn is 1, switch to THUMB mode
  */
-void Arm7Tdmi::BranchExchange(u32 instruction)
+void Arm7Tdmi::branchExchange(u32 instruction)
 {
     u32 Rn = util::bitseq<3, 0>(instruction);
 
     if (Rn == r15)
     {
         LOG(LogLevel::Error, "BranchExchange: Undefined behavior: r15 as operand: 0x{x}\n", registers.r15);
-        SetMode(Mode::UND);
+        setMode(Mode::UND);
         exit(0);
         return;
     }
     
-    u32 branch_address = GetRegister(Rn);
+    u32 branch_address = getRegister(Rn);
 
-    SetRegister(r15, branch_address); 
+    setRegister(r15, branch_address); 
 
     // swith to THUMB mode if necessary
     if ((branch_address & 1) == 1)
     {
         registers.r15 -= 1; // continue at Rn - 1 for thumb mode
-        SetState(State::THUMB);
+        setState(State::THUMB);
     }
 
     // flush pipeline for refill
     pipeline_full = false;
 
     // cycles: 2S + 1N
-    Tick(1, 2, 0);
+    tick(1, 2, 0);
 }
 
-void Arm7Tdmi::BranchLink(u32 instruction)
+void Arm7Tdmi::branchLink(u32 instruction)
 {
     bool link  = util::bitseq<24, 24>(instruction);
     u32 offset = util::bitseq<23, 0>(instruction);
@@ -62,26 +62,26 @@ void Arm7Tdmi::BranchLink(u32 instruction)
         // write the old PC into the link register of the current bank
         // The PC value written into r14 is adjusted to allow for the prefetch, and contains the
         // address of the instruction following the branch and link instruction
-        new_address = GetRegister(r15) - 4; // instruction following this BL
+        new_address = getRegister(r15) - 4; // instruction following this BL
         new_address &= ~3; // clear bits 0-1
-        SetRegister(r14, new_address);
+        setRegister(r14, new_address);
     }
 
-    new_address = GetRegister(r15) + offset;
-    SetRegister(r15, new_address);
+    new_address = getRegister(r15) + offset;
+    setRegister(r15, new_address);
 
     // flush pipeline for refill
     pipeline_full = false;
 
     // cycles: 2S + 1N
-    Tick(1, 2, 0);
+    tick(1, 2, 0);
 }
 
- void Arm7Tdmi::DataProcessing(u32 instruction)
+ void Arm7Tdmi::dataProcessing(u32 instruction)
  {
     u32 Rd = util::bitseq<15, 12>(instruction); // destination register
     u32 Rn = util::bitseq<19, 16>(instruction); // source register
-    u32 op1 = GetRegister(Rn);
+    u32 op1 = getRegister(Rn);
     u32 op2;
     u32 result;
 
@@ -110,7 +110,7 @@ void Arm7Tdmi::BranchLink(u32 instruction)
         rotate *= 2; // rotate by twice the value in the rotate field
 
         // perform right rotation
-        carry_out = BarrelShift(rotate, op2, 0b11); // code for ror
+        carry_out = barrelShift(rotate, op2, 0b11); // code for ror
     }
     
     // op2 is shifted register
@@ -120,7 +120,7 @@ void Arm7Tdmi::BranchLink(u32 instruction)
         u8 shift_type = util::bitseq<6, 5>(instruction);
         u32 shift_amount;
         u32 Rm = instruction & 0b1111; // bitseq<> 3-0 
-        op2 = GetRegister(Rm);
+        op2 = getRegister(Rm);
 
         // if r15 is a shifted reg and the shift amount is contained in the register,
         // the value in r15 will be 12 bytes ahead of the instruction due to prefetch
@@ -130,7 +130,7 @@ void Arm7Tdmi::BranchLink(u32 instruction)
         if ((shift & 1) == 1) // shift amount contained in bottom byte of Rs
         { 
             u32 Rs = util::bitseq<11, 8>(instruction);
-            shift_amount = GetRegister(Rs) & 0xFF;
+            shift_amount = getRegister(Rs) & 0xFF;
 
             // must add 4 bytes to r15 to account for prefetch
             if (Rn == r15 || Rm == r15 || Rs == r15)
@@ -151,7 +151,7 @@ void Arm7Tdmi::BranchLink(u32 instruction)
             }
         }
 
-        carry_out = BarrelShift(shift_amount, op2, shift_type);
+        carry_out = barrelShift(shift_amount, op2, shift_type);
 
         // must add 4 bytes to op2 to account for prefetch
         if (prefetch)
@@ -163,86 +163,86 @@ void Arm7Tdmi::BranchLink(u32 instruction)
     // for arithmetic operations that use a carry bit, this will either equal
     // - the carry out bit of the barrel shifter (if a register shift was applied), or
     // - the existing condition code flag from the cpsr
-    u8 carry = carry_out == 2 ? GetConditionCodeFlag(ConditionFlag::C) : carry_out;
+    u8 carry = carry_out == 2 ? getConditionCodeFlag(ConditionFlag::C) : carry_out;
 
     // decode opcode (bits 24-21)
     switch((DataProcessingOpcodes) util::bitseq<24, 21>(instruction))
     {
         case AND: 
             result = op1 & op2;
-            SetRegister(Rd, result);
-            if (set_condition_code) UpdateFlagsLogical(result, carry);
+            setRegister(Rd, result);
+            if (set_condition_code) updateFlagsLogical(result, carry);
             break;
         case EOR:
             result = op1 ^ op2;
-            SetRegister(Rd, result);
-            if (set_condition_code) UpdateFlagsLogical(result, carry);
+            setRegister(Rd, result);
+            if (set_condition_code) updateFlagsLogical(result, carry);
             break;
         case SUB:
             result = op1 - op2;
-            SetRegister(Rd, result);
-            if (set_condition_code) UpdateFlagsSubtraction(op1, op2, result);
+            setRegister(Rd, result);
+            if (set_condition_code) updateFlagsSubtraction(op1, op2, result);
             break;
         case RSB:
             result = op2 - op1;
-            SetRegister(Rd, result);
-            if (set_condition_code) UpdateFlagsSubtraction(op2, op1, result);
+            setRegister(Rd, result);
+            if (set_condition_code) updateFlagsSubtraction(op2, op1, result);
             break;
         case ADD:
             result = op1 + op2;
-            SetRegister(Rd, result);
-            if (set_condition_code) UpdateFlagsAddition(op1, op2, result);
+            setRegister(Rd, result);
+            if (set_condition_code) updateFlagsAddition(op1, op2, result);
             break;
         case ADC:
-            result = op1 + op2 + GetConditionCodeFlag(ConditionFlag::C);
-            SetRegister(Rd, result);
-            if (set_condition_code) UpdateFlagsAddition(op1, op2, result);
+            result = op1 + op2 + getConditionCodeFlag(ConditionFlag::C);
+            setRegister(Rd, result);
+            if (set_condition_code) updateFlagsAddition(op1, op2, result);
             break;
         case SBC:
-            result = op1 - op2 + GetConditionCodeFlag(ConditionFlag::C) - 1;
-            SetRegister(Rd, result);
-            if (set_condition_code) UpdateFlagsSubtraction(op1, op2, result);
+            result = op1 - op2 + getConditionCodeFlag(ConditionFlag::C) - 1;
+            setRegister(Rd, result);
+            if (set_condition_code) updateFlagsSubtraction(op1, op2, result);
             break;
         case RSC:
-            result = op2 - op1 + GetConditionCodeFlag(ConditionFlag::C) - 1;
-            SetRegister(Rd, result);
-            if (set_condition_code) UpdateFlagsSubtraction(op2, op1, result);
+            result = op2 - op1 + getConditionCodeFlag(ConditionFlag::C) - 1;
+            setRegister(Rd, result);
+            if (set_condition_code) updateFlagsSubtraction(op2, op1, result);
             break;
         case TST:
             result = op1 & op2;
-            if (set_condition_code) UpdateFlagsLogical(result, carry);
+            if (set_condition_code) updateFlagsLogical(result, carry);
             break;
         case TEQ:
             result = op1 ^ op2;
-            if (set_condition_code) UpdateFlagsLogical(result, carry);
+            if (set_condition_code) updateFlagsLogical(result, carry);
             break;
         case CMP:
             result = op1 - op2;
-            if (set_condition_code) UpdateFlagsSubtraction(op1, op2, result);
+            if (set_condition_code) updateFlagsSubtraction(op1, op2, result);
             break;
         case CMN:
             result = op1 + op2;
-            if (set_condition_code) UpdateFlagsAddition(op1, op2, result);
+            if (set_condition_code) updateFlagsAddition(op1, op2, result);
             break;
         case ORR:
             result = op1 | op2;
-            SetRegister(Rd, result);
-            if (set_condition_code) UpdateFlagsLogical(result, carry);
+            setRegister(Rd, result);
+            if (set_condition_code) updateFlagsLogical(result, carry);
             break;
         case MOV:
             result = op2;
-            SetRegister(Rd, result);
-            if (set_condition_code) UpdateFlagsLogical(result, carry);
+            setRegister(Rd, result);
+            if (set_condition_code) updateFlagsLogical(result, carry);
             break;
         case BIC:
             result = op1 & ~op2;
-            SetRegister(Rd, result);
-            if (set_condition_code) UpdateFlagsLogical(result, carry);
+            setRegister(Rd, result);
+            if (set_condition_code) updateFlagsLogical(result, carry);
             break;
         case MVN:
             result = ~op2;
-            SetRegister(Rd, result);
-            if (set_condition_code) UpdateFlagsLogical(result, carry);
+            setRegister(Rd, result);
+            if (set_condition_code) updateFlagsLogical(result, carry);
             break;
         default:
             LOG(LogLevel::Error, "Unrecognized data processing opcode: {}\n", util::bitseq<24, 21>(instruction));
@@ -255,15 +255,15 @@ void Arm7Tdmi::BranchLink(u32 instruction)
         pipeline_full = false;
         // if S bit is set, move SPSR into CPSR
         if (set_condition_code)
-            SetRegister(cpsr, GetRegister(spsr));
+            setRegister(cpsr, getRegister(spsr));
     }
 
     // cycles: (1+p)S + rI + pN
     // Whereas r=1 if I=0 and R=1 (ie. shift by register); otherwise r=0. And p=1 if Rd=R15; otherwise p=0.
-    Tick(n, s, i); 
+    tick(n, s, i); 
 }
 
-void Arm7Tdmi::Multiply(u32 instruction)
+void Arm7Tdmi::multiply(u32 instruction)
 {
     // assign registers
     u32 Rm = util::bitseq<3, 0>(instruction);   // first operand
@@ -287,8 +287,8 @@ void Arm7Tdmi::Multiply(u32 instruction)
 
     u8 m; // # of m cycles
     
-    u32 op1 = GetRegister(Rm);
-    u32 op2 = GetRegister(Rs);
+    u32 op1 = getRegister(Rm);
+    u32 op2 = getRegister(Rs);
     u32 result = op1 * op2;
 
     // determine how many m cycles
@@ -303,28 +303,28 @@ void Arm7Tdmi::Multiply(u32 instruction)
     
     if (accumulate)
     {
-        result += GetRegister(Rn); // multiply-accumulate form gives Rd:=Rm*Rs+Rn
+        result += getRegister(Rn); // multiply-accumulate form gives Rd:=Rm*Rs+Rn
         ++m; // for MLA (m + 1) I cycles
     }
 
-    SetRegister(Rd, result);
+    setRegister(Rd, result);
 
     if (set_condition_code_flags)
     {
         u8 new_n_flag = result & 0x80000000 ? 1 : 0; // bit 31 of result
-        SetConditionCodeFlag(ConditionFlag::N, new_n_flag);
+        setConditionCodeFlag(ConditionFlag::N, new_n_flag);
 
         u8 new_z_flag = result == 0 ? 1 : 0;
-        SetConditionCodeFlag(ConditionFlag::Z, new_z_flag);
+        setConditionCodeFlag(ConditionFlag::Z, new_z_flag);
 
-        SetConditionCodeFlag(ConditionFlag::C, 1); // C is set to a meaningless value
+        setConditionCodeFlag(ConditionFlag::C, 1); // C is set to a meaningless value
     }
 
     // cycles: 1S, mI
-    Tick(0, 1, m);
+    tick(0, 1, m);
 }
 
-void Arm7Tdmi::MultiplyLong(u32 instruction)
+void Arm7Tdmi::multiplyLong(u32 instruction)
 {
     u32 RdHi                = util::bitseq<19, 16>(instruction);
     u32 RdLo                = util::bitseq<15, 12>(instruction);
@@ -352,18 +352,18 @@ void Arm7Tdmi::MultiplyLong(u32 instruction)
     // signed multiply long
     if (sign)
     {
-        s64 op1 = (s32) GetRegister(Rm);
-        s64 op2 = (s32) GetRegister(Rs);
+        s64 op1 = (s32) getRegister(Rm);
+        s64 op2 = (s32) getRegister(Rs);
         s64 result, temp;
         result = op1 * op2; // 64 bit result
 
         // Add contents of RdHi, RdLo to result
         if (accumulate)
         {
-            u64 acc = GetRegister(RdHi);
+            u64 acc = getRegister(RdHi);
             acc <<= 16;
             acc <<= 16;
-            acc |= GetRegister(RdLo);
+            acc |= getRegister(RdLo);
             result += (s64) acc; // C++ casting...
             
             // +1 m cycles for accumulate
@@ -379,19 +379,19 @@ void Arm7Tdmi::MultiplyLong(u32 instruction)
 
         result = temp;
 
-        SetRegister(RdHi, hi);
-        SetRegister(RdLo, lo);
+        setRegister(RdHi, hi);
+        setRegister(RdLo, lo);
 
         if (set_condition_code)
         {
             u8 new_n_flag = result & 0x8000000000000000 ? 1 : 0; // bit 63 of result
-            SetConditionCodeFlag(ConditionFlag::N, new_n_flag);
+            setConditionCodeFlag(ConditionFlag::N, new_n_flag);
 
             u8 new_z_flag = result == 0 ? 1 : 0;
-            SetConditionCodeFlag(ConditionFlag::Z, new_z_flag);
+            setConditionCodeFlag(ConditionFlag::Z, new_z_flag);
 
             // C destroyed
-            SetConditionCodeFlag(ConditionFlag::C, 0);
+            setConditionCodeFlag(ConditionFlag::C, 0);
         }
 
         // determine how many m cycles
@@ -408,18 +408,18 @@ void Arm7Tdmi::MultiplyLong(u32 instruction)
     // unsigned multiply long
     else
     {
-        u64 op1 = GetRegister(Rm);
-        u64 op2 = GetRegister(Rs);
+        u64 op1 = getRegister(Rm);
+        u64 op2 = getRegister(Rs);
         u64 result, temp;
         result = op1 * op2; // 64 bit result
 
         // Add contents of RdHi, RdLo to result
         if (accumulate)
         {
-            u64 acc = (u32) GetRegister(RdHi);
+            u64 acc = (u32) getRegister(RdHi);
             acc <<= 16;
             acc <<= 16;
-            acc |= (u32) GetRegister(RdLo);
+            acc |= (u32) getRegister(RdLo);
             result += acc;
 
             // +1 m cycles for accumulate
@@ -435,19 +435,19 @@ void Arm7Tdmi::MultiplyLong(u32 instruction)
 
         result = temp;
 
-        SetRegister(RdHi, hi);
-        SetRegister(RdLo, lo);
+        setRegister(RdHi, hi);
+        setRegister(RdLo, lo);
 
         if (set_condition_code)
         {
             u8 new_n_flag = result & 0x8000000000000000 ? 1 : 0; // bit 63 of result
-            SetConditionCodeFlag(ConditionFlag::N, new_n_flag);
+            setConditionCodeFlag(ConditionFlag::N, new_n_flag);
 
             u8 new_z_flag = result == 0 ? 1 : 0;
-            SetConditionCodeFlag(ConditionFlag::Z, new_z_flag);
+            setConditionCodeFlag(ConditionFlag::Z, new_z_flag);
 
             // C destroyed
-            SetConditionCodeFlag(ConditionFlag::C, 0);
+            setConditionCodeFlag(ConditionFlag::C, 0);
         }
 
         // determine how many m cycles
@@ -462,11 +462,11 @@ void Arm7Tdmi::MultiplyLong(u32 instruction)
     }
 
     // cycles: 1S, mI
-    Tick(0, 1, m);
+    tick(0, 1, m);
 }
 
 // allow access to CPSR and SPSR registers
- void Arm7Tdmi::PSRTransfer(u32 instruction)
+ void Arm7Tdmi::psrTransfer(u32 instruction)
  {
     bool use_spsr = util::bitseq<22, 22>(instruction) == 1;
     u32 opcode    = util::bitseq<21, 21>(instruction);
@@ -482,9 +482,9 @@ void Arm7Tdmi::MultiplyLong(u32 instruction)
         }
 
         if (use_spsr)
-            SetRegister(Rd, GetRegister(spsr)); // Rd <- spsr_<mode>
+            setRegister(Rd, getRegister(spsr)); // Rd <- spsr_<mode>
         else
-            SetRegister(Rd, GetRegister(cpsr)); // Rd <- cpsr
+            setRegister(Rd, getRegister(cpsr)); // Rd <- cpsr
     }
 
     // MSR (transfer register contents to PSR)
@@ -502,7 +502,7 @@ void Arm7Tdmi::MultiplyLong(u32 instruction)
             rotate *= 2; // rotate by twice the value in the rotate field
 
             // perform right rotation
-            BarrelShift(rotate, new_value, 0b11); // code for ROR
+            barrelShift(rotate, new_value, 0b11); // code for ROR
         }
         
         // use value in register
@@ -515,21 +515,21 @@ void Arm7Tdmi::MultiplyLong(u32 instruction)
                 return;
             }
 
-            new_value = GetRegister(Rm);
+            new_value = getRegister(Rm);
         }
 
         if (use_spsr)
-            UpdateSPSR(new_value, flags_only);
+            updateSPSR(new_value, flags_only);
         else
-            UpdateCPSR(new_value, flags_only);
+            updateCPSR(new_value, flags_only);
     }
 
     // cycles: 1S
-    Tick(0, 1, 0);
+    tick(0, 1, 0);
 }
 
 // store or load single value to/from memory
-void Arm7Tdmi::SingleDataTransfer(u32 instruction)
+void Arm7Tdmi::singleDataTransfer(u32 instruction)
 {
     bool immediate  = util::bitseq<25, 25>(instruction) == 0;
     bool pre_index  = util::bitseq<24, 24>(instruction) == 1; // bit 24 set = pre index, bit 24 0 = post index
@@ -562,7 +562,7 @@ void Arm7Tdmi::SingleDataTransfer(u32 instruction)
         }
 
         u8 shift_type = util::bitseq<6, 5>(instruction);
-        offset = GetRegister(offset_register);
+        offset = getRegister(offset_register);
 
         // encodings of LSR #0, ASR #0, and ROR #0 should be interpreted as LSR #32, ASR #32, and RRX
         if (shift_amount == 0 && shift_type != 0) // shift_type == 0 is LSL
@@ -573,10 +573,10 @@ void Arm7Tdmi::SingleDataTransfer(u32 instruction)
                 shift_amount = 32;
         }
 
-        BarrelShift(shift_amount, offset, shift_type); // offset will be modified to contain result of shifted register
+        barrelShift(shift_amount, offset, shift_type); // offset will be modified to contain result of shifted register
     }
 
-    u32 base = GetRegister(Rn);
+    u32 base = getRegister(Rn);
 
     // offset modification before transfer
     if (pre_index)
@@ -593,13 +593,13 @@ void Arm7Tdmi::SingleDataTransfer(u32 instruction)
         if (byte) // load one byte from memory, sign extend 0s
         {
             u32 value = 0;
-            value |= Read8(base);
-            SetRegister(Rd, value);
+            value |= read8(base);
+            setRegister(Rd, value);
         }
         
         // load one word from memory
         else
-            SetRegister(Rd, Read32(base, true));
+            setRegister(Rd, read32(base, true));
 
         // normal loads instructions take 1S + 1N + 1I
         ++s;
@@ -619,16 +619,16 @@ void Arm7Tdmi::SingleDataTransfer(u32 instruction)
     // store from register to memory
     else
     {
-        u32 value = GetRegister(Rd);
+        u32 value = getRegister(Rd);
 
         // if Rd is r15, the stored address will be the address of the current instruction plus 12
         if (Rd == r15)
             value += 4;
 
         if (byte) // store one byte to memory
-            Write8(base, value & 0xFF);  // lowest byte in register
+            write8(base, value & 0xFF);  // lowest byte in register
         else // store one word into memory
-            Write32(base, value);
+            write32(base, value);
 
         // stores take 2N cycles to execute
         n = 2;
@@ -642,14 +642,14 @@ void Arm7Tdmi::SingleDataTransfer(u32 instruction)
     }
 
     if ((write_back || !pre_index) && (!load || Rd != Rn))
-        SetRegister(Rn, base);
+        setRegister(Rn, base);
 
     // cycles: LDR: 1S + 1N + 1I. LDR PC: 2S + 2N + 1I. STR: 2N
-    Tick(n, s, i);
+    tick(n, s, i);
 }
 
 // transfer halfword and signed data
-void Arm7Tdmi::HalfwordDataTransfer(u32 instruction)
+void Arm7Tdmi::halfwordDataTransfer(u32 instruction)
 {
     bool pre_index  = util::bitseq<24, 24>(instruction) == 1; // bit 24 set = pre index, bit 24 0 = post index
     bool up         = util::bitseq<23, 23>(instruction) == 1; // bit 23 set = up, bit 23 0 = down
@@ -660,7 +660,7 @@ void Arm7Tdmi::HalfwordDataTransfer(u32 instruction)
     u32 Rd          = util::bitseq<15, 12>(instruction);      // src/dest register
     u32 Rm          = util::bitseq<3, 0>(instruction);        // offset register
     u32 offset;
-    u32 base = GetRegister(Rn);
+    u32 base = getRegister(Rn);
 
     // cycles
     u8 n = 0;
@@ -682,7 +682,7 @@ void Arm7Tdmi::HalfwordDataTransfer(u32 instruction)
     
     else
     {
-        offset = GetRegister(Rm);
+        offset = getRegister(Rm);
     }
 
     // offset modification before transfer
@@ -697,18 +697,18 @@ void Arm7Tdmi::HalfwordDataTransfer(u32 instruction)
     {
         case 0b01: // unsigned halfwords
             if (load)
-                SetRegister(Rd, Read16(base, false));
+                setRegister(Rd, read16(base, false));
             else
-                Write16(base, GetRegister(Rd) & 0xFFFF);
+                write16(base, getRegister(Rd) & 0xFFFF);
             break;
         
         case 0b10: // signed byte
             if (load)
             {
-                u32 value = (u32) Read8(base);
+                u32 value = (u32) read8(base);
                 if (value & 0x80)
                 value |= ~0b11111111; // bit 7 of byte is 1, so sign extend bits 31-8 of register
-                SetRegister(Rd, value);
+                setRegister(Rd, value);
             }
             
             else
@@ -721,9 +721,9 @@ void Arm7Tdmi::HalfwordDataTransfer(u32 instruction)
         case 0b11: // signed halfwords
             if (load)
             {
-                u32 value = Read16(base, true);
+                u32 value = read16(base, true);
                 if (value & 0x8000) value |= ~0b1111111111111111; // bit 15 of byte is 1, so sign extend bits 31-16 of register
-                SetRegister(Rd, value);
+                setRegister(Rd, value);
             }
             
             else
@@ -747,7 +747,7 @@ void Arm7Tdmi::HalfwordDataTransfer(u32 instruction)
     }
 
     if ((write_back || !pre_index) && (!load || Rd != Rn))
-        SetRegister(Rn, base);
+        setRegister(Rn, base);
 
     // calculate cycles
     if (load)
@@ -769,10 +769,10 @@ void Arm7Tdmi::HalfwordDataTransfer(u32 instruction)
     }
 
     // cycles: LDR: 1S + 1N + 1I. LDR PC: 2S + 2N + 1I. STR: 2N
-    Tick(n, s, i);
+    tick(n, s, i);
 }
 
-void Arm7Tdmi::BlockDataTransfer(u32 instruction)
+void Arm7Tdmi::blockDataTransfer(u32 instruction)
 {
     bool pre_index    = util::bitseq<24, 24>(instruction) == 1; // bit 24 set = pre index, bit 24 0 = post index
     bool up           = util::bitseq<23, 23>(instruction) == 1; // bit 23 set = up, bit 23 0 = down
@@ -781,10 +781,10 @@ void Arm7Tdmi::BlockDataTransfer(u32 instruction)
     bool load         = util::bitseq<20, 20>(instruction) == 1; // bit 20 set = load, bit 20 0 = store
     u32 Rb            = util::bitseq<19, 16>(instruction);      // base register
     u32 register_list = util::bitseq<15, 0>(instruction);
-    u32 base          = GetRegister(Rb);
+    u32 base          = getRegister(Rb);
     int num_registers = 0; // number of set bitseq<> in the register list, should be between 0-16
     int set_registers[16];
-    Mode temp_mode = GetMode();
+    Mode temp_mode = getMode();
     bool Rb_in_Rlist = false;
 
     bool r15_in_register_list = ((register_list >> 15) & 0x1) == 1;
@@ -805,20 +805,20 @@ void Arm7Tdmi::BlockDataTransfer(u32 instruction)
     {
         if (load) // load r15
         { 
-            SetRegister(r15, Read32(base, false));
+            setRegister(r15, read32(base, false));
             pipeline_full = false;
         }
 
         else // store r15
         {
-            Write32(base, registers.r15 + 4);
+            write32(base, registers.r15 + 4);
         }
 
         // store Rb = Rb +/- 0x40
         if (up)
-            SetRegister(Rb, base + 0x40);
+            setRegister(Rb, base + 0x40);
         else
-            SetRegister(Rb, base - 0x40);
+            setRegister(Rb, base - 0x40);
 
         return;
     }
@@ -844,7 +844,7 @@ void Arm7Tdmi::BlockDataTransfer(u32 instruction)
 
     // force use user bank registers
     if (load_psr)
-        SetMode(Mode::USR);
+        setMode(Mode::USR);
 
     if (load) // load from memory
     { 
@@ -860,7 +860,7 @@ void Arm7Tdmi::BlockDataTransfer(u32 instruction)
                 if (pre_index) // pre increment
                     base += 4;
 
-                SetRegister(set_registers[i], Read32(base, false));
+                setRegister(set_registers[i], read32(base, false));
                 if (set_registers[i] == r15) // loading into r15
                 {
                     pipeline_full = false; 
@@ -883,7 +883,7 @@ void Arm7Tdmi::BlockDataTransfer(u32 instruction)
                 if (pre_index) // pre decrement
                     base -= 4;
 
-                SetRegister(set_registers[i], Read32(base, false));
+                setRegister(set_registers[i], read32(base, false));
                 if (set_registers[i] == r15) // loading into r15
                 {
                     pipeline_full = false; 
@@ -911,11 +911,11 @@ void Arm7Tdmi::BlockDataTransfer(u32 instruction)
                 if (pre_index) // pre increment
                     base += 4;
                     
-                u32 value = GetRegister(set_registers[i]);
+                u32 value = getRegister(set_registers[i]);
                 // if Rd is r15, the stored address will be the address of the current instruction plus 12
                 if (set_registers[i] == r15)
                     value += 4;
-                Write32(base, value);
+                write32(base, value);
 
                 if (!pre_index) // post increment
                     base += 4;
@@ -932,11 +932,11 @@ void Arm7Tdmi::BlockDataTransfer(u32 instruction)
                 if (pre_index) // pre decrement
                     base -= 4;
                     
-                u32 value = GetRegister(set_registers[i]);
+                u32 value = getRegister(set_registers[i]);
                 // if Rd is r15, the stored address will be the address of the current instruction plus 12
                 if (set_registers[i] == r15)
                     value += 4;
-                Write32(base, value);
+                write32(base, value);
 
                 if (!pre_index) // post decrement
                     base -= 4;
@@ -963,19 +963,19 @@ void Arm7Tdmi::BlockDataTransfer(u32 instruction)
         //}
 
         //else
-        SetRegister(Rb, base); // write back final address if LDM or Rb is NOT in Rlist 
+        setRegister(Rb, base); // write back final address if LDM or Rb is NOT in Rlist 
     }
 
     if (load_psr)
-        SetMode(temp_mode); // restore cpu state
+        setMode(temp_mode); // restore cpu state
     
     // cycles:
     // For normal LDM, nS + 1N + 1I.
     // For LDM PC, (n+1)S+2N+1I. For STM (n-1)S+2N. Where n is the number of words transferred.
-    Tick(n, s, i);
+    tick(n, s, i);
 }
 
-void Arm7Tdmi::SingleDataSwap(u32 instruction)
+void Arm7Tdmi::singleDataSwap(u32 instruction)
 {
     bool byte = util::bitseq<22, 22>(instruction);
     u32 Rn    = util::bitseq<19, 16>(instruction); // base register
@@ -988,41 +988,41 @@ void Arm7Tdmi::SingleDataSwap(u32 instruction)
         return;
     }
 
-    u32 swap_address = GetRegister(Rn);
+    u32 swap_address = getRegister(Rn);
 
     // swap a byte
     if (byte)
     {
-        u8 temp = Read8(swap_address);
-        u8 source = GetRegister(Rm) & 0xFF; // bottom byte of source register
-        Write8(swap_address, source);
-        SetRegister(Rd, temp);
+        u8 temp = read8(swap_address);
+        u8 source = getRegister(Rm) & 0xFF; // bottom byte of source register
+        write8(swap_address, source);
+        setRegister(Rd, temp);
     }
     
     // swap a word
     else
     {
-        u32 temp = Read32(swap_address, true);
-        u32 source = GetRegister(Rm);
-        Write32(swap_address, source);
-        SetRegister(Rd, temp);
+        u32 temp = read32(swap_address, true);
+        u32 source = getRegister(Rm);
+        write32(swap_address, source);
+        setRegister(Rd, temp);
     }
 
     // cycles: 1S + 2N + 1I
-    Tick(2, 1, 1);
+    tick(2, 1, 1);
 }
 
-void Arm7Tdmi::SoftwareInterruptArm(u32 instruction)
+void Arm7Tdmi::softwareInterruptArm(u32 instruction)
 {
     //LOG(LogLevel::Debug, "ARM SWI: {}\n", instruction >> 16 & 0xFF);
 
     // LLE BIOS calls - handle thru BIOS
-    u32 old_cpsr = GetRegister(cpsr);
-    SetMode(Mode::SVC);
-    SetRegister(r14, GetRegister(r15) - 4);
+    u32 old_cpsr = getRegister(cpsr);
+    setMode(Mode::SVC);
+    setRegister(r14, getRegister(r15) - 4);
     registers.cpsr.i = 1;
-    UpdateSPSR(old_cpsr, false); // move up
-    SetRegister(r15, 0x08);
+    updateSPSR(old_cpsr, false); // move up
+    setRegister(r15, 0x08);
     pipeline_full = false;
 
     last_read_bios = bios_read_state[3];
@@ -1046,10 +1046,10 @@ void Arm7Tdmi::SoftwareInterruptArm(u32 instruction)
     //         swi_arctan2();
     //         break;
     //     case 0xB:
-    //         swi_cpuSet();
+    //         swi_cpuset();
     //         break;
     //     case 0xF:
-    //         swi_objAffineSet();
+    //         swi_objAffineset();
     //         break;
     //     case 0x10:
     //         swi_bitUnpack();
@@ -1060,5 +1060,5 @@ void Arm7Tdmi::SoftwareInterruptArm(u32 instruction)
     // }
 
     // cycles: 2S + 1N
-    Tick(1, 2, 0);
+    tick(1, 2, 0);
 }

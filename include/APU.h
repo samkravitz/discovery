@@ -36,7 +36,6 @@ class APU
 	void generateChannel4(s16*, int, int);
 	void generateDirectSoundA(s16*, int, int);
 	void generateDirectSoundB(s16*, int, int);
-	SDL_AudioCallback audioCallback(void*, Uint8*, int);
 
 	s8 getDriverID(void);
 	

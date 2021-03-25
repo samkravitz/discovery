@@ -22,3 +22,5 @@ sdl sine wave generator
 sponge bob square wave 
 https://davidgow.net/handmadepenguin/ch8.html
 
+more details 
+https://www.problemkaputt.de/gbatek.htm#gbasoundchannel1tonesweep

@@ -64,20 +64,41 @@ void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count)
 {
 	// dmg channel 1 sweep control
 	// sweep shifts unit (s)
-	// sweep asc == 0, desc == 1
+	// sweep_freq_direction asc == 0, desc == 1
 	u16 ch1_l = (s16) this->mem->read8(REG_SOUND1CNT_L);
-	u16 sweep_shift_reg = util::bitseq<2,0>(ch1_l);
-	u16 sweep_asc_desc = util::bitseq<3,3>(ch1_l);
-	u16 sweep_time_reg = util::bitseq<6,4>(ch1_l);
+	u16 n_sweep_shifts = util::bitseq<2,0>(ch1_l);
+	u16 sweep_freq_direction = util::bitseq<3,3>(ch1_l);
+	u16 sweep_time = util::bitseq<6,4>(ch1_l);
 	
 	// dmg channel 1 wave and envelope control
 	u16 ch1_h = (s16) this->mem->read16(REG_SOUND1CNT_H);
 	u16 sound_len_reg = util::bitseq<5,0>(ch1_h);
 	u16 sound_len = (64 - sound_len_reg)/256;
-	u16 wave_duty_cycle = util::bitseq<7,6>(ch1_h);
+	u16 wave_duty_cycle_reg = util::bitseq<7,6>(ch1_h);
 	u16 envelope_step_time = util::bitseq<0xA,8>(ch1_h);
 	u16 envelope_mode = util::bitseq<0xB,0xB>(ch1_h);
 	u16 envelope_init_value = util::bitseq<0xF,0xC>(ch1_h);
+
+	float wave_cycle_ratio;
+	switch(wave_duty_cycle_reg)
+	{
+		case 0b00:
+			wave_cycle_ratio = .125;
+			break;
+		case 0b01:
+			wave_cycle_ratio = .250;
+			break;
+		case 0b10:
+			wave_cycle_ratio = .500;
+			break;
+		case 0b11:
+			wave_cycle_ratio = .750;
+			break;
+		default: 
+			throw std::domain_error("invalid wave_cycle_ratio register value");
+			wave_cycle_ratio = .500;
+			break;
+	}
 
 	// dmg channel 1 frequency, reset, loop control
 	u16 ch1_x = (s16) this->mem->read16(REG_SOUND1CNT_X);
@@ -91,13 +112,13 @@ void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count)
 
 	// generate sound
 	for(int i = 0; i < sample_len; i++) {
-		double period = (double) sample_count / (double) SAMPLE_RATE;
-		double wave = (s16) AMPLITUDE * util::signum(std::sin(2.0 * M_PI * sound_freq * period));
-		double sweep_shift = period + sweep_asc_desc
-			? (period / std::pow(2, sweep_shift_reg))
-			: -1 * (period / std::pow(2, sweep_shift_reg));
-		double sweep_time = sweep_time_reg / 128000;
-		stream[i] = wave + sweep_shift;
+		double time = (double) sample_count / (double) SAMPLE_RATE;
+		double wave = (s16) AMPLITUDE * util::signum(std::sin(2.0 * M_PI * sound_freq * time));
+		// double sweep_shift = time + sweep_asc_desc
+		// 	? (time / std::pow(2, sweep_shift_reg))
+		// 	: -1 * (time / std::pow(2, sweep_shift_reg));
+		// double sweep_time = (64 - sound_len_reg) / 256;
+		stream[i] = wave ;
 		sample_count += 1;
 	}
 }

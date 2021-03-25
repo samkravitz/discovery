@@ -116,14 +116,14 @@ void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count)
 	int sample_len = buffer_len/2;
 
 	// generate sound
-	for(int i = 0; i < sample_len; i++) {
+	for(int i = 1; i < sample_len; i++) {
 		double time = (double) sample_count / (double) SAMPLE_RATE;
 		double wave = (s16) AMPLITUDE * util::signum(std::sin(2.0 * M_PI * sound_freq * time));
-		// double sweep_shift = time + sweep_asc_desc
-		// 	? (time / std::pow(2, sweep_shift_reg))
-		// 	: -1 * (time / std::pow(2, sweep_shift_reg));
+		double sweep_shift = stream[i-1] + sweep_freq_direction
+			? (time / std::pow(2, n_sweep_shifts))
+			: -1 * (time / std::pow(2, n_sweep_shifts));
 		// double sweep_time = (64 - sound_len_reg) / 256;
-		stream[i] = wave ;
+		stream[i] = wave + sweep_shift;
 		sample_count += 1;
 	}
 }

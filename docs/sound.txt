@@ -24,3 +24,6 @@ https://davidgow.net/handmadepenguin/ch8.html
 
 more details 
 https://www.problemkaputt.de/gbatek.htm#gbasoundchannel1tonesweep
+
+sound timing
+http://ianfinlayson.net/class/cpsc305/notes/19-sound

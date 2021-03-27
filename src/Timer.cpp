@@ -16,9 +16,9 @@ Timer::Timer()
     // zero channels
     for (int i = 0; i < 4; ++i)
     {
-        channel[i].cnt         = 0;
-        channel[i].data        = 0;
-        channel[i].initial     = 0;
+        channel[i].cnt       = 0;
+        channel[i].data      = 0;
+        channel[i].initial   = 0;
         channel[i].prescalar = 1;
     }
 }

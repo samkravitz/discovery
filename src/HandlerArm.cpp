@@ -638,7 +638,7 @@ void Arm7Tdmi::singleDataTransfer(u32 instruction)
     if (!pre_index)
     {
         if (up) base += offset; // offset is added to base
-        else base -= offset; // offset is subtracted from base
+        else    base -= offset; // offset is subtracted from base
     }
 
     if ((write_back || !pre_index) && (!load || Rd != Rn))

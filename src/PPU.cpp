@@ -223,7 +223,6 @@ void PPU::Tick()
 void PPU::render()
 {
     //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
-
     // copy pixel buffer over to surface pixels
     if (SDL_MUSTLOCK(final_screen))
         SDL_LockSurface(final_screen);

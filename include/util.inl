@@ -32,9 +32,7 @@ inline u16 bitseq(u16 val)
 
 inline u32 u16ToU32Color(u16 color_u16)
 {
-    u8 a = 0x1F;
     u32 r, g, b;
-    u32 color = 0; // alpha value 255 ?
 
     r = color_u16 & 0x1F; color_u16 >>= 5; // bits  0 - 5
     g = color_u16 & 0x1F; color_u16 >>= 5; // bits  6 - 10

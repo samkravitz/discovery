@@ -56,6 +56,11 @@ PPU::PPU(Memory *mem, LcdStat *stat) : mem(mem), stat(stat)
 
     oam_update = std::make_unique<std::stack<int>>();
 
+    // internal ptrs linked to memory's
+    palram = &mem->memory[MEM_PALETTE_RAM_START];
+    vram   = &mem->memory[MEM_VRAM_START];
+    oam    = &mem->memory[MEM_OAM_START];
+
     Reset();
 }
 
@@ -269,7 +274,7 @@ void PPU::render()
 void PPU::renderScanline()
 {
     // index 0 in BG palette
-    backdrop_color = util::u16ToU32Color(mem->read16Unsafe(MEM_PALETTE_RAM_START));
+    backdrop_color = util::u16ToU32Color(palram[1] << 8 | palram[0]);
 
     // "zero" scanline buffer with backdrop color
     for (int i = 0; i < SCREEN_WIDTH; ++i)
@@ -565,17 +570,18 @@ void PPU::renderScanlineBitmap(int mode)
     switch (mode)
     {
         case 3:
-            pal_ptr = MEM_VRAM_START + (scanline * SCREEN_WIDTH * sizeof(u16));
+            pal_ptr = scanline * SCREEN_WIDTH * 2;
 
             for (int i = 0; i < SCREEN_WIDTH; ++i)
             {
-                pixel = mem->read16Unsafe(pal_ptr); pal_ptr += 2;
+                pixel = vram[pal_ptr + 1] << 8 | vram[pal_ptr];
+                pal_ptr += 2;
                 scanline_buffer[i] = util::u16ToU32Color(pixel);
             }
             break;
 
         case 4:
-            pal_ptr = MEM_VRAM_START + (scanline * SCREEN_WIDTH);
+            pal_ptr = scanline * SCREEN_WIDTH;
 
             // page 2 starts at 0x600A000
             if (stat->dispcnt.ps)
@@ -583,18 +589,20 @@ void PPU::renderScanlineBitmap(int mode)
 
             for (int i = 0; i < SCREEN_WIDTH; ++i)
             {
-                palette_index = mem->read8Unsafe(pal_ptr++);
-                // multiply by sizeof(u16) because each entry in palram is 2 bytes
-                pixel = mem->read16Unsafe(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
+                // multiply by 2 because each entry in palram is 2 bytes
+                palette_index = vram[pal_ptr++] * 2;
+                pixel = palram[palette_index + 1] << 8 | palram[palette_index];
                 scanline_buffer[i] = util::u16ToU32Color(pixel);
             }
 
             break;
 
         case 5:
-            if (scanline >= 128) return; // mode 5 has 160 x 128 resolution
+            // mode 5 has 160 x 128 resolution
+            if (scanline >= 128)
+                return;
 
-            pal_ptr = MEM_VRAM_START + (scanline * 160);
+            pal_ptr = scanline * 160;
 
             // page 2 starts at 0x600A000
             if (stat->dispcnt.ps)
@@ -602,9 +610,9 @@ void PPU::renderScanlineBitmap(int mode)
 
             for (int i = 0; i < 160; ++i)
             {
-                palette_index = mem->read8Unsafe(pal_ptr++);
-                // multiply by sizeof(u16) because each entry in palram is 2 bytes
-                pixel = mem->read16Unsafe(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
+                // multiply by 2 because each entry in palram is 2 bytes
+                palette_index = vram[pal_ptr++] * 2;
+                pixel = palram[palette_index + 1] << 8 | palram[palette_index];
                 scanline_buffer[i] = util::u16ToU32Color(pixel);
             }
 
@@ -950,8 +958,8 @@ void PPU::composeWindow()
         obj_in_winout = true;
 
     // obj window enabled
-    if (stat->dispcnt.win_enabled & 4)
-        LOG(LogLevel::Warning, "Object window is enabled\n");
+    // if (stat->dispcnt.win_enabled & 4)
+    //     LOG(LogLevel::Warning, "Object window is enabled\n");
 }
 
 inline u16 PPU::getObjPixel4BPP(u32 addr, int palbank, int x, int y)
@@ -1024,12 +1032,4 @@ bool PPU::isInWinOut(int x, int y)
         y >= win[1].top  && y <= win[1].bottom) return false;
     
     return true;
-}
-
-void PPU::printPalette()
-{
-    for (int i = 0; i < 256; i++)
-    {
-        LOG("{}: {:x}\n", i, mem->read16Unsafe(MEM_PALETTE_RAM_START + 2 * i));
-    }
 }

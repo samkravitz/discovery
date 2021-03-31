@@ -63,6 +63,11 @@ class PPU
         SDL_Surface *original_screen;
         SDL_Rect     scale_rect;
 
+        // internal buffers linked from memory
+        u8 *palram;
+        u8 *vram;
+        u8 *oam;
+
         u8 frame; // counts 0 - 60
         u8 fps;
         clock_t old_time;
@@ -151,6 +156,4 @@ class PPU
         void updateAttr();
         void composeWindow();
         inline bool isInWinOut(int, int);
-
-        void printPalette();
 };

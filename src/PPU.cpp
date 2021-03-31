@@ -211,9 +211,7 @@ void PPU::Tick()
 
         // scanline is not equal to trigger value, reset this bit
         else
-        {
             stat->dispstat.vcs = 0;
-        }
 
         cycles = 0;
         stat->dispstat.in_hBlank = false;

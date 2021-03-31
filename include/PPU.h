@@ -61,7 +61,7 @@ class PPU
         SDL_Window  *window;
         SDL_Surface *final_screen;
         SDL_Surface *original_screen;
-        SDL_Rect     scale_rect;
+        SDL_Rect    scale_rect;
 
         // internal buffers linked from memory
         u8 *palram;

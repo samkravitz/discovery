@@ -48,7 +48,7 @@ PPU::PPU(Memory *mem, LcdStat *stat) : mem(mem), stat(stat)
 
     final_screen = SDL_GetWindowSurface(window);
     original_screen = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32, 0, 0, 0, 0);
-
+    
     scale_rect.w = SCREEN_WIDTH  * 2;
     scale_rect.h = SCREEN_HEIGHT * 2;
     scale_rect.x = 0;
@@ -60,6 +60,8 @@ PPU::PPU(Memory *mem, LcdStat *stat) : mem(mem), stat(stat)
     palram = &mem->memory[MEM_PALETTE_RAM_START];
     vram   = &mem->memory[MEM_VRAM_START];
     oam    = &mem->memory[MEM_OAM_START];
+
+    original_screen->pixels = (u32 *) screen_buffer;
 
     reset();
 }
@@ -225,19 +227,9 @@ void PPU::tick()
 void PPU::render()
 {
     //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
-    // copy pixel buffer over to surface pixels
-    if (SDL_MUSTLOCK(final_screen))
-        SDL_LockSurface(final_screen);
-
-    u32 *screen_pixels = (u32 *) original_screen->pixels;
-
-    std::memcpy(screen_pixels, screen_buffer, sizeof(screen_buffer));
-
-    if (SDL_MUSTLOCK(final_screen))
-        SDL_UnlockSurface(final_screen);
 
     // scale screen buffer
-    SDL_BlitScaled(original_screen, NULL, final_screen, &scale_rect);
+    SDL_BlitScaled(original_screen, nullptr, final_screen, &scale_rect);
 
     // draw final_screen pixels on screen
     SDL_UpdateWindowSurface(window);
@@ -635,7 +627,7 @@ void PPU::renderObj()
 
         // obj exists outside current scanline
         if (scanline < attr.qy0 - attr.hheight || scanline >= attr.qy0 + attr.hheight)
-             continue;
+            continue;
 
         // obj exists outside current object layer
         if (scanline < objminy || scanline >= objmaxy)

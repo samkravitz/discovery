@@ -269,11 +269,19 @@ void PPU::renderScanline()
 
     // "zero" scanline buffer with backdrop color
     for (int i = 0; i < SCREEN_WIDTH; ++i)
+    {
         scanline_buffer[i] = backdrop_color;
+        objwin_scanline_buffer[i] = 0;
+    }
+
+    // update visible objs and obj window
+    if (stat->dispcnt.obj_enabled)
+        updateAttr();
+        
 
     // init windows if enabled
-    // if (stat->dispcnt.win_enabled != 0)
-    //     composeWindow();
+    if (stat->dispcnt.win_enabled != 0)
+        composeWindow();
 
     // render bg
     switch (stat->dispcnt.mode)
@@ -348,12 +356,15 @@ void PPU::renderScanline()
     // render sprites
     if (stat->dispcnt.obj_enabled)
     {
-        // update objs list
-        updateAttr();
-        renderObj();
+        while (!oam_update->empty())
+        {
+            renderScanlineObj(oam_update->top());
+            oam_update->pop();
+        }
         //std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
     }
 
+    obj_in_objwin = false;
     std::memcpy(&screen_buffer[scanline], scanline_buffer, sizeof(scanline_buffer));
 }
 
@@ -527,12 +538,10 @@ void PPU::renderScanlineAffine(int bg)
         }
 
         // no wrap
-        else
-        {
-            // transformmed coordinate is out of bounds
-            if (px >= width || py >= height) continue;
-            if (px < 0      || py < 0)       continue;
-        }
+        // transformmed coordinate is out of bounds
+        if (px >= width || py >= height) continue;
+        if (px < 0      || py < 0)       continue;
+
 
         map_x = px;
         map_y = py;
@@ -611,110 +620,118 @@ void PPU::renderScanlineBitmap(int mode)
 }
 
 
-void PPU::renderObj()
+void PPU::renderScanlineObj(int idx, bool obj_win)
 {
     u16 pixel;
 
-    // loop through all objs
-    while (!oam_update->empty())
+    const auto attr = objs[idx];
+
+    // skip hidden object
+    if (attr.obj_mode == 2)
+        return;
+
+    // obj exists outside current scanline
+    if (scanline < attr.qy0 - attr.hheight || scanline >= attr.qy0 + attr.hheight)
+        return;
+
+    // obj exists outside current object layer
+    if (scanline < objminy || scanline >= objmaxy)
+        return;
+    
+    int qx0 = attr.qx0;      // center of sprite screen space
+
+    // x, y coordinate of texture after transformation
+    int px, py;
+    int iy = -attr.hheight + (scanline - attr.y);
+
+
+    //LOG("{} {} {} {}\n", attr.x, attr.y, attr.hheight, attr.hwidth);
+    //LOG("{} {} {} {}\n", attr.x0, attr.y0, attr.hheight, attr.hwidth);
+
+    for (int ix = -attr.hwidth; ix < attr.hwidth; ++ix)
     {
-        const auto attr = objs[oam_update->top()];
-        oam_update->pop();
-
-        // skip hidden object
-        if (attr.obj_mode == 2)
+        // objs in winout
+        if (obj_in_winout && !isInWinOut(qx0 + ix, scanline))
             continue;
 
-        // obj exists outside current scanline
-        if (scanline < attr.qy0 - attr.hheight || scanline >= attr.qy0 + attr.hheight)
-            continue;
+        px = ix + attr.hwidth;
+        py = iy + attr.hheight;
 
         // obj exists outside current object layer
-        if (scanline < objminy || scanline >= objmaxy)
+        if (qx0 + ix < objminx || qx0 + ix >= objmaxx)
             continue;
-        
-        int qx0 = attr.qx0;      // center of sprite screen space
 
-        // x, y coordinate of texture after transformation
-        int px, py;
-        int iy = -attr.hheight + (scanline - attr.y);
-
-
-        //LOG("{} {} {} {}\n", attr.x, attr.y, attr.hheight, attr.hwidth);
-        //LOG("{} {} {} {}\n", attr.x0, attr.y0, attr.hheight, attr.hwidth);
-
-        for (int ix = -attr.hwidth; ix < attr.hwidth; ++ix)
+        // transform affine & double wide affine
+        if (attr.obj_mode == 1 || attr.obj_mode == 3)
         {
-            // objs in winout
-            if (obj_in_winout && !isInWinOut(qx0 + ix, scanline))
-                continue;
+            px = attr.pa * ix + attr.pb * iy + attr.px0;
+            py = attr.pc * ix + attr.pd * iy + attr.py0;
+        }
 
-            px = ix + attr.hwidth;
-            py = iy + attr.hheight;
+        // horizontal / vertical flip
+        if (attr.h_flip) px = attr.width  - px - 1;
+        if (attr.v_flip) py = attr.height - py - 1;
+        
+        // transformed coordinate is out of bounds
+        if (px >= attr.width || py  >= attr.height) continue;
+        if (px       < 0     || py  < 0           ) continue;
+        if (qx0 + ix < 0     || qx0 + ix >= 240   ) continue;
 
-            // obj exists outside current object layer
-            if (qx0 + ix < objminx || qx0 + ix >= objmaxx)
-                continue;
+        
+        int tile_x  = px % 8; // x coordinate of pixel within tile
+        int tile_y  = py % 8; // y coordinate of pixel within tile
+        int block_x = px / 8; // x coordinate of tile in vram
+        int block_y = py / 8; // y coordinate of tile in vram
 
-            // transform affine & double wide affine
-            if (attr.obj_mode == 1 || attr.obj_mode == 3)
-            {
-                px = attr.pa * ix + attr.pb * iy + attr.px0;
-                py = attr.pc * ix + attr.pd * iy + attr.py0;
-            }
+        int tileno = attr.tileno;
+        int pixel;
 
-            // horizontal / vertical flip
-            if (attr.h_flip) px = attr.width  - px - 1;
-            if (attr.v_flip) py = attr.height - py - 1;
+        // 8bpp
+        if (attr.color_mode == 1)
+        {
+            // 1d
+            if (stat->dispcnt.obj_map_mode == 1)
+                tileno += block_y * (attr.width / 4);
+
+            // 2d
+            else
+                tileno = (tileno & ~1) + block_y * 32;
             
-            // transformed coordinate is out of bounds
-            if (px >= attr.width || py  >= attr.height) continue;
-            if (px       < 0     || py  < 0           ) continue;
-            if (qx0 + ix < 0     || qx0 + ix >= 240   ) continue;
+            tileno += block_x * 2;
 
+            pixel = getObjPixel8BPP(tileno * 32, tile_x, tile_y);
+        }
+
+        // 8bpp
+        else
+        {
+            // 1d
+            if (stat->dispcnt.obj_map_mode == 1)
+                tileno += block_y * (attr.width / 8);
+
+            // 2d
+            else
+                tileno += block_y * 32;
+
+            tileno += block_x;
             
-            int tile_x  = px % 8; // x coordinate of pixel within tile
-            int tile_y  = py % 8; // y coordinate of pixel within tile
-            int block_x = px / 8; // x coordinate of tile in vram
-            int block_y = py / 8; // y coordinate of tile in vram
+            pixel = getObjPixel4BPP(tileno * 32, attr.palbank, tile_x, tile_y);
+        }
+        
+        if (pixel != TRANSPARENT)
+        {
+            // don't render, but signify that this pixel serves in the object window mask
+            if (obj_win)
+                objwin_scanline_buffer[qx0 + ix] = 1;
 
-            int tileno = attr.tileno;
-            int pixel;
-
-            // 8bpp
-            if (attr.color_mode == 1)
-            {
-                // 1d
-                if (stat->dispcnt.obj_map_mode == 1)
-                    tileno += block_y * (attr.width / 4);
-
-                // 2d
-                else
-                    tileno = (tileno & ~1) + block_y * 32;
-                
-                tileno += block_x * 2;
-
-                pixel = getObjPixel8BPP(tileno * 32, tile_x, tile_y);
-            }
-
-            // 8bpp
             else
             {
-                // 1d
-                if (stat->dispcnt.obj_map_mode == 1)
-                    tileno += block_y * (attr.width / 8);
+                // pixel doesn't fall in object window, so skip
+                if (obj_in_objwin && !objwin_scanline_buffer[qx0 + ix])
+                    continue;
 
-                // 2d
-                else
-                    tileno += block_y * 32;
-
-                tileno += block_x;
-                
-                pixel = getObjPixel4BPP(tileno * 32, attr.palbank, tile_x, tile_y);
-            }
-            
-            if (pixel != TRANSPARENT)
                 scanline_buffer[qx0 + ix] = util::u16ToU32Color(pixel);
+            }
         }
     }
 }
@@ -830,13 +847,17 @@ void PPU::updateAttr()
         // add index to stack to be displayed
         if (obj.obj_mode != 2)
             oam_update->push(i);
+        
+        // add obj's non-transparent pixels to obj window
+        if (obj.gfx_mode == 2)
+            renderScanlineObj(i, true);
     }
 }
 
 void PPU::composeWindow()
 {
     // win1 enabled
-    if (stat->dispcnt.win_enabled & 2)
+     if (stat->dispcnt.win_enabled & 2)
     {
         u16 win1v  = mem->read16Unsafe(REG_WIN1V);
         u16 win1h  = mem->read16Unsafe(REG_WIN1H);
@@ -883,7 +904,7 @@ void PPU::composeWindow()
         }
     }
 
-    // win0 enabled
+    // // win0 enabled
     if (stat->dispcnt.win_enabled & 1)
     {
         u16 win0v  = mem->read16Unsafe(REG_WIN0V);
@@ -931,7 +952,7 @@ void PPU::composeWindow()
         }
     }
 
-    // winout
+    // // winout
     u8 winoutcontent = mem->read16Unsafe(REG_WINOUT) & 0xFF;
 
     // check if bgs are in winout content
@@ -954,8 +975,38 @@ void PPU::composeWindow()
         obj_in_winout = true;
 
     // obj window enabled
-    // if (stat->dispcnt.win_enabled & 4)
-    //     LOG(LogLevel::Warning, "Object window is enabled\n");
+    if (stat->dispcnt.win_enabled & 4)
+    {
+        // window content
+        u8 objwincontent = mem->read16Unsafe(REG_WINOUT) >> 8;
+        //std::cout << "Win obj enabled\n";
+
+        // check if bgs are in window content
+        // int mask;
+        // for (int i = 0; i < 4; ++i)
+        // {
+        //     mask = 1 << i;
+        //     if (win1content & mask)
+        //     {
+        //         stat->bgcnt[i].minx = window.left;
+        //         stat->bgcnt[i].maxx = window.right;
+        //         stat->bgcnt[i].miny = window.top;
+        //         stat->bgcnt[i].maxy = window.bottom;
+        //         stat->bgcnt[i].in_winin = true;
+        //     }
+        // }
+
+        // objs in objwin
+        if (objwincontent & 0x10)
+        {
+            // objminx        = window.left;
+            // objmaxx        = window.right;
+            // objminy        = window.top;
+            // objmaxy        = window.bottom;
+            obj_in_objwin  = true;
+        }
+    }
+   
 }
 
 inline u16 PPU::getObjPixel4BPP(u32 addr, int palbank, int x, int y)

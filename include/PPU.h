@@ -74,6 +74,7 @@ class PPU
 
         u32 scanline_buffer[SCREEN_WIDTH];
         u32 obj_scanline_buffer[SCREEN_WIDTH];
+        int objwin_scanline_buffer[SCREEN_WIDTH];
 
         u32 screen_buffer[SCREEN_HEIGHT][SCREEN_WIDTH];
 
@@ -95,6 +96,7 @@ class PPU
         int objmaxx;
         int objmaxy;
         int obj_in_winout;
+        int obj_in_objwin;
 
         // oam data structure
         struct ObjAttr
@@ -139,11 +141,11 @@ class PPU
 
         // video mode renders
         void render();
-        void renderObj();
         void renderScanline();
         void renderScanlineText(int);
         void renderScanlineAffine(int);
         void renderScanlineBitmap(int);
+        void renderScanlineObj(int, bool obj_win = false);
 
         void drawBackgroundReg(int);
         void drawBackgroundAffine(int);

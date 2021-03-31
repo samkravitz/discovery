@@ -54,8 +54,8 @@ class PPU
         u32 cycles;
         u8 scanline;
 
-        void Tick();
-        void Reset();
+        void tick();
+        void reset();
 
     private:
         SDL_Window  *window;

@@ -103,7 +103,7 @@ void Discovery::gameLoop()
 void Discovery::tick()
 {
     system_cycles++;
-    ppu->Tick();
+    ppu->tick();
     timer->tick();
 
     // poll for key presses at start of vblank

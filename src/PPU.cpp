@@ -61,7 +61,7 @@ PPU::PPU(Memory *mem, LcdStat *stat) : mem(mem), stat(stat)
     vram   = &mem->memory[MEM_VRAM_START];
     oam    = &mem->memory[MEM_OAM_START];
 
-    Reset();
+    reset();
 }
 
 PPU::~PPU()
@@ -70,7 +70,7 @@ PPU::~PPU()
     SDL_Quit();
 }
 
-void PPU::Reset()
+void PPU::reset()
 {
     cycles         = 0;
     scanline       = 0;
@@ -104,7 +104,7 @@ void PPU::Reset()
 }
 
 // 1 clock cycle of the PPU
-void PPU::Tick()
+void PPU::tick()
 {
     cycles++;
 

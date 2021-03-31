@@ -123,7 +123,6 @@ void PPU::tick()
             //LOG(LogLevel::Debug, "HBlank interrupt\n");
         }
 
-
         // check for DMA HBlank requests
         // TODO - Don't fire DMA Hblank in VBlank
         if (!stat->dispstat.in_vBlank)
@@ -281,8 +280,8 @@ void PPU::renderScanline()
         scanline_buffer[i] = backdrop_color;
 
     // init windows if enabled
-    if (stat->dispcnt.win_enabled != 0)
-        composeWindow();
+    // if (stat->dispcnt.win_enabled != 0)
+    //     composeWindow();
 
     // render bg
     switch (stat->dispcnt.mode)
@@ -397,7 +396,7 @@ void PPU::renderScanlineText(int bg)
     int screenblock, screenentry, se_index;
     int tile_id, hflip, vflip, palbank; // screenentry properties
     int pixel;
-    u32 sb_addr, tile_addr;
+    u32 tile_addr;
 
     // used for vflip / hflip
     int grid_x, grid_y;
@@ -413,13 +412,12 @@ void PPU::renderScanlineText(int bg)
         tile_x = map_x / 8; // 8 px per tile
 
         screenblock = bgcnt.sbb + ((tile_y / 32) * pitch + (tile_x / 32));
-        sb_addr = MEM_VRAM_START + SCREENBLOCK_LEN * (bgcnt.sbb);
         se_index = screenblock * 1024 + (tile_y % 32) * 32 + (tile_x % 32);
 
-        screenentry = mem->read16(MEM_VRAM_START + 2 * se_index);
+        screenentry = vram[se_index * 2 + 1] << 8 | vram[se_index * 2];
         tile_id = screenentry >>  0 & 0x3FF;
-        hflip  = screenentry >> 10 & 0x1;
-        vflip  = screenentry >> 11 & 0x1;
+        hflip   = screenentry >> 10 & 0x1;
+        vflip   = screenentry >> 11 & 0x1;
 
         grid_x = map_x % 8;
         grid_y = map_y % 8;
@@ -434,13 +432,13 @@ void PPU::renderScanlineText(int bg)
         {
             palbank = screenentry >> 12 & 0xF;
 
-            tile_addr = (MEM_VRAM_START + bgcnt.cbb * CHARBLOCK_LEN) + 0x20 * tile_id;
+            tile_addr = bgcnt.cbb * CHARBLOCK_LEN + 0x20 * tile_id;
             pixel = getBGPixel4BPP(tile_addr, palbank, grid_x, grid_y);
         }
 
         else // 8BPP
         {
-            tile_addr = (MEM_VRAM_START + bgcnt.cbb * CHARBLOCK_LEN) + 0x40 * tile_id;
+            tile_addr = bgcnt.cbb * CHARBLOCK_LEN + 0x40 * tile_id;
             pixel = getBGPixel8BPP(tile_addr, grid_x, grid_y);
         }
 
@@ -512,7 +510,7 @@ void PPU::renderScanlineAffine(int bg)
     int pixel;
     u32 tile_addr;
 
-    for (int x = bgcnt.minx; x < bgcnt.miny; ++x)
+    for (int x = bgcnt.minx; x < bgcnt.maxx; ++x)
     {
         // layer is in winout & not winin
         if (bgcnt.in_winout && !bgcnt.in_winin && !isInWinOut(x, scanline))
@@ -549,8 +547,8 @@ void PPU::renderScanlineAffine(int bg)
         tile_x = map_x / 8; // 8 px per tile
         tile_y = map_y / 8;
 
-        se_index = mem->read8((MEM_VRAM_START + bgcnt.sbb * SCREENBLOCK_LEN) + tile_y * (width / 8) + tile_x);
-        tile_addr = (MEM_VRAM_START + bgcnt.cbb * CHARBLOCK_LEN) + (se_index * 0x40);
+        se_index  = vram[bgcnt.sbb * SCREENBLOCK_LEN + tile_y * (width / 8) + tile_x];
+        tile_addr = bgcnt.cbb * CHARBLOCK_LEN + se_index * 0x40;
 
         // 8BPP only
         pixel = getBGPixel8BPP(tile_addr, map_x % 8, map_y % 8);
@@ -563,7 +561,7 @@ void PPU::renderScanlineAffine(int bg)
 // render the current scanline for bitmap modes
 void PPU::renderScanlineBitmap(int mode)
 {
-    u8 palette_index;
+    u8  palette_index;
     u16 pixel;
     u32 pal_ptr;
 
@@ -628,59 +626,59 @@ void PPU::renderObj()
     // loop through all objs
     while (!oam_update->empty())
     {
-        auto *attr = &objs[oam_update->top()];
+        const auto attr = objs[oam_update->top()];
         oam_update->pop();
 
         // skip hidden object
-        if (attr->obj_mode == 2)
+        if (attr.obj_mode == 2)
             continue;
 
         // obj exists outside current scanline
-        if (scanline < attr->qy0 - attr->hheight || scanline >= attr->qy0 + attr->hheight)
+        if (scanline < attr.qy0 - attr.hheight || scanline >= attr.qy0 + attr.hheight)
              continue;
 
         // obj exists outside current object layer
         if (scanline < objminy || scanline >= objmaxy)
             continue;
         
-        int qx0 = attr->qx0;      // center of sprite screen space
+        int qx0 = attr.qx0;      // center of sprite screen space
 
         // x, y coordinate of texture after transformation
         int px, py;
-        int iy = -attr->hheight + (scanline - attr->y);
+        int iy = -attr.hheight + (scanline - attr.y);
 
 
-        //LOG("{} {} {} {}\n", attr->x, attr->y, attr->hheight, attr->hwidth);
-        //LOG("{} {} {} {}\n", attr->x0, attr->y0, attr->hheight, attr->hwidth);
+        //LOG("{} {} {} {}\n", attr.x, attr.y, attr.hheight, attr.hwidth);
+        //LOG("{} {} {} {}\n", attr.x0, attr.y0, attr.hheight, attr.hwidth);
 
-        for (int ix = -attr->hwidth; ix < attr->hwidth; ++ix)
+        for (int ix = -attr.hwidth; ix < attr.hwidth; ++ix)
         {
             // objs in winout
             if (obj_in_winout && !isInWinOut(qx0 + ix, scanline))
                 continue;
 
-            px = ix + attr->hwidth;
-            py = iy + attr->hheight;
+            px = ix + attr.hwidth;
+            py = iy + attr.hheight;
 
             // obj exists outside current object layer
             if (qx0 + ix < objminx || qx0 + ix >= objmaxx)
                 continue;
 
             // transform affine & double wide affine
-            if (attr->obj_mode == 1 || attr->obj_mode == 3)
+            if (attr.obj_mode == 1 || attr.obj_mode == 3)
             {
-                px = attr->pa * ix + attr->pb * iy + attr->px0;
-                py = attr->pc * ix + attr->pd * iy + attr->py0;
+                px = attr.pa * ix + attr.pb * iy + attr.px0;
+                py = attr.pc * ix + attr.pd * iy + attr.py0;
             }
 
             // horizontal / vertical flip
-            if (attr->h_flip) px = attr->width  - px - 1;
-            if (attr->v_flip) py = attr->height - py - 1;
+            if (attr.h_flip) px = attr.width  - px - 1;
+            if (attr.v_flip) py = attr.height - py - 1;
             
             // transformed coordinate is out of bounds
-            if (px >= attr->width || py  >= attr->height) continue;
-            if (px       < 0      || py  < 0            ) continue;
-            if (qx0 + ix < 0      || qx0 + ix >= 240    ) continue;
+            if (px >= attr.width || py  >= attr.height) continue;
+            if (px       < 0     || py  < 0           ) continue;
+            if (qx0 + ix < 0     || qx0 + ix >= 240   ) continue;
 
             
             int tile_x  = px % 8; // x coordinate of pixel within tile
@@ -688,33 +686,39 @@ void PPU::renderObj()
             int block_x = px / 8; // x coordinate of tile in vram
             int block_y = py / 8; // y coordinate of tile in vram
 
-            int tileno = attr->tileno;
+            int tileno = attr.tileno;
             int pixel;
 
-            if (attr->color_mode == 1) // 8bpp
+            // 8bpp
+            if (attr.color_mode == 1)
             {
-                if (stat->dispcnt.obj_map_mode == 1) // 1d
-                    tileno += block_y * (attr->width / 4);
+                // 1d
+                if (stat->dispcnt.obj_map_mode == 1)
+                    tileno += block_y * (attr.width / 4);
 
-                else // 2d
+                // 2d
+                else
                     tileno = (tileno & ~1) + block_y * 32;
                 
                 tileno += block_x * 2;
 
-                pixel = getObjPixel8BPP(LOWER_SPRITE_BLOCK + tileno * 32, tile_x, tile_y);
+                pixel = getObjPixel8BPP(tileno * 32, tile_x, tile_y);
             }
 
-            else // 4bpp
+            // 8bpp
+            else
             {
-                if (stat->dispcnt.obj_map_mode == 1) // 1d
-                    tileno += block_y * (attr->width / 8);
+                // 1d
+                if (stat->dispcnt.obj_map_mode == 1)
+                    tileno += block_y * (attr.width / 8);
 
-                else // 2d
+                // 2d
+                else
                     tileno += block_y * 32;
 
                 tileno += block_x;
-
-                pixel = getObjPixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
+                
+                pixel = getObjPixel4BPP(tileno * 32, attr.palbank, tile_x, tile_y);
             }
             
             if (pixel != TRANSPARENT)
@@ -725,7 +729,7 @@ void PPU::renderObj()
 
 void PPU::updateAttr()
 {
-    u32 oam_ptr = MEM_OAM_START;
+    int attr_ptr = 0;
     u16 attr0, attr1, attr2;
 
     // loop through all objs
@@ -733,9 +737,9 @@ void PPU::updateAttr()
     {
         ObjAttr &obj = objs[i];
 
-        attr0 = mem->read16Unsafe(oam_ptr); oam_ptr += 2;
-        attr1 = mem->read16Unsafe(oam_ptr); oam_ptr += 2;
-        attr2 = mem->read16Unsafe(oam_ptr); oam_ptr += 4;
+        attr0 = oam[attr_ptr + 1] << 8 | oam[attr_ptr]; attr_ptr += 2;
+        attr1 = oam[attr_ptr + 1] << 8 | oam[attr_ptr]; attr_ptr += 2;
+        attr2 = oam[attr_ptr + 1] << 8 | oam[attr_ptr]; attr_ptr += 4;
 
         obj.y            = attr0 >>  0 & 0xFF;
         obj.obj_mode     = attr0 >>  8 & 0x3;
@@ -806,15 +810,15 @@ void PPU::updateAttr()
         // get affine matrix if necessary
         if (obj.obj_mode == 1 || obj.obj_mode == 3) // affine
         {
-            u32 matrix_ptr = MEM_OAM_START + obj.affine_index * 32; // each affine entry is 32 bytes across
+            u32 matrix_ptr = obj.affine_index * 32; // each affine entry is 32 bytes across
 
             // transform P matrix from 8.8f to float
             // P = [pa pb]
             //     [pc pd]
-            obj.pa = (s16) mem->read16(matrix_ptr +  0x6) / 256.0;
-            obj.pb = (s16) mem->read16(matrix_ptr +  0xE) / 256.0;
-            obj.pc = (s16) mem->read16(matrix_ptr + 0x16) / 256.0;
-            obj.pd = (s16) mem->read16(matrix_ptr + 0x1E) / 256.0;
+            obj.pa = (s16) (oam[matrix_ptr +  0x6 + 1] << 8 | oam[matrix_ptr +  0x6]) / 256.0;
+            obj.pb = (s16) (oam[matrix_ptr +  0xE + 1] << 8 | oam[matrix_ptr +  0xE]) / 256.0;
+            obj.pc = (s16) (oam[matrix_ptr + 0x16 + 1] << 8 | oam[matrix_ptr + 0x16]) / 256.0;
+            obj.pd = (s16) (oam[matrix_ptr + 0x1E + 1] << 8 | oam[matrix_ptr + 0x1E]) / 256.0;
 
             // double wide affine
             if (obj.obj_mode == 3)
@@ -966,58 +970,71 @@ inline u16 PPU::getObjPixel4BPP(u32 addr, int palbank, int x, int y)
 {
     addr += (y * 4) + (x / 2);
 
-    u16 palette_index = mem->read8(addr);
+    // add 0x10000 for lower sprite block
+    u8 palette_index = vram[addr + 0x10000];
 
     // use top nybble for odd x, even otherwise
-    if (x & 1) { palette_index >>= 4; }
+    if (x & 1)
+        palette_index >>= 4;
 
     palette_index &= 0xF;
 
     if (palette_index == 0)
         return TRANSPARENT;
 
-    return mem->read16(SPRITE_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
+    // add 0x200 for sprite palette
+    int idx = 0x200 + palette_index * 2 + palbank * PALBANK_LEN;
+
+    return palram[idx + 1] << 8 | palram[idx];
 }
 
 inline u16 PPU::getObjPixel8BPP(u32 addr, int x, int y)
 {
-    addr += (y * 8) + x;
+    addr += y * 8 + x;
 
-    u16 palette_index = mem->read8(addr);
+    // add 0x10000 for lower sprite block
+    u8 palette_index = vram[addr + 0x10000];
 
    if (palette_index == 0)
         return TRANSPARENT;
 
-    return mem->read16(SPRITE_PALETTE + palette_index * sizeof(u16));
+    // add 0x200 for sprite palette
+    int idx = 0x200 + palette_index * 2;
+    return palram[idx + 1] << 8 | palram[idx];
 }
 
 inline u16 PPU::getBGPixel4BPP(u32 addr, int palbank, int x, int y)
 {
     addr += (y * 4) + (x / 2);
 
-    u16 palette_index = mem->read8(addr);
+    u8 palette_index = vram[addr];
 
     // use top nybble for odd x, even otherwise
-    if (x & 1) { palette_index >>= 4; }
+    if (x & 1)
+        palette_index >>= 4;
 
     palette_index &= 0xF;
 
     if (palette_index == 0)
         return TRANSPARENT;
+    
+    int idx = palette_index * 2 + palbank * PALBANK_LEN;
 
-    return mem->read16(BG_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
+    return palram[idx + 1] << 8 | palram[idx];
 }
 
 inline u16 PPU::getBGPixel8BPP(u32 addr, int x, int y)
 {
     addr += (y * 8) + x;
 
-    u16 palette_index = mem->read8(addr);
+    u8 palette_index = vram[addr];
 
     if (palette_index == 0)
        return TRANSPARENT;
 
-    return mem->read16(BG_PALETTE + palette_index * sizeof(u16));
+    int idx = palette_index * 2;
+
+    return palram[idx + 1] << 8 | palram[idx];
 }
 
 // returns true if (x, y) is currently in winOut, true otherwise

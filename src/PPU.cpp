@@ -445,7 +445,6 @@ void PPU::renderScanlineText(int bg)
             pixel = getBGPixel8BPP(tile_addr, grid_x, grid_y);
         }
 
-
         if (pixel != TRANSPARENT)
             scanline_buffer[x] = util::u16ToU32Color(pixel);
     }

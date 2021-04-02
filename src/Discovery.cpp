@@ -76,7 +76,7 @@ void Discovery::gameLoop()
             auto interrupts_enabled   = mem->read16Unsafe(REG_IE);
             auto interrupts_requested = mem->read16Unsafe(REG_IF);
 
-            if (interrupts_enabled & interrupts_requested != 0)
+            if ((interrupts_enabled & interrupts_requested) != 0)
                 mem->haltcnt = 0;
         }
 
@@ -96,7 +96,7 @@ void Discovery::gameLoop()
             tick();
     }
 
-    shutDown();
+    shutdown();
 }
 
 // clock hardware components
@@ -148,7 +148,7 @@ void Discovery::printArgHelp()
 	LOG("  Show help...\n");
 }
 
-void Discovery::shutDown()
+void Discovery::shutdown()
 {
     // free resources and shutdown
 	delete cpu;

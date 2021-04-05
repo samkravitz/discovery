@@ -109,6 +109,14 @@ class Memory
         // DMA transfer routine
         void _dma(int);
 
+        enum class BackupType
+        {
+            SRAM,
+            EEPROM,
+            FLASH,
+            NONE
+        };
+
     private:
         void dma0();
         void dma1();

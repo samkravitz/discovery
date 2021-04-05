@@ -136,33 +136,12 @@ class PPU
             float pc;
             float pd;
 
-            bool operator<(const ObjAttr& other) { return priority < other.priority; }
-            bool operator>(const ObjAttr& other) { return priority > other.priority; }
-
             bool operator()(const ObjAttr& lhs, const ObjAttr& rhs) const { return lhs.priority < rhs.priority; }
 
         } objs[NUM_OBJS]; // can support 128 objects
-
-        //bool ObjAttr::operator()(ObjAttr const& d1, ObjAttr const& d2) { return false; }
-
-        //ObjAttr::operator <()
-
-        //std::function<bool(const ObjAttr &a, const ObjAttr &b)> comp = { return a.priority < b.priority; }
         
         // holds the indeces of which objs need to be displayed
         std::priority_queue<ObjAttr, std::vector<ObjAttr>, ObjAttr> oam_render;
-        //std::queue<ObjAttr> oam_render;
-
-        struct Renderable
-        {
-            int arg; // argument to the render function
-            //std::function<void(PPU *, int)> render_func;
-            //std::mem_fn<void(int)> render_func;
-            //void (PPU::*render_func) (int);
-            std::function<void(int)> render_func;
-        };
-
-        std::vector<Renderable> render_list;
 
         // video mode renders
         void render();
@@ -170,7 +149,7 @@ class PPU
         void renderScanlineText(int);
         void renderScanlineAffine(int);
         void renderScanlineBitmap(int);
-        void renderScanlineObj(int, bool obj_win = false);
+        void renderScanlineObj(ObjAttr const &, bool obj_win = false);
 
         void drawBackgroundReg(int);
         void drawBackgroundAffine(int);

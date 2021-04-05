@@ -62,22 +62,6 @@ PPU::PPU(Memory *mem, LcdStat *stat) : mem(mem), stat(stat)
 
     original_screen->pixels = (u32 *) screen_buffer;
 
-    // ObjAttr priority comparison function
-    // auto comp = [](const ObjAttr &a, const ObjAttr &b) -> bool 
-    //     {
-    //         return a.priority < b.priority;
-    //     };
-    
-    // oam_render = new std::priority_queue(comp);
-
-    // std::priority_queue<ObjAttr, std::vector<ObjAttr>, decltype(comp)> pq(comp);
-
-    //auto comp = [] (int &a, int &b) -> bool { return a < b; };
-    //std::priority_queue<int,std::vector<int>, decltype(comp) > pq (comp);
-    
-    // // oam_render = std::make_shared<std::priority_queue<ObjAttr, std::vector<ObjAttr>, decltype(comp)>>(comp);
-    // oam_render = std::make_shared<std::priority_queue<ObjAttr, std::vector<ObjAttr>, decltype(comp)>>(comp);
-
     reset();
 }
 
@@ -291,15 +275,7 @@ void PPU::renderScanline()
 
     // update visible objs and obj window
     if (stat->dispcnt.obj_enabled)
-    {
         updateAttr();
-        
-        // TODO - sort objs here based on priority
-        // std::sort(oam_render.begin(), oam_render.end(), [](const ObjAttr &a, const ObjAttr &b) -> bool 
-        // {
-        //     return a.priority < b.priority;
-        // });
-    }
         
 
     // init windows if enabled
@@ -307,114 +283,47 @@ void PPU::renderScanline()
         composeWindow();
     
     // prepare enabled backgrounds to be rendered
-    // for (int priority = 3; priority >= 0; --priority)
-    // {
-    //     for (int bg = 3; bg >= 0; --bg)
-    //     {
-    //         if (stat->bgcnt[bg].enabled && stat->bgcnt[bg].priority == priority)
-    //         {
-            
-    //         }
-    //     }
-    // }
-
-    // render bg
-    switch (stat->dispcnt.mode)
+    for (int priority = 3; priority >= 0; --priority)
     {
-        case 0: // reg bg 0-3
-            // for (int i = 3; i >= 0; --i) // bg0 - bg3
-            // {
-            //     if (stat->bgcnt[i].enabled)
-            //         RenderScanlineText(i);
-            // }
-            for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
+        for (int bg = 3; bg >= 0; --bg)
+        {
+            if (stat->bgcnt[bg].enabled && stat->bgcnt[bg].priority == priority)
             {
-                for (int i = 3; i >= 0; --i) // bg0 - bg3
+                switch (stat->dispcnt.mode)
                 {
-                    if (stat->bgcnt[i].enabled && stat->bgcnt[i].priority == priority)
-                        render_list.push_back({ i, [this](int arg) { renderScanlineText(arg); } });
-                }
+                    case 0:
+                        renderScanlineText(bg);
+                        break;
+                    
+                    case 1:
+                        if (bg == 0 || bg == 1)
+                            renderScanlineText(bg);
+                        else if (bg == 2)
+                            renderScanlineAffine(bg);
+                        break;
 
-                while (!oam_render.empty() && oam_render.top().priority == priority) {
-                    render_list.push_back({ oam_render.top().idx, [this](int arg){ renderScanlineObj(arg); } });
-                    oam_render.pop();
-                }
+                    case 2:
+                        if (bg == 2 || bg == 3)
+                            renderScanlineAffine(bg);
+                        break;
 
-                //for (auto x : oam_render)
-                //{
-                    //if (x.priority == priority)
-                        //render_list.push_back({ x.idx, [this](int arg){ renderScanlineObj(arg); } });
-                //}
-            }
-
-            break;
-        case 1: // reg bg 0-1, aff bg 2
-            // if (stat->bgcnt[2].enabled) RenderScanlineAffine(2);
-            // if (stat->bgcnt[1].enabled) RenderScanlineText(1);
-            // if (stat->bgcnt[0].enabled) RenderScanlineText(0);
-            for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
-            {
-                for (int i = 2; i >= 0; --i) // bg0 - bg2
-                {
-                    if (stat->bgcnt[i].enabled && stat->bgcnt[i].priority == priority)
-                    {
-                        switch (i)
-                        {
-                            case 0:
-                            case 1:
-                                render_list.push_back({ i, [this](int arg) { renderScanlineText(arg); } });
-                                break;
-                            case 2:
-                                render_list.push_back({ i, [this](int arg) { renderScanlineAffine(arg); } });
-                                break;
-                            default: // should never happen
-                                std::cerr << "Error: trying to draw invalid background in mode 1: " << i << "\n";
-                        }
-                    }
+                    case 3:
+                    case 4:
+                    case 5:
+                        renderScanlineBitmap(bg);
+                        break;
                 }
             }
+        }
 
-            break;
-        case 2: // aff bg 2-3
-            // if (stat->bgcnt[3].enabled) RenderScanlineAffine(3);
-            // if (stat->bgcnt[2].enabled) RenderScanlineAffine(2);
-            for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
-            {
-                for (int i = 3; i >= 2; --i) // bg3 - bg2
-                {
-                    if (stat->bgcnt[i].enabled && stat->bgcnt[i].priority == priority)
-                       render_list.push_back({ i, [this](int arg) { renderScanlineAffine(arg); } });
-                }
-            }
-
-            break;
-        case 3:
-        case 4:
-        case 5:
-            render_list.push_back({ stat->dispcnt.mode, [this](int arg) { renderScanlineBitmap(arg); } });
-            break;
+        while (!oam_render.empty() && oam_render.top().priority == priority)
+        {
+            renderScanlineObj(oam_render.top());
+            oam_render.pop();
+        }
     }
 
-    //for (int i = 0; i < render_list.size(); i++)
-        //(this->*(render_list[i].render_func))(render_list[i].arg);
-
-    for (auto r : render_list)
-        r.render_func(r.arg);
-
-    render_list.clear();
-    //oam_render.clear();
     assert(oam_render.empty());
-
-    // render sprites
-    // if (stat->dispcnt.obj_enabled)
-    // {
-    //     while (oam_render.size() != 0)
-    //     {
-    //         renderScanlineObj(oam_render.back().idx);
-    //         oam_render.pop_back();
-    //     }
-    //     //std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
-    // }
 
     obj_in_objwin = false;
     std::memcpy(&screen_buffer[scanline], scanline_buffer, sizeof(scanline_buffer));
@@ -671,11 +580,9 @@ void PPU::renderScanlineBitmap(int mode)
 }
 
 
-void PPU::renderScanlineObj(int idx, bool obj_win)
+void PPU::renderScanlineObj(ObjAttr const &attr, bool obj_win)
 {
     u16 pixel;
-
-    const auto attr = objs[idx];
 
     // skip hidden object
     if (attr.obj_mode == 2)
@@ -903,7 +810,7 @@ void PPU::updateAttr()
         
         // add obj's non-transparent pixels to obj window
         if (obj.gfx_mode == 2)
-            renderScanlineObj(i, true);
+            renderScanlineObj(obj, true);
     }
 }
 

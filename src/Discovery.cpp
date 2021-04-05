@@ -71,13 +71,12 @@ void Discovery::gameLoop()
         // tick hardware (not cpu) if in halt state
         while (mem->haltcnt)
         {
-            tick();
+            int ticks_left = system_cycles % 197120;
+            while (ticks_left--)
+                tick();
 
-            auto interrupts_enabled   = mem->read16Unsafe(REG_IE);
-            auto interrupts_requested = mem->read16Unsafe(REG_IF);
-
-            if ((interrupts_enabled & interrupts_requested) != 0)
-                mem->haltcnt = 0;
+            mem->haltcnt = 0;
+            cpu->handleInterrupt();
         }
 
         cpu->fetch();

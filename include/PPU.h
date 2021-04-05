@@ -13,7 +13,7 @@
 #include <iostream>
 #include <ctime>
 #include <functional>
-#include <queue>
+#include <stack>
 
 #include "Memory.h"
 #include "common.h"
@@ -136,12 +136,10 @@ class PPU
             float pc;
             float pd;
 
-            bool operator()(const ObjAttr& lhs, const ObjAttr& rhs) const { return lhs.priority < rhs.priority; }
-
         } objs[NUM_OBJS]; // can support 128 objects
         
-        // holds the indeces of which objs need to be displayed
-        std::priority_queue<ObjAttr, std::vector<ObjAttr>, ObjAttr> oam_render;
+        // holds the objs that need to be displayed
+        std::stack<ObjAttr> oam_render[4];
 
         // video mode renders
         void render();

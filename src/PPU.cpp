@@ -310,20 +310,24 @@ void PPU::renderScanline()
                     case 3:
                     case 4:
                     case 5:
-                        renderScanlineBitmap(bg);
+                        renderScanlineBitmap(stat->dispcnt.mode);
                         break;
                 }
             }
         }
 
-        while (!oam_render.empty() && oam_render.top().priority == priority)
+        while (!oam_render[priority].empty())
         {
-            renderScanlineObj(oam_render.top());
-            oam_render.pop();
+            renderScanlineObj(oam_render[priority].top());
+            oam_render[priority].pop();
         }
     }
 
-    assert(oam_render.empty());
+    // TODO - just keep these on for a bit until I know this works fine
+    assert(oam_render[0].empty());
+    assert(oam_render[1].empty());
+    assert(oam_render[2].empty());
+    assert(oam_render[3].empty());
 
     obj_in_objwin = false;
     std::memcpy(&screen_buffer[scanline], scanline_buffer, sizeof(scanline_buffer));
@@ -708,8 +712,6 @@ void PPU::updateAttr()
         attr1 = oam[attr_ptr + 1] << 8 | oam[attr_ptr]; attr_ptr += 2;
         attr2 = oam[attr_ptr + 1] << 8 | oam[attr_ptr]; attr_ptr += 4;
 
-        obj.idx = i;
-
         obj.y            = attr0 >>  0 & 0xFF;
         obj.obj_mode     = attr0 >>  8 & 0x3;
         obj.gfx_mode     = attr0 >> 10 & 0x3;
@@ -806,7 +808,7 @@ void PPU::updateAttr()
 
         // add index to stack to be displayed
         if (obj.obj_mode != 2)
-            oam_render.push(obj);
+            oam_render[obj.priority].push(obj);
         
         // add obj's non-transparent pixels to obj window
         if (obj.gfx_mode == 2)

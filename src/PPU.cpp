@@ -12,6 +12,7 @@
 #include <sstream>
 #include <iomanip>
 #include <cstring>
+#include <cassert>
 
 #include "PPU.h"
 #include "util.h"
@@ -54,14 +55,28 @@ PPU::PPU(Memory *mem, LcdStat *stat) : mem(mem), stat(stat)
     scale_rect.x = 0;
     scale_rect.y = 0;
 
-    oam_update = std::make_unique<std::stack<int>>();
-
     // internal ptrs linked to memory's
     palram = &mem->memory[MEM_PALETTE_RAM_START];
     vram   = &mem->memory[MEM_VRAM_START];
     oam    = &mem->memory[MEM_OAM_START];
 
     original_screen->pixels = (u32 *) screen_buffer;
+
+    // ObjAttr priority comparison function
+    // auto comp = [](const ObjAttr &a, const ObjAttr &b) -> bool 
+    //     {
+    //         return a.priority < b.priority;
+    //     };
+    
+    // oam_render = new std::priority_queue(comp);
+
+    // std::priority_queue<ObjAttr, std::vector<ObjAttr>, decltype(comp)> pq(comp);
+
+    //auto comp = [] (int &a, int &b) -> bool { return a < b; };
+    //std::priority_queue<int,std::vector<int>, decltype(comp) > pq (comp);
+    
+    // // oam_render = std::make_shared<std::priority_queue<ObjAttr, std::vector<ObjAttr>, decltype(comp)>>(comp);
+    // oam_render = std::make_shared<std::priority_queue<ObjAttr, std::vector<ObjAttr>, decltype(comp)>>(comp);
 
     reset();
 }
@@ -276,12 +291,32 @@ void PPU::renderScanline()
 
     // update visible objs and obj window
     if (stat->dispcnt.obj_enabled)
+    {
         updateAttr();
+        
+        // TODO - sort objs here based on priority
+        // std::sort(oam_render.begin(), oam_render.end(), [](const ObjAttr &a, const ObjAttr &b) -> bool 
+        // {
+        //     return a.priority < b.priority;
+        // });
+    }
         
 
     // init windows if enabled
     if (stat->dispcnt.win_enabled != 0)
         composeWindow();
+    
+    // prepare enabled backgrounds to be rendered
+    // for (int priority = 3; priority >= 0; --priority)
+    // {
+    //     for (int bg = 3; bg >= 0; --bg)
+    //     {
+    //         if (stat->bgcnt[bg].enabled && stat->bgcnt[bg].priority == priority)
+    //         {
+            
+    //         }
+    //     }
+    // }
 
     // render bg
     switch (stat->dispcnt.mode)
@@ -297,10 +332,19 @@ void PPU::renderScanline()
                 for (int i = 3; i >= 0; --i) // bg0 - bg3
                 {
                     if (stat->bgcnt[i].enabled && stat->bgcnt[i].priority == priority)
-                    {
-                        renderScanlineText(i);
-                    }
+                        render_list.push_back({ i, [this](int arg) { renderScanlineText(arg); } });
                 }
+
+                while (!oam_render.empty() && oam_render.top().priority == priority) {
+                    render_list.push_back({ oam_render.top().idx, [this](int arg){ renderScanlineObj(arg); } });
+                    oam_render.pop();
+                }
+
+                //for (auto x : oam_render)
+                //{
+                    //if (x.priority == priority)
+                        //render_list.push_back({ x.idx, [this](int arg){ renderScanlineObj(arg); } });
+                //}
             }
 
             break;
@@ -318,10 +362,10 @@ void PPU::renderScanline()
                         {
                             case 0:
                             case 1:
-                                renderScanlineText(i);
+                                render_list.push_back({ i, [this](int arg) { renderScanlineText(arg); } });
                                 break;
                             case 2:
-                                renderScanlineAffine(i);
+                                render_list.push_back({ i, [this](int arg) { renderScanlineAffine(arg); } });
                                 break;
                             default: // should never happen
                                 std::cerr << "Error: trying to draw invalid background in mode 1: " << i << "\n";
@@ -339,9 +383,7 @@ void PPU::renderScanline()
                 for (int i = 3; i >= 2; --i) // bg3 - bg2
                 {
                     if (stat->bgcnt[i].enabled && stat->bgcnt[i].priority == priority)
-                    {
-                       renderScanlineAffine(i);
-                    }
+                       render_list.push_back({ i, [this](int arg) { renderScanlineAffine(arg); } });
                 }
             }
 
@@ -349,20 +391,30 @@ void PPU::renderScanline()
         case 3:
         case 4:
         case 5:
-            renderScanlineBitmap(stat->dispcnt.mode);
+            render_list.push_back({ stat->dispcnt.mode, [this](int arg) { renderScanlineBitmap(arg); } });
             break;
     }
 
+    //for (int i = 0; i < render_list.size(); i++)
+        //(this->*(render_list[i].render_func))(render_list[i].arg);
+
+    for (auto r : render_list)
+        r.render_func(r.arg);
+
+    render_list.clear();
+    //oam_render.clear();
+    assert(oam_render.empty());
+
     // render sprites
-    if (stat->dispcnt.obj_enabled)
-    {
-        while (!oam_update->empty())
-        {
-            renderScanlineObj(oam_update->top());
-            oam_update->pop();
-        }
-        //std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
-    }
+    // if (stat->dispcnt.obj_enabled)
+    // {
+    //     while (oam_render.size() != 0)
+    //     {
+    //         renderScanlineObj(oam_render.back().idx);
+    //         oam_render.pop_back();
+    //     }
+    //     //std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
+    // }
 
     obj_in_objwin = false;
     std::memcpy(&screen_buffer[scanline], scanline_buffer, sizeof(scanline_buffer));
@@ -749,6 +801,8 @@ void PPU::updateAttr()
         attr1 = oam[attr_ptr + 1] << 8 | oam[attr_ptr]; attr_ptr += 2;
         attr2 = oam[attr_ptr + 1] << 8 | oam[attr_ptr]; attr_ptr += 4;
 
+        obj.idx = i;
+
         obj.y            = attr0 >>  0 & 0xFF;
         obj.obj_mode     = attr0 >>  8 & 0x3;
         obj.gfx_mode     = attr0 >> 10 & 0x3;
@@ -845,7 +899,7 @@ void PPU::updateAttr()
 
         // add index to stack to be displayed
         if (obj.obj_mode != 2)
-            oam_update->push(i);
+            oam_render.push(obj);
         
         // add obj's non-transparent pixels to obj window
         if (obj.gfx_mode == 2)

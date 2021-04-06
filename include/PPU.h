@@ -160,4 +160,7 @@ class PPU
         void updateAttr();
         void composeWindow();
         inline bool isInWinOut(int, int);
+
+        u32 color_lut[0x10000];
+        inline u32 u16ToU32Color(u16);
 };

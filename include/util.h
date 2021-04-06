@@ -24,8 +24,6 @@ namespace util
 
     bool pathExists(const string &);
 
-    // given a 16 bit GBA color, make it a 32 bit SDL color
-    inline u32 u16ToU32Color(u16 color_u16);
     // util inline functions
     #include "util.inl"
 }

@@ -20,7 +20,7 @@ int PRINT = 0;
 Arm7Tdmi::Arm7Tdmi(Memory *mem) : mem(mem)
 {
     registers = {0}; // zero out registers
-    registers.r15 = 0x8000000; // starting address of gamepak flash rom
+    registers.r15 = 0;//0x8000000; // starting address of gamepak flash rom
 
     registers.r13     = 0x3007F00; // starting address of user stack
     registers.r13_svc = 0x3007FE0; // starting address of swi stack

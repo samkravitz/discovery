@@ -62,6 +62,22 @@ PPU::PPU(Memory *mem, LcdStat *stat) : mem(mem), stat(stat)
 
     original_screen->pixels = (u32 *) screen_buffer;
 
+    // initialize color LUT
+    // algorithm adapted from
+    // https://github.com/samuelchen52/gbaemu & https://near.sh/articles/video/color-emulation
+    for (u16 i = 0; i < 0x8000; i++)
+    {
+        double lb = pow(((i & 31744) >> 10) / 31.0, 4.0);
+        double lg = pow(((i &   992) >>  5) / 31.0, 4.0);
+        double lr = pow(((i &    31) >>  0) / 31.0, 4.0);
+        int r = trunc(pow((  0 * lb +  50 * lg + 220 * lr) / 255, 1 / 2.2) * (0xffff / 280));
+        int g = trunc(pow(( 30 * lb + 230 * lg +  10 * lr) / 255, 1 / 2.2) * (0xffff / 280));
+        int b = trunc(pow((220 * lb +  10 * lg +  10 * lr) / 255, 1 / 2.2) * (0xffff / 280));
+
+        color_lut[i] = r << 16 | g << 8 |  b;
+        color_lut[i + 32768] = r << 16 | g << 8 |  b;
+    }
+
     reset();
 }
 
@@ -264,7 +280,7 @@ void PPU::render()
 void PPU::renderScanline()
 {
     // index 0 in BG palette
-    backdrop_color = util::u16ToU32Color(palram[1] << 8 | palram[0]);
+    backdrop_color = u16ToU32Color(palram[1] << 8 | palram[0]);
 
     // "zero" scanline buffer with backdrop color
     for (int i = 0; i < SCREEN_WIDTH; ++i)
@@ -411,7 +427,7 @@ void PPU::renderScanlineText(int bg)
         }
 
         if (pixel != TRANSPARENT)
-            scanline_buffer[x] = util::u16ToU32Color(pixel);
+            scanline_buffer[x] = u16ToU32Color(pixel);
     }
 
 }
@@ -519,7 +535,7 @@ void PPU::renderScanlineAffine(int bg)
         pixel = getBGPixel8BPP(tile_addr, map_x % 8, map_y % 8);
 
         if (pixel != TRANSPARENT)
-            scanline_buffer[x] = util::u16ToU32Color(pixel);
+            scanline_buffer[x] = u16ToU32Color(pixel);
     }
 }
 
@@ -539,7 +555,7 @@ void PPU::renderScanlineBitmap(int mode)
             {
                 pixel = vram[pal_ptr + 1] << 8 | vram[pal_ptr];
                 pal_ptr += 2;
-                scanline_buffer[i] = util::u16ToU32Color(pixel);
+                scanline_buffer[i] = u16ToU32Color(pixel);
             }
             break;
 
@@ -555,7 +571,7 @@ void PPU::renderScanlineBitmap(int mode)
                 // multiply by 2 because each entry in palram is 2 bytes
                 palette_index = vram[pal_ptr++] * 2;
                 pixel = palram[palette_index + 1] << 8 | palram[palette_index];
-                scanline_buffer[i] = util::u16ToU32Color(pixel);
+                scanline_buffer[i] = u16ToU32Color(pixel);
             }
 
             break;
@@ -576,7 +592,7 @@ void PPU::renderScanlineBitmap(int mode)
                 // multiply by 2 because each entry in palram is 2 bytes
                 palette_index = vram[pal_ptr++] * 2;
                 pixel = palram[palette_index + 1] << 8 | palram[palette_index];
-                scanline_buffer[i] = util::u16ToU32Color(pixel);
+                scanline_buffer[i] = u16ToU32Color(pixel);
             }
 
             break;
@@ -692,7 +708,7 @@ void PPU::renderScanlineObj(ObjAttr const &attr, bool obj_win)
                 if (obj_in_objwin && !objwin_scanline_buffer[qx0 + ix])
                     continue;
 
-                scanline_buffer[qx0 + ix] = util::u16ToU32Color(pixel);
+                scanline_buffer[qx0 + ix] = u16ToU32Color(pixel);
             }
         }
     }
@@ -1055,3 +1071,5 @@ bool PPU::isInWinOut(int x, int y)
     
     return true;
 }
+
+inline u32 PPU::u16ToU32Color(u16 color_u16) { return color_lut[color_u16]; }

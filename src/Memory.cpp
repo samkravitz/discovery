@@ -9,6 +9,7 @@
  */
 #include <fstream>
 #include <iostream>
+#include <regex>
 #include <experimental/filesystem>
 #include <string.h>
 
@@ -21,8 +22,8 @@ Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad) :
     timer(timer),
     gamepad(gamepad)
 {
-    // cart_rom  = NULL;
-    cart_ram  = NULL;
+    cart_ram = nullptr;
+    backup_type = BackupType::NONE;
 
     reset();
 }
@@ -31,7 +32,7 @@ Memory::~Memory() { }
 
 void Memory::reset()
 {
-    // default cycle accesses for wait statae
+    // default cycle accesses for waitstates
     n_cycles = 4;
     s_cycles = 2;
 
@@ -62,9 +63,6 @@ void Memory::reset()
     }
 
     haltcnt = 0;
-
-    // write all 1s to keypad (all keys cleared)
-    write32Unsafe(REG_KEYINPUT, 0b1111111111);
 }
 
 bool Memory::loadRom(const std::string &name)
@@ -79,67 +77,53 @@ bool Memory::loadRom(const std::string &name)
 
     rom_size = fs::file_size(name);
 
-    //cart_rom = new u8[rom_size]();
     rom.read((char *) cart_rom, rom_size);
     rom.close();
 
     // get cart RAM type
-    char *rom_temp = (char *) cart_rom;
-    for (int i = 0; i < rom_size; ++i, ++rom_temp)
+    std::string rom_temp((char *) cart_rom, rom_size);
+
+    // eeprom
+    if (rom_temp.find("EEPROM_V") != std::string::npos)
     {
-        // FLASH RAM
-        if (*rom_temp == 'F')
-        {
-            if (strncmp(rom_temp, "FLASH512_V", 10) == 0)
-            {
-                LOG(LogLevel::Message, "Cart RAM FLASH512 detected\n");
+        LOG(LogLevel::Warning, "Cart RAM EEPROM detected\n");
+        backup_type = BackupType::EEPROM;
+    }
 
-                ram_size = 0x10000;
-                cart_ram = new u8[ram_size]();
-            }
+    // flash 1M
+    if (rom_temp.find("FLASH1M_V") != std::string::npos)
+    {
+        LOG(LogLevel::Warning, "Cart RAM FLASH128 detected\n");
+        ram_size    = 0x20000;
+        cart_ram    = new u8[ram_size]();
+        backup_type = BackupType::FLASH128;
+    }
 
-            if (strncmp(rom_temp, "FLASH1M_V", 8) == 0)
-            {
-                LOG(LogLevel::Message, "Cart RAM FLASH128 detected\n");
+    // flash 512
+    if (rom_temp.find("FLASH512_V") != std::string::npos)
+    {
+        LOG(LogLevel::Warning, "Cart RAM FLASH512 detected\n");
+        ram_size    = 0x10000;
+        cart_ram    = new u8[ram_size]();
+        backup_type = BackupType::FLASH64;
+    }
 
-                ram_size = 0x20000;
-                cart_ram = new u8[ram_size]();
-            }
+    // flashv
+    if (rom_temp.find("FLASH_V") != std::string::npos)
+    {
+        LOG(LogLevel::Warning, "Cart RAM FLASH detected\n");
+        ram_size    = 0x10000;
+        cart_ram    = new u8[ram_size]();
+        backup_type = BackupType::FLASH64;
+    }
 
-            if (strncmp(rom_temp, "FLASH_V", 7) == 0)
-            {
-                LOG(LogLevel::Message, "Cart RAM FLASH detected\n");
-
-                ram_size = 0x10000;
-                cart_ram = new u8[ram_size]();
-            }
-        }
-
-        // SRAM
-        if (*rom_temp == 'S')
-        {
-            if (strncmp(rom_temp, "SRAM_V", 6) == 0)
-            {
-                LOG(LogLevel::Message, "Cart RAM SRAM detected\n");
-
-                ram_size = 0x8000;
-                cart_ram = new u8[ram_size]();
-            }
-        }
-
-        // EEPROM
-        if (*rom_temp == 'E')
-        {
-            if (strncmp(rom_temp, "EEPROM_V", 8) == 0)
-            {
-                LOG(LogLevel::Message, "Cart RAM EEPROM detected\n");
-            }
-        }
-
-        if (*rom_temp == 0xc2 && *(rom_temp + 1) == 0x32)
-        {
-            exit(32);
-        }
+    // sram
+    if (rom_temp.find("SRAM_V") != std::string::npos)
+    {
+        LOG(LogLevel::Warning, "Cart RAM SRAM detected\n");
+        ram_size    = 0x8000;
+        cart_ram    = new u8[ram_size]();
+        backup_type = BackupType::SRAM;
     }
 
     // no cart RAM detected

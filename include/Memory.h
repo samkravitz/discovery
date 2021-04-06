@@ -113,7 +113,8 @@ class Memory
         {
             SRAM,
             EEPROM,
-            FLASH,
+            FLASH64,
+            FLASH128,
             NONE
         };
 
@@ -122,4 +123,6 @@ class Memory
         void dma1();
         void dma2();
         void dma3();
+
+        BackupType backup_type;
 };

@@ -108,8 +108,8 @@ class Memory
 
         // DMA transfer routine
         void _dma(int);
-
-        enum class BackupType
+    
+        enum BackupType
         {
             SRAM,
             EEPROM,
@@ -118,11 +118,21 @@ class Memory
             NONE
         };
 
+        enum FlashState
+        {
+            READY,
+            CMD_1,
+            CMD_2,
+        };
+
     private:
         void dma0();
         void dma1();
         void dma2();
         void dma3();
 
+        void writeFlash(u32, u8);
+
         BackupType backup_type;
+        FlashState flash_state;
 };

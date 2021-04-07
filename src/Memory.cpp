@@ -23,7 +23,8 @@ Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad) :
     gamepad(gamepad)
 {
     cart_ram = nullptr;
-    backup_type = BackupType::NONE;
+    backup_type = NONE;
+    flash_state = READY;
 
     reset();
 }
@@ -87,7 +88,7 @@ bool Memory::loadRom(const std::string &name)
     if (rom_temp.find("EEPROM_V") != std::string::npos)
     {
         LOG(LogLevel::Warning, "Cart RAM EEPROM detected\n");
-        backup_type = BackupType::EEPROM;
+        backup_type = EEPROM;
     }
 
     // flash 1M
@@ -96,7 +97,7 @@ bool Memory::loadRom(const std::string &name)
         LOG(LogLevel::Warning, "Cart RAM FLASH128 detected\n");
         ram_size    = 0x20000;
         cart_ram    = new u8[ram_size]();
-        backup_type = BackupType::FLASH128;
+        backup_type = FLASH128;
     }
 
     // flash 512
@@ -105,7 +106,7 @@ bool Memory::loadRom(const std::string &name)
         LOG(LogLevel::Warning, "Cart RAM FLASH512 detected\n");
         ram_size    = 0x10000;
         cart_ram    = new u8[ram_size]();
-        backup_type = BackupType::FLASH64;
+        backup_type = FLASH64;
     }
 
     // flashv
@@ -114,7 +115,7 @@ bool Memory::loadRom(const std::string &name)
         LOG(LogLevel::Warning, "Cart RAM FLASH detected\n");
         ram_size    = 0x10000;
         cart_ram    = new u8[ram_size]();
-        backup_type = BackupType::FLASH64;
+        backup_type = FLASH64;
     }
 
     // sram
@@ -123,7 +124,7 @@ bool Memory::loadRom(const std::string &name)
         LOG(LogLevel::Warning, "Cart RAM SRAM detected\n");
         ram_size    = 0x8000;
         cart_ram    = new u8[ram_size]();
-        backup_type = BackupType::SRAM;
+        backup_type = SRAM;
     }
 
     // no cart RAM detected
@@ -355,8 +356,14 @@ void Memory::write8(u32 address, u8 value)
         case 0xF:
             address -= 0x1000000;
         case 0xE:
-            //std::cout << "Writing to cart RAM\n";
             address &= ~ram_size; // RAM Mirror
+
+            if (backup_type == FLASH64 || backup_type == FLASH128)
+            {
+                writeFlash(address, value);
+                return;
+            }
+
             cart_ram[address - 0xE000000] = value;
             return;
 
@@ -1109,6 +1116,22 @@ void Memory::dma3()
         LOG(LogLevel::Debug, "DMA3 IRQ request\n");
 
     //LOG(LogLevel::Debug, "DMA 3 Done\n");
+}
+
+void Memory::writeFlash(u32 address, u8 value)
+{
+    switch (address)
+    {
+        case 0xE005555:
+            if (value == 0xAA && flash_state == READY)
+                flash_state = CMD_1;
+            break;
+        
+        case 0xE002AAA:
+            if (value == 0x55 && flash_state == CMD_1)
+                flash_state = CMD_2;
+
+    }
 }
 
 // std::cout << "([a-zA-Z0-9 \\n]+)"

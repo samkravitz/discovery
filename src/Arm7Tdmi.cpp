@@ -9,6 +9,7 @@
  */
 #include <iostream>
 #include <iomanip>
+#include <cassert>
 
 #include "Arm7Tdmi.h"
 
@@ -61,27 +62,13 @@ Mode Arm7Tdmi::getMode()
         case 0b11111: return Mode::SYS;
         case 0b11011: return Mode::UND;
         default:
-            LOG(LogLevel::Error, "Undefined mode {}\n", (int) registers.cpsr.mode);
-            exit(21);
+            assert(!"Error: unrecognized mode in Arm7Tdmi::getMode");
+            return (Mode) 0;
     } 
 }
 
 void Arm7Tdmi::setMode(Mode mode)
 {
-    bool valid = false;
-
-    switch (mode)
-    {
-        case Mode::USR:
-        case Mode::FIQ:
-        case Mode::IRQ:
-        case Mode::SVC:
-        case Mode::ABT:
-        case Mode::SYS:
-        case Mode::UND:
-            valid = true;
-    }
-
     switch (mode)
     {
         case Mode::USR: registers.cpsr.mode = 0b10000; break;
@@ -91,6 +78,8 @@ void Arm7Tdmi::setMode(Mode mode)
         case Mode::ABT: registers.cpsr.mode = 0b10111; break;
         case Mode::SYS: registers.cpsr.mode = 0b11111; break;
         case Mode::UND: registers.cpsr.mode = 0b11011; break;
+        default:
+            assert(!"Error: unrecognized mode in Arm7Tdmi::setMode");
     }
 }
 
@@ -103,8 +92,8 @@ u8 Arm7Tdmi::getConditionCodeFlag(ConditionFlag flag)
         case ConditionFlag::C: return registers.cpsr.c;
         case ConditionFlag::V: return registers.cpsr.v;
         default:
-            std::cerr << "Unrecognized condition code flag\n";
-            return 0;
+            assert(!"Error: unrecognized flag in Arm7Tdmi::getFlag");
+            return -1;
     }
 }
 
@@ -124,8 +113,7 @@ void Arm7Tdmi::setConditionCodeFlag(ConditionFlag flag, u8 bit)
         case ConditionFlag::C: registers.cpsr.c = bit; break;
         case ConditionFlag::V: registers.cpsr.v = bit; break;
         default:
-            std::cerr << "Unrecognized condition code flag\n";
-            return;
+            assert(!"Error: unrecognized flag in Arm7Tdmi::setConditionCodeFlag");
     }
 }
 
@@ -150,7 +138,7 @@ bool Arm7Tdmi::conditionMet(Condition condition)
         case Condition::LE: return getConditionCodeFlag(ConditionFlag::Z) || (getConditionCodeFlag(ConditionFlag::N) != getConditionCodeFlag(ConditionFlag::V));  // Z set OR (N not equal to V)
         case Condition::AL: return true; // always
         default: // should never happen
-            std::cerr << "Unrecognized condition field\n";
+            assert(!"Error: unrecognized condition in Arm7Tdmi::conditionMet");
             return false;
     }
 }
@@ -384,10 +372,12 @@ u32 Arm7Tdmi::getRegister(u32 reg)
             }
             break;
         default:
-            std::cerr << "Unknown register: " << reg << "\n";
-            return 0;
+            assert(!"Error: unknown register in Arm7Tdmi::getRegister");
+            return -1;
     }
-    return 100; // should never happen
+
+    assert(!"Error: unknown register in Arm7Tdmi::getRegister");
+    return -1;
 }
 
 void Arm7Tdmi::setRegister(u32 reg, u32 val)
@@ -512,11 +502,10 @@ void Arm7Tdmi::setRegister(u32 reg, u32 val)
             break;
 
 
-        case r15: registers.r15 = val; break; // all banks share r15
+        case r15:  registers.r15      = val; break; // all banks share r15
         case cpsr: registers.cpsr.raw = val; break; // all banks share cpsr
         default:
-            std::cerr << "Unknown register: " << reg << "\n";
-            break;
+            assert(!"Error: unknown register in Arm7Tdmi::setRegister");
     }
 }
 
@@ -716,23 +705,8 @@ void Arm7Tdmi::updateCPSR(u32 value, bool flags_only)
     if (registers.cpsr.t != sr.t)
         LOG(LogLevel::Warning, "Software is changing T-Bit in CPSR!\n");
 
-    // TODO - validate CPSR was appropriately changed
-    bool valid = false;
-
-    switch (getMode())
-    {
-        case Mode::USR:
-        case Mode::FIQ:
-        case Mode::IRQ:
-        case Mode::SVC:
-        case Mode::ABT:
-        case Mode::SYS:
-        case Mode::UND:
-            valid = true;
-    }
-
-    if (!valid)
-        std::cerr << "Invalid state being set to cpsr: " << value << "\n";
+    // validate CPSR wasn't given an invalid state
+    assert(getMode());
 
     // if (sr.state == IRQ && registers.cpsr.i == 1) return; // irq disabled bit set
     // if (sr.state == FIQ && registers.cpsr.f == 1) return; // fiq disabled bit set

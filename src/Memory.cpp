@@ -7,13 +7,14 @@
  * DATE: July 13, 2020
  * DESCRIPTION: Implementation of memory related functions
  */
+#include "Memory.h"
+
 #include <fstream>
 #include <iostream>
 #include <regex>
 #include <experimental/filesystem>
 #include <string.h>
-
-#include "Memory.h"
+#include <cassert>
 
 namespace fs = std::experimental::filesystem;
 
@@ -166,14 +167,11 @@ u16 Memory::read16(u32 address)
 u8 Memory::read8(u32 address)
 {
     if (address == 0xE000000)
-    {
         return 0x62;
-    }
 
     if (address == 0xE000001)
-    {
         return 0x13;
-    }
+
     // get memory region for mirrors
     switch (address >> 24)
     {
@@ -234,7 +232,7 @@ u8 Memory::read8(u32 address)
             return cart_ram[address - 0xE000000];
 
         default:
-            LOG(LogLevel::Error, "Invalid address to read: 0x{x}\n", address);
+            assert(!"Error: Invalid address in Memory::read8");
             return 0;
     }
 

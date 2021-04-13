@@ -22,28 +22,14 @@
 
 PPU::PPU(Memory *mem, LcdStat *stat) : mem(mem), stat(stat)
 {
-    if (SDL_Init(SDL_INIT_VIDEO) < 0)
-    {
-        LOG(LogLevel::Error, "Could not initialize PPU");
-        exit(2);
-    }
+    assert(SDL_Init(SDL_INIT_VIDEO) >= 0);
 
     window = SDL_CreateWindow("discovery", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2, 0);
-
-    if (window == NULL)
-    {
-        LOG(LogLevel::Error, "Could not create window");
-        exit(2);
-    }
+    assert(window);
 
     // discovery icon logo
     SDL_Surface *logo = SDL_LoadBMP("assets/discovery.bmp");
-
-    if (logo == NULL)
-    {
-        LOG(LogLevel::Error, "Could not load discovery logo!\n");
-        exit(2);
-    }
+    assert(logo);
 
     SDL_SetWindowIcon(window, logo);
 

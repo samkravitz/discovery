@@ -76,7 +76,7 @@ void Timer::tick()
 
                 // overflow irq
                 if (channel[j].irq)
-                    LOG("Timer {} overflow IRQ request\n");
+                    LOG("Timer {} overflow IRQ request\n", j);
 
                 // cascade
                 cascade(j);

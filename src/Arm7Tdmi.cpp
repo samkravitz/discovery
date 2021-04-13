@@ -980,7 +980,7 @@ u32 Arm7Tdmi::read16(u32 address, bool sign)
     // reading from BIOS memory
     if (address <= 0x3FFF && registers.r15 > 0x3FFF)
     {
-        LOG(LogLevel::Error, "Invalid read from BIOS u16: 0x{x}\n", last_read_bios);
+        //LOG(LogLevel::Error, "Invalid read from BIOS u16: 0x{x}\n", last_read_bios);
 
         u32 value = last_read_bios;
         return value & 0xFFFF;

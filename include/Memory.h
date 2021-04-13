@@ -43,7 +43,7 @@ constexpr u32 MEM_EWRAM_SIZE       = 0x40000;
 constexpr u32 MEM_IWRAM_SIZE       = 0x8000;
 constexpr u32 MEM_IO_REG_SIZE      = 0x400;
 constexpr u32 MEM_PALETTE_RAM_SIZE = 0x400;
-constexpr u32 MEM_VRAM_SIZE        = 0x20000;
+constexpr u32 MEM_VRAM_SIZE        = 0x18000;
 constexpr u32 MEM_OAM_SIZE         = 0x400;
 constexpr u32 MEM_SIZE             = 0x8000000;
 

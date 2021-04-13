@@ -801,7 +801,7 @@ void Arm7Tdmi::handleInterrupt()
     // exit interrupt
     if (in_interrupt && getRegister(r15) == 0x138)
     {
-        std::cout << "Handled interrupt!\n";
+        //std::cout << "Handled interrupt!\n";
 
         // restore registers from stack
         // ldmfd r13! r0-r3, r12, r14
@@ -850,7 +850,7 @@ void Arm7Tdmi::handleInterrupt()
             // handle interrupt at position i
             if (irq_mask & (1 << i))
             {
-                std::cout << "IRQ\n";
+                //std::cout << "IRQ\n";
                 //LLE interrupts through BIOS
                 // registers.spsr_irq = registers.cpsr;
 

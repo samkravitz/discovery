@@ -75,16 +75,15 @@ void Discovery::gameLoop()
     while (running)
     {
         // tick hardware (not cpu) if in halt state
-        // while (mem->haltcnt)
-        // {
-        //     std::cout << "halt\n";
-        //     int ticks_left = system_cycles % 197120;
-        //     while (ticks_left--)
-        //         tick();
+        while (mem->haltcnt)
+        {
+            int ticks_left = system_cycles % 197120;
+            while (ticks_left--)
+                tick();
 
-        //     mem->haltcnt = 0;
-        //     cpu->handleInterrupt();
-        // }
+            mem->haltcnt = 0;
+            cpu->handleInterrupt();
+        }
 
         cpu->fetch();
         cpu->decode(cpu->pipeline[0]);

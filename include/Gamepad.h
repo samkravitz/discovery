@@ -15,9 +15,14 @@
 
 class Gamepad
 {
-
     public:
-        Gamepad()  { keys.raw = 0x3FF; } // all keys released
+
+        Gamepad()
+        {
+            keys.raw   = 0x3FF;  // all keys released
+            keycnt.raw = 0;
+        }
+
         ~Gamepad() { }
 
         struct Keys
@@ -44,6 +49,33 @@ class Gamepad
             
         } keys;
 
+        struct KeyCnt
+        {
+            union
+            {
+                struct
+                {
+                    u8 a         : 1;
+                    u8 b         : 1;
+                    u8 sel       : 1;
+                    u8 start     : 1;
+                    u8 right     : 1;
+                    u8 left      : 1;
+                    u8 up        : 1;
+                    u8 down      : 1;
+                    u8 r         : 1;
+                    u8 l         : 1;
+                    u8 blank     : 4;
+                    u8 irq       : 1;
+                    u8 condition : 1;
+                };
+
+                u16 raw;
+            };
+
+        } keycnt;
+
+        void writeCnt(u16 val) { keycnt.raw = val; }
         void poll();
         void print();
 };

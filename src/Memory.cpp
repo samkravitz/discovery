@@ -699,6 +699,12 @@ void Memory::write8(u32 address, u8 value)
         case REG_TM3CNT:
             timer->writeCnt(3, memory[REG_TM3CNT]);
             break;
+
+        // REG_KEYCNT
+        case REG_KEYCNT: [[fallthrough]];
+        case REG_KEYCNT + 1:
+            gamepad->keycnt.raw = memory[REG_KEYCNT + 1] << 8 | memory[REG_KEYCNT];
+            break;
         
         // REG_IF
         case REG_IF:    [[fallthrough]];

@@ -1109,49 +1109,11 @@ u32 Arm7Tdmi::read32(u32 address, bool ldr)
 
     switch (address)
     {
-        // case REG_BG0HOFS:
-        // case REG_BG1HOFS:
-        // case REG_BG2HOFS:
-        // case REG_BG3HOFS:
-        // case REG_BG0VOFS:
-        // case REG_BG1VOFS:
-        // case REG_BG2VOFS:
-        // case REG_BG3VOFS:
-        // case REG_BG2X:
-        // case REG_BG2Y:
-        // case REG_BG2PA:
-        // case REG_BG2PB:
-        // case REG_BG2PC:
-        // case REG_BG2PD:
-        // case REG_BG3X:
-        // case REG_BG3Y:
-        // case REG_BG3PA:
-        // case REG_BG3PB:
-        // case REG_BG3PC:
-        // case REG_BG3PD:
-        // case REG_WIN0H:
-        // case REG_WIN1H:
-        // case REG_WIN0V:
-        // case REG_WIN1V:
-        // case REG_WININ:
-        // case REG_WINOUT:
-        // case REG_MOSAIC:
-        // case REG_DMA0SAD:
-        // case REG_DMA0DAD:
-        case REG_DMA0CNT:
-        // case REG_DMA1SAD:
-        // case REG_DMA1DAD:
-        case REG_DMA1CNT:
-        // case REG_DMA2SAD:
-        // case REG_DMA2DAD:
-        case REG_DMA2CNT:
-        // case REG_DMA3SAD:
-        // case REG_DMA3DAD:
-        case REG_DMA3CNT:
-            //std::cout << "u32 sadkjflsadfkjsdaflkj\n";
-            //return 0;
-        default:
-            break;
+        [[unlikely]] case REG_DMA0CNT:
+        [[unlikely]] case REG_DMA1CNT:
+        [[unlikely]] case REG_DMA2CNT:
+        [[unlikely]] case REG_DMA3CNT:
+            return mem->read32Unsafe(address) & 0x00FFFFFF; // return 0 for unused byte 0x40000XE
     }
 
     if ((address >= 0x4000 && address <= 0x1FFFFFF) || address >= 0x10000000)

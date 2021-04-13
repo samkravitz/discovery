@@ -8,6 +8,7 @@
  * DESCRIPTION: Implementation of memory related functions
  */
 #include "Memory.h"
+#include "IRQ.h"
 
 #include <fstream>
 #include <iostream>
@@ -15,6 +16,8 @@
 #include <experimental/filesystem>
 #include <string.h>
 #include <cassert>
+
+extern IRQ *irq;
 
 namespace fs = std::experimental::filesystem;
 
@@ -709,7 +712,19 @@ void Memory::write8(u32 address, u8 value)
         // REG_IF
         case REG_IF:    [[fallthrough]];
         case REG_IF + 1:
-            memory[address] &= ~value;
+            irq->clear(~(memory[REG_IF + 1] << 8 | memory[REG_IF]));
+            break;
+        
+        // REG_IE
+        case REG_IE:    [[fallthrough]];
+        case REG_IE + 1:
+            irq->setIE(memory[REG_IE + 1] << 8 | memory[REG_IE]);
+            break;
+        
+        // REG_IME
+        case REG_IME:    [[fallthrough]];
+        case REG_IME + 1:
+            irq->setIME(memory[REG_IME + 1] << 8 | memory[REG_IME]);
             break;
         
         case REG_HALTCNT:

@@ -16,6 +16,9 @@
 
 #include "PPU.h"
 #include "util.h"
+#include "IRQ.h"
+
+extern IRQ *irq;
 
 // transparent pixel color
 #define TRANSPARENT 0x8000
@@ -122,7 +125,8 @@ void PPU::tick()
         // fire HBlank interrupt if necessary
         if (stat->dispstat.hbi)
         {
-            mem->memory[REG_IF] |= IRQ_HBLANK;
+            irq->raise(InterruptOccasion::HBLANK);
+            //mem->memory[REG_IF] |= IRQ_HBLANK;
             //LOG(LogLevel::Debug, "HBlank interrupt\n");
         }
 
@@ -149,8 +153,9 @@ void PPU::tick()
             // fire Vblank interrupt if necessary
             if (stat->dispstat.vbi)
             {
+                irq->raise(InterruptOccasion::VBLANK);
                 //LOG(LogLevel::Debug, "VBlank interrupt\n");
-                mem->memory[REG_IF] |= IRQ_VBLANK;
+                //mem->memory[REG_IF] |= IRQ_VBLANK;
             }
 
             // check for DMA VBLANK requests
@@ -210,7 +215,8 @@ void PPU::tick()
             // scanline interrupt is triggered if requested
             if (stat->dispstat.vci)
             {
-                mem->memory[REG_IF] |= IRQ_VCOUNT;
+                irq->raise(InterruptOccasion::VCOUNT);
+                //mem->memory[REG_IF] |= IRQ_VCOUNT;
                 //std::cout << "Scanline interrupt\n";
             }
 

@@ -12,6 +12,9 @@
 #include <cassert>
 
 #include "Arm7Tdmi.h"
+#include "IRQ.h"
+
+extern IRQ *irq;
 
 // uncomment this if running tests
 //#define TEST
@@ -798,7 +801,7 @@ void Arm7Tdmi::handleInterrupt()
     // exit interrupt
     if (in_interrupt && getRegister(r15) == 0x138)
     {
-        //std::cout << "Handled interrupt!\n";
+        std::cout << "Handled interrupt!\n";
 
         // restore registers from stack
         // ldmfd r13! r0-r3, r12, r14
@@ -820,7 +823,7 @@ void Arm7Tdmi::handleInterrupt()
 
         // re-enable interrupts
         registers.cpsr.i = 0;
-        mem->write32Unsafe(REG_IME, 1);
+        irq->enable();
 
         pipeline_full = false;
         in_interrupt  = false;
@@ -831,12 +834,15 @@ void Arm7Tdmi::handleInterrupt()
     }
 
     // check if master interrupts are enabled
-    if (mem->read32Unsafe(REG_IME) && registers.cpsr.i == 0) 
+    if (irq->isEnabled() && registers.cpsr.i == 0) 
     {
+        //std::cout << "enabled\n";
         // get enabled interrupts and requested interrupts
         // u16 interrupts_enabled   = mem->Read16Unsafe(REG_IE);
         // u16 interrupts_requested = mem->Read16Unsafe(REG_IF);
-        auto irq_mask = mem->read16Unsafe(REG_IE) & mem->read16Unsafe(REG_IF);
+        //auto irq_mask = mem->read16Unsafe(REG_IE) & mem->read16Unsafe(REG_IF);
+
+        u16 irq_mask = irq->getIE() & irq->getIF();
 
         // get first identical set bit in enabled/requested interrupts
         for (int i = 0; i < 14; ++i) // 14 interrupts available
@@ -844,6 +850,7 @@ void Arm7Tdmi::handleInterrupt()
             // handle interrupt at position i
             if (irq_mask & (1 << i))
             {
+                std::cout << "IRQ\n";
                 //LLE interrupts through BIOS
                 // registers.spsr_irq = registers.cpsr;
 
@@ -910,11 +917,13 @@ void Arm7Tdmi::handleInterrupt()
                 // ldr r15, [r0, -0x4]
                 setRegister(r15, mem->read32(getRegister(r0) - 0x4) & ~0x3);
 
-                registers.cpsr.i = 1; // disable interrupts
+                // disable interrupts
+                registers.cpsr.i = 1;
+                irq->disable();
+
                 setState(State::ARM);
                 pipeline_full = false;
                 in_interrupt  = true;
-                mem->write32Unsafe(REG_IME, 0);
 
                 last_read_bios = bios_read_state[1];
 

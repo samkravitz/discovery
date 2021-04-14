@@ -878,7 +878,10 @@ void Memory::dma0()
 
     // IRQ request
     if (dma[0].irq)
+    {
         LOG(LogLevel::Debug, "DMA0 IRQ request\n");
+        irq->raise(InterruptOccasion::DMA0);
+    }
 
     //LOG(LogLevel::Debug, "DMA 0 Done\n");
 }
@@ -965,7 +968,10 @@ void Memory::dma1()
 
     // IRQ request
     if (dma[1].irq)
+    {
         LOG(LogLevel::Debug, "DMA1 IRQ request\n");
+        irq->raise(InterruptOccasion::DMA1);
+    }
 
     //LOG(LogLevel::Debug, "DMA 1 Done\n");
 }
@@ -1052,7 +1058,10 @@ void Memory::dma2()
 
     // IRQ request
     if (dma[2].irq)
-        LOG(LogLevel::Debug, "DMA3 IRQ request\n");
+    {
+        LOG(LogLevel::Debug, "DMA2 IRQ request\n");
+        irq->raise(InterruptOccasion::DMA2);
+    }
 
     //LOG(LogLevel::Debug, "DMA 2 Done\n");
 }
@@ -1145,8 +1154,11 @@ void Memory::dma3()
 
     // IRQ request
     if (dma[3].irq)
+    {
         LOG(LogLevel::Debug, "DMA3 IRQ request\n");
-
+        irq->raise(InterruptOccasion::DMA3);
+    }
+        
     //LOG(LogLevel::Debug, "DMA 3 Done\n");
 }
 

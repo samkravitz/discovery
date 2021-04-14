@@ -8,6 +8,9 @@
  */
 
 #include "Timer.h"
+#include "IRQ.h"
+
+extern IRQ *irq;
 
 Timer::Timer()
 {
@@ -51,35 +54,42 @@ void Timer::tick()
 {
     ++ticks;
 
-    for (int j = 0; j < 4; ++j)
+    for (int i = 0; i < 4; ++i)
     {
         // ignore if timer is disabled
-        if (!channel[j].enable)
+        if (!channel[i].enable)
             continue;
 
         // ignore if cascade bit is set (timer will be incremented by previous timer)
-        if (channel[j].cascade)
+        if (channel[i].cascade)
             continue;
 
         // increment counter by 1
-        if (ticks % channel[j].prescalar == 0)
+        if (ticks % channel[i].prescalar == 0)
         {
-            channel[j].data += 1; // increment timer
+            channel[i].data += 1; // increment timer
 
             // timer overflowed
-            if (channel[j].data == 0x0000)
+            if (channel[i].data == 0x0000)
             {
                 // reset timer
-                channel[j].data = channel[j].initial;
-
-                //std::cout << "Timer " << j << " overflow\n";
+                channel[i].data = channel[i].initial;
 
                 // overflow irq
-                if (channel[j].irq)
-                    LOG("Timer {} overflow IRQ request\n", j);
+                if (channel[i].irq)
+                {
+                    LOG("Timer {} overflow IRQ request\n", i);
+                    switch (i)
+                    {
+                        case 0: irq->raise(InterruptOccasion::TIMER0); break;
+                        case 1: irq->raise(InterruptOccasion::TIMER1); break;
+                        case 2: irq->raise(InterruptOccasion::TIMER2); break;
+                        case 3: irq->raise(InterruptOccasion::TIMER3); break;
+                    }
+                }
 
                 // cascade
-                cascade(j);
+                cascade(i);
             }
         }
     }

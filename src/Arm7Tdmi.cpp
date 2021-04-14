@@ -933,6 +933,7 @@ void Arm7Tdmi::handleInterrupt()
         }
     }
 }
+int i = 0xFFFF;
 
 u8 Arm7Tdmi::read8(u32 address)
 {

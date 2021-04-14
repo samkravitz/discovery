@@ -15,67 +15,70 @@
 
 class Gamepad
 {
-    public:
+public:
 
-        Gamepad()
+    Gamepad()
+    {
+        keys.raw   = 0x3FF;  // all keys released
+        keycnt.raw = 0;
+    }
+
+    ~Gamepad() { }
+
+    struct Keys
+    {
+        union
         {
-            keys.raw   = 0x3FF;  // all keys released
-            keycnt.raw = 0;
-        }
-
-        ~Gamepad() { }
-
-        struct Keys
-        {
-            union
+            struct 
             {
-                struct 
-                {
-                    u8 a     : 1;
-                    u8 b     : 1;
-                    u8 sel   : 1;
-                    u8 start : 1;
-                    u8 right : 1;
-                    u8 left  : 1;
-                    u8 up    : 1;
-                    u8 down  : 1;
-                    u8 r     : 1;
-                    u8 l     : 1;
-                    u8 blank : 6;
-                };
-                
-                u16 raw;
+                u8 a     : 1;
+                u8 b     : 1;
+                u8 sel   : 1;
+                u8 start : 1;
+                u8 right : 1;
+                u8 left  : 1;
+                u8 up    : 1;
+                u8 down  : 1;
+                u8 r     : 1;
+                u8 l     : 1;
+                u8 blank : 6;
             };
             
-        } keys;
+            u16 raw;
+        };
+        
+    } keys;
 
-        struct KeyCnt
+    struct KeyCnt
+    {
+        union
         {
-            union
+            struct
             {
-                struct
-                {
-                    u8 a         : 1;
-                    u8 b         : 1;
-                    u8 sel       : 1;
-                    u8 start     : 1;
-                    u8 right     : 1;
-                    u8 left      : 1;
-                    u8 up        : 1;
-                    u8 down      : 1;
-                    u8 r         : 1;
-                    u8 l         : 1;
-                    u8 blank     : 4;
-                    u8 irq       : 1;
-                    u8 condition : 1;
-                };
-
-                u16 raw;
+                u8 a         : 1;
+                u8 b         : 1;
+                u8 sel       : 1;
+                u8 start     : 1;
+                u8 right     : 1;
+                u8 left      : 1;
+                u8 up        : 1;
+                u8 down      : 1;
+                u8 r         : 1;
+                u8 l         : 1;
+                u8 blank     : 4;
+                u8 irq       : 1;
+                u8 condition : 1;
             };
 
-        } keycnt;
+            u16 raw;
+        };
 
-        void writeCnt(u16 val) { keycnt.raw = val; }
-        void poll();
-        void print();
+    } keycnt;
+
+    void writeCnt(u16 val) { keycnt.raw = val; }
+    void poll();
+    void print();
+
+private:
+    void checkInterrupt();
 };

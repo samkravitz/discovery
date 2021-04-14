@@ -7,7 +7,6 @@
  * DATE: January 6th, 2021
  * DESCRIPTION: Implementation of PPU class
  */
-
 #include <ctime>
 #include <sstream>
 #include <iomanip>
@@ -53,7 +52,8 @@ PPU::PPU(Memory *mem, LcdStat *stat) : mem(mem), stat(stat)
 
     // initialize color LUT
     // algorithm adapted from
-    // https://github.com/samuelchen52/gbaemu & https://near.sh/articles/video/color-emulation
+    // https://github.com/samuelchen52/gbaemu &
+    // https://near.sh/articles/video/color-emulation
     for (u16 i = 0; i < 0x8000; i++)
     {
         double lb = pow(((i & 31744) >> 10) / 31.0, 4.0);
@@ -126,7 +126,6 @@ void PPU::tick()
         if (stat->dispstat.hbi)
         {
             irq->raise(InterruptOccasion::HBLANK);
-            //mem->memory[REG_IF] |= IRQ_HBLANK;
             //LOG(LogLevel::Debug, "HBlank interrupt\n");
         }
 
@@ -155,7 +154,6 @@ void PPU::tick()
             {
                 irq->raise(InterruptOccasion::VBLANK);
                 //LOG(LogLevel::Debug, "VBlank interrupt\n");
-                //mem->memory[REG_IF] |= IRQ_VBLANK;
             }
 
             // check for DMA VBLANK requests
@@ -216,8 +214,7 @@ void PPU::tick()
             if (stat->dispstat.vci)
             {
                 irq->raise(InterruptOccasion::VCOUNT);
-                //mem->memory[REG_IF] |= IRQ_VCOUNT;
-                //std::cout << "Scanline interrupt\n";
+                // std::cout << "Scanline interrupt\n";
             }
 
         }

@@ -8,6 +8,9 @@
  * DESCRIPTION: Gamepad class
  */
 #include "Gamepad.h"
+#include "IRQ.h"
+
+extern IRQ *irq;
 
 // get current key state
 void Gamepad::poll()
@@ -44,44 +47,48 @@ void Gamepad::poll()
     if (state[SDL_SCANCODE_ESCAPE])
         exit(0);
 
-    // // check for key interrupt
     if (keycnt.irq) // key interrupts enabled
+        checkInterrupt();
+        
+}
+
+void Gamepad::checkInterrupt()
+{
+    // zero blank bits in keys just in case they're not
+    keys.blank = 0;
+    int keys_to_check = keycnt.raw & 0x3FF;
+    bool raise_interrupt = false; // interrupt condition
+
+    if (keycnt.condition == 1) // use AND (raise if all keys are down)
     {
-        // zero blank bits in keys just in case they're not
-        keys.blank = 0;
-        int keys_to_check = keycnt.raw & 0x3FF;
-        bool raise_interrupt = false;
-
-        if (keycnt.condition == 1) // use AND (raise if all keys are down)
+        raise_interrupt = true;
+        for (int i = 0; i < 10; ++i) // 10 keys
         {
-            raise_interrupt = true;
-            for (int i = 0; i < 10; ++i) // 10 keys
+            if ((keys_to_check >> i & 1) && (keys.raw >> i & 1))
             {
-                if ((keys_to_check >> i & 1) && (keys.raw >> i & 1))
-                {
-                    raise_interrupt = false;
-                    break;
-                }
+                raise_interrupt = false;
+                break;
             }
         }
+    }
 
-        else // use OR (raise if any keys are down)
+    else // use OR (raise if any keys are down)
+    {
+        for (int i = 0; i < 10; ++i) // 10 keys
         {
-            for (int i = 0; i < 10; ++i) // 10 keys
+            if ((keys_to_check >> i & 1) && (keys.raw >> i & 1) == 0)
             {
-                if ((keys_to_check >> i & 1) && (keys.raw >> i & 1) == 0)
-                {
-                    raise_interrupt = true;
-                    break;
-                }
+                raise_interrupt = true;
+                break;
             }
         }
+    }
 
-        // raise keypad interrupt
-        if (raise_interrupt)
-        {
-            LOG("Raising gamepad interrupt\n");
-        }
+    // raise keypad interrupt
+    if (raise_interrupt)
+    {
+        LOG("Raising gamepad interrupt\n");
+        irq->raise(InterruptOccasion::KEYPAD);
     }
 }
 

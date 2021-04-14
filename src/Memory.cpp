@@ -276,6 +276,18 @@ u8 Memory::read8(u32 address)
         case REG_KEYINPUT:     return gamepad->keys.raw >> 0 & 0xFF;
         case REG_KEYINPUT + 1: return gamepad->keys.raw >> 8 & 0xFF;
 
+        // REG_IF
+        case REG_IF:           return irq->getIF() >> 0 & 0xFF;
+        case REG_IF + 1:       return irq->getIF() >> 8 & 0xFF;
+
+        // REG_IE
+        case REG_IE:           return irq->getIE() >> 0 & 0xFF;
+        case REG_IE + 1:       return irq->getIE() >> 8 & 0xFF;
+
+        // REG_IME
+        case REG_IME:           return irq->getIME() >> 0 & 0xFF;
+        case REG_IME + 1:       return irq->getIME() >> 8 & 0xFF;
+
         default:
             return memory[address];
     }

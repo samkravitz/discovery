@@ -724,7 +724,7 @@ void Memory::write8(u32 address, u8 value)
         // REG_IF
         case REG_IF:    [[fallthrough]];
         case REG_IF + 1:
-            irq->clear(~(memory[REG_IF + 1] << 8 | memory[REG_IF]));
+            irq->clear(memory[REG_IF + 1] << 8 | memory[REG_IF]);
             break;
         
         // REG_IE

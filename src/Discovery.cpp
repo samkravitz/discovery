@@ -75,10 +75,9 @@ void Discovery::gameLoop()
     while (running)
     {
         // tick hardware (not cpu) if in halt state
-        while (mem->haltcnt)
-        {
-            int ticks_left = system_cycles % 197120;
-            while (ticks_left--)
+        if (mem->haltcnt)
+        {   
+            while ((irq->getIE() & irq->getIF()) == 0)
                 tick();
 
             mem->haltcnt = 0;

@@ -7,21 +7,21 @@
  * DATE: Feb 13, 2021
  * DESCRIPTION: Implements the audio processing unit
  */
+#include "APU.h"
+#include "util.h"
 
 #include <iostream>
 #include <queue>
 #include <cmath>
 #include <vector>
+#include <cassert>
 
-#include "APU.h"
-#include "util.h"
-
-const int AMPLITUDE = 14000;
-const int SAMPLE_RATE = 44100;
-const int BUFFER_SIZE = 2048;
+constexpr int AMPLITUDE   = 14000;
+constexpr int SAMPLE_RATE = 44100;
+constexpr int BUFFER_SIZE = 2048;
 
 APU::APU(Memory *mem)
-:mem(mem)
+	:mem(mem)
 {
 	SDL_Init(SDL_INIT_AUDIO);
 	
@@ -87,30 +87,20 @@ void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count)
 	float wave_cycle_ratio;
 	switch(wave_duty_cycle_reg)
 	{
-		case 0b00:
-			wave_cycle_ratio = .125;
-			break;
-		case 0b01:
-			wave_cycle_ratio = .250;
-			break;
-		case 0b10:
-			wave_cycle_ratio = .500;
-			break;
-		case 0b11:
-			wave_cycle_ratio = .750;
-			break;
+		case 0b00: wave_cycle_ratio = .125; break;
+		case 0b01: wave_cycle_ratio = .250; break;
+		case 0b10: wave_cycle_ratio = .500; break;
+		case 0b11: wave_cycle_ratio = .750; break;
 		default: 
-			throw std::domain_error("invalid wave_cycle_ratio register value");
-			wave_cycle_ratio = .500;
-			break;
+			assert(!"Invalid wave_cycle_ratio register value");
 	}
 
 	// dmg channel 1 frequency, reset, loop control
 	u16 ch1_x = (s16) this->mem->read16(REG_SOUND1CNT_X);
 	u16 sound_freq_reg = util::bitseq<0xA,0>(ch1_x);
 	u16 sound_freq = 131072 / (2048 - sound_freq_reg);
-	bool timed_mode = (bool) util::bitseq<0xE,0xE>(ch1_x);
-	bool sound_reset = (bool) util::bitseq<0xF,0xF>(ch1_x);
+	bool timed_mode = util::bitseq<0xE,0xE>(ch1_x);
+	bool sound_reset = util::bitseq<0xF,0xF>(ch1_x);
 	
 	// sample length, AUDIO_S16SYS is 2 bits
 	int sample_len = buffer_len/2;

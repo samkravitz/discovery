@@ -190,7 +190,7 @@ void Arm7Tdmi::execute(u32 instruction)
         exit(5);
     }
 
-    //std::cout << std::hex << registers.r15 << "\n";
+    // std::cout << std::hex << registers.r15 << "\n";
     
     switch (getState())
     {

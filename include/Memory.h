@@ -18,6 +18,7 @@
 #include "Timer.h"
 #include "mmio.h"
 #include "log.h"
+#include "Backup.h"
 
 // start and end addresses of internal memory regions
 constexpr u32 MEM_BIOS_END          = 0x3FFF;
@@ -108,15 +109,6 @@ class Memory
 
         // DMA transfer routine
         void _dma(int);
-    
-        enum BackupType
-        {
-            SRAM,
-            EEPROM,
-            FLASH64,
-            FLASH128,
-            NONE
-        };
 
         enum FlashState
         {
@@ -133,6 +125,6 @@ class Memory
 
         void writeFlash(u32, u8);
 
-        BackupType backup_type;
+        Backup *backup;
         FlashState flash_state;
 };

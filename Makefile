@@ -9,7 +9,7 @@ VPATH = $(SOURCEDIR)
 TESTS = $(SOURCEDIR)tests/tests.cpp $(SOURCEDIR)tests/instruction_tests.cpp $(SOURCEDIR)tests/data_processing_tests.cpp
 
 # Use compiler optimizations
-OPT = 0
+OPT = 1
 
 ifeq (1, $(OPT))
 CXXFLAGS += -Ofast

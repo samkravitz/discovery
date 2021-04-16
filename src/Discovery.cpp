@@ -66,7 +66,7 @@ Discovery::Discovery()
     mem     = new Memory(stat, timer, gamepad);
     cpu     = new Arm7Tdmi(mem);
     ppu     = new PPU(mem, stat);
-    apu     = new APU(mem);
+    //apu     = new APU(mem);
 
     irq     = new IRQ();
 }

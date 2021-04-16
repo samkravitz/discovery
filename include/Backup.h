@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.h"
+#include "log.h"
 
 #include <cassert>
 
@@ -20,14 +21,14 @@ public:
     {
         assert(address < size);
 
-        return cart_ram[address - 0xE0000000];
+        return 0xFF;
     }
 
     virtual void write(u32 address, u8 value)
     {
         assert(address < size);
 
-        cart_ram[address - 0xE0000000] = value;
+        cart_ram[address] = value;
     }
 
 protected:

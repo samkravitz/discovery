@@ -225,7 +225,7 @@ u8 Memory::read8(u32 address)
         case 0xE:
             //std::cout << "Reading from cart RAM\n";
             address &= ~ram_size; // RAM Mirror
-            return backup->read(address);
+            return backup->read(address - 0xE000000);
 
         default:
             std::cout << std::hex << address << "\n";
@@ -279,8 +279,8 @@ u8 Memory::read8(u32 address)
         case REG_IE + 1:       return irq->getIE() >> 8 & 0xFF;
 
         // REG_IME
-        case REG_IME:           return irq->getIME() >> 0 & 0xFF;
-        case REG_IME + 1:       return irq->getIME() >> 8 & 0xFF;
+        case REG_IME:          return irq->getIME() >> 0 & 0xFF;
+        case REG_IME + 1:      return irq->getIME() >> 8 & 0xFF;
 
         default:
             return memory[address];
@@ -365,7 +365,7 @@ void Memory::write8(u32 address, u8 value)
         case 0xE:
             address &= ~ram_size; // RAM Mirror
 
-            backup->write(address, value);
+            backup->write(address - 0xE000000, value);
             return;
 
         default:

@@ -110,13 +110,6 @@ class Memory
         // DMA transfer routine
         void _dma(int);
 
-        enum FlashState
-        {
-            READY,
-            CMD_1,
-            CMD_2,
-        };
-
     private:
         void dma0();
         void dma1();
@@ -126,5 +119,4 @@ class Memory
         void writeFlash(u32, u8);
 
         Backup *backup;
-        FlashState flash_state;
 };

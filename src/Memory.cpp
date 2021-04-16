@@ -29,7 +29,6 @@ Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad) :
 {
     backup = nullptr;
     cart_ram = nullptr;
-    flash_state = READY;
 
     reset();
 }
@@ -99,24 +98,24 @@ bool Memory::loadRom(const std::string &name)
     if (rom_temp.find("FLASH1M_V") != std::string::npos)
     {
         LOG(LogLevel::Warning, "Cart RAM FLASH128 detected\n");
-        ram_size    = 0x20000;
-        cart_ram    = new u8[ram_size]();
+        ram_size = 0x20000;
+        backup   = new Flash(ram_size); 
     }
 
     // flash 512
     if (rom_temp.find("FLASH512_V") != std::string::npos)
     {
         LOG(LogLevel::Warning, "Cart RAM FLASH512 detected\n");
-        ram_size    = 0x10000;
-        cart_ram    = new u8[ram_size]();
+        ram_size = 0x10000;
+        backup   = new Flash(ram_size); 
     }
 
     // flashv
     if (rom_temp.find("FLASH_V") != std::string::npos)
     {
         LOG(LogLevel::Warning, "Cart RAM FLASH detected\n");
-        ram_size    = 0x10000;
-        cart_ram    = new u8[ram_size]();
+        ram_size = 0x10000;
+        backup   = new Flash(ram_size); 
     }
 
     // sram
@@ -169,12 +168,6 @@ u16 Memory::read16(u32 address)
 
 u8 Memory::read8(u32 address)
 {
-    if (address == 0xE000000)
-        return 0x62;
-
-    if (address == 0xE000001)
-        return 0x13;
-
     // get memory region for mirrors
     switch (address >> 24)
     {
@@ -232,9 +225,10 @@ u8 Memory::read8(u32 address)
         case 0xE:
             //std::cout << "Reading from cart RAM\n";
             address &= ~ram_size; // RAM Mirror
-            return cart_ram[address - 0xE000000];
+            return backup->read(address);
 
         default:
+            std::cout << std::hex << address << "\n";
             assert(!"Error: Invalid address in Memory::read8");
             return 0;
     }

@@ -9,8 +9,12 @@
  */
 #include <iostream>
 #include <iomanip>
+#include <cassert>
 
 #include "Arm7Tdmi.h"
+#include "IRQ.h"
+
+extern IRQ *irq;
 
 // uncomment this if running tests
 //#define TEST
@@ -19,8 +23,8 @@ int PRINT = 0;
 
 Arm7Tdmi::Arm7Tdmi(Memory *mem) : mem(mem)
 {
-    registers = {0}; // zero out registers
-    registers.r15 = 0x8000000; // starting address of gamepak flash rom
+    registers = {0};               // zero out registers
+    registers.r15 = 0x8000000;     // starting address of gamepak flash rom
 
     registers.r13     = 0x3007F00; // starting address of user stack
     registers.r13_svc = 0x3007FE0; // starting address of swi stack
@@ -61,27 +65,13 @@ Mode Arm7Tdmi::getMode()
         case 0b11111: return Mode::SYS;
         case 0b11011: return Mode::UND;
         default:
-            LOG(LogLevel::Error, "Undefined mode {}\n", (int) registers.cpsr.mode);
-            exit(21);
+            assert(!"Error: unrecognized mode in Arm7Tdmi::getMode");
+            return (Mode) 0;
     } 
 }
 
 void Arm7Tdmi::setMode(Mode mode)
 {
-    bool valid = false;
-
-    switch (mode)
-    {
-        case Mode::USR:
-        case Mode::FIQ:
-        case Mode::IRQ:
-        case Mode::SVC:
-        case Mode::ABT:
-        case Mode::SYS:
-        case Mode::UND:
-            valid = true;
-    }
-
     switch (mode)
     {
         case Mode::USR: registers.cpsr.mode = 0b10000; break;
@@ -91,6 +81,8 @@ void Arm7Tdmi::setMode(Mode mode)
         case Mode::ABT: registers.cpsr.mode = 0b10111; break;
         case Mode::SYS: registers.cpsr.mode = 0b11111; break;
         case Mode::UND: registers.cpsr.mode = 0b11011; break;
+        default:
+            assert(!"Error: unrecognized mode in Arm7Tdmi::setMode");
     }
 }
 
@@ -103,8 +95,8 @@ u8 Arm7Tdmi::getConditionCodeFlag(ConditionFlag flag)
         case ConditionFlag::C: return registers.cpsr.c;
         case ConditionFlag::V: return registers.cpsr.v;
         default:
-            std::cerr << "Unrecognized condition code flag\n";
-            return 0;
+            assert(!"Error: unrecognized flag in Arm7Tdmi::getFlag");
+            return -1;
     }
 }
 
@@ -124,8 +116,7 @@ void Arm7Tdmi::setConditionCodeFlag(ConditionFlag flag, u8 bit)
         case ConditionFlag::C: registers.cpsr.c = bit; break;
         case ConditionFlag::V: registers.cpsr.v = bit; break;
         default:
-            std::cerr << "Unrecognized condition code flag\n";
-            return;
+            assert(!"Error: unrecognized flag in Arm7Tdmi::setConditionCodeFlag");
     }
 }
 
@@ -150,7 +141,7 @@ bool Arm7Tdmi::conditionMet(Condition condition)
         case Condition::LE: return getConditionCodeFlag(ConditionFlag::Z) || (getConditionCodeFlag(ConditionFlag::N) != getConditionCodeFlag(ConditionFlag::V));  // Z set OR (N not equal to V)
         case Condition::AL: return true; // always
         default: // should never happen
-            std::cerr << "Unrecognized condition field\n";
+            assert(!"Error: unrecognized condition in Arm7Tdmi::conditionMet");
             return false;
     }
 }
@@ -199,7 +190,7 @@ void Arm7Tdmi::execute(u32 instruction)
         exit(5);
     }
 
-    //std::cout << std::hex << registers.r15 << "\n";
+    // std::cout << std::hex << registers.r15 << "\n";
     
     switch (getState())
     {
@@ -384,10 +375,12 @@ u32 Arm7Tdmi::getRegister(u32 reg)
             }
             break;
         default:
-            std::cerr << "Unknown register: " << reg << "\n";
-            return 0;
+            assert(!"Error: unknown register in Arm7Tdmi::getRegister");
+            return -1;
     }
-    return 100; // should never happen
+
+    assert(!"Error: unknown register in Arm7Tdmi::getRegister");
+    return -1;
 }
 
 void Arm7Tdmi::setRegister(u32 reg, u32 val)
@@ -512,11 +505,10 @@ void Arm7Tdmi::setRegister(u32 reg, u32 val)
             break;
 
 
-        case r15: registers.r15 = val; break; // all banks share r15
+        case r15:  registers.r15      = val; break; // all banks share r15
         case cpsr: registers.cpsr.raw = val; break; // all banks share cpsr
         default:
-            std::cerr << "Unknown register: " << reg << "\n";
-            break;
+            assert(!"Error: unknown register in Arm7Tdmi::setRegister");
     }
 }
 
@@ -716,23 +708,8 @@ void Arm7Tdmi::updateCPSR(u32 value, bool flags_only)
     if (registers.cpsr.t != sr.t)
         LOG(LogLevel::Warning, "Software is changing T-Bit in CPSR!\n");
 
-    // TODO - validate CPSR was appropriately changed
-    bool valid = false;
-
-    switch (getMode())
-    {
-        case Mode::USR:
-        case Mode::FIQ:
-        case Mode::IRQ:
-        case Mode::SVC:
-        case Mode::ABT:
-        case Mode::SYS:
-        case Mode::UND:
-            valid = true;
-    }
-
-    if (!valid)
-        std::cerr << "Invalid state being set to cpsr: " << value << "\n";
+    // validate CPSR wasn't given an invalid state
+    assert(getMode());
 
     // if (sr.state == IRQ && registers.cpsr.i == 1) return; // irq disabled bit set
     // if (sr.state == FIQ && registers.cpsr.f == 1) return; // fiq disabled bit set
@@ -846,7 +823,7 @@ void Arm7Tdmi::handleInterrupt()
 
         // re-enable interrupts
         registers.cpsr.i = 0;
-        mem->write32Unsafe(REG_IME, 1);
+        irq->enable();
 
         pipeline_full = false;
         in_interrupt  = false;
@@ -857,12 +834,15 @@ void Arm7Tdmi::handleInterrupt()
     }
 
     // check if master interrupts are enabled
-    if (mem->read32Unsafe(REG_IME) && registers.cpsr.i == 0) 
+    if (irq->isEnabled() && registers.cpsr.i == 0) 
     {
+        //std::cout << "enabled\n";
         // get enabled interrupts and requested interrupts
         // u16 interrupts_enabled   = mem->Read16Unsafe(REG_IE);
         // u16 interrupts_requested = mem->Read16Unsafe(REG_IF);
-        auto irq_mask = mem->read16Unsafe(REG_IE) & mem->read16Unsafe(REG_IF);
+        //auto irq_mask = mem->read16Unsafe(REG_IE) & mem->read16Unsafe(REG_IF);
+
+        u16 irq_mask = irq->getIE() & irq->getIF();
 
         // get first identical set bit in enabled/requested interrupts
         for (int i = 0; i < 14; ++i) // 14 interrupts available
@@ -870,6 +850,7 @@ void Arm7Tdmi::handleInterrupt()
             // handle interrupt at position i
             if (irq_mask & (1 << i))
             {
+                //std::cout << "IRQ\n";
                 //LLE interrupts through BIOS
                 // registers.spsr_irq = registers.cpsr;
 
@@ -936,11 +917,13 @@ void Arm7Tdmi::handleInterrupt()
                 // ldr r15, [r0, -0x4]
                 setRegister(r15, mem->read32(getRegister(r0) - 0x4) & ~0x3);
 
-                registers.cpsr.i = 1; // disable interrupts
+                // disable interrupts
+                registers.cpsr.i = 1;
+                irq->disable();
+
                 setState(State::ARM);
                 pipeline_full = false;
                 in_interrupt  = true;
-                mem->write32Unsafe(REG_IME, 0);
 
                 last_read_bios = bios_read_state[1];
 
@@ -950,6 +933,7 @@ void Arm7Tdmi::handleInterrupt()
         }
     }
 }
+int i = 0xFFFF;
 
 u8 Arm7Tdmi::read8(u32 address)
 {
@@ -1006,7 +990,7 @@ u32 Arm7Tdmi::read16(u32 address, bool sign)
     // reading from BIOS memory
     if (address <= 0x3FFF && registers.r15 > 0x3FFF)
     {
-        LOG(LogLevel::Error, "Invalid read from BIOS u16: 0x{x}\n", last_read_bios);
+        //LOG(LogLevel::Error, "Invalid read from BIOS u16: 0x{x}\n", last_read_bios);
 
         u32 value = last_read_bios;
         return value & 0xFFFF;
@@ -1135,49 +1119,11 @@ u32 Arm7Tdmi::read32(u32 address, bool ldr)
 
     switch (address)
     {
-        // case REG_BG0HOFS:
-        // case REG_BG1HOFS:
-        // case REG_BG2HOFS:
-        // case REG_BG3HOFS:
-        // case REG_BG0VOFS:
-        // case REG_BG1VOFS:
-        // case REG_BG2VOFS:
-        // case REG_BG3VOFS:
-        // case REG_BG2X:
-        // case REG_BG2Y:
-        // case REG_BG2PA:
-        // case REG_BG2PB:
-        // case REG_BG2PC:
-        // case REG_BG2PD:
-        // case REG_BG3X:
-        // case REG_BG3Y:
-        // case REG_BG3PA:
-        // case REG_BG3PB:
-        // case REG_BG3PC:
-        // case REG_BG3PD:
-        // case REG_WIN0H:
-        // case REG_WIN1H:
-        // case REG_WIN0V:
-        // case REG_WIN1V:
-        // case REG_WININ:
-        // case REG_WINOUT:
-        // case REG_MOSAIC:
-        // case REG_DMA0SAD:
-        // case REG_DMA0DAD:
-        case REG_DMA0CNT:
-        // case REG_DMA1SAD:
-        // case REG_DMA1DAD:
-        case REG_DMA1CNT:
-        // case REG_DMA2SAD:
-        // case REG_DMA2DAD:
-        case REG_DMA2CNT:
-        // case REG_DMA3SAD:
-        // case REG_DMA3DAD:
-        case REG_DMA3CNT:
-            //std::cout << "u32 sadkjflsadfkjsdaflkj\n";
-            //return 0;
-        default:
-            break;
+        [[unlikely]] case REG_DMA0CNT:
+        [[unlikely]] case REG_DMA1CNT:
+        [[unlikely]] case REG_DMA2CNT:
+        [[unlikely]] case REG_DMA3CNT:
+            return mem->read32Unsafe(address) & 0x00FFFFFF; // return 0 for unused byte 0x40000XE
     }
 
     if ((address >= 0x4000 && address <= 0x1FFFFFF) || address >= 0x10000000)

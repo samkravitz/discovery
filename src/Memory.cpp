@@ -7,12 +7,17 @@
  * DATE: July 13, 2020
  * DESCRIPTION: Implementation of memory related functions
  */
+#include "Memory.h"
+#include "IRQ.h"
+
 #include <fstream>
 #include <iostream>
+#include <regex>
 #include <experimental/filesystem>
 #include <string.h>
+#include <cassert>
 
-#include "Memory.h"
+extern IRQ *irq;
 
 namespace fs = std::experimental::filesystem;
 
@@ -21,8 +26,9 @@ Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad) :
     timer(timer),
     gamepad(gamepad)
 {
-    // cart_rom  = NULL;
-    cart_ram  = NULL;
+    cart_ram = nullptr;
+    backup_type = NONE;
+    flash_state = READY;
 
     reset();
 }
@@ -31,7 +37,7 @@ Memory::~Memory() { }
 
 void Memory::reset()
 {
-    // default cycle accesses for wait statae
+    // default cycle accesses for waitstates
     n_cycles = 4;
     s_cycles = 2;
 
@@ -62,9 +68,6 @@ void Memory::reset()
     }
 
     haltcnt = 0;
-
-    // write all 1s to keypad (all keys cleared)
-    write32Unsafe(REG_KEYINPUT, 0b1111111111);
 }
 
 bool Memory::loadRom(const std::string &name)
@@ -79,67 +82,53 @@ bool Memory::loadRom(const std::string &name)
 
     rom_size = fs::file_size(name);
 
-    //cart_rom = new u8[rom_size]();
     rom.read((char *) cart_rom, rom_size);
     rom.close();
 
     // get cart RAM type
-    char *rom_temp = (char *) cart_rom;
-    for (int i = 0; i < rom_size; ++i, ++rom_temp)
+    std::string rom_temp((char *) cart_rom, rom_size);
+
+    // eeprom
+    if (rom_temp.find("EEPROM_V") != std::string::npos)
     {
-        // FLASH RAM
-        if (*rom_temp == 'F')
-        {
-            if (strncmp(rom_temp, "FLASH512_V", 10) == 0)
-            {
-                LOG(LogLevel::Message, "Cart RAM FLASH512 detected\n");
+        LOG(LogLevel::Warning, "Cart RAM EEPROM detected\n");
+        backup_type = EEPROM;
+    }
 
-                ram_size = 0x10000;
-                cart_ram = new u8[ram_size]();
-            }
+    // flash 1M
+    if (rom_temp.find("FLASH1M_V") != std::string::npos)
+    {
+        LOG(LogLevel::Warning, "Cart RAM FLASH128 detected\n");
+        ram_size    = 0x20000;
+        cart_ram    = new u8[ram_size]();
+        backup_type = FLASH128;
+    }
 
-            if (strncmp(rom_temp, "FLASH1M_V", 8) == 0)
-            {
-                LOG(LogLevel::Message, "Cart RAM FLASH128 detected\n");
+    // flash 512
+    if (rom_temp.find("FLASH512_V") != std::string::npos)
+    {
+        LOG(LogLevel::Warning, "Cart RAM FLASH512 detected\n");
+        ram_size    = 0x10000;
+        cart_ram    = new u8[ram_size]();
+        backup_type = FLASH64;
+    }
 
-                ram_size = 0x20000;
-                cart_ram = new u8[ram_size]();
-            }
+    // flashv
+    if (rom_temp.find("FLASH_V") != std::string::npos)
+    {
+        LOG(LogLevel::Warning, "Cart RAM FLASH detected\n");
+        ram_size    = 0x10000;
+        cart_ram    = new u8[ram_size]();
+        backup_type = FLASH64;
+    }
 
-            if (strncmp(rom_temp, "FLASH_V", 7) == 0)
-            {
-                LOG(LogLevel::Message, "Cart RAM FLASH detected\n");
-
-                ram_size = 0x10000;
-                cart_ram = new u8[ram_size]();
-            }
-        }
-
-        // SRAM
-        if (*rom_temp == 'S')
-        {
-            if (strncmp(rom_temp, "SRAM_V", 6) == 0)
-            {
-                LOG(LogLevel::Message, "Cart RAM SRAM detected\n");
-
-                ram_size = 0x8000;
-                cart_ram = new u8[ram_size]();
-            }
-        }
-
-        // EEPROM
-        if (*rom_temp == 'E')
-        {
-            if (strncmp(rom_temp, "EEPROM_V", 8) == 0)
-            {
-                LOG(LogLevel::Message, "Cart RAM EEPROM detected\n");
-            }
-        }
-
-        if (*rom_temp == 0xc2 && *(rom_temp + 1) == 0x32)
-        {
-            exit(32);
-        }
+    // sram
+    if (rom_temp.find("SRAM_V") != std::string::npos)
+    {
+        LOG(LogLevel::Warning, "Cart RAM SRAM detected\n");
+        ram_size    = 0x8000;
+        cart_ram    = new u8[ram_size]();
+        backup_type = SRAM;
     }
 
     // no cart RAM detected
@@ -181,14 +170,11 @@ u16 Memory::read16(u32 address)
 u8 Memory::read8(u32 address)
 {
     if (address == 0xE000000)
-    {
         return 0x62;
-    }
 
     if (address == 0xE000001)
-    {
         return 0x13;
-    }
+
     // get memory region for mirrors
     switch (address >> 24)
     {
@@ -249,7 +235,7 @@ u8 Memory::read8(u32 address)
             return cart_ram[address - 0xE000000];
 
         default:
-            LOG(LogLevel::Error, "Invalid address to read: 0x{x}\n", address);
+            assert(!"Error: Invalid address in Memory::read8");
             return 0;
     }
 
@@ -289,6 +275,18 @@ u8 Memory::read8(u32 address)
         // REG_KEYINPUT
         case REG_KEYINPUT:     return gamepad->keys.raw >> 0 & 0xFF;
         case REG_KEYINPUT + 1: return gamepad->keys.raw >> 8 & 0xFF;
+
+        // REG_IF
+        case REG_IF:           return irq->getIF() >> 0 & 0xFF;
+        case REG_IF + 1:       return irq->getIF() >> 8 & 0xFF;
+
+        // REG_IE
+        case REG_IE:           return irq->getIE() >> 0 & 0xFF;
+        case REG_IE + 1:       return irq->getIE() >> 8 & 0xFF;
+
+        // REG_IME
+        case REG_IME:           return irq->getIME() >> 0 & 0xFF;
+        case REG_IME + 1:       return irq->getIME() >> 8 & 0xFF;
 
         default:
             return memory[address];
@@ -371,8 +369,14 @@ void Memory::write8(u32 address, u8 value)
         case 0xF:
             address -= 0x1000000;
         case 0xE:
-            //std::cout << "Writing to cart RAM\n";
             address &= ~ram_size; // RAM Mirror
+
+            if (backup_type == FLASH64 || backup_type == FLASH128)
+            {
+                writeFlash(address, value);
+                return;
+            }
+
             cart_ram[address - 0xE000000] = value;
             return;
 
@@ -710,15 +714,29 @@ void Memory::write8(u32 address, u8 value)
         case REG_TM3CNT:
             timer->writeCnt(3, memory[REG_TM3CNT]);
             break;
+
+        // REG_KEYCNT
+        case REG_KEYCNT: [[fallthrough]];
+        case REG_KEYCNT + 1:
+            gamepad->keycnt.raw = memory[REG_KEYCNT + 1] << 8 | memory[REG_KEYCNT];
+            break;
         
         // REG_IF
         case REG_IF:    [[fallthrough]];
         case REG_IF + 1:
-            memory[address] &= ~value;
+            irq->clear(memory[REG_IF + 1] << 8 | memory[REG_IF]);
             break;
         
-        case REG_HALTCNT:
-            haltcnt = 1;
+        // REG_IE
+        case REG_IE:    [[fallthrough]];
+        case REG_IE + 1:
+            irq->setIE(memory[REG_IE + 1] << 8 | memory[REG_IE]);
+            break;
+        
+        // REG_IME
+        case REG_IME:    [[fallthrough]];
+        case REG_IME + 1:
+            irq->setIME(memory[REG_IME + 1] << 8 | memory[REG_IME]);
             break;
     }
 }
@@ -856,7 +874,10 @@ void Memory::dma0()
 
     // IRQ request
     if (dma[0].irq)
+    {
         LOG(LogLevel::Debug, "DMA0 IRQ request\n");
+        irq->raise(InterruptOccasion::DMA0);
+    }
 
     //LOG(LogLevel::Debug, "DMA 0 Done\n");
 }
@@ -943,7 +964,10 @@ void Memory::dma1()
 
     // IRQ request
     if (dma[1].irq)
+    {
         LOG(LogLevel::Debug, "DMA1 IRQ request\n");
+        irq->raise(InterruptOccasion::DMA1);
+    }
 
     //LOG(LogLevel::Debug, "DMA 1 Done\n");
 }
@@ -1030,7 +1054,10 @@ void Memory::dma2()
 
     // IRQ request
     if (dma[2].irq)
-        LOG(LogLevel::Debug, "DMA3 IRQ request\n");
+    {
+        LOG(LogLevel::Debug, "DMA2 IRQ request\n");
+        irq->raise(InterruptOccasion::DMA2);
+    }
 
     //LOG(LogLevel::Debug, "DMA 2 Done\n");
 }
@@ -1044,6 +1071,7 @@ void Memory::dma3()
 
     // increment for destination, src
     int dest_inc, src_inc;
+
 
     // LOG(LogLevel::Debug, "DMA 3 start addr: 0x{x}\n", (int) src_ptr);
     // LOG(LogLevel::Debug, "DMA 3 dest  addr: 0x{x}\n", (int) dest_ptr);
@@ -1122,9 +1150,28 @@ void Memory::dma3()
 
     // IRQ request
     if (dma[3].irq)
+    {
         LOG(LogLevel::Debug, "DMA3 IRQ request\n");
-
+        irq->raise(InterruptOccasion::DMA3);
+    }
+        
     //LOG(LogLevel::Debug, "DMA 3 Done\n");
+}
+
+void Memory::writeFlash(u32 address, u8 value)
+{
+    switch (address)
+    {
+        case 0xE005555:
+            if (value == 0xAA && flash_state == READY)
+                flash_state = CMD_1;
+            break;
+        
+        case 0xE002AAA:
+            if (value == 0x55 && flash_state == CMD_1)
+                flash_state = CMD_2;
+
+    }
 }
 
 // std::cout << "([a-zA-Z0-9 \\n]+)"

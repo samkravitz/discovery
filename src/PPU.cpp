@@ -7,56 +7,67 @@
  * DATE: January 6th, 2021
  * DESCRIPTION: Implementation of PPU class
  */
-
 #include <ctime>
 #include <sstream>
 #include <iomanip>
 #include <cstring>
+#include <cassert>
 
 #include "PPU.h"
 #include "util.h"
+#include "IRQ.h"
+
+extern IRQ *irq;
 
 // transparent pixel color
 #define TRANSPARENT 0x8000
 
 PPU::PPU(Memory *mem, LcdStat *stat) : mem(mem), stat(stat)
 {
-    if (SDL_Init(SDL_INIT_VIDEO) < 0)
-    {
-        LOG(LogLevel::Error, "Could not initialize PPU");
-        exit(2);
-    }
+    assert(SDL_Init(SDL_INIT_VIDEO) >= 0);
 
     window = SDL_CreateWindow("discovery", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2, 0);
-
-    if (window == NULL)
-    {
-        LOG(LogLevel::Error, "Could not create window");
-        exit(2);
-    }
+    assert(window);
 
     // discovery icon logo
     SDL_Surface *logo = SDL_LoadBMP("assets/discovery.bmp");
-
-    if (logo == NULL)
-    {
-        LOG(LogLevel::Error, "Could not load discovery logo!\n");
-        exit(2);
-    }
+    assert(logo);
 
     SDL_SetWindowIcon(window, logo);
 
     final_screen = SDL_GetWindowSurface(window);
     original_screen = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32, 0, 0, 0, 0);
-
+    
     scale_rect.w = SCREEN_WIDTH  * 2;
     scale_rect.h = SCREEN_HEIGHT * 2;
     scale_rect.x = 0;
     scale_rect.y = 0;
 
-    oam_update = std::make_unique<std::stack<int>>();
+    // internal ptrs linked to memory's
+    palram = &mem->memory[MEM_PALETTE_RAM_START];
+    vram   = &mem->memory[MEM_VRAM_START];
+    oam    = &mem->memory[MEM_OAM_START];
 
-    Reset();
+    original_screen->pixels = (u32 *) screen_buffer;
+
+    // initialize color LUT
+    // algorithm adapted from
+    // https://github.com/samuelchen52/gbaemu &
+    // https://near.sh/articles/video/color-emulation
+    for (u16 i = 0; i < 0x8000; i++)
+    {
+        double lb = pow(((i & 31744) >> 10) / 31.0, 4.0);
+        double lg = pow(((i &   992) >>  5) / 31.0, 4.0);
+        double lr = pow(((i &    31) >>  0) / 31.0, 4.0);
+        int r = trunc(pow((  0 * lb +  50 * lg + 220 * lr) / 255, 1 / 2.2) * (0xffff / 280));
+        int g = trunc(pow(( 30 * lb + 230 * lg +  10 * lr) / 255, 1 / 2.2) * (0xffff / 280));
+        int b = trunc(pow((220 * lb +  10 * lg +  10 * lr) / 255, 1 / 2.2) * (0xffff / 280));
+
+        color_lut[i] = r << 16 | g << 8 |  b;
+        color_lut[i + 32768] = r << 16 | g << 8 |  b;
+    }
+
+    reset();
 }
 
 PPU::~PPU()
@@ -65,7 +76,7 @@ PPU::~PPU()
     SDL_Quit();
 }
 
-void PPU::Reset()
+void PPU::reset()
 {
     cycles         = 0;
     scanline       = 0;
@@ -114,10 +125,9 @@ void PPU::tick()
         // fire HBlank interrupt if necessary
         if (stat->dispstat.hbi)
         {
-            mem->memory[REG_IF] |= IRQ_HBLANK;
+            irq->raise(InterruptOccasion::HBLANK);
             //LOG(LogLevel::Debug, "HBlank interrupt\n");
         }
-
 
         // check for DMA HBlank requests
         // TODO - Don't fire DMA Hblank in VBlank
@@ -142,8 +152,8 @@ void PPU::tick()
             // fire Vblank interrupt if necessary
             if (stat->dispstat.vbi)
             {
+                irq->raise(InterruptOccasion::VBLANK);
                 //LOG(LogLevel::Debug, "VBlank interrupt\n");
-                mem->memory[REG_IF] |= IRQ_VBLANK;
             }
 
             // check for DMA VBLANK requests
@@ -203,17 +213,15 @@ void PPU::tick()
             // scanline interrupt is triggered if requested
             if (stat->dispstat.vci)
             {
-                mem->memory[REG_IF] |= IRQ_VCOUNT;
-                //std::cout << "Scanline interrupt\n";
+                irq->raise(InterruptOccasion::VCOUNT);
+                // std::cout << "Scanline interrupt\n";
             }
 
         }
 
         // scanline is not equal to trigger value, reset this bit
         else
-        {
             stat->dispstat.vcs = 0;
-        }
 
         cycles = 0;
         stat->dispstat.in_hBlank = false;
@@ -224,19 +232,8 @@ void PPU::render()
 {
     //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
 
-    // copy pixel buffer over to surface pixels
-    if (SDL_MUSTLOCK(final_screen))
-        SDL_LockSurface(final_screen);
-
-    u32 *screen_pixels = (u32 *) original_screen->pixels;
-
-    std::memcpy(screen_pixels, screen_buffer, sizeof(screen_buffer));
-
-    if (SDL_MUSTLOCK(final_screen))
-        SDL_UnlockSurface(final_screen);
-
     // scale screen buffer
-    SDL_BlitScaled(original_screen, NULL, final_screen, &scale_rect);
+    SDL_BlitScaled(original_screen, nullptr, final_screen, &scale_rect);
 
     // draw final_screen pixels on screen
     SDL_UpdateWindowSurface(window);
@@ -272,95 +269,72 @@ void PPU::render()
 void PPU::renderScanline()
 {
     // index 0 in BG palette
-    backdrop_color = util::u16ToU32Color(mem->read16Unsafe(MEM_PALETTE_RAM_START));
+    backdrop_color = u16ToU32Color(palram[1] << 8 | palram[0]);
 
     // "zero" scanline buffer with backdrop color
     for (int i = 0; i < SCREEN_WIDTH; ++i)
+    {
         scanline_buffer[i] = backdrop_color;
+        objwin_scanline_buffer[i] = 0;
+    }
+
+    // update visible objs and obj window
+    if (stat->dispcnt.obj_enabled)
+        updateAttr();
+        
 
     // init windows if enabled
     if (stat->dispcnt.win_enabled != 0)
         composeWindow();
-
-    // render bg
-    switch (stat->dispcnt.mode)
+    
+    // prepare enabled backgrounds to be rendered
+    for (int priority = 3; priority >= 0; --priority)
     {
-        case 0: // reg bg 0-3
-            // for (int i = 3; i >= 0; --i) // bg0 - bg3
-            // {
-            //     if (stat->bgcnt[i].enabled)
-            //         RenderScanlineText(i);
-            // }
-            for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
+        for (int bg = 3; bg >= 0; --bg)
+        {
+            if (stat->bgcnt[bg].enabled && stat->bgcnt[bg].priority == priority)
             {
-                for (int i = 3; i >= 0; --i) // bg0 - bg3
+                switch (stat->dispcnt.mode)
                 {
-                    if (stat->bgcnt[i].enabled && stat->bgcnt[i].priority == priority)
-                    {
-                        renderScanlineText(i);
-                    }
+                    case 0:
+                        renderScanlineText(bg);
+                        break;
+                    
+                    case 1:
+                        if (bg == 0 || bg == 1)
+                            renderScanlineText(bg);
+                        else if (bg == 2)
+                            renderScanlineAffine(bg);
+                        break;
+
+                    case 2:
+                        if (bg == 2 || bg == 3)
+                            renderScanlineAffine(bg);
+                        break;
+
+                    case 3:
+                    case 4:
+                    case 5:
+                        renderScanlineBitmap(stat->dispcnt.mode);
+                        break;
                 }
             }
+        }
 
-            break;
-        case 1: // reg bg 0-1, aff bg 2
-            // if (stat->bgcnt[2].enabled) RenderScanlineAffine(2);
-            // if (stat->bgcnt[1].enabled) RenderScanlineText(1);
-            // if (stat->bgcnt[0].enabled) RenderScanlineText(0);
-            for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
-            {
-                for (int i = 2; i >= 0; --i) // bg0 - bg2
-                {
-                    if (stat->bgcnt[i].enabled && stat->bgcnt[i].priority == priority)
-                    {
-                        switch (i)
-                        {
-                            case 0:
-                            case 1:
-                                renderScanlineText(i);
-                                break;
-                            case 2:
-                                renderScanlineAffine(i);
-                                break;
-                            default: // should never happen
-                                std::cerr << "Error: trying to draw invalid background in mode 1: " << i << "\n";
-                        }
-                    }
-                }
-            }
-
-            break;
-        case 2: // aff bg 2-3
-            // if (stat->bgcnt[3].enabled) RenderScanlineAffine(3);
-            // if (stat->bgcnt[2].enabled) RenderScanlineAffine(2);
-            for (int priority = 3; priority >= 0; --priority) // draw highest priority first, lower priorities drawn on top
-            {
-                for (int i = 3; i >= 2; --i) // bg3 - bg2
-                {
-                    if (stat->bgcnt[i].enabled && stat->bgcnt[i].priority == priority)
-                    {
-                       renderScanlineAffine(i);
-                    }
-                }
-            }
-
-            break;
-        case 3:
-        case 4:
-        case 5:
-            renderScanlineBitmap(stat->dispcnt.mode);
-            break;
+        while (!oam_render[priority].empty())
+        {
+            renderScanlineObj(oam_render[priority].top());
+            oam_render[priority].pop();
+        }
     }
 
-    // render sprites
-    if (stat->dispcnt.obj_enabled)
-    {
-        // update objs list
-        updateAttr();
-        renderObj();
-        //std::memcpy(&screen_buffer[scanline * SCREEN_WIDTH], obj_scanline_buffer, sizeof(obj_scanline_buffer));
-    }
+    // TODO - just keep these on for a bit until I know this works fine
+    assert(oam_render[0].empty());
+    assert(oam_render[1].empty());
+    assert(oam_render[2].empty());
+    assert(oam_render[3].empty());
 
+    obj_in_objwin = false;
     std::memcpy(&screen_buffer[scanline], scanline_buffer, sizeof(scanline_buffer));
 }
 
@@ -395,7 +369,7 @@ void PPU::renderScanlineText(int bg)
     int screenblock, screenentry, se_index;
     int tile_id, hflip, vflip, palbank; // screenentry properties
     int pixel;
-    u32 sb_addr, tile_addr;
+    u32 tile_addr;
 
     // used for vflip / hflip
     int grid_x, grid_y;
@@ -411,13 +385,12 @@ void PPU::renderScanlineText(int bg)
         tile_x = map_x / 8; // 8 px per tile
 
         screenblock = bgcnt.sbb + ((tile_y / 32) * pitch + (tile_x / 32));
-        sb_addr = MEM_VRAM_START + SCREENBLOCK_LEN * (bgcnt.sbb);
         se_index = screenblock * 1024 + (tile_y % 32) * 32 + (tile_x % 32);
 
-        screenentry = mem->read16(MEM_VRAM_START + 2 * se_index);
+        screenentry = vram[se_index * 2 + 1] << 8 | vram[se_index * 2];
         tile_id = screenentry >>  0 & 0x3FF;
-        hflip  = screenentry >> 10 & 0x1;
-        vflip  = screenentry >> 11 & 0x1;
+        hflip   = screenentry >> 10 & 0x1;
+        vflip   = screenentry >> 11 & 0x1;
 
         grid_x = map_x % 8;
         grid_y = map_y % 8;
@@ -432,19 +405,18 @@ void PPU::renderScanlineText(int bg)
         {
             palbank = screenentry >> 12 & 0xF;
 
-            tile_addr = (MEM_VRAM_START + bgcnt.cbb * CHARBLOCK_LEN) + 0x20 * tile_id;
+            tile_addr = bgcnt.cbb * CHARBLOCK_LEN + 0x20 * tile_id;
             pixel = getBGPixel4BPP(tile_addr, palbank, grid_x, grid_y);
         }
 
         else // 8BPP
         {
-            tile_addr = (MEM_VRAM_START + bgcnt.cbb * CHARBLOCK_LEN) + 0x40 * tile_id;
+            tile_addr = bgcnt.cbb * CHARBLOCK_LEN + 0x40 * tile_id;
             pixel = getBGPixel8BPP(tile_addr, grid_x, grid_y);
         }
 
-
         if (pixel != TRANSPARENT)
-            scanline_buffer[x] = util::u16ToU32Color(pixel);
+            scanline_buffer[x] = u16ToU32Color(pixel);
     }
 
 }
@@ -510,7 +482,7 @@ void PPU::renderScanlineAffine(int bg)
     int pixel;
     u32 tile_addr;
 
-    for (int x = bgcnt.minx; x < bgcnt.miny; ++x)
+    for (int x = bgcnt.minx; x < bgcnt.maxx; ++x)
     {
         // layer is in winout & not winin
         if (bgcnt.in_winout && !bgcnt.in_winin && !isInWinOut(x, scanline))
@@ -535,50 +507,49 @@ void PPU::renderScanlineAffine(int bg)
         }
 
         // no wrap
-        else
-        {
-            // transformmed coordinate is out of bounds
-            if (px >= width || py >= height) continue;
-            if (px < 0      || py < 0)       continue;
-        }
+        // transformmed coordinate is out of bounds
+        if (px >= width || py >= height) continue;
+        if (px < 0      || py < 0)       continue;
+
 
         map_x = px;
         map_y = py;
         tile_x = map_x / 8; // 8 px per tile
         tile_y = map_y / 8;
 
-        se_index = mem->read8((MEM_VRAM_START + bgcnt.sbb * SCREENBLOCK_LEN) + tile_y * (width / 8) + tile_x);
-        tile_addr = (MEM_VRAM_START + bgcnt.cbb * CHARBLOCK_LEN) + (se_index * 0x40);
+        se_index  = vram[bgcnt.sbb * SCREENBLOCK_LEN + tile_y * (width / 8) + tile_x];
+        tile_addr = bgcnt.cbb * CHARBLOCK_LEN + se_index * 0x40;
 
         // 8BPP only
         pixel = getBGPixel8BPP(tile_addr, map_x % 8, map_y % 8);
 
         if (pixel != TRANSPARENT)
-            scanline_buffer[x] = util::u16ToU32Color(pixel);
+            scanline_buffer[x] = u16ToU32Color(pixel);
     }
 }
 
 // render the current scanline for bitmap modes
 void PPU::renderScanlineBitmap(int mode)
 {
-    u8 palette_index;
+    u8  palette_index;
     u16 pixel;
     u32 pal_ptr;
 
     switch (mode)
     {
         case 3:
-            pal_ptr = MEM_VRAM_START + (scanline * SCREEN_WIDTH * sizeof(u16));
+            pal_ptr = scanline * SCREEN_WIDTH * 2;
 
             for (int i = 0; i < SCREEN_WIDTH; ++i)
             {
-                pixel = mem->read16Unsafe(pal_ptr); pal_ptr += 2;
-                scanline_buffer[i] = util::u16ToU32Color(pixel);
+                pixel = vram[pal_ptr + 1] << 8 | vram[pal_ptr];
+                pal_ptr += 2;
+                scanline_buffer[i] = u16ToU32Color(pixel);
             }
             break;
 
         case 4:
-            pal_ptr = MEM_VRAM_START + (scanline * SCREEN_WIDTH);
+            pal_ptr = scanline * SCREEN_WIDTH;
 
             // page 2 starts at 0x600A000
             if (stat->dispcnt.ps)
@@ -586,18 +557,20 @@ void PPU::renderScanlineBitmap(int mode)
 
             for (int i = 0; i < SCREEN_WIDTH; ++i)
             {
-                palette_index = mem->read8Unsafe(pal_ptr++);
-                // multiply by sizeof(u16) because each entry in palram is 2 bytes
-                pixel = mem->read16Unsafe(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
-                scanline_buffer[i] = util::u16ToU32Color(pixel);
+                // multiply by 2 because each entry in palram is 2 bytes
+                palette_index = vram[pal_ptr++] * 2;
+                pixel = palram[palette_index + 1] << 8 | palram[palette_index];
+                scanline_buffer[i] = u16ToU32Color(pixel);
             }
 
             break;
 
         case 5:
-            if (scanline >= 128) return; // mode 5 has 160 x 128 resolution
+            // mode 5 has 160 x 128 resolution
+            if (scanline >= 128)
+                return;
 
-            pal_ptr = MEM_VRAM_START + (scanline * 160);
+            pal_ptr = scanline * 160;
 
             // page 2 starts at 0x600A000
             if (stat->dispcnt.ps)
@@ -605,10 +578,10 @@ void PPU::renderScanlineBitmap(int mode)
 
             for (int i = 0; i < 160; ++i)
             {
-                palette_index = mem->read8Unsafe(pal_ptr++);
-                // multiply by sizeof(u16) because each entry in palram is 2 bytes
-                pixel = mem->read16Unsafe(MEM_PALETTE_RAM_START + (palette_index * sizeof(u16)));
-                scanline_buffer[i] = util::u16ToU32Color(pixel);
+                // multiply by 2 because each entry in palram is 2 bytes
+                palette_index = vram[pal_ptr++] * 2;
+                pixel = palram[palette_index + 1] << 8 | palram[palette_index];
+                scanline_buffer[i] = u16ToU32Color(pixel);
             }
 
             break;
@@ -616,111 +589,123 @@ void PPU::renderScanlineBitmap(int mode)
 }
 
 
-void PPU::renderObj()
+void PPU::renderScanlineObj(ObjAttr const &attr, bool obj_win)
 {
     u16 pixel;
 
-    // loop through all objs
-    while (!oam_update->empty())
-    {
-        auto *attr = &objs[oam_update->top()];
-        oam_update->pop();
+    // skip hidden object
+    if (attr.obj_mode == 2)
+        return;
 
-        // skip hidden object
-        if (attr->obj_mode == 2)
+    // obj exists outside current scanline
+    if (scanline < attr.qy0 - attr.hheight || scanline >= attr.qy0 + attr.hheight)
+        return;
+
+    // obj exists outside current object layer
+    if (scanline < objminy || scanline >= objmaxy)
+        return;
+    
+    int qx0 = attr.qx0;      // center of sprite screen space
+
+    // x, y coordinate of texture after transformation
+    int px, py;
+    int iy = -attr.hheight + (scanline - attr.y);
+
+
+    //LOG("{} {} {} {}\n", attr.x, attr.y, attr.hheight, attr.hwidth);
+    //LOG("{} {} {} {}\n", attr.x0, attr.y0, attr.hheight, attr.hwidth);
+
+    for (int ix = -attr.hwidth; ix < attr.hwidth; ++ix)
+    {
+        // objs in winout
+        if (obj_in_winout && !isInWinOut(qx0 + ix, scanline))
             continue;
 
-        // obj exists outside current scanline
-        if (scanline < attr->qy0 - attr->hheight || scanline >= attr->qy0 + attr->hheight)
-             continue;
+        px = ix + attr.hwidth;
+        py = iy + attr.hheight;
 
         // obj exists outside current object layer
-        if (scanline < objminy || scanline >= objmaxy)
+        if (qx0 + ix < objminx || qx0 + ix >= objmaxx)
             continue;
-        
-        int qx0 = attr->qx0;      // center of sprite screen space
 
-        // x, y coordinate of texture after transformation
-        int px, py;
-        int iy = -attr->hheight + (scanline - attr->y);
-
-
-        //LOG("{} {} {} {}\n", attr->x, attr->y, attr->hheight, attr->hwidth);
-        //LOG("{} {} {} {}\n", attr->x0, attr->y0, attr->hheight, attr->hwidth);
-
-        for (int ix = -attr->hwidth; ix < attr->hwidth; ++ix)
+        // transform affine & double wide affine
+        if (attr.obj_mode == 1 || attr.obj_mode == 3)
         {
-            // objs in winout
-            if (obj_in_winout && !isInWinOut(qx0 + ix, scanline))
-                continue;
+            px = attr.pa * ix + attr.pb * iy + attr.px0;
+            py = attr.pc * ix + attr.pd * iy + attr.py0;
+        }
 
-            px = ix + attr->hwidth;
-            py = iy + attr->hheight;
+        // horizontal / vertical flip
+        if (attr.h_flip) px = attr.width  - px - 1;
+        if (attr.v_flip) py = attr.height - py - 1;
+        
+        // transformed coordinate is out of bounds
+        if (px >= attr.width || py  >= attr.height) continue;
+        if (px       < 0     || py  < 0           ) continue;
+        if (qx0 + ix < 0     || qx0 + ix >= 240   ) continue;
 
-            // obj exists outside current object layer
-            if (qx0 + ix < objminx || qx0 + ix >= objmaxx)
-                continue;
+        
+        int tile_x  = px % 8; // x coordinate of pixel within tile
+        int tile_y  = py % 8; // y coordinate of pixel within tile
+        int block_x = px / 8; // x coordinate of tile in vram
+        int block_y = py / 8; // y coordinate of tile in vram
 
-            // transform affine & double wide affine
-            if (attr->obj_mode == 1 || attr->obj_mode == 3)
-            {
-                px = attr->pa * ix + attr->pb * iy + attr->px0;
-                py = attr->pc * ix + attr->pd * iy + attr->py0;
-            }
+        int tileno = attr.tileno;
+        int pixel;
 
-            // horizontal / vertical flip
-            if (attr->h_flip) px = attr->width  - px - 1;
-            if (attr->v_flip) py = attr->height - py - 1;
+        // 8bpp
+        if (attr.color_mode == 1)
+        {
+            // 1d
+            if (stat->dispcnt.obj_map_mode == 1)
+                tileno += block_y * (attr.width / 4);
+
+            // 2d
+            else
+                tileno = (tileno & ~1) + block_y * 32;
             
-            // transformed coordinate is out of bounds
-            if (px >= attr->width || py  >= attr->height) continue;
-            if (px       < 0      || py  < 0            ) continue;
-            if (qx0 + ix < 0      || qx0 + ix >= 240    ) continue;
+            tileno += block_x * 2;
 
+            pixel = getObjPixel8BPP(tileno * 32, tile_x, tile_y);
+        }
+
+        // 8bpp
+        else
+        {
+            // 1d
+            if (stat->dispcnt.obj_map_mode == 1)
+                tileno += block_y * (attr.width / 8);
+
+            // 2d
+            else
+                tileno += block_y * 32;
+
+            tileno += block_x;
             
-            int tile_x  = px % 8; // x coordinate of pixel within tile
-            int tile_y  = py % 8; // y coordinate of pixel within tile
-            int block_x = px / 8; // x coordinate of tile in vram
-            int block_y = py / 8; // y coordinate of tile in vram
+            pixel = getObjPixel4BPP(tileno * 32, attr.palbank, tile_x, tile_y);
+        }
+        
+        if (pixel != TRANSPARENT)
+        {
+            // don't render, but signify that this pixel serves in the object window mask
+            if (obj_win)
+                objwin_scanline_buffer[qx0 + ix] = 1;
 
-            int tileno = attr->tileno;
-            int pixel;
-
-            if (attr->color_mode == 1) // 8bpp
+            else
             {
-                if (stat->dispcnt.obj_map_mode == 1) // 1d
-                    tileno += block_y * (attr->width / 4);
+                // pixel doesn't fall in object window, so skip
+                if (obj_in_objwin && !objwin_scanline_buffer[qx0 + ix])
+                    continue;
 
-                else // 2d
-                    tileno = (tileno & ~1) + block_y * 32;
-                
-                tileno += block_x * 2;
-
-                pixel = getObjPixel8BPP(LOWER_SPRITE_BLOCK + tileno * 32, tile_x, tile_y);
+                scanline_buffer[qx0 + ix] = u16ToU32Color(pixel);
             }
-
-            else // 4bpp
-            {
-                if (stat->dispcnt.obj_map_mode == 1) // 1d
-                    tileno += block_y * (attr->width / 8);
-
-                else // 2d
-                    tileno += block_y * 32;
-
-                tileno += block_x;
-
-                pixel = getObjPixel4BPP(LOWER_SPRITE_BLOCK + tileno * 32, attr->palbank, tile_x, tile_y);
-            }
-            
-            if (pixel != TRANSPARENT)
-                scanline_buffer[qx0 + ix] = util::u16ToU32Color(pixel);
         }
     }
 }
 
 void PPU::updateAttr()
 {
-    u32 oam_ptr = MEM_OAM_START;
+    int attr_ptr = 0;
     u16 attr0, attr1, attr2;
 
     // loop through all objs
@@ -728,9 +713,9 @@ void PPU::updateAttr()
     {
         ObjAttr &obj = objs[i];
 
-        attr0 = mem->read16Unsafe(oam_ptr); oam_ptr += 2;
-        attr1 = mem->read16Unsafe(oam_ptr); oam_ptr += 2;
-        attr2 = mem->read16Unsafe(oam_ptr); oam_ptr += 4;
+        attr0 = oam[attr_ptr + 1] << 8 | oam[attr_ptr]; attr_ptr += 2;
+        attr1 = oam[attr_ptr + 1] << 8 | oam[attr_ptr]; attr_ptr += 2;
+        attr2 = oam[attr_ptr + 1] << 8 | oam[attr_ptr]; attr_ptr += 4;
 
         obj.y            = attr0 >>  0 & 0xFF;
         obj.obj_mode     = attr0 >>  8 & 0x3;
@@ -801,15 +786,15 @@ void PPU::updateAttr()
         // get affine matrix if necessary
         if (obj.obj_mode == 1 || obj.obj_mode == 3) // affine
         {
-            u32 matrix_ptr = MEM_OAM_START + obj.affine_index * 32; // each affine entry is 32 bytes across
+            u32 matrix_ptr = obj.affine_index * 32; // each affine entry is 32 bytes across
 
             // transform P matrix from 8.8f to float
             // P = [pa pb]
             //     [pc pd]
-            obj.pa = (s16) mem->read16(matrix_ptr +  0x6) / 256.0;
-            obj.pb = (s16) mem->read16(matrix_ptr +  0xE) / 256.0;
-            obj.pc = (s16) mem->read16(matrix_ptr + 0x16) / 256.0;
-            obj.pd = (s16) mem->read16(matrix_ptr + 0x1E) / 256.0;
+            obj.pa = (s16) (oam[matrix_ptr +  0x6 + 1] << 8 | oam[matrix_ptr +  0x6]) / 256.0;
+            obj.pb = (s16) (oam[matrix_ptr +  0xE + 1] << 8 | oam[matrix_ptr +  0xE]) / 256.0;
+            obj.pc = (s16) (oam[matrix_ptr + 0x16 + 1] << 8 | oam[matrix_ptr + 0x16]) / 256.0;
+            obj.pd = (s16) (oam[matrix_ptr + 0x1E + 1] << 8 | oam[matrix_ptr + 0x1E]) / 256.0;
 
             // double wide affine
             if (obj.obj_mode == 3)
@@ -828,14 +813,18 @@ void PPU::updateAttr()
 
         // add index to stack to be displayed
         if (obj.obj_mode != 2)
-            oam_update->push(i);
+            oam_render[obj.priority].push(obj);
+        
+        // add obj's non-transparent pixels to obj window
+        if (obj.gfx_mode == 2)
+            renderScanlineObj(obj, true);
     }
 }
 
 void PPU::composeWindow()
 {
     // win1 enabled
-    if (stat->dispcnt.win_enabled & 2)
+     if (stat->dispcnt.win_enabled & 2)
     {
         u16 win1v  = mem->read16Unsafe(REG_WIN1V);
         u16 win1h  = mem->read16Unsafe(REG_WIN1H);
@@ -882,7 +871,7 @@ void PPU::composeWindow()
         }
     }
 
-    // win0 enabled
+    // // win0 enabled
     if (stat->dispcnt.win_enabled & 1)
     {
         u16 win0v  = mem->read16Unsafe(REG_WIN0V);
@@ -930,7 +919,7 @@ void PPU::composeWindow()
         }
     }
 
-    // winout
+    // // winout
     u8 winoutcontent = mem->read16Unsafe(REG_WINOUT) & 0xFF;
 
     // check if bgs are in winout content
@@ -954,65 +943,108 @@ void PPU::composeWindow()
 
     // obj window enabled
     if (stat->dispcnt.win_enabled & 4)
-        LOG(LogLevel::Warning, "Object window is enabled\n");
+    {
+        // window content
+        u8 objwincontent = mem->read16Unsafe(REG_WINOUT) >> 8;
+        //std::cout << "Win obj enabled\n";
+
+        // check if bgs are in window content
+        // int mask;
+        // for (int i = 0; i < 4; ++i)
+        // {
+        //     mask = 1 << i;
+        //     if (win1content & mask)
+        //     {
+        //         stat->bgcnt[i].minx = window.left;
+        //         stat->bgcnt[i].maxx = window.right;
+        //         stat->bgcnt[i].miny = window.top;
+        //         stat->bgcnt[i].maxy = window.bottom;
+        //         stat->bgcnt[i].in_winin = true;
+        //     }
+        // }
+
+        // objs in objwin
+        if (objwincontent & 0x10)
+        {
+            // objminx        = window.left;
+            // objmaxx        = window.right;
+            // objminy        = window.top;
+            // objmaxy        = window.bottom;
+            obj_in_objwin  = true;
+        }
+    }
+   
 }
 
 inline u16 PPU::getObjPixel4BPP(u32 addr, int palbank, int x, int y)
 {
     addr += (y * 4) + (x / 2);
 
-    u16 palette_index = mem->read8(addr);
+    // add 0x10000 for lower sprite block
+    u8 palette_index = vram[addr + 0x10000];
 
     // use top nybble for odd x, even otherwise
-    if (x & 1) { palette_index >>= 4; }
+    if (x & 1)
+        palette_index >>= 4;
 
     palette_index &= 0xF;
 
     if (palette_index == 0)
         return TRANSPARENT;
 
-    return mem->read16(SPRITE_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
+    // add 0x200 for sprite palette
+    int idx = 0x200 + palette_index * 2 + palbank * PALBANK_LEN;
+
+    return palram[idx + 1] << 8 | palram[idx];
 }
 
 inline u16 PPU::getObjPixel8BPP(u32 addr, int x, int y)
 {
-    addr += (y * 8) + x;
+    addr += y * 8 + x;
 
-    u16 palette_index = mem->read8(addr);
+    // add 0x10000 for lower sprite block
+    u8 palette_index = vram[addr + 0x10000];
 
    if (palette_index == 0)
         return TRANSPARENT;
 
-    return mem->read16(SPRITE_PALETTE + palette_index * sizeof(u16));
+    // add 0x200 for sprite palette
+    int idx = 0x200 + palette_index * 2;
+    return palram[idx + 1] << 8 | palram[idx];
 }
 
 inline u16 PPU::getBGPixel4BPP(u32 addr, int palbank, int x, int y)
 {
     addr += (y * 4) + (x / 2);
 
-    u16 palette_index = mem->read8(addr);
+    u8 palette_index = vram[addr];
 
     // use top nybble for odd x, even otherwise
-    if (x & 1) { palette_index >>= 4; }
+    if (x & 1)
+        palette_index >>= 4;
 
     palette_index &= 0xF;
 
     if (palette_index == 0)
         return TRANSPARENT;
+    
+    int idx = palette_index * 2 + palbank * PALBANK_LEN;
 
-    return mem->read16(BG_PALETTE + palette_index * sizeof(u16) + (palbank * PALBANK_LEN));
+    return palram[idx + 1] << 8 | palram[idx];
 }
 
 inline u16 PPU::getBGPixel8BPP(u32 addr, int x, int y)
 {
     addr += (y * 8) + x;
 
-    u16 palette_index = mem->read8(addr);
+    u8 palette_index = vram[addr];
 
     if (palette_index == 0)
        return TRANSPARENT;
 
-    return mem->read16(BG_PALETTE + palette_index * sizeof(u16));
+    int idx = palette_index * 2;
+
+    return palram[idx + 1] << 8 | palram[idx];
 }
 
 // returns true if (x, y) is currently in winOut, true otherwise
@@ -1029,10 +1061,4 @@ bool PPU::isInWinOut(int x, int y)
     return true;
 }
 
-void PPU::printPalette()
-{
-    for (int i = 0; i < 256; i++)
-    {
-        LOG("{}: {:x}\n", i, mem->read16Unsafe(MEM_PALETTE_RAM_START + 2 * i));
-    }
-}
+inline u32 PPU::u16ToU32Color(u16 color_u16) { return color_lut[color_u16]; }

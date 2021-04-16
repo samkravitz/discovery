@@ -43,5 +43,5 @@ class Discovery
         void tick();
         void parseArgs();
         void printArgHelp();
-        void shutDown();
+        void shutdown();
 };

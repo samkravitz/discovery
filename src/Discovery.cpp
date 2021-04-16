@@ -12,6 +12,10 @@
 
 #include "Discovery.h"
 #include "util.h"
+#include "IRQ.h"
+
+// global IRQ handler
+IRQ *irq;
 
 int main(int argc, char **argv)
 {
@@ -63,6 +67,8 @@ Discovery::Discovery()
     cpu     = new Arm7Tdmi(mem);
     ppu     = new PPU(mem, stat);
     apu     = new APU(mem);
+
+    irq     = new IRQ();
 }
 
 void Discovery::gameLoop()
@@ -71,15 +77,13 @@ void Discovery::gameLoop()
     while (running)
     {
         // tick hardware (not cpu) if in halt state
-        while (mem->haltcnt)
-        {
-            this->tick();
+        if (mem->haltcnt)
+        {   
+            while ((irq->getIE() & irq->getIF()) == 0)
+                tick();
 
-            auto interrupts_enabled   = mem->read16Unsafe(REG_IE);
-            auto interrupts_requested = mem->read16Unsafe(REG_IF);
-
-            if (interrupts_enabled & interrupts_requested != 0)
-                mem->haltcnt = 0;
+            mem->haltcnt = 0;
+            cpu->handleInterrupt();
         }
 
         cpu->fetch();
@@ -98,7 +102,7 @@ void Discovery::gameLoop()
             this->tick();
     }
 
-    shutDown();
+    shutdown();
 }
 
 // clock hardware components
@@ -150,7 +154,7 @@ void Discovery::printArgHelp()
 	LOG("  Show help...\n");
 }
 
-void Discovery::shutDown()
+void Discovery::shutdown()
 {
     // free resources and shutdown
 	delete cpu;

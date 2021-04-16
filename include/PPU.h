@@ -12,7 +12,7 @@
 #include <SDL2/SDL.h>
 #include <iostream>
 #include <ctime>
-#include <memory>
+#include <functional>
 #include <stack>
 
 #include "Memory.h"
@@ -55,13 +55,18 @@ class PPU
         u8 scanline;
 
         void tick();
-        void Reset();
+        void reset();
 
     private:
         SDL_Window  *window;
         SDL_Surface *final_screen;
         SDL_Surface *original_screen;
-        SDL_Rect     scale_rect;
+        SDL_Rect    scale_rect;
+
+        // internal buffers linked from memory
+        u8 *palram;
+        u8 *vram;
+        u8 *oam;
 
         u8 frame; // counts 0 - 60
         u8 fps;
@@ -69,6 +74,7 @@ class PPU
 
         u32 scanline_buffer[SCREEN_WIDTH];
         u32 obj_scanline_buffer[SCREEN_WIDTH];
+        int objwin_scanline_buffer[SCREEN_WIDTH];
 
         u32 screen_buffer[SCREEN_HEIGHT][SCREEN_WIDTH];
 
@@ -90,10 +96,13 @@ class PPU
         int objmaxx;
         int objmaxy;
         int obj_in_winout;
+        int obj_in_objwin;
 
         // oam data structure
         struct ObjAttr
         {
+            int idx;
+
             // coordinate of top left of sprite
             int x, y;
 
@@ -128,17 +137,17 @@ class PPU
             float pd;
 
         } objs[NUM_OBJS]; // can support 128 objects
-
-        // holds the indeces of which objs need to be displayed
-        std::unique_ptr<std::stack<int>> oam_update;
+        
+        // holds the objs that need to be displayed
+        std::stack<ObjAttr> oam_render[4];
 
         // video mode renders
         void render();
-        void renderObj();
         void renderScanline();
         void renderScanlineText(int);
         void renderScanlineAffine(int);
         void renderScanlineBitmap(int);
+        void renderScanlineObj(ObjAttr const &, bool obj_win = false);
 
         void drawBackgroundReg(int);
         void drawBackgroundAffine(int);
@@ -152,5 +161,6 @@ class PPU
         void composeWindow();
         inline bool isInWinOut(int, int);
 
-        void printPalette();
+        u32 color_lut[0x10000];
+        inline u32 u16ToU32Color(u16);
 };

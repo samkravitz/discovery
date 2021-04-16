@@ -8,6 +8,9 @@
  * DESCRIPTION: Gamepad class
  */
 #include "Gamepad.h"
+#include "IRQ.h"
+
+extern IRQ *irq;
 
 // get current key state
 void Gamepad::poll()
@@ -40,43 +43,53 @@ void Gamepad::poll()
     keys.r     = state[SDL_SCANCODE_S]         ? 0 : 1;
     keys.l     = state[SDL_SCANCODE_A]         ? 0 : 1;
 
+    // quit discovery
     if (state[SDL_SCANCODE_ESCAPE])
         exit(0);
 
-    // // check for key interrupt
-    // u16 keycnt = mem->Read16Unsafe(REG_KEYCNT);
-    // if (keycnt >> 14 & 0x1) // key interrupts enabled
-    // {
-    //     u16 keys = keycnt & 0x3FF; // keys to check
+    if (keycnt.irq) // key interrupts enabled
+        checkInterrupt();
+        
+}
 
-    //     bool raise_interrupt = false;
-    //     if (keycnt >> 15) // use AND (raise if all keys are down)
-    //     {
-    //         // all keys to check are down (high)
-    //         if (keys == ~gamepad_result)
-    //             raise_interrupt = true;
-    //     }
+void Gamepad::checkInterrupt()
+{
+    // zero blank bits in keys just in case they're not
+    keys.blank = 0;
+    int keys_to_check = keycnt.raw & 0x3FF;
+    bool raise_interrupt = false; // interrupt condition
 
-    //     else // use OR (raise if any keys are down)
-    //     {
-    //         for (int i = 0; i < 10; ++i) // 10 keys
-    //         {
-    //             if ((keys >> i & 1) && (gamepad_result >> i & 1) == 0)
-    //             {
-    //                 raise_interrupt = true;
-    //                 break;
-    //             }
-    //         }
-    //     }
+    if (keycnt.condition == 1) // use AND (raise if all keys are down)
+    {
+        raise_interrupt = true;
+        for (int i = 0; i < 10; ++i) // 10 keys
+        {
+            if ((keys_to_check >> i & 1) && (keys.raw >> i & 1))
+            {
+                raise_interrupt = false;
+                break;
+            }
+        }
+    }
 
-    //     // raise keypad interrupt
-    //     if (raise_interrupt)
-    //     {
-    //         std::cout << "Raising gamepad interrupt\n";
-    //         u16 reg_if = mem->Read16Unsafe(REG_IF) | IRQ_KEYPAD;
-    //         mem->Write16Unsafe(REG_IF, reg_if);
-    //     }
-    // }
+    else // use OR (raise if any keys are down)
+    {
+        for (int i = 0; i < 10; ++i) // 10 keys
+        {
+            if ((keys_to_check >> i & 1) && (keys.raw >> i & 1) == 0)
+            {
+                raise_interrupt = true;
+                break;
+            }
+        }
+    }
+
+    // raise keypad interrupt
+    if (raise_interrupt)
+    {
+        LOG("Raising gamepad interrupt\n");
+        irq->raise(InterruptOccasion::KEYPAD);
+    }
 }
 
 void Gamepad::print()

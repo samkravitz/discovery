@@ -30,27 +30,9 @@ inline u16 bitseq(u16 val)
     return val;
 }
 
-inline u32 u16ToU32Color(u16 color_u16)
-{
-    u8 a = 0x1F;
-    u32 r, g, b;
-    u32 color = 0; // alpha value 255 ?
-
-    r = color_u16 & 0x1F; color_u16 >>= 5; // bits  0 - 5
-    g = color_u16 & 0x1F; color_u16 >>= 5; // bits  6 - 10
-    b = color_u16 & 0x1F; color_u16 >>= 5; // bits 11 - 15
-
-    return r << 19 | g << 11 | b << 3;
-}
-
 inline s8 signum(double val) 
 {
     if(std::isnan(val)) throw std::invalid_argument("Invalid argument passed to util::signum");
     else return (s8) (0. < val) - (val < 0.);
 }
 
-// inline bool pathExists(const std::string &path)
-// {
-// 	std::fstream fin(path);
-// 	return fin.fail();
-// }

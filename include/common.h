@@ -176,18 +176,20 @@ enum class ThumbInstruction
     UND   // undefined
 };
 
-// IRQ bits
-constexpr u32 IRQ_VBLANK  = 1 << 0;
-constexpr u32 IRQ_HBLANK  = 1 << 1;
-constexpr u32 IRQ_VCOUNT  = 1 << 2;
-constexpr u32 IRQ_TIMER0  = 1 << 3;
-constexpr u32 IRQ_TIMER1  = 1 << 4;
-constexpr u32 IRQ_TIMER2  = 1 << 5;
-constexpr u32 IRQ_TIMER3  = 1 << 6;
-constexpr u32 IRQ_COM     = 1 << 7;
-constexpr u32 IRQ_DMA0    = 1 << 8;
-constexpr u32 IRQ_DMA1    = 1 << 9;
-constexpr u32 IRQ_DMA2    = 1 << 10;
-constexpr u32 IRQ_DMA3    = 1 << 11;
-constexpr u32 IRQ_KEYPAD  = 1 << 12;
-constexpr u32 IRQ_GAMEPAK = 1 << 13;
+enum class InterruptOccasion
+{
+    VBLANK,
+    HBLANK,
+    VCOUNT,
+    TIMER0,
+    TIMER1,
+    TIMER2,
+    TIMER3,
+    COM,
+    DMA0,
+    DMA1,
+    DMA2,
+    DMA3,
+    KEYPAD,
+    GAMEPAK,
+};

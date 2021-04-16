@@ -9,6 +9,7 @@
  */
 #include "Memory.h"
 #include "IRQ.h"
+#include "Flash.h"
 
 #include <fstream>
 #include <iostream>

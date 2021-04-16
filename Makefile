@@ -4,12 +4,12 @@ CXXFLAGS = -g -std=c++2a -I $(INCLUDEDIR)
 BIN = bin/
 SOURCEDIR = src/
 INCLUDEDIR = include/
-OBJECTS = Arm7Tdmi.o util.o Memory.o PPU.o Gamepad.o Timer.o IRQ.o APU.o HandlerArm.o HandlerThumb.o swi.o
+OBJECTS = Arm7Tdmi.o util.o Memory.o PPU.o Gamepad.o Timer.o IRQ.o APU.o HandlerArm.o HandlerThumb.o swi.o Flash.o
 VPATH = $(SOURCEDIR)
 TESTS = $(SOURCEDIR)tests/tests.cpp $(SOURCEDIR)tests/instruction_tests.cpp $(SOURCEDIR)tests/data_processing_tests.cpp
 
 # Use compiler optimizations
-OPT = 1
+OPT = 0
 
 ifeq (1, $(OPT))
 CXXFLAGS += -Ofast

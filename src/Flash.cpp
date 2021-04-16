@@ -1,5 +1,13 @@
 #include "Flash.h"
 
+#include <cassert>
+
+Flash::Flash(int size) :
+    Backup(size)
+{
+    assert(size == 65536 || size == 131072);
+}
+
 void Flash::write(u32 address, u8 value)
 {
     // switch (address)
@@ -14,4 +22,9 @@ void Flash::write(u32 address, u8 value)
     //             flash_state = CMD_2;
 
     // }
+}
+
+u8 Flash::read(u32 address)
+{
+    return 0;
 }

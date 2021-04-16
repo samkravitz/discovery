@@ -7,7 +7,7 @@
 class Backup
 {
 public:
-    Backup(int size) :
+    explicit Backup(int size) :
         size(size)
     {
         backup_type = NONE;

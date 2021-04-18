@@ -962,6 +962,7 @@ void PPU::composeWindow()
         //         stat->bgcnt[i].in_winin = true;
         //     }
         // }
+        
 
         // objs in objwin
         if (objwincontent & 0x10)

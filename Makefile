@@ -5,7 +5,7 @@ BIN = bin/
 SOURCEDIR = src/
 INCLUDEDIR = include/
 BACKUPDIR = $(INCLUDEDIR)backup
-OBJECTS = Arm7Tdmi.o util.o Memory.o PPU.o Gamepad.o Timer.o IRQ.o APU.o HandlerArm.o HandlerThumb.o swi.o Flash.o None.o
+OBJECTS = Arm7Tdmi.o util.o Memory.o PPU.o Gamepad.o Timer.o IRQ.o APU.o HandlerArm.o HandlerThumb.o swi.o Flash.o None.o SRAM.o
 LIST=$(addprefix $(BIN), $(OBJECTS))
 VPATH = $(SOURCEDIR) $(SOURCEDIR)backup
 

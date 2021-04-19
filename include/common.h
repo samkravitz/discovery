@@ -194,7 +194,7 @@ enum class InterruptOccasion
     GAMEPAK,
 };
 
-enum BackupType
+enum class BackupType
 {
     SRAM,
     EEPROM,

@@ -11,6 +11,7 @@
 #include "IRQ.h"
 #include "Flash.h"
 #include "None.h"
+#include "SRAM.h"
 
 #include <fstream>
 #include <iostream>
@@ -124,7 +125,7 @@ bool Memory::loadRom(std::string const &name)
     {
         LOG(LogLevel::Warning, "Cart RAM SRAM detected\n");
         ram_size    = 0x8000;
-        cart_ram    = new u8[ram_size]();
+        backup = new SRAM(0x8000);
     }
 
     // no cart RAM detected

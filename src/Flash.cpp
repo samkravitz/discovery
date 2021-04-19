@@ -1,5 +1,7 @@
 #include "Flash.h"
+#include "log.h"
 
+#include <cstring>
 #include <cassert>
 
 Flash::Flash(int size) :
@@ -13,29 +15,102 @@ Flash::Flash(int size) :
         case 131072: flash_size = SIZE_128K; break;
     }
 
+    // uniitialized memory is 0xFF
+    std::memset(cart_ram, 0xFF, size);
+
     state = READY;
 }
 
-void Flash::write(u32 address, u8 value)
+void Flash::write(u32 index, u8 value)
 {
-    // switch (address)
-    // {
-    //     case 0xE005555:
-    //         if (value == 0xAA && flash_state == READY)
-    //             flash_state = CMD_1;
-    //         break;
-        
-    //     case 0xE002AAA:
-    //         if (value == 0x55 && flash_state == CMD_1)
-    //             flash_state = CMD_2;
+    // First check for single write
+    if (state == PREPARE_TO_WRITE)
+    {
+        LOG("WRITING\n");
+        // TODO - add memory bank
+        cart_ram[index] = value;
+        state = READY;
+        return;
+    }
 
-    // }
+    // Erase 4K sector
+    if (state == ERASE_4K && value == 0x30)
+    {
+        u8 n = index >> 12 & 0xF; // page to be erased
+        int i = n * 0x400;
+        std::memset(&cart_ram[i], 0xFF, 0x1000);
+        state = READY;
+        return;
+    }
+
+    // Check for change command
+    if (index == 0x5555)
+    {
+        switch (value)
+        {
+            case 0xAA:
+                if (state == READY)
+                    state = CMD_1;
+                break;
+
+            case 0x90: // Enter "Chip identification mode"
+                if (state == CMD_2)
+                    state = CHIP_ID;
+                break;
+            
+            case 0xF0: // Exit "Chip identification mode"
+                if (state == CHIP_ID)
+                    state = READY;
+                break;
+            
+            case 0x80: // Prepare to receive erase command
+                if (state == CMD_2)
+                    state = PREPARE_TO_ERASE;
+                break;
+            
+            case 0x10: // Erase entire chip
+                if (state == PREPARE_TO_ERASE)
+                {
+                    std::memset(cart_ram, 0xFF, size);
+                    state = READY;
+                }
+                break;
+            
+            case 0x30: // Erase 4K sector
+                if (state == PREPARE_TO_ERASE)
+                {
+                    ;
+                    state = READY;
+                }
+                break;
+            
+            case 0xA0: // Prepare to write single data byte
+                if (state == CMD_2)
+                    state = PREPARE_TO_WRITE;
+                break;
+            
+            case 0xB0: // Set memory bank
+                if (flash_size == SIZE_128K && state == CMD_2)
+                    state = SET_MEMORY_BANK;
+                break;
+            
+            default: // reset to ready
+                state = READY;
+        }
+    }
+        
+    else if (index == 0x2AAA)
+    {
+        if (value == 0x55 && state == CMD_1)
+                state = CMD_2;
+    }
+
 }
 
-u8 Flash::read(u32 address)
+u8 Flash::read(u32 index)
 {
     // read device ID
-    if (address == 0xE000000)
+    if (index == 0 && state == CHIP_ID)
     {
         switch (flash_size)
         {
@@ -44,7 +119,8 @@ u8 Flash::read(u32 address)
         }
     }
 
-    if (address == 0xE000001)
+    // read device ID
+    if (index == 1 && state == CHIP_ID)
     {
         switch (flash_size)
         {
@@ -53,5 +129,5 @@ u8 Flash::read(u32 address)
         }
     }
     
-    return 0;
+    return cart_ram[index];
 }

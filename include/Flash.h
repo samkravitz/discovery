@@ -14,9 +14,18 @@ public:
 private:
     enum FlashState
     {
+        // Prepare for command states
         READY,
         CMD_1,
         CMD_2,
+
+        // command states
+        CHIP_ID,
+        PREPARE_TO_ERASE,
+        ERASE_ENTIRE,
+        ERASE_4K,
+        PREPARE_TO_WRITE,
+        SET_MEMORY_BANK,
     } state;
 
     enum FlashSize

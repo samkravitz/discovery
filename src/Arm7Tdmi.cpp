@@ -216,7 +216,7 @@ void Arm7Tdmi::execute(u32 instruction)
                 case ArmInstruction::SWP:  singleDataSwap(instruction);       break;
                 case ArmInstruction::INT:  softwareInterruptArm(instruction); break;
                 default:
-                    LOG(LogLevel::Error, "Cannot execute instruction {}, pc {}\n", instruction, registers.r15);
+                    LOG(LogLevel::Error, "Cannot execute instruction {:x}, pc {:x}\n", (int) instruction, (int) registers.r15);
                     registers.r15 &= ~0x3;
             }
             break;

@@ -888,27 +888,28 @@ void Arm7Tdmi::conditionalBranch(u16 instruction)
 
 void Arm7Tdmi::softwareInterruptThumb(u16 instruction)
 {
-    //LOG(LogLevel::Debug, "Thumb SWI: {}\n", instruction & 0xFF);
+    //LOG(LogLevel::Debug, "Thumb SWI: {:x}\n", (int) (instruction & 0xFF));
+    last_read_bios = bios_read_state[3];
+    pipeline_full = false;
 
     // HLE BIOS calls
     // bits 7 - 0 determine which interrupt
-    // switch (instruction & 0xFF)
-    // {
-    //     case 0x0:  SwiSoftReset();        return;
-    //     case 0x1:  SwiRegisterRamReset(); return;
-    //     //case 0x5:  SwiVBlankIntrWait(); return;
-    //     case 0x6:  SwiDivision();         return;
-    //     case 0x8:  SwiSqrt();             return;
-    //     case 0xA:  SwiArctan2();          return;
-    //     case 0xB:  SwiCpuSet();           return;
-    //     case 0xF:  SwiObjAffineSet();     return;
-    //     case 0x10: SwiBitUnpack();        return;
-    //     case 0x15:
-    //         //swi_RLUnCompVRAM();
-    //         break;
-    //     default:
-    //         std::cout << "Unknown SWI code: " << std::hex << (instruction & 0xFF) << "\n";
-    // }
+    switch (instruction & 0xFF)
+    {
+        //case 0x0:  SwiSoftReset();        return;
+        //case 0x1:  SwiRegisterRamReset(); return;
+        //case 0x5:  SwiVBlankIntrWait();   return;
+        //case 0x6:  swiDivision();         return;
+        //case 0x8:  SwiSqrt();             return;
+        //case 0xA:  SwiArctan2();          return;
+        case 0xB:  swiCpuSet();             return;
+        //case 0xF:  SwiObjAffineSet();     return;
+        //case 0x10: SwiBitUnpack();        return;
+        //case 0x15: swi_RLUnCompVRAM();    return
+        //default:
+        // std::cout << "Unknown SWI code: " << std::hex << (instruction & 0xFF) << "\n";
+    }
+
 
     // LLE BIOS calls - handle thru BIOS
     u32 old_cpsr = getRegister(cpsr);

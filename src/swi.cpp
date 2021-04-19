@@ -195,91 +195,54 @@ void Arm7Tdmi::swiCpuSet()
     u32 dest_ptr = getRegister(r1);
     u32 mode     = getRegister(r2);
 
-    u32 wordcount = mode & 0x1FFFFF; // bits 0-20
-    u8 fill       = mode >> 24 & 1; // bit 24 (1 == fill, 0 == copy)
-    u8 datasize   = (mode >> 26 & 1) == 0 ? 2 : 4;
+    u32 count   = mode & 0x1FFFFF; // bits 0-20
+    u8 fill     = mode >> 24 & 1;  // bit 24 (1 == fill, 0 == copy)
+    u8 datasize = (mode >> 26 & 1) == 0 ? 2 : 4;
 
-    u32 val32;
-    u16 val16;
+    // align src and dest addr
+    u32 mask;
+    if (datasize == 2)
+        mask = ~0x1;
+    else
+        mask = ~0x3;
+    
+    src_ptr  &= mask;
+    dest_ptr &= mask;
 
     // memfill
     if (fill == 1)
     {
-        // get word / halfword
-        if (datasize == 2)
+        u32 temp = mem->read32(src_ptr);
+        while (count--)
         {
-            // align src and dest addr
-            src_ptr  &= ~0x1;
-            dest_ptr &= ~0x1;
-
-            val16 = mem->read16(src_ptr);
-            for (int i = 0; i < wordcount; ++i)
-            {
-                mem->write16(dest_ptr, val16);
-                dest_ptr += datasize;
-            }
-        }
-
-        else
-        {
-            // align src and dest addr
-            src_ptr  &= ~0x3;
-            dest_ptr &= ~0x3;
-
-            val32 = mem->read32(src_ptr);
-            for (int i = 0; i < wordcount; ++i)
-            {
-                mem->write32(dest_ptr, val32);
-                dest_ptr += datasize;
-            } 
+            if (datasize == 2)
+                mem->write16(dest_ptr, temp);
+            else
+                mem->write32(dest_ptr, temp);
+            
+            dest_ptr += datasize;
         }
     }
 
     // memcpy
     else
     {
-        for (int i = 0; i < datasize; ++i)
+        while (count--)
         {
-            // halfword transfer
             if (datasize == 2)
-            {
-                // align src and dest addr
-                src_ptr  &= ~0x1;
-                dest_ptr &= ~0x1;
-
-                for (int i = 0; i < wordcount; ++i)
-                {
-                    val16 = mem->read16(src_ptr);
-                    mem->write16(dest_ptr, val16);
-                    dest_ptr += datasize;
-                    src_ptr += datasize;
-                }
-            }
-                
+                mem->write16(dest_ptr, mem->read16(src_ptr));
             else
-            {
-                // align src and dest addr
-                src_ptr  &= ~0x3;
-                dest_ptr &= ~0x3;
+                mem->write32(dest_ptr, mem->read32(src_ptr));
+            
+            dest_ptr += datasize;
+            src_ptr += datasize;
 
-                for (int i = 0; i < wordcount; ++i)
-                {
-                    val32 = mem->read32(src_ptr);
-                    mem->write32(dest_ptr, val32);
-                    dest_ptr += datasize;
-                    src_ptr += datasize;
-                }
-            }
         }
     }
 
-    // std::cout << "SWI CpuSet\n";
-    // std::cout << "Src Ptr: "   << std::hex << src_ptr << "\n";
-    // std::cout << "Dest Ptr: "  << std::hex << dest_ptr << "\n";
-    // std::cout << "Mode: "      << std::hex << mode << "\n";
-    // std::cout << "Wordcount: " << std::hex << wordcount << "\n";
-    // std::cout << "fill: "      << std::hex << (int) fill << "\n";
-    // std::cout << "datasize: "  << std::hex << (int) datasize << "\n";
+    // write back registers
+    setRegister(0, src_ptr);
+    setRegister(1, dest_ptr);
 }
 
 /*

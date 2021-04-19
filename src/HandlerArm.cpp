@@ -1014,7 +1014,7 @@ void Arm7Tdmi::singleDataSwap(u32 instruction)
 
 void Arm7Tdmi::softwareInterruptArm(u32 instruction)
 {
-    //LOG(LogLevel::Debug, "ARM SWI: {}\n", instruction >> 16 & 0xFF);
+    LOG(LogLevel::Debug, "ARM SWI: {:x}\n", (int) (instruction >> 16 & 0xFF));
 
     // LLE BIOS calls - handle thru BIOS
     u32 old_cpsr = getRegister(cpsr);
@@ -1024,40 +1024,6 @@ void Arm7Tdmi::softwareInterruptArm(u32 instruction)
     updateSPSR(old_cpsr, false); // move up
     setRegister(r15, 0x08);
     pipeline_full = false;
-
-    last_read_bios = bios_read_state[3];
-
-    // bits 23 - 16 determine which interrupt
-    // switch (instruction >> 16 & 0xFF)
-    // {
-    //    case 0x0:
-    //         swi_softReset();
-    //         break;
-    //     case 0x1:
-    //         swi_registerRamReset();
-    //         break;
-    //     case 0x6:
-    //         swi_division();
-    //         break;
-    //     case 0x8:
-    //         swi_sqrt();
-    //         break;
-    //     case 0xA:
-    //         swi_arctan2();
-    //         break;
-    //     case 0xB:
-    //         swi_cpuset();
-    //         break;
-    //     case 0xF:
-    //         swi_objAffineset();
-    //         break;
-    //     case 0x10:
-    //         swi_bitUnpack();
-    //         break;
-        
-    //     default:
-    //         std::cout << "Unknown SWI code: " << std::hex << (instruction >> 16 & 0xFF) << "\n";
-    // }
 
     // cycles: 2S + 1N
     tick(1, 2, 0);

@@ -10,6 +10,7 @@
 #include "Memory.h"
 #include "IRQ.h"
 #include "Flash.h"
+#include "None.h"
 
 #include <fstream>
 #include <iostream>
@@ -130,9 +131,8 @@ bool Memory::loadRom(std::string const &name)
     if (ram_size == 0)
     {
         LOG(LogLevel::Warning, "No cart RAM detected!\n");
-        //backup = new SRAM(0x8000);
+        backup = new None(0x8000);
     }
-        
 
     return true;
 }

@@ -162,11 +162,11 @@ u8 Flash::read(u32 index)
 // dump contents of cart_ram to backup .sav file
 void Flash::writeChip()
 {
-    //std::ofstream backup("backup.sav", std::ios::out | std::ios::binary);
-    //assert(backup);
+    std::ofstream backup("backup.sav", std::ios::out | std::ios::binary);
+    assert(backup);
 
-    //backup.write((char *) &cart_ram[0], size);
-    //backup.close();
+    backup.write((char *) &cart_ram[0], size);
+    backup.close();
 }
 
 // load contents of backup .sav file to cart_ram

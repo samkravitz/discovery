@@ -7,7 +7,7 @@ INCLUDEDIR = include/
 BACKUPDIR = $(INCLUDEDIR)backup
 OBJECTS = Arm7Tdmi.o util.o Memory.o PPU.o Gamepad.o Timer.o IRQ.o APU.o HandlerArm.o HandlerThumb.o swi.o Flash.o
 LIST=$(addprefix $(BIN), $(OBJECTS))
-VPATH = $(SOURCEDIR) $(SOURCEDIR)/backup
+VPATH = $(SOURCEDIR) $(SOURCEDIR)backup
 
 # Use compiler optimizations
 # run `make opt=1`

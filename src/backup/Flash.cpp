@@ -17,7 +17,7 @@ Flash::Flash(int size) :
     }
 
     // uniitialized memory is 0xFF
-    std::memset(cart_ram, 0xFF, size);
+    std::memset(&cart_ram[0], 0xFF, size);
 
     loadChip();
 
@@ -100,7 +100,7 @@ void Flash::write(u32 index, u8 value)
             case 0x10: // Erase entire chip
                 if (state == CMD_2 && prepare_to_erase)
                 {
-                    std::memset(cart_ram, 0xFF, size);
+                    std::memset(&cart_ram[0], 0xFF, size);
                     prepare_to_erase = false;
                     state = READY;
                     writeChip();
@@ -168,7 +168,7 @@ void Flash::writeChip()
     std::ofstream backup("backup.sav", std::ios::out | std::ios::binary);
     assert(backup);
 
-    backup.write((char *) cart_ram, size);
+    backup.write((char *) &cart_ram[0], size);
     backup.close();
 }
 
@@ -178,6 +178,6 @@ void Flash::loadChip()
     std::ifstream backup("backup.sav", std::ios::in | std::ios::binary);
     assert(backup);
 
-    backup.read((char *) cart_ram, size);
+    backup.read((char *) &cart_ram[0], size);
     backup.close();
 }

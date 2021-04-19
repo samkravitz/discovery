@@ -69,7 +69,7 @@ enum class ConditionFlag
     N, // 31st bit 
     Z, // 30th bit
     C, // 29th bit
-    V // 28th bit
+    V  // 28th bit
 };
 
 // condition field of an instruction
@@ -192,4 +192,12 @@ enum class InterruptOccasion
     DMA3,
     KEYPAD,
     GAMEPAK,
+};
+
+enum BackupType
+{
+    SRAM,
+    EEPROM,
+    FLASH,
+    NONE
 };

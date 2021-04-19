@@ -130,7 +130,7 @@ bool Memory::loadRom(std::string const &name)
     if (ram_size == 0)
     {
         LOG(LogLevel::Warning, "No cart RAM detected!\n");
-        backup = new Backup(0x8000);
+        //backup = new SRAM(0x8000);
     }
         
 

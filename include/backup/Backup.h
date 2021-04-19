@@ -13,6 +13,9 @@ public:
         size(size)
     {
         cart_ram.resize(size);
+
+        // uniitialized memory is 0xFF
+        std::memset(&cart_ram[0], 0xFF, size);
     }
 
     ~Backup() = default;

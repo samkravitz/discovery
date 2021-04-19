@@ -12,5 +12,5 @@ public:
     virtual u8 read(u32);
 
 private:
-    u8 *ram;
+    //u8 *ram;
 };

@@ -121,11 +121,11 @@ bool Memory::loadRom(std::string const &name)
     }
 
     // sram
-    if (rom_temp.find("SRAM_V") != std::string::npos)
+    if (rom_temp.find("SRAM") != std::string::npos)
     {
         LOG(LogLevel::Warning, "Cart RAM SRAM detected\n");
-        ram_size    = 0x8000;
-        backup = new SRAM(0x8000);
+        ram_size    = 0x10000;
+        backup = new SRAM(0x10000);
     }
 
     // no cart RAM detected

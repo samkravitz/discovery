@@ -78,7 +78,7 @@ void Timer::tick()
                 // overflow irq
                 if (channel[i].irq)
                 {
-                    LOG("Timer {} overflow IRQ request\n", i);
+                    //LOG("Timer {} overflow IRQ request\n", i);
                     switch (i)
                     {
                         case 0: irq->raise(InterruptOccasion::TIMER0); break;

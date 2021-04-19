@@ -12,6 +12,19 @@ public:
     virtual u8 read(u32);
 
 private:
+
+    // current memory bank (0 or 1)
+    int bank;
+
+    // Chip identification mode is activated
+    bool chip_id_mode;
+
+    // next command is to be an erase command
+    bool prepare_to_erase;
+
+    void writeChip();
+    void loadChip();
+
     enum FlashState
     {
         // Prepare for command states
@@ -20,9 +33,7 @@ private:
         CMD_2,
 
         // command states
-        CHIP_ID,
         PREPARE_TO_ERASE,
-        ERASE_ENTIRE,
         ERASE_4K,
         PREPARE_TO_WRITE,
         SET_MEMORY_BANK,

@@ -23,7 +23,7 @@ namespace util
     ThumbInstruction getInstructionFormat(u16);
 
     // test if path exists
-    bool pathExists(const string &);
+    bool pathExists(string const &);
 
     // util inline functions
     #include "util.inl"

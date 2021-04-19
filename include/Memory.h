@@ -87,8 +87,8 @@ class Memory
         u8 haltcnt;
 
         void reset();
-        bool loadRom(const std::string &);
-        bool loadBios(const std::string &);
+        bool loadRom(std::string const &);
+        bool loadBios(std::string const &);
 
         // read / write from memory
         u32  read32(u32);

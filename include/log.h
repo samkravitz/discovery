@@ -23,13 +23,13 @@ enum class LogLevel
 };
 
 template<typename S, typename... Args>
-void LOG(const S& format, Args&&... args)
+void LOG(S const &format, Args&&... args)
 {
     LOG(LogLevel::Message, format, args...);
 }
 
 template<typename S, typename... Args>
-void LOG(LogLevel level, const S& format, Args&&... args)
+void LOG(LogLevel level, S const &format, Args&&... args)
 {
     fmt::color color;
 

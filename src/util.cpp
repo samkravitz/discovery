@@ -160,7 +160,7 @@ ThumbInstruction util::getInstructionFormat(u16 instruction)
         return ThumbInstruction::UND;
 }
 
-bool util::pathExists(const std::string &path)
+bool util::pathExists(std::string const &path)
 {
 	std::fstream fin(path);
 	return !fin.fail();

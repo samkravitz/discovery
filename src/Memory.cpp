@@ -70,7 +70,7 @@ void Memory::reset()
     haltcnt = 0;
 }
 
-bool Memory::loadRom(const std::string &name)
+bool Memory::loadRom(std::string const &name)
 {
     std::ifstream rom(name, std::ios::in | std::ios::binary);
 
@@ -137,7 +137,7 @@ bool Memory::loadRom(const std::string &name)
     return true;
 }
 
-bool Memory::loadBios(const std::string &name)
+bool Memory::loadBios(std::string const &name)
 {
     // bios must be called gba_bios.bin
     std::ifstream bios(name, std::ios::in | std::ios::binary);

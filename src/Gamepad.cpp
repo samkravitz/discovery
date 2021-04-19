@@ -43,13 +43,8 @@ void Gamepad::poll()
     keys.r     = state[SDL_SCANCODE_S]         ? 0 : 1;
     keys.l     = state[SDL_SCANCODE_A]         ? 0 : 1;
 
-    // quit discovery
-    if (state[SDL_SCANCODE_ESCAPE])
-        exit(0);
-
     if (keycnt.irq) // key interrupts enabled
         checkInterrupt();
-        
 }
 
 void Gamepad::checkInterrupt()
@@ -90,19 +85,4 @@ void Gamepad::checkInterrupt()
         LOG("Raising gamepad interrupt\n");
         irq->raise(InterruptOccasion::KEYPAD);
     }
-}
-
-void Gamepad::print()
-{
-    LOG("\n\n");
-    if (keys.l     == 0) LOG("L is pressed\n");
-    if (keys.r     == 0) LOG("R is pressed\n");
-    if (keys.down  == 0) LOG("Down is pressed\n");
-    if (keys.up    == 0) LOG("Up is pressed\n");
-    if (keys.left  == 0) LOG("Left is pressed\n");
-    if (keys.right == 0) LOG("Right is pressed\n");
-    if (keys.start == 0) LOG("Start is pressed\n");
-    if (keys.sel   == 0) LOG("Select is pressed\n");
-    if (keys.b     == 0) LOG("b is pressed\n");
-    if (keys.a     == 0) LOG("a is pressed\n");
 }

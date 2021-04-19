@@ -19,14 +19,14 @@ IRQ *irq;
 
 int main(int argc, char **argv)
 {
-    Discovery emulator;
-
     if (argc < 2)
     {
         LOG(LogLevel::Error, "Error: No ROM file given\n");
         LOG("Usage: ./discovery /path/to/rom\n");
-        exit(1);
+        return 1;
     }
+
+    Discovery emulator;
 
     // collect command line args
     for (int i = 1; i < argc; ++i)
@@ -40,17 +40,13 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	else
-	{
-		LOG("Welcome to Discovery!\n");
-	}
-
+	LOG("Welcome to Discovery!\n");
 
     // load bios, rom, and launch game loop
     emulator.mem->loadBios(config::bios_name);
     emulator.mem->loadRom(config::rom_name);
-
     emulator.gameLoop();
+
     return 0;
 }
 
@@ -115,9 +111,16 @@ void Discovery::tick()
     // poll for key presses at start of vblank
     if (system_cycles % 197120 == 0)
     {
-        SDL_PollEvent(&e);
-        if (e.type == SDL_QUIT)
-           running = false;
+        while (SDL_PollEvent(&e))
+        {
+            // Click X on window
+            if (e.type == SDL_QUIT)
+                running = false;
+            
+            // Press Escape key
+            if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)
+                running = false;
+        }
 
         gamepad->poll();
     }
@@ -159,9 +162,10 @@ void Discovery::shutdown()
     // free resources and shutdown
 	delete cpu;
     delete ppu;
-    delete apu;
+    //delete apu;
     delete mem;
     delete stat;
     delete gamepad;
     delete timer;
+    delete irq;
 }

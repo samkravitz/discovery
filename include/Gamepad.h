@@ -77,7 +77,6 @@ public:
 
     void writeCnt(u16 val) { keycnt.raw = val; }
     void poll();
-    void print();
 
 private:
     void checkInterrupt();

@@ -18,7 +18,7 @@ Flash::Flash(int size) :
 
     loadChip();
 
-    prepare_to_erase = true;
+    prepare_to_erase = false;
     chip_id_mode = false;
     bank = 0;
     state = READY;
@@ -26,25 +26,29 @@ Flash::Flash(int size) :
 
 void Flash::write(u32 index, u8 value)
 {
+    //LOG("WRITING: {:x} {:x} state={} bank={}\n", (int) value, (int) index, state, bank);
+
     // First check for single write
     if (state == PREPARE_TO_WRITE)
     {
         cart_ram[index + bank * 0x10000] = value;
         state = READY;
-        writeChip();
+        //writeChip();
         return;
     }
 
     // Erase 4K sector
     if (prepare_to_erase && value == 0x30)
-    {
+    {        
         u8 n = index >> 12 & 0xF; // page to be erased
-        int i = n * 0x400;        // index of first erased cell
+        int i = n * 0x1000;        // index of first erased cell
 
-        std::memset(&cart_ram[i], 0xFF, 0x1000);
+        //LOG("ERASING SECTOR: {:x} {} bank={} {} {}\n", (int) n, i, bank, (int) (i + bank * 0x10000), prepare_to_erase);
+        
+        std::memset(&cart_ram[i + bank * 0x10000], 0xFF, 0x1000);
         prepare_to_erase = false;
         state = READY;
-        writeChip();
+        //writeChip();
         return;
     }
 
@@ -100,7 +104,7 @@ void Flash::write(u32 index, u8 value)
                     std::memset(&cart_ram[0], 0xFF, size);
                     prepare_to_erase = false;
                     state = READY;
-                    writeChip();
+                    //writeChip();
                 }
                 break;
             
@@ -155,7 +159,7 @@ u8 Flash::read(u32 index)
             case SIZE_128K: return 0x13;
         }
     }
-    
+
     return cart_ram[index + bank * 0x10000];
 }
 

@@ -11,6 +11,9 @@ public:
     virtual void write(u32, u8);
     virtual u8 read(u32);
 
+    void writeChip();
+    void loadChip();
+
 private:
 
     // current memory bank (0 or 1)
@@ -21,9 +24,6 @@ private:
 
     // next command is to be an erase command
     bool prepare_to_erase;
-
-    void writeChip();
-    void loadChip();
 
     enum FlashState
     {

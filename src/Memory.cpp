@@ -35,7 +35,12 @@ Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad) :
     reset();
 }
 
-Memory::~Memory() { }
+Memory::~Memory()
+{
+    LOG("SAVING BACKUP\n");
+    dynamic_cast<Flash*>(backup)->writeChip();
+    
+}
 
 void Memory::reset()
 {

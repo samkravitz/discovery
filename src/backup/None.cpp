@@ -8,5 +8,5 @@ None::None(int size) :
     assert(size == 0x8000);
 }
 
-void None::write(u32 index, u8 value) { }
-u8 None::read(u32 index) { return 0xFF; }
+void None::write(int index, u8 value) { }
+u8 None::read(int index) { return 0xFF; }

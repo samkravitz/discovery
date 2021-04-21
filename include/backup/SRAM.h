@@ -6,11 +6,11 @@ class SRAM : public Backup
 {
 public:
     SRAM(int);
-    ~SRAM();
+    ~SRAM() = default;
 
-    virtual void write(u32, u8);
-    virtual u8 read(u32);
+    void write(int, u8);
+    u8 read(int);
 
-private:
-    //u8 *ram;
+    void loadChip();
+    void writeChip();
 };

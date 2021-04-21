@@ -23,7 +23,7 @@ Flash::Flash(int size) :
     state = READY;
 }
 
-void Flash::write(u32 index, u8 value)
+void Flash::write(int index, u8 value)
 {
     //LOG("WRITING: {:x} {:x} state={} bank={}\n", (int) value, (int) index, state, bank);
 
@@ -134,7 +134,7 @@ void Flash::write(u32 index, u8 value)
     }
 }
 
-u8 Flash::read(u32 index)
+u8 Flash::read(int index)
 {
     // read device ID
     if (index == 0 && chip_id_mode)

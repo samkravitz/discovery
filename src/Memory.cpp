@@ -39,6 +39,7 @@ Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad) :
 
 Memory::~Memory()
 {
+    // dump cart ram contents to backup file
     backup->writeChip();    
 }
 
@@ -247,8 +248,8 @@ u8 Memory::read8(u32 address)
             address -= 0x1000000;
         case 0xE:
             //std::cout << "Reading from cart RAM\n";
-            address &= ~ram_size; // RAM Mirror
-            return backup->read(address - 0xE000000);
+            address &= 0xFFFF; // RAM Mirror
+            return backup->read(address);
 
         default:
             std::cout << std::hex << address << "\n";
@@ -386,9 +387,9 @@ void Memory::write8(u32 address, u8 value)
         case 0xF:
             address -= 0x1000000;
         case 0xE:
-            address &= ~ram_size; // RAM Mirror
+            address &= 0xFFFF; // RAM Mirror
 
-            backup->write(address - 0xE000000, value);
+            backup->write(address, value);
             return;
 
         default:

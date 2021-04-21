@@ -8,6 +8,6 @@ public:
     None(int);
     ~None() = default;
 
-    virtual void write(u32, u8);
-    virtual u8 read(u32);
+    virtual void write(int, u8);
+    virtual u8 read(int);
 };

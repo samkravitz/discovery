@@ -9,7 +9,7 @@
 class Backup
 {
 public:
-    Backup(int size) :
+    Backup(size_t size) :
         size(size)
     {
         cart_ram.resize(size);
@@ -20,8 +20,8 @@ public:
 
     ~Backup() = default;
 
-    virtual u8 read(u32) = 0;
-    virtual void write(u32, u8) = 0;
+    virtual u8 read(int) = 0;
+    virtual void write(int, u8) = 0;
     virtual void loadChip() { }
     virtual void writeChip() { }
 

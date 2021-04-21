@@ -58,6 +58,6 @@ I also referenced other open source emulators for particularly tricky sections:
 
 Shonumi's [GBE+](https://github.com/shonumi/gbe-plus/)
 
-[mGBA](https://github.com/mgba-emu/mgba)
+Fleroviux's [NanoBoyAdvance](https://github.com/fleroviux/NanoBoyAdvance)
 
 Thank you for sharing the wisdom!

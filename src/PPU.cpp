@@ -305,6 +305,8 @@ void PPU::renderScanline()
     {
         u16 pixel = backdrop_color;
 
+        // This window composition logic was modified from NanoBoyAdvance.
+        // https://github.com/fleroviux/NanoBoyAdvance
         if (window)
         {
             // Win0 is enabled and the current point is inside it

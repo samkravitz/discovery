@@ -40,7 +40,7 @@ Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad) :
 Memory::~Memory()
 {
     // dump cart ram contents to backup file
-    backup->writeChip();    
+    //backup->writeChip();    
 }
 
 void Memory::reset()
@@ -147,7 +147,7 @@ bool Memory::loadRom(std::string const &name)
     if (util::pathExists(config::backup_path))
     {
         LOG("Save file {} detected. Loading now.\n", config::backup_path);
-        backup->loadChip();
+        //backup->loadChip();
     }
 
     else

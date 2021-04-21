@@ -20,7 +20,7 @@
 extern IRQ *irq;
 
 // transparent pixel color
-#define TRANSPARENT 0x8000
+constexpr int TRANSPARENT = 0x8000;
 
 PPU::PPU(Memory *mem, LcdStat *stat) : mem(mem), stat(stat)
 {
@@ -82,7 +82,6 @@ void PPU::reset()
     scanline       = 0;
     frame          = 0;
     fps            = 0;
-    backdrop_color = 0;
     old_time       = clock();
     objminx        = 0;
     objminy        = 0;
@@ -107,6 +106,8 @@ void PPU::reset()
         win[i].top    = 0;
         win[i].bottom = 160;
     }
+
+    bg_list.clear();
 }
 
 // 1 clock cycle of the PPU
@@ -269,13 +270,13 @@ void PPU::render()
 void PPU::renderScanline()
 {
     // index 0 in BG palette
-    backdrop_color = u16ToU32Color(palram[1] << 8 | palram[0]);
+    u16 backdrop_color = palram[1] << 8 | palram[0];
 
     // "zero" scanline buffer with backdrop color
     for (int i = 0; i < SCREEN_WIDTH; ++i)
     {
-        scanline_buffer[i] = backdrop_color;
         objwin_scanline_buffer[i] = 0;
+        obj_scanline_buffer[i] = TRANSPARENT;
     }
 
     // update visible objs and obj window
@@ -284,8 +285,8 @@ void PPU::renderScanline()
         
 
     // init windows if enabled
-    if (stat->dispcnt.win_enabled != 0)
-        composeWindow();
+    //if (stat->dispcnt.win_enabled != 0)
+        //composeWindow();
 
     // prepare enabled backgrounds to be rendered
     for (int priority = 3; priority >= 0; --priority)
@@ -298,18 +299,29 @@ void PPU::renderScanline()
                 {
                     case 0:
                         renderScanlineText(bg);
+                        bg_list.push_back(bg);
                         break;
                     
                     case 1:
                         if (bg == 0 || bg == 1)
+                        {
                             renderScanlineText(bg);
+                            bg_list.push_back(bg);
+                        }
+
                         else if (bg == 2)
+                        {
                             renderScanlineAffine(bg);
+                            bg_list.push_back(bg);
+                        }
                         break;
 
                     case 2:
                         if (bg == 2 || bg == 3)
+                        {
                             renderScanlineAffine(bg);
+                            bg_list.push_back(bg);
+                        }
                         break;
 
                     case 3:
@@ -334,8 +346,26 @@ void PPU::renderScanline()
     assert(oam_render[2].empty());
     assert(oam_render[3].empty());
 
+    for (int x = 0; x < SCREEN_WIDTH; ++x)
+    {
+        u16 pixel = backdrop_color;
+    
+        for (int i = bg_list.size() - 1; i >= 0; --i)
+        //for (int i = 0; i < bg_list.size(); i++)
+        {
+            if (bg_buffer[i][x] != TRANSPARENT)
+                pixel = bg_buffer[i][x];
+            
+            if (obj_scanline_buffer[x] != TRANSPARENT)
+                pixel = obj_scanline_buffer[x];
+        }
+
+        screen_buffer[scanline][x] = u16ToU32Color(pixel);
+    }
+
+    bg_list.clear();
     obj_in_objwin = false;
-    std::memcpy(&screen_buffer[scanline], scanline_buffer, sizeof(scanline_buffer));
+    //std::memcpy(&screen_buffer[scanline], scanline_buffer, sizeof(scanline_buffer));
 }
 
 void PPU::renderScanlineText(int bg)
@@ -415,10 +445,8 @@ void PPU::renderScanlineText(int bg)
             pixel = getBGPixel8BPP(tile_addr, grid_x, grid_y);
         }
 
-        if (pixel != TRANSPARENT)
-            scanline_buffer[x] = u16ToU32Color(pixel);
+        bg_buffer[bg][x] = pixel;
     }
-
 }
 
 // render the current scanline for affine bg modes
@@ -523,8 +551,7 @@ void PPU::renderScanlineAffine(int bg)
         // 8BPP only
         pixel = getBGPixel8BPP(tile_addr, map_x % 8, map_y % 8);
 
-        if (pixel != TRANSPARENT)
-            scanline_buffer[x] = u16ToU32Color(pixel);
+        bg_buffer[bg][x] = pixel;
     }
 }
 
@@ -697,7 +724,7 @@ void PPU::renderScanlineObj(ObjAttr const &attr, bool obj_win)
                 if (obj_in_objwin && !objwin_scanline_buffer[qx0 + ix])
                     continue;
 
-                scanline_buffer[qx0 + ix] = u16ToU32Color(pixel);
+                obj_scanline_buffer[qx0 + ix] = pixel;
             }
         }
     }

@@ -6,15 +6,13 @@
  * DATE: December 7th, 2020
  * DESCRIPTION: global configuration data for discovery
  */
-#pragma once
-
-#include <string>
+#include "config.h" 
 
 namespace config
 {
-    extern std::string rom_name;
-    extern std::string backup_path;
-    extern std::string bios_name;
-    extern bool show_help;
-    extern bool debug;
+    std::string rom_name = "";
+    std::string backup_path = "";
+    std::string bios_name = "gba_bios.bin";
+    bool show_help = false;
+    bool debug = false;
 }

@@ -12,6 +12,8 @@
 #include "Flash.h"
 #include "None.h"
 #include "SRAM.h"
+#include "config.h"
+#include "util.h"
 
 #include <fstream>
 #include <iostream>
@@ -37,9 +39,7 @@ Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad) :
 
 Memory::~Memory()
 {
-    LOG("SAVING BACKUP\n");
-    dynamic_cast<Flash*>(backup)->writeChip();
-    
+    backup->writeChip();    
 }
 
 void Memory::reset()
@@ -138,6 +138,23 @@ bool Memory::loadRom(std::string const &name)
     {
         LOG(LogLevel::Warning, "No cart RAM detected!\n");
         backup = new None(0x8000);
+        return true;
+    }
+
+    // Load save file into cart RAM if one exists, otherwise create one
+    config::backup_path = name + ".sav";
+    if (util::pathExists(config::backup_path))
+    {
+        LOG("Save file {} detected. Loading now.\n", config::backup_path);
+        backup->loadChip();
+    }
+
+    else
+    {
+        LOG("Save file {} not found. Creating now\n", config::backup_path);
+        std::fstream backup { config::backup_path, std::ios::out };
+        assert(backup);
+        backup.close();
     }
 
     return true;

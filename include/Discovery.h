@@ -17,7 +17,6 @@
 #include "Memory.h"
 #include "Timer.h"
 #include "Gamepad.h"
-#include "config.h"
 
 class Discovery
 {

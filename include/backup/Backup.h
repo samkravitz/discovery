@@ -22,6 +22,8 @@ public:
 
     virtual u8 read(u32) = 0;
     virtual void write(u32, u8) = 0;
+    virtual void loadChip() { }
+    virtual void writeChip() { }
 
 protected:
     std::vector<u8> cart_ram;

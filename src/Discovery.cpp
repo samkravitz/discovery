@@ -13,6 +13,7 @@
 #include "Discovery.h"
 #include "util.h"
 #include "IRQ.h"
+#include "config.h"
 
 // global IRQ handler
 IRQ *irq;

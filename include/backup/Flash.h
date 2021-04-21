@@ -8,8 +8,8 @@ public:
     Flash(int);
     ~Flash() = default;
 
-    virtual void write(u32, u8);
-    virtual u8 read(u32);
+    void write(u32, u8);
+    u8 read(u32);
 
     void writeChip();
     void loadChip();

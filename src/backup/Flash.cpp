@@ -1,5 +1,6 @@
 #include "Flash.h"
 #include "log.h"
+#include "config.h"
 
 #include <fstream>
 #include <cstring>
@@ -16,8 +17,6 @@ Flash::Flash(int size) :
         case 131072: flash_size = SIZE_128K; break;
     }
 
-    loadChip();
-
     prepare_to_erase = false;
     chip_id_mode = false;
     bank = 0;
@@ -33,7 +32,6 @@ void Flash::write(u32 index, u8 value)
     {
         cart_ram[index + bank * 0x10000] = value;
         state = READY;
-        //writeChip();
         return;
     }
 
@@ -48,7 +46,6 @@ void Flash::write(u32 index, u8 value)
         std::memset(&cart_ram[i + bank * 0x10000], 0xFF, 0x1000);
         prepare_to_erase = false;
         state = READY;
-        //writeChip();
         return;
     }
 
@@ -104,7 +101,6 @@ void Flash::write(u32 index, u8 value)
                     std::memset(&cart_ram[0], 0xFF, size);
                     prepare_to_erase = false;
                     state = READY;
-                    //writeChip();
                 }
                 break;
             
@@ -166,17 +162,18 @@ u8 Flash::read(u32 index)
 // dump contents of cart_ram to backup .sav file
 void Flash::writeChip()
 {
-    std::ofstream backup("backup.sav", std::ios::out | std::ios::binary);
+    std::ofstream backup(config::backup_path, std::ios::out | std::ios::binary);
     assert(backup);
 
     backup.write((char *) &cart_ram[0], size);
     backup.close();
+    LOG("Wrote save to file {}\n", config::backup_path);
 }
 
 // load contents of backup .sav file to cart_ram
 void Flash::loadChip()
 {
-    std::ifstream backup("backup.sav", std::ios::in | std::ios::binary);
+    std::ifstream backup(config::backup_path, std::ios::in | std::ios::binary);
     assert(backup);
 
     backup.read((char *) &cart_ram[0], size);

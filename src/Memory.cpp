@@ -40,7 +40,7 @@ Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad) :
 Memory::~Memory()
 {
     // dump cart ram contents to backup file
-    //backup->writeChip();    
+    backup->writeChip();    
 }
 
 void Memory::reset()
@@ -561,6 +561,52 @@ void Memory::write8(u32 address, u8 value)
         case REG_BG3Y + 2:  [[fallthrough]];
         case REG_BG3Y + 3:
             stat->bgcnt[3].dy = (memory[REG_BG3Y + 3] << 24) | (memory[REG_BG3Y + 2] << 16) | (memory[REG_BG3Y + 1] << 8) | (memory[REG_BG3Y]);
+            break;
+        
+        // Window controls
+
+        // REG_WIN0H
+        case REG_WIN0H:     [[fallthrough]];
+        case REG_WIN0H + 1:
+            stat->writeWinh(0, memory[REG_WIN0H + 1] << 8 | memory[REG_WIN0H]);
+            break;
+        
+        // REG_WIN0H
+        case REG_WIN0V:     [[fallthrough]];
+        case REG_WIN0V + 1:
+            stat->writeWinv(0, memory[REG_WIN0V + 1] << 8 | memory[REG_WIN0V]);
+            break;
+        
+        // REG_WIN1H
+        case REG_WIN1H:     [[fallthrough]];
+        case REG_WIN1H + 1:
+            stat->writeWinh(1, memory[REG_WIN1H + 1] << 8 | memory[REG_WIN1H]);
+            break;
+        
+        // REG_WIN1V
+        case REG_WIN1V:     [[fallthrough]];
+        case REG_WIN1V + 1:
+            stat->writeWinv(1, memory[REG_WIN1V + 1] << 8 | memory[REG_WIN1V]);
+            break;
+        
+        // REG_WININ
+        case REG_WININ:
+            stat->writeWindowContent(CONTENT_WIN0, value);
+            break;
+        
+        // REG_WININ + 1
+        case REG_WININ + 1:
+            stat->writeWindowContent(CONTENT_WIN1, value);
+            break;
+        
+        // REG_WINOUT
+        case REG_WINOUT:
+            stat->writeWindowContent(CONTENT_WINOUT, value);
+            break;
+        
+        // REG_WINOUT + 1
+        case REG_WINOUT + 1:
+            stat->writeWindowContent(CONTENT_WINOBJ, value);
             break;
 
         // DMA

@@ -201,3 +201,11 @@ enum class BackupType
     FLASH,
     NONE
 };
+
+enum WindowContent
+{
+    CONTENT_WIN0   = 0,
+    CONTENT_WIN1   = 1,
+    CONTENT_WINOUT = 2,
+    CONTENT_WINOBJ = 3
+};

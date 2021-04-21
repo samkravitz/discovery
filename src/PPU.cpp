@@ -83,11 +83,6 @@ void PPU::reset()
     frame          = 0;
     fps            = 0;
     old_time       = clock();
-    objminx        = 0;
-    objminy        = 0;
-    objmaxx        = 240;
-    objmaxy        = 160;
-    obj_in_winout  = false;
 
     std::memset(screen_buffer, 0, sizeof(screen_buffer));
 
@@ -97,17 +92,6 @@ void PPU::reset()
         std::memset(&objs[i], 0, sizeof(ObjAttr));
         objs[i].obj_mode = 2; // hidden
     }
-
-    // reset window parameters
-    for (int i = 0; i < 3; ++i)
-    {
-        win[i].left   = 0;
-        win[i].right  = 240;
-        win[i].top    = 0;
-        win[i].bottom = 160;
-    }
-
-    bg_list.clear();
 }
 
 // 1 clock cycle of the PPU
@@ -238,33 +222,6 @@ void PPU::render()
 
     // draw final_screen pixels on screen
     SDL_UpdateWindowSurface(window);
-
-    // reset bgcnt's window parameters
-    for (int i = 0; i < 4; ++i)
-    {
-        stat->bgcnt[i].minx = 0;
-        stat->bgcnt[i].miny = 0;
-        stat->bgcnt[i].maxx = 240;
-        stat->bgcnt[i].maxy = 160;
-        stat->bgcnt[i].in_winout = false;
-        stat->bgcnt[i].in_winin  = false;
-    }
-
-    // reset window parameters
-    for (int i = 0; i < 3; ++i)
-    {
-        win[i].left   = 0;
-        win[i].right  = 240;
-        win[i].top    = 0;
-        win[i].bottom = 160;
-    }
-
-    // reset obj layer window parameters
-    objminx = 0;
-    objminy = 0;
-    objmaxx = 240;
-    objmaxy = 160;
-    obj_in_winout = false;
 }
 
 void PPU::renderScanline()
@@ -282,11 +239,6 @@ void PPU::renderScanline()
     // update visible objs and obj window
     if (stat->dispcnt.obj_enabled)
         updateAttr();
-        
-
-    // init windows if enabled
-    //if (stat->dispcnt.win_enabled != 0)
-        //composeWindow();
 
     // prepare enabled backgrounds to be rendered
     for (int priority = 3; priority >= 0; --priority)
@@ -346,35 +298,68 @@ void PPU::renderScanline()
     assert(oam_render[2].empty());
     assert(oam_render[3].empty());
 
+    bool window = stat->dispcnt.win_enabled;
+    int *active_window_content;
+
     for (int x = 0; x < SCREEN_WIDTH; ++x)
     {
         u16 pixel = backdrop_color;
+
+        if (window)
+        {
+            // Win0 is enabled and the current point is inside it
+            if ((stat->dispcnt.win_enabled & 1) && isInWindow(0, x, scanline))
+                active_window_content = stat->window_content[CONTENT_WIN0];
+            
+            // Win1 is enabled and the current point is inside it
+            else if ((stat->dispcnt.win_enabled & 2) && isInWindow(1, x, scanline))
+                active_window_content = stat->window_content[CONTENT_WIN1];
+            
+            // Obj window is enabled and the current point is inside it
+            else if ((stat->dispcnt.win_enabled & 4) && objwin_scanline_buffer[x])
+                active_window_content = stat->window_content[CONTENT_WINOBJ];
+            
+            // Current point is in winout
+            else
+                active_window_content = stat->window_content[CONTENT_WINOUT];
+            
+            //LOG("{} {} {} {}\n", x, scanline, isInWindow(1, x, scanline), debug);
+            //LOG("stats = {} {} {} {}\n", stat->winh[1].left, stat->winh[1].right, stat->winv[1].top, stat->winv[1].bottom);
+        }
     
         for (int i = bg_list.size() - 1; i >= 0; --i)
-        //for (int i = 0; i < bg_list.size(); i++)
         {
-            if (bg_buffer[i][x] != TRANSPARENT)
-                pixel = bg_buffer[i][x];
+
+            if (window)
+            {
+                //LOG("{} {} {} {} {} {}\n", active_window_content[0], active_window_content[1], active_window_content[2], active_window_content[3], active_window_content[4], active_window_content[5]);
+                if (active_window_content[i] && (bg_buffer[i][x] != TRANSPARENT))
+                    pixel = bg_buffer[i][x];
+                
+                if (active_window_content[4] && (obj_scanline_buffer[x] != TRANSPARENT))
+                    pixel = obj_scanline_buffer[x];
+            }
+
+            else
+            {
+                if (bg_buffer[i][x] != TRANSPARENT)
+                    pixel = bg_buffer[i][x];
             
-            if (obj_scanline_buffer[x] != TRANSPARENT)
-                pixel = obj_scanline_buffer[x];
+                if (obj_scanline_buffer[x] != TRANSPARENT)
+                    pixel = obj_scanline_buffer[x];
+            }
         }
 
         screen_buffer[scanline][x] = u16ToU32Color(pixel);
     }
 
     bg_list.clear();
-    obj_in_objwin = false;
     //std::memcpy(&screen_buffer[scanline], scanline_buffer, sizeof(scanline_buffer));
 }
 
 void PPU::renderScanlineText(int bg)
 {
     auto const &bgcnt = stat->bgcnt[bg];
-
-    // scanline outside of window
-    if (scanline < bgcnt.miny || scanline > bgcnt.maxy)
-       return;
 
     int pitch; // pitch of screenblocks
 
@@ -405,12 +390,8 @@ void PPU::renderScanlineText(int bg)
     int grid_x, grid_y;
 
     // conver only where bg is inside its window
-    for (int x = bgcnt.minx; x < bgcnt.maxx; ++x)
+    for (int x = 0; x < SCREEN_WIDTH; ++x)
     {
-        // layer is in winout & not winin
-        if (bgcnt.in_winout && !bgcnt.in_winin && !isInWinOut(x, scanline))
-          continue;
-
         map_x = (x + bgcnt.hoff) % width;
         tile_x = map_x / 8; // 8 px per tile
 
@@ -453,10 +434,6 @@ void PPU::renderScanlineText(int bg)
 void PPU::renderScanlineAffine(int bg)
 {
     auto const &bgcnt = stat->bgcnt[bg];
-
-    // scanline outside of window
-    if (scanline < bgcnt.miny || scanline > bgcnt.maxy)
-        return;
 
     // displacement vector
     // width, height of map in pixels
@@ -510,12 +487,8 @@ void PPU::renderScanlineAffine(int bg)
     int pixel;
     u32 tile_addr;
 
-    for (int x = bgcnt.minx; x < bgcnt.maxx; ++x)
+    for (int x = 0; x < SCREEN_WIDTH; ++x)
     {
-        // layer is in winout & not winin
-        if (bgcnt.in_winout && !bgcnt.in_winin && !isInWinOut(x, scanline))
-          continue;
-
         x1 = x + dx;
 
         // affine transform
@@ -628,11 +601,7 @@ void PPU::renderScanlineObj(ObjAttr const &attr, bool obj_win)
     if (scanline < attr.qy0 - attr.hheight || scanline >= attr.qy0 + attr.hheight)
         return;
 
-    // obj exists outside current object layer
-    if (scanline < objminy || scanline >= objmaxy)
-        return;
-    
-    int qx0 = attr.qx0;      // center of sprite screen space
+    int qx0 = attr.qx0; // center of sprite screen space
 
     // x, y coordinate of texture after transformation
     int px, py;
@@ -644,16 +613,8 @@ void PPU::renderScanlineObj(ObjAttr const &attr, bool obj_win)
 
     for (int ix = -attr.hwidth; ix < attr.hwidth; ++ix)
     {
-        // objs in winout
-        if (obj_in_winout && !isInWinOut(qx0 + ix, scanline))
-            continue;
-
         px = ix + attr.hwidth;
         py = iy + attr.hheight;
-
-        // obj exists outside current object layer
-        if (qx0 + ix < objminx || qx0 + ix >= objmaxx)
-            continue;
 
         // transform affine & double wide affine
         if (attr.obj_mode == 1 || attr.obj_mode == 3)
@@ -717,15 +678,9 @@ void PPU::renderScanlineObj(ObjAttr const &attr, bool obj_win)
             // don't render, but signify that this pixel serves in the object window mask
             if (obj_win)
                 objwin_scanline_buffer[qx0 + ix] = 1;
-
+            
             else
-            {
-                // pixel doesn't fall in object window, so skip
-                if (obj_in_objwin && !objwin_scanline_buffer[qx0 + ix])
-                    continue;
-
                 obj_scanline_buffer[qx0 + ix] = pixel;
-            }
         }
     }
 }
@@ -848,162 +803,6 @@ void PPU::updateAttr()
     }
 }
 
-void PPU::composeWindow()
-{
-    // win1 enabled
-     if (stat->dispcnt.win_enabled & 2)
-    {
-        u16 win1v  = mem->read16Unsafe(REG_WIN1V);
-        u16 win1h  = mem->read16Unsafe(REG_WIN1H);
-        
-        auto &window = win[1];
-        window.left   = win1h >> 8;
-        window.right  = win1h & 0xFF;
-        window.top    = win1v >> 8;
-        window.bottom = win1v & 0xFF;
-
-        // illegal values
-        if (window.right > 240 || window.left > window.right)
-            window.right = 240;
-
-        if (window.bottom > 160 || window.top > window.bottom)
-            window.bottom = 160;
-
-        // window content
-        u8 win1content = mem->read16Unsafe(REG_WININ) >> 8;
-
-        // check if bgs are in window content
-        int mask;
-        for (int i = 0; i < 4; ++i)
-        {
-            mask = 1 << i;
-            if (win1content & mask)
-            {
-                stat->bgcnt[i].minx = window.left;
-                stat->bgcnt[i].maxx = window.right;
-                stat->bgcnt[i].miny = window.top;
-                stat->bgcnt[i].maxy = window.bottom;
-                stat->bgcnt[i].in_winin = true;
-            }
-        }
-
-        // objs in win1
-        if (win1content & 0x10)
-        {
-            objminx        = window.left;
-            objmaxx        = window.right;
-            objminy        = window.top;
-            objmaxy        = window.bottom;
-            obj_in_winout  = false;
-        }
-    }
-
-    // // win0 enabled
-    if (stat->dispcnt.win_enabled & 1)
-    {
-        u16 win0v  = mem->read16Unsafe(REG_WIN0V);
-        u16 win0h  = mem->read16Unsafe(REG_WIN0H);
-
-        auto &window = win[0];
-        window.left   = win0h >> 8;
-        window.right  = win0h & 0xFF;
-        window.top    = win0v >> 8;
-        window.bottom = win0v & 0xFF;
-
-        // illegal values
-        if (window.right > 240 || window.left > window.right)
-            window.right = 240;
-
-        if (window.bottom > 160 || window.top > window.bottom)
-            window.bottom = 160;
-
-        // window content
-        u8 win0content = mem->read16Unsafe(REG_WININ) & 0xFF;
-
-        // check if bgs are in window content
-        int mask;
-        for (int i = 0; i < 4; ++i)
-        {
-            mask = 1 << i;
-            if (win0content & mask)
-            {
-                stat->bgcnt[i].minx = window.left;
-                stat->bgcnt[i].maxx = window.right;
-                stat->bgcnt[i].miny = window.top;
-                stat->bgcnt[i].maxy = window.bottom;
-                stat->bgcnt[i].in_winin = true;
-            }
-        }
-
-        // objs in win0
-        if (win0content & 0x10)
-        {
-            objminx        = window.left;
-            objmaxx        = window.right;
-            objminy        = window.top;
-            objmaxy        = window.bottom;
-            obj_in_winout  = false;
-        }
-    }
-
-    // // winout
-    u8 winoutcontent = mem->read16Unsafe(REG_WINOUT) & 0xFF;
-
-    // check if bgs are in winout content
-    int mask;
-    for (int i = 0; i < 4; ++i)
-    {
-        mask = 1 << i;
-        if (winoutcontent & mask)
-        {
-            stat->bgcnt[i].minx = 0;
-            stat->bgcnt[i].miny = 0;
-            stat->bgcnt[i].maxx = 240;
-            stat->bgcnt[i].maxy = 160;
-            stat->bgcnt[i].in_winout = true;
-        }
-    }
-
-    // objs in winout
-    if (winoutcontent & 0x10)
-        obj_in_winout = true;
-
-    // obj window enabled
-    if (stat->dispcnt.win_enabled & 4)
-    {
-        // window content
-        u8 objwincontent = mem->read16Unsafe(REG_WINOUT) >> 8;
-        //std::cout << "Win obj enabled\n";
-
-        // check if bgs are in window content
-        // int mask;
-        // for (int i = 0; i < 4; ++i)
-        // {
-        //     mask = 1 << i;
-        //     if (win1content & mask)
-        //     {
-        //         stat->bgcnt[i].minx = window.left;
-        //         stat->bgcnt[i].maxx = window.right;
-        //         stat->bgcnt[i].miny = window.top;
-        //         stat->bgcnt[i].maxy = window.bottom;
-        //         stat->bgcnt[i].in_winin = true;
-        //     }
-        // }
-        
-
-        // objs in objwin
-        if (objwincontent & 0x10)
-        {
-            // objminx        = window.left;
-            // objmaxx        = window.right;
-            // objminy        = window.top;
-            // objmaxy        = window.bottom;
-            obj_in_objwin  = true;
-        }
-    }
-   
-}
-
 inline u16 PPU::getObjPixel4BPP(u32 addr, int palbank, int x, int y)
 {
     addr += (y * 4) + (x / 2);
@@ -1075,18 +874,9 @@ inline u16 PPU::getBGPixel8BPP(u32 addr, int x, int y)
     return palram[idx + 1] << 8 | palram[idx];
 }
 
-// returns true if (x, y) is currently in winOut, true otherwise
-bool PPU::isInWinOut(int x, int y)
+inline bool PPU::isInWindow(int win, int x, int y)
 {
-    if ((stat->dispcnt.win_enabled & 1)         &&
-        x >= win[0].left && x <= win[0].right   &&
-        y >= win[0].top  && y <= win[0].bottom) return false;
-
-    if ((stat->dispcnt.win_enabled & 2)         &&
-        x >= win[1].left && x <= win[1].right   &&
-        y >= win[1].top  && y <= win[1].bottom) return false;
-    
-    return true;
+    return (x >= stat->winh[win].left) && (x < stat->winh[win].right) && (y >= stat->winv[win].top) && (y < stat->winv[win].bottom);
 }
 
 inline u32 PPU::u16ToU32Color(u16 color_u16) { return color_lut[color_u16]; }

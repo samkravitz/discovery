@@ -84,24 +84,6 @@ private:
 
     u32 screen_buffer[SCREEN_HEIGHT][SCREEN_WIDTH];
 
-    // window data structure
-    // window 0, window 1, obj window
-    struct win
-    {
-        int left;
-        int right;
-        int top;
-        int bottom;
-    } win[3];
-
-    // where objs can be drawn in the window
-    int objminx;
-    int objminy;
-    int objmaxx;
-    int objmaxy;
-    int obj_in_winout;
-    int obj_in_objwin;
-
     // oam data structure
     struct ObjAttr
     {
@@ -153,17 +135,13 @@ private:
     void renderScanlineBitmap(int);
     void renderScanlineObj(ObjAttr const &, bool obj_win = false);
 
-    void drawBackgroundReg(int);
-    void drawBackgroundAffine(int);
-
     // misc
     inline u16 getObjPixel4BPP(u32, int, int, int);
     inline u16 getObjPixel8BPP(u32, int, int);
     inline u16 getBGPixel4BPP(u32, int, int, int);
     inline u16 getBGPixel8BPP(u32, int, int);
     void updateAttr();
-    void composeWindow();
-    inline bool isInWinOut(int, int);
+    inline bool isInWindow(int, int, int);
 
     u32 color_lut[0x10000];
     inline u32 u16ToU32Color(u16);

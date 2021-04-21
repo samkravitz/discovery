@@ -286,7 +286,7 @@ void PPU::renderScanline()
     // init windows if enabled
     if (stat->dispcnt.win_enabled != 0)
         composeWindow();
-    
+
     // prepare enabled backgrounds to be rendered
     for (int priority = 3; priority >= 0; --priority)
     {

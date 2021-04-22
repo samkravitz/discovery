@@ -77,8 +77,15 @@ private:
     clock_t old_time;
 
     u32 scanline_buffer[SCREEN_WIDTH];
-    u16 obj_scanline_buffer[SCREEN_WIDTH];
+
+    struct ObjPixel
+    {
+        u16 color;
+        int priority;        
+    } obj_scanline_buffer[SCREEN_WIDTH];
+
     int objwin_scanline_buffer[SCREEN_WIDTH];
+
     std::array<u16, SCREEN_WIDTH> bg_buffer[NUM_BG];
     std::vector<int> bg_list; // list of currently enabled bgs
 

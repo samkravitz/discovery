@@ -295,6 +295,8 @@ void PPU::renderScanline()
     {
         u16 pixel = backdrop_color;
 
+        int priority = 4;
+
         // This window composition logic was modified from NanoBoyAdvance.
         // https://github.com/fleroviux/NanoBoyAdvance
         if (window)
@@ -329,18 +331,22 @@ void PPU::renderScanline()
             bool bg_in_current_window = window ? active_window_content[bg] : true;
 
             if (bg_in_current_window && (bg_buffer[bg][x] != TRANSPARENT))
+            {
                 pixel = bg_buffer[bg][x];
+                priority = stat->bgcnt[bg].priority;
+            }
         }
                
 
-        if (obj_in_current_window && (obj_scanline_buffer[x] != TRANSPARENT))
-            pixel = obj_scanline_buffer[x];
+        if (obj_in_current_window && (obj_scanline_buffer[x].priority <= priority) && (obj_scanline_buffer[x].color != TRANSPARENT))
+            pixel = obj_scanline_buffer[x].color;
 
         screen_buffer[scanline][x] = u16ToU32Color(pixel);
 
         // zero oam buffers for next scanline
         objwin_scanline_buffer[x] = 0;
-        obj_scanline_buffer[x] = TRANSPARENT;
+        obj_scanline_buffer[x].color = TRANSPARENT;
+        obj_scanline_buffer[x].priority = 4;
     }
 
     bg_list.clear();
@@ -677,8 +683,11 @@ void PPU::renderScanlineObj()
                 if (attr.gfx_mode == 2)
                     objwin_scanline_buffer[qx0 + ix] = 1;
                 
-                else
-                    obj_scanline_buffer[qx0 + ix] = pixel;
+                else if (attr.priority <= obj_scanline_buffer[qx0 + ix].priority)
+                {
+                    obj_scanline_buffer[qx0 + ix].color = pixel;
+                    obj_scanline_buffer[qx0 + ix].priority = attr.priority;
+                }
             }
         }
     }

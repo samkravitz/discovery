@@ -123,9 +123,6 @@ private:
         float pd;
 
     } objs[NUM_OBJS]; // can support 128 objects
-    
-    // holds the objs that need to be displayed
-    std::stack<ObjAttr> oam_render[4];
 
     // video mode renders
     void render();
@@ -133,7 +130,7 @@ private:
     void renderScanlineText(int);
     void renderScanlineAffine(int);
     void renderScanlineBitmap(int);
-    void renderScanlineObj(ObjAttr const &, bool obj_win = false);
+    void renderScanlineObj();
 
     // misc
     inline u16 getObjPixel4BPP(u32, int, int, int);

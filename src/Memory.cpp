@@ -365,6 +365,8 @@ void Memory::write8(u32 address, u8 value)
         case 0x7:
             address &= MEM_OAM_END;
             
+            stat->oam_changed = true;
+            
             // TODO: uncommenting this makes some nasty visual artifacts
             // if (!stat->dispcnt.hb && stat->dispstat.in_hBlank)
             //    return;

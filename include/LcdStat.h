@@ -140,6 +140,8 @@ struct LcdStat
             window_content[win][i] = content >> i & 1;
     }
 
+    bool oam_changed;
+
     LcdStat()
     {
         scanline = 0;
@@ -149,6 +151,8 @@ struct LcdStat
 
         // zero reg_dispstat
         dispstat.raw = 0;
+
+        oam_changed = false;
 
         // zero background ctl
         for (int i = 0; i < 4; ++i)

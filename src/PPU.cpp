@@ -233,17 +233,6 @@ void PPU::renderScanline()
     // index 0 in BG palette
     u16 backdrop_color = palram[1] << 8 | palram[0];
 
-    // "zero" scanline buffer with backdrop color
-    for (int i = 0; i < SCREEN_WIDTH; ++i)
-    {
-        objwin_scanline_buffer[i] = 0;
-        obj_scanline_buffer[i] = TRANSPARENT;
-    }
-
-    // update visible objs and obj window
-    if (stat->dispcnt.obj_enabled)
-        updateAttr();
-
     // prepare enabled backgrounds to be rendered
     for (int priority = 3; priority >= 0; --priority)
     {
@@ -289,19 +278,15 @@ void PPU::renderScanline()
                 }
             }
         }
-
-        while (!oam_render[priority].empty())
-        {    
-            renderScanlineObj(oam_render[priority].top());
-            oam_render[priority].pop();
-        }
     }
 
-    // TODO - just keep these on for a bit until I know this works fine
-    assert(oam_render[0].empty());
-    assert(oam_render[1].empty());
-    assert(oam_render[2].empty());
-    assert(oam_render[3].empty());
+    // Update obj data structure if necessary
+    // and render objs into buffer
+    if (stat->dispcnt.obj_enabled)
+    {
+        updateAttr();
+        renderScanlineObj();
+    }
 
     bool window = stat->dispcnt.win_enabled;
     int active_window, *active_window_content;
@@ -352,6 +337,10 @@ void PPU::renderScanline()
             pixel = obj_scanline_buffer[x];
 
         screen_buffer[scanline][x] = u16ToU32Color(pixel);
+
+        // zero oam buffers for next scanline
+        objwin_scanline_buffer[x] = 0;
+        obj_scanline_buffer[x] = TRANSPARENT;
     }
 
     bg_list.clear();
@@ -594,104 +583,113 @@ void PPU::renderScanlineBitmap(int mode)
 }
 
 
-void PPU::renderScanlineObj(ObjAttr const &attr, bool obj_win)
+void PPU::renderScanlineObj()
 {
     u16 pixel;
 
-    // skip hidden object
-    if (attr.obj_mode == 2)
-        return;
-
-    // obj exists outside current scanline
-    if (scanline < attr.qy0 - attr.hheight || scanline >= attr.qy0 + attr.hheight)
-        return;
-
-    int qx0 = attr.qx0; // center of sprite screen space
-
-    // x, y coordinate of texture after transformation
-    int px, py;
-    int iy = -attr.hheight + (scanline - attr.y);
-
-
-    //LOG("{} {} {} {}\n", attr.x, attr.y, attr.hheight, attr.hwidth);
-    //LOG("{} {} {} {}\n", attr.x0, attr.y0, attr.hheight, attr.hwidth);
-
-    for (int ix = -attr.hwidth; ix < attr.hwidth; ++ix)
+    for (int i = NUM_OBJS - 1; i >= 0; --i)
     {
-        px = ix + attr.hwidth;
-        py = iy + attr.hheight;
+        auto const &attr = objs[i];
 
-        // transform affine & double wide affine
-        if (attr.obj_mode == 1 || attr.obj_mode == 3)
-        {
-            px = attr.pa * ix + attr.pb * iy + attr.px0;
-            py = attr.pc * ix + attr.pd * iy + attr.py0;
-        }
+        // skip hidden object
+        if (attr.obj_mode == 2)
+            continue;
 
-        // horizontal / vertical flip
-        if (attr.h_flip) px = attr.width  - px - 1;
-        if (attr.v_flip) py = attr.height - py - 1;
+        // obj exists outside current scanline
+        if (scanline < attr.qy0 - attr.hheight || scanline >= attr.qy0 + attr.hheight)
+            continue;
         
-        // transformed coordinate is out of bounds
-        if (px >= attr.width || py  >= attr.height) continue;
-        if (px       < 0     || py  < 0           ) continue;
-        if (qx0 + ix < 0     || qx0 + ix >= 240   ) continue;
+        int qx0 = attr.qx0; // center of sprite screen space
 
-        
-        int tile_x  = px % 8; // x coordinate of pixel within tile
-        int tile_y  = py % 8; // y coordinate of pixel within tile
-        int block_x = px / 8; // x coordinate of tile in vram
-        int block_y = py / 8; // y coordinate of tile in vram
+        // x, y coordinate of texture after transformation
+        int px, py;
+        int iy = -attr.hheight + (scanline - attr.y);
 
-        int tileno = attr.tileno;
-        int pixel;
 
-        // 8bpp
-        if (attr.color_mode == 1)
+        //LOG("{} {} {} {}\n", attr.x, attr.y, attr.hheight, attr.hwidth);
+        //LOG("{} {} {} {}\n", attr.x0, attr.y0, attr.hheight, attr.hwidth);
+
+        for (int ix = -attr.hwidth; ix < attr.hwidth; ++ix)
         {
-            // 1d
-            if (stat->dispcnt.obj_map_mode == 1)
-                tileno += block_y * (attr.width / 4);
+            px = ix + attr.hwidth;
+            py = iy + attr.hheight;
 
-            // 2d
-            else
-                tileno = (tileno & ~1) + block_y * 32;
+            // transform affine & double wide affine
+            if (attr.obj_mode == 1 || attr.obj_mode == 3)
+            {
+                px = attr.pa * ix + attr.pb * iy + attr.px0;
+                py = attr.pc * ix + attr.pd * iy + attr.py0;
+            }
+
+            // horizontal / vertical flip
+            if (attr.h_flip) px = attr.width  - px - 1;
+            if (attr.v_flip) py = attr.height - py - 1;
             
-            tileno += block_x * 2;
+            // transformed coordinate is out of bounds
+            if (px >= attr.width || py  >= attr.height) continue;
+            if (px       < 0     || py  < 0           ) continue;
+            if (qx0 + ix < 0     || qx0 + ix >= 240   ) continue;
 
-            pixel = getObjPixel8BPP(tileno * 32, tile_x, tile_y);
-        }
-
-        // 8bpp
-        else
-        {
-            // 1d
-            if (stat->dispcnt.obj_map_mode == 1)
-                tileno += block_y * (attr.width / 8);
-
-            // 2d
-            else
-                tileno += block_y * 32;
-
-            tileno += block_x;
             
-            pixel = getObjPixel4BPP(tileno * 32, attr.palbank, tile_x, tile_y);
-        }
-        
-        if (pixel != TRANSPARENT)
-        {
-            // don't render, but signify that this pixel serves in the object window mask
-            if (obj_win)
-                objwin_scanline_buffer[qx0 + ix] = 1;
-            
+            int tile_x  = px % 8; // x coordinate of pixel within tile
+            int tile_y  = py % 8; // y coordinate of pixel within tile
+            int block_x = px / 8; // x coordinate of tile in vram
+            int block_y = py / 8; // y coordinate of tile in vram
+
+            int tileno = attr.tileno;
+            int pixel;
+
+            // 8bpp
+            if (attr.color_mode == 1)
+            {
+                // 1d
+                if (stat->dispcnt.obj_map_mode == 1)
+                    tileno += block_y * (attr.width / 4);
+
+                // 2d
+                else
+                    tileno = (tileno & ~1) + block_y * 32;
+                
+                tileno += block_x * 2;
+
+                pixel = getObjPixel8BPP(tileno * 32, tile_x, tile_y);
+            }
+
+            // 8bpp
             else
-                obj_scanline_buffer[qx0 + ix] = pixel;
+            {
+                // 1d
+                if (stat->dispcnt.obj_map_mode == 1)
+                    tileno += block_y * (attr.width / 8);
+
+                // 2d
+                else
+                    tileno += block_y * 32;
+
+                tileno += block_x;
+                
+                pixel = getObjPixel4BPP(tileno * 32, attr.palbank, tile_x, tile_y);
+            }
+            
+            if (pixel != TRANSPARENT)
+            {
+                // don't render, but signify that this pixel serves in the object window mask
+                if (attr.gfx_mode == 2)
+                    objwin_scanline_buffer[qx0 + ix] = 1;
+                
+                else
+                    obj_scanline_buffer[qx0 + ix] = pixel;
+            }
         }
     }
 }
 
 void PPU::updateAttr()
 {
+    // no need to refresh oam data structure if no changes have been made
+    if (!stat->oam_changed)
+        return;
+
     int attr_ptr = 0;
     u16 attr0, attr1, attr2;
 
@@ -798,13 +796,7 @@ void PPU::updateAttr()
             obj.h_flip = 0;
         }
 
-        // add index to stack to be displayed
-        if (obj.obj_mode != 2)
-            oam_render[obj.priority].push(obj);
-        
-        // add obj's non-transparent pixels to obj window
-        if (obj.gfx_mode == 2)
-            renderScanlineObj(obj, true);
+        stat->oam_changed = false;
     }
 }
 

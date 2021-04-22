@@ -291,7 +291,7 @@ void PPU::renderScanline()
         }
 
         while (!oam_render[priority].empty())
-        {
+        {    
             renderScanlineObj(oam_render[priority].top());
             oam_render[priority].pop();
         }
@@ -336,29 +336,20 @@ void PPU::renderScanline()
             //LOG("stats = {} {} {} {}\n", stat->winh[1].left, stat->winh[1].right, stat->winv[1].top, stat->winv[1].bottom);
         }
 
+        bool obj_in_current_window = window ? active_window_content[4] : true;
+
         for (int i = 0; i < bg_list.size(); i++)
         {
             int bg = bg_list[i];
+            bool bg_in_current_window = window ? active_window_content[bg] : true;
 
-            if (window)
-            {
-                //LOG("{} {} {} {} {} {}\n", active_window_content[0], active_window_content[1], active_window_content[2], active_window_content[3], active_window_content[4], active_window_content[5]);
-                if (active_window_content[bg] && (bg_buffer[bg][x] != TRANSPARENT))
-                    pixel = bg_buffer[bg][x];
-                
-                if (active_window_content[4] && (obj_scanline_buffer[x] != TRANSPARENT))
-                    pixel = obj_scanline_buffer[x];
-            }
-
-            else
-            {
-                if (bg_buffer[bg][x] != TRANSPARENT)
-                    pixel = bg_buffer[bg][x];
-            
-                if (obj_scanline_buffer[x] != TRANSPARENT)
-                    pixel = obj_scanline_buffer[x];
-            }
+            if (bg_in_current_window && (bg_buffer[bg][x] != TRANSPARENT))
+                pixel = bg_buffer[bg][x];
         }
+               
+
+        if (obj_in_current_window && (obj_scanline_buffer[x] != TRANSPARENT))
+            pixel = obj_scanline_buffer[x];
 
         screen_buffer[scanline][x] = u16ToU32Color(pixel);
     }

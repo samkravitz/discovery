@@ -308,7 +308,7 @@ void PPU::renderScanline()
         // This window composition logic was modified from NanoBoyAdvance.
         // https://github.com/fleroviux/NanoBoyAdvance
         if (window)
-        {
+        {   
             // Win0 is enabled and the current point is inside it
             if ((stat->dispcnt.win_enabled & 1) && isInWindow(0, x, scanline))
                 active_window_content = stat->window_content[CONTENT_WIN0];
@@ -328,15 +328,15 @@ void PPU::renderScanline()
             //LOG("{} {} {} {}\n", x, scanline, isInWindow(1, x, scanline), debug);
             //LOG("stats = {} {} {} {}\n", stat->winh[1].left, stat->winh[1].right, stat->winv[1].top, stat->winv[1].bottom);
         }
-    
-        for (int i = bg_list.size() - 1; i >= 0; --i)
-        {
 
+        for (int i = 0; i < bg_list.size(); i++)
+        {
+            int bg = bg_list[i];
             if (window)
             {
                 //LOG("{} {} {} {} {} {}\n", active_window_content[0], active_window_content[1], active_window_content[2], active_window_content[3], active_window_content[4], active_window_content[5]);
-                if (active_window_content[i] && (bg_buffer[i][x] != TRANSPARENT))
-                    pixel = bg_buffer[i][x];
+                if (active_window_content[bg] && (bg_buffer[bg][x] != TRANSPARENT))
+                    pixel = bg_buffer[bg][x];
                 
                 if (active_window_content[4] && (obj_scanline_buffer[x] != TRANSPARENT))
                     pixel = obj_scanline_buffer[x];
@@ -344,8 +344,9 @@ void PPU::renderScanline()
 
             else
             {
-                if (bg_buffer[i][x] != TRANSPARENT)
-                    pixel = bg_buffer[i][x];
+                if (bg_buffer[bg][x] != TRANSPARENT)
+                    pixel = bg_buffer[bg][x];
+
             
                 if (obj_scanline_buffer[x] != TRANSPARENT)
                     pixel = obj_scanline_buffer[x];
@@ -356,7 +357,6 @@ void PPU::renderScanline()
     }
 
     bg_list.clear();
-    //std::memcpy(&screen_buffer[scanline], scanline_buffer, sizeof(scanline_buffer));
 }
 
 void PPU::renderScanlineText(int bg)

@@ -300,7 +300,7 @@ void PPU::renderScanline()
     assert(oam_render[3].empty());
 
     bool window = stat->dispcnt.win_enabled;
-    int *active_window_content;
+    int active_window, *active_window_content;
 
     for (int x = 0; x < SCREEN_WIDTH; ++x)
     {
@@ -312,19 +312,25 @@ void PPU::renderScanline()
         {   
             // Win0 is enabled and the current point is inside it
             if ((stat->dispcnt.win_enabled & 1) && isInWindow(0, x, scanline))
-                active_window_content = stat->window_content[CONTENT_WIN0];
+                active_window = CONTENT_WIN0;
+                //active_window_content = stat->window_content[CONTENT_WIN0];
             
             // Win1 is enabled and the current point is inside it
             else if ((stat->dispcnt.win_enabled & 2) && isInWindow(1, x, scanline))
-                active_window_content = stat->window_content[CONTENT_WIN1];
+                active_window = CONTENT_WIN1;
+                //active_window_content = stat->window_content[CONTENT_WIN1];
             
             // Obj window is enabled and the current point is inside it
             else if ((stat->dispcnt.win_enabled & 4) && objwin_scanline_buffer[x])
-                active_window_content = stat->window_content[CONTENT_WINOBJ];
+                active_window = CONTENT_WINOBJ;
+                //active_window_content = stat->window_content[CONTENT_WINOBJ];
             
             // Current point is in winout
             else
-                active_window_content = stat->window_content[CONTENT_WINOUT];
+                active_window = CONTENT_WINOUT;
+                //active_window_content = stat->window_content[CONTENT_WINOUT];
+            
+            active_window_content = stat->window_content[active_window];
             
             //LOG("{} {} {} {}\n", x, scanline, isInWindow(1, x, scanline), debug);
             //LOG("stats = {} {} {} {}\n", stat->winh[1].left, stat->winh[1].right, stat->winv[1].top, stat->winv[1].bottom);
@@ -339,8 +345,10 @@ void PPU::renderScanline()
                 if (active_window_content[bg] && (bg_buffer[bg][x] != TRANSPARENT))
                     pixel = bg_buffer[bg][x];
                 
-                if (active_window_content[4] && (obj_scanline_buffer[x] != TRANSPARENT))
-                    pixel = obj_scanline_buffer[x];
+                // if (active_window_content[4] && (obj_scanline_buffer[x] != TRANSPARENT)){
+                    
+                //     pixel = obj_scanline_buffer[x];
+                // }
             }
 
             else
@@ -353,6 +361,9 @@ void PPU::renderScanline()
                     pixel = obj_scanline_buffer[x];
             }
         }
+
+        //if (x == 0 && (pixel != backdrop_color))
+            //LOG("{}\n", (int) backdrop_color);
 
         screen_buffer[scanline][x] = u16ToU32Color(pixel);
     }
@@ -506,8 +517,8 @@ void PPU::renderScanlineAffine(int bg)
             if (py < 0)
                 py = height - std::abs(py);
 
-            px %=  width;
-            py %=  height;
+            px %= width;
+            py %= height;
         }
 
         // no wrap
@@ -526,6 +537,9 @@ void PPU::renderScanlineAffine(int bg)
 
         // 8BPP only
         pixel = getBGPixel8BPP(tile_addr, map_x % 8, map_y % 8);
+
+        if (x == 0)
+            LOG("{}\n", pixel);
 
         bg_buffer[bg][x] = pixel;
     }

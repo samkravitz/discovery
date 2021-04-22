@@ -280,6 +280,7 @@ void PPU::renderScanline()
                     case 4:
                     case 5:
                         renderScanlineBitmap(stat->dispcnt.mode);
+                        bg_list.push_back(0);
                         break;
                 }
             }
@@ -542,11 +543,11 @@ void PPU::renderScanlineBitmap(int mode)
         case 3:
             pal_ptr = scanline * SCREEN_WIDTH * 2;
 
-            for (int i = 0; i < SCREEN_WIDTH; ++i)
+            for (int x = 0; x < SCREEN_WIDTH; ++x)
             {
                 pixel = vram[pal_ptr + 1] << 8 | vram[pal_ptr];
                 pal_ptr += 2;
-                scanline_buffer[i] = u16ToU32Color(pixel);
+                bg_buffer[0][x] = pixel;
             }
             break;
 
@@ -557,12 +558,12 @@ void PPU::renderScanlineBitmap(int mode)
             if (stat->dispcnt.ps)
                 pal_ptr += 0xA000;
 
-            for (int i = 0; i < SCREEN_WIDTH; ++i)
+            for (int x = 0; x < SCREEN_WIDTH; ++x)
             {
                 // multiply by 2 because each entry in palram is 2 bytes
                 palette_index = vram[pal_ptr++] * 2;
                 pixel = palram[palette_index + 1] << 8 | palram[palette_index];
-                scanline_buffer[i] = u16ToU32Color(pixel);
+                bg_buffer[0][x] = pixel;
             }
 
             break;
@@ -578,12 +579,12 @@ void PPU::renderScanlineBitmap(int mode)
             if (stat->dispcnt.ps)
                 pal_ptr += 0xA000;
 
-            for (int i = 0; i < 160; ++i)
+            for (int x = 0; x < 160; +x)
             {
                 // multiply by 2 because each entry in palram is 2 bytes
                 palette_index = vram[pal_ptr++] * 2;
                 pixel = palram[palette_index + 1] << 8 | palram[palette_index];
-                scanline_buffer[i] = u16ToU32Color(pixel);
+                bg_buffer[0][x] = pixel;
             }
 
             break;

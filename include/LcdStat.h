@@ -12,6 +12,8 @@
 
 #include "common.h"
 
+#include <cstring>
+
 struct LcdStat
 {
     u8 scanline;
@@ -90,13 +92,55 @@ struct LcdStat
 
         int width, height; // dimensions of map in pixels
         int voff,  hoff;   // vertical, horizontal offsets
-
-        // window parameters
-        int minx, maxx;
-        int miny, maxy;
-        bool in_winout, in_winin;
-
     } bgcnt[4]; // backgrounds 0-3
+
+    struct WinH
+    {
+        u8 right;
+        u8 left;
+    } winh[2];
+
+    struct WinV
+    {
+        u8 bottom;
+        u8 top;
+    } winv[2];
+
+    int window_content[4][6];
+
+    void writeWinh(int win, u16 value)
+    {
+        u8 right = value >> 0 & 0xFF;
+        u8 left  = value >> 8 & 0xFF;
+
+        // Check for illegal values
+        if (right > 240 || left > right)
+            right = 240;
+        
+        winh[win].right = right;
+        winh[win].left  = left;
+    }
+
+    void writeWinv(int win, u16 value)
+    {
+        u8 bottom = value >> 0 & 0xFF;
+        u8 top    = value >> 8 & 0xFF;
+
+        // Check for illegal values
+        if (bottom > 160 || top > bottom)
+            bottom = 160;
+        
+        winv[win].bottom = bottom;
+        winv[win].top    = top;
+    }
+
+    void writeWindowContent(WindowContent win, u8 content)
+    {
+        for (int i = 0; i < 6; ++i)
+            window_content[win][i] = content >> i & 1;
+    }
+
+    bool oam_changed;
 
     LcdStat()
     {
@@ -107,6 +151,8 @@ struct LcdStat
 
         // zero reg_dispstat
         dispstat.raw = 0;
+
+        oam_changed = false;
 
         // zero background ctl
         for (int i = 0; i < 4; ++i)
@@ -119,15 +165,14 @@ struct LcdStat
             bgcnt[i].height  = 0;
             bgcnt[i].voff    = 0;
             bgcnt[i].hoff    = 0;
-
-            bgcnt[i].minx = 0;
-            bgcnt[i].miny = 0;
-            bgcnt[i].maxx = 240;
-            bgcnt[i].maxy = 160;
-            bgcnt[i].in_winout = false;
-            bgcnt[i].in_winin  = false;
         }
-    }
 
-    ~LcdStat() { }
+        // zero window control
+        winh[0].left = winh[0].right = 0;
+        winh[1].left = winh[1].right = 0;
+        winv[0].bottom = winv[0].top = 0;
+        winv[1].bottom = winv[1].top = 0;
+
+        std::memset(window_content, 0, sizeof(window_content));
+    }
 };

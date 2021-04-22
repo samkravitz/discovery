@@ -20,7 +20,7 @@
 extern IRQ *irq;
 
 // transparent pixel color
-#define TRANSPARENT 0x8000
+constexpr int TRANSPARENT = 0x8000;
 
 PPU::PPU(Memory *mem, LcdStat *stat) : mem(mem), stat(stat)
 {
@@ -82,13 +82,7 @@ void PPU::reset()
     scanline       = 0;
     frame          = 0;
     fps            = 0;
-    backdrop_color = 0;
     old_time       = clock();
-    objminx        = 0;
-    objminy        = 0;
-    objmaxx        = 240;
-    objmaxy        = 160;
-    obj_in_winout  = false;
 
     std::memset(screen_buffer, 0, sizeof(screen_buffer));
 
@@ -99,14 +93,9 @@ void PPU::reset()
         objs[i].obj_mode = 2; // hidden
     }
 
-    // reset window parameters
-    for (int i = 0; i < 3; ++i)
-    {
-        win[i].left   = 0;
-        win[i].right  = 240;
-        win[i].top    = 0;
-        win[i].bottom = 160;
-    }
+    // zero bg buffer
+    for (int i = 0; i < NUM_BG; ++i)
+        bg_buffer[i].fill(TRANSPARENT);
 }
 
 // 1 clock cycle of the PPU
@@ -237,55 +226,12 @@ void PPU::render()
 
     // draw final_screen pixels on screen
     SDL_UpdateWindowSurface(window);
-
-    // reset bgcnt's window parameters
-    for (int i = 0; i < 4; ++i)
-    {
-        stat->bgcnt[i].minx = 0;
-        stat->bgcnt[i].miny = 0;
-        stat->bgcnt[i].maxx = 240;
-        stat->bgcnt[i].maxy = 160;
-        stat->bgcnt[i].in_winout = false;
-        stat->bgcnt[i].in_winin  = false;
-    }
-
-    // reset window parameters
-    for (int i = 0; i < 3; ++i)
-    {
-        win[i].left   = 0;
-        win[i].right  = 240;
-        win[i].top    = 0;
-        win[i].bottom = 160;
-    }
-
-    // reset obj layer window parameters
-    objminx = 0;
-    objminy = 0;
-    objmaxx = 240;
-    objmaxy = 160;
-    obj_in_winout = false;
 }
 
 void PPU::renderScanline()
 {
     // index 0 in BG palette
-    backdrop_color = u16ToU32Color(palram[1] << 8 | palram[0]);
-
-    // "zero" scanline buffer with backdrop color
-    for (int i = 0; i < SCREEN_WIDTH; ++i)
-    {
-        scanline_buffer[i] = backdrop_color;
-        objwin_scanline_buffer[i] = 0;
-    }
-
-    // update visible objs and obj window
-    if (stat->dispcnt.obj_enabled)
-        updateAttr();
-        
-
-    // init windows if enabled
-    if (stat->dispcnt.win_enabled != 0)
-        composeWindow();
+    u16 backdrop_color = palram[1] << 8 | palram[0];
 
     // prepare enabled backgrounds to be rendered
     for (int priority = 3; priority >= 0; --priority)
@@ -298,53 +244,117 @@ void PPU::renderScanline()
                 {
                     case 0:
                         renderScanlineText(bg);
+                        bg_list.push_back(bg);
                         break;
                     
                     case 1:
                         if (bg == 0 || bg == 1)
+                        {
                             renderScanlineText(bg);
+                            bg_list.push_back(bg);
+                        }
+
                         else if (bg == 2)
+                        {
                             renderScanlineAffine(bg);
+                            bg_list.push_back(bg);
+                        }
                         break;
 
                     case 2:
                         if (bg == 2 || bg == 3)
+                        {
                             renderScanlineAffine(bg);
+                            bg_list.push_back(bg);
+                        }
                         break;
 
                     case 3:
                     case 4:
                     case 5:
                         renderScanlineBitmap(stat->dispcnt.mode);
+                        bg_list.push_back(0);
                         break;
                 }
             }
         }
-
-        while (!oam_render[priority].empty())
-        {
-            renderScanlineObj(oam_render[priority].top());
-            oam_render[priority].pop();
-        }
     }
 
-    // TODO - just keep these on for a bit until I know this works fine
-    assert(oam_render[0].empty());
-    assert(oam_render[1].empty());
-    assert(oam_render[2].empty());
-    assert(oam_render[3].empty());
+    // Update obj data structure if necessary
+    // and render objs into buffer
+    if (stat->dispcnt.obj_enabled)
+    {
+        updateAttr();
+        renderScanlineObj();
+    }
 
-    obj_in_objwin = false;
-    std::memcpy(&screen_buffer[scanline], scanline_buffer, sizeof(scanline_buffer));
+    bool window = stat->dispcnt.win_enabled;
+    int active_window, *active_window_content;
+
+    for (int x = 0; x < SCREEN_WIDTH; ++x)
+    {
+        u16 pixel = backdrop_color;
+
+        int priority = 4;
+
+        // This window composition logic was modified from NanoBoyAdvance.
+        // https://github.com/fleroviux/NanoBoyAdvance
+        if (window)
+        {   
+            // Win0 is enabled and the current point is inside it
+            if ((stat->dispcnt.win_enabled & 1) && isInWindow(0, x, scanline))
+                active_window = CONTENT_WIN0;
+
+            // Win1 is enabled and the current point is inside it
+            else if ((stat->dispcnt.win_enabled & 2) && isInWindow(1, x, scanline))
+                active_window = CONTENT_WIN1;
+
+            // Obj window is enabled and the current point is inside it
+            else if ((stat->dispcnt.win_enabled & 4) && objwin_scanline_buffer[x])
+                active_window = CONTENT_WINOBJ;
+
+            // Current point is in winout
+            else
+                active_window = CONTENT_WINOUT;
+
+            active_window_content = stat->window_content[active_window];
+            
+            //LOG("{} {} {} {}\n", x, scanline, isInWindow(1, x, scanline), debug);
+            //LOG("stats = {} {} {} {}\n", stat->winh[1].left, stat->winh[1].right, stat->winv[1].top, stat->winv[1].bottom);
+        }
+
+        bool obj_in_current_window = window ? active_window_content[4] : true;
+
+        for (int i = 0; i < bg_list.size(); i++)
+        {
+            int bg = bg_list[i];
+            bool bg_in_current_window = window ? active_window_content[bg] : true;
+
+            if (bg_in_current_window && (bg_buffer[bg][x] != TRANSPARENT))
+            {
+                pixel = bg_buffer[bg][x];
+                priority = stat->bgcnt[bg].priority;
+            }
+        }
+               
+
+        if (obj_in_current_window && (obj_scanline_buffer[x].priority <= priority) && (obj_scanline_buffer[x].color != TRANSPARENT))
+            pixel = obj_scanline_buffer[x].color;
+
+        screen_buffer[scanline][x] = u16ToU32Color(pixel);
+
+        // zero oam buffers for next scanline
+        objwin_scanline_buffer[x] = 0;
+        obj_scanline_buffer[x].color = TRANSPARENT;
+        obj_scanline_buffer[x].priority = 4;
+    }
+
+    bg_list.clear();
 }
 
 void PPU::renderScanlineText(int bg)
 {
     auto const &bgcnt = stat->bgcnt[bg];
-
-    // scanline outside of window
-    if (scanline < bgcnt.miny || scanline > bgcnt.maxy)
-       return;
 
     int pitch; // pitch of screenblocks
 
@@ -375,12 +385,8 @@ void PPU::renderScanlineText(int bg)
     int grid_x, grid_y;
 
     // conver only where bg is inside its window
-    for (int x = bgcnt.minx; x < bgcnt.maxx; ++x)
+    for (int x = 0; x < SCREEN_WIDTH; ++x)
     {
-        // layer is in winout & not winin
-        if (bgcnt.in_winout && !bgcnt.in_winin && !isInWinOut(x, scanline))
-          continue;
-
         map_x = (x + bgcnt.hoff) % width;
         tile_x = map_x / 8; // 8 px per tile
 
@@ -415,20 +421,14 @@ void PPU::renderScanlineText(int bg)
             pixel = getBGPixel8BPP(tile_addr, grid_x, grid_y);
         }
 
-        if (pixel != TRANSPARENT)
-            scanline_buffer[x] = u16ToU32Color(pixel);
+        bg_buffer[bg][x] = pixel;
     }
-
 }
 
 // render the current scanline for affine bg modes
 void PPU::renderScanlineAffine(int bg)
 {
     auto const &bgcnt = stat->bgcnt[bg];
-
-    // scanline outside of window
-    if (scanline < bgcnt.miny || scanline > bgcnt.maxy)
-        return;
 
     // displacement vector
     // width, height of map in pixels
@@ -482,12 +482,8 @@ void PPU::renderScanlineAffine(int bg)
     int pixel;
     u32 tile_addr;
 
-    for (int x = bgcnt.minx; x < bgcnt.maxx; ++x)
+    for (int x = 0; x < SCREEN_WIDTH; ++x)
     {
-        // layer is in winout & not winin
-        if (bgcnt.in_winout && !bgcnt.in_winin && !isInWinOut(x, scanline))
-          continue;
-
         x1 = x + dx;
 
         // affine transform
@@ -497,20 +493,25 @@ void PPU::renderScanlineAffine(int bg)
         // wrap
         if (bgcnt.affine_wrap == 1)
         {
+            px %= width;
+            py %= height;
+
             if (px < 0)
                 px = width  - std::abs(px);
             if (py < 0)
                 py = height - std::abs(py);
-
-            px %=  width;
-            py %=  height;
         }
 
         // no wrap
-        // transformmed coordinate is out of bounds
-        if (px >= width || py >= height) continue;
-        if (px < 0      || py < 0)       continue;
-
+        else
+        {
+            // transformmed coordinate is out of bounds
+            if (px >= width || py >= height || px < 0 || py < 0)
+            {
+                bg_buffer[bg][x] = TRANSPARENT;
+                continue;
+            }       
+        }
 
         map_x = px;
         map_y = py;
@@ -523,8 +524,7 @@ void PPU::renderScanlineAffine(int bg)
         // 8BPP only
         pixel = getBGPixel8BPP(tile_addr, map_x % 8, map_y % 8);
 
-        if (pixel != TRANSPARENT)
-            scanline_buffer[x] = u16ToU32Color(pixel);
+        bg_buffer[bg][x] = pixel;
     }
 }
 
@@ -540,11 +540,11 @@ void PPU::renderScanlineBitmap(int mode)
         case 3:
             pal_ptr = scanline * SCREEN_WIDTH * 2;
 
-            for (int i = 0; i < SCREEN_WIDTH; ++i)
+            for (int x = 0; x < SCREEN_WIDTH; ++x)
             {
                 pixel = vram[pal_ptr + 1] << 8 | vram[pal_ptr];
                 pal_ptr += 2;
-                scanline_buffer[i] = u16ToU32Color(pixel);
+                bg_buffer[0][x] = pixel;
             }
             break;
 
@@ -555,12 +555,12 @@ void PPU::renderScanlineBitmap(int mode)
             if (stat->dispcnt.ps)
                 pal_ptr += 0xA000;
 
-            for (int i = 0; i < SCREEN_WIDTH; ++i)
+            for (int x = 0; x < SCREEN_WIDTH; ++x)
             {
                 // multiply by 2 because each entry in palram is 2 bytes
                 palette_index = vram[pal_ptr++] * 2;
                 pixel = palram[palette_index + 1] << 8 | palram[palette_index];
-                scanline_buffer[i] = u16ToU32Color(pixel);
+                bg_buffer[0][x] = pixel;
             }
 
             break;
@@ -576,12 +576,12 @@ void PPU::renderScanlineBitmap(int mode)
             if (stat->dispcnt.ps)
                 pal_ptr += 0xA000;
 
-            for (int i = 0; i < 160; ++i)
+            for (int x = 0; x < 160; +x)
             {
                 // multiply by 2 because each entry in palram is 2 bytes
                 palette_index = vram[pal_ptr++] * 2;
                 pixel = palram[palette_index + 1] << 8 | palram[palette_index];
-                scanline_buffer[i] = u16ToU32Color(pixel);
+                bg_buffer[0][x] = pixel;
             }
 
             break;
@@ -589,115 +589,105 @@ void PPU::renderScanlineBitmap(int mode)
 }
 
 
-void PPU::renderScanlineObj(ObjAttr const &attr, bool obj_win)
+void PPU::renderScanlineObj()
 {
     u16 pixel;
 
-    // skip hidden object
-    if (attr.obj_mode == 2)
-        return;
-
-    // obj exists outside current scanline
-    if (scanline < attr.qy0 - attr.hheight || scanline >= attr.qy0 + attr.hheight)
-        return;
-
-    // obj exists outside current object layer
-    if (scanline < objminy || scanline >= objmaxy)
-        return;
-    
-    int qx0 = attr.qx0;      // center of sprite screen space
-
-    // x, y coordinate of texture after transformation
-    int px, py;
-    int iy = -attr.hheight + (scanline - attr.y);
-
-
-    //LOG("{} {} {} {}\n", attr.x, attr.y, attr.hheight, attr.hwidth);
-    //LOG("{} {} {} {}\n", attr.x0, attr.y0, attr.hheight, attr.hwidth);
-
-    for (int ix = -attr.hwidth; ix < attr.hwidth; ++ix)
+    for (int i = NUM_OBJS - 1; i >= 0; --i)
     {
-        // objs in winout
-        if (obj_in_winout && !isInWinOut(qx0 + ix, scanline))
+        auto const &attr = objs[i];
+
+        // skip hidden object
+        if (attr.obj_mode == 2)
             continue;
 
-        px = ix + attr.hwidth;
-        py = iy + attr.hheight;
-
-        // obj exists outside current object layer
-        if (qx0 + ix < objminx || qx0 + ix >= objmaxx)
+        // obj exists outside current scanline
+        if (scanline < attr.qy0 - attr.hheight || scanline >= attr.qy0 + attr.hheight)
             continue;
-
-        // transform affine & double wide affine
-        if (attr.obj_mode == 1 || attr.obj_mode == 3)
-        {
-            px = attr.pa * ix + attr.pb * iy + attr.px0;
-            py = attr.pc * ix + attr.pd * iy + attr.py0;
-        }
-
-        // horizontal / vertical flip
-        if (attr.h_flip) px = attr.width  - px - 1;
-        if (attr.v_flip) py = attr.height - py - 1;
         
-        // transformed coordinate is out of bounds
-        if (px >= attr.width || py  >= attr.height) continue;
-        if (px       < 0     || py  < 0           ) continue;
-        if (qx0 + ix < 0     || qx0 + ix >= 240   ) continue;
+        int qx0 = attr.qx0; // center of sprite screen space
 
-        
-        int tile_x  = px % 8; // x coordinate of pixel within tile
-        int tile_y  = py % 8; // y coordinate of pixel within tile
-        int block_x = px / 8; // x coordinate of tile in vram
-        int block_y = py / 8; // y coordinate of tile in vram
+        // x, y coordinate of texture after transformation
+        int px, py;
+        int iy = -attr.hheight + (scanline - attr.y);
 
-        int tileno = attr.tileno;
-        int pixel;
 
-        // 8bpp
-        if (attr.color_mode == 1)
+        //LOG("{} {} {} {}\n", attr.x, attr.y, attr.hheight, attr.hwidth);
+        //LOG("{} {} {} {}\n", attr.x0, attr.y0, attr.hheight, attr.hwidth);
+
+        for (int ix = -attr.hwidth; ix < attr.hwidth; ++ix)
         {
-            // 1d
-            if (stat->dispcnt.obj_map_mode == 1)
-                tileno += block_y * (attr.width / 4);
+            px = ix + attr.hwidth;
+            py = iy + attr.hheight;
 
-            // 2d
-            else
-                tileno = (tileno & ~1) + block_y * 32;
+            // transform affine & double wide affine
+            if (attr.obj_mode == 1 || attr.obj_mode == 3)
+            {
+                px = attr.pa * ix + attr.pb * iy + attr.px0;
+                py = attr.pc * ix + attr.pd * iy + attr.py0;
+            }
+
+            // horizontal / vertical flip
+            if (attr.h_flip) px = attr.width  - px - 1;
+            if (attr.v_flip) py = attr.height - py - 1;
             
-            tileno += block_x * 2;
+            // transformed coordinate is out of bounds
+            if (px >= attr.width || py  >= attr.height) continue;
+            if (px       < 0     || py  < 0           ) continue;
+            if (qx0 + ix < 0     || qx0 + ix >= 240   ) continue;
 
-            pixel = getObjPixel8BPP(tileno * 32, tile_x, tile_y);
-        }
-
-        // 8bpp
-        else
-        {
-            // 1d
-            if (stat->dispcnt.obj_map_mode == 1)
-                tileno += block_y * (attr.width / 8);
-
-            // 2d
-            else
-                tileno += block_y * 32;
-
-            tileno += block_x;
             
-            pixel = getObjPixel4BPP(tileno * 32, attr.palbank, tile_x, tile_y);
-        }
-        
-        if (pixel != TRANSPARENT)
-        {
-            // don't render, but signify that this pixel serves in the object window mask
-            if (obj_win)
-                objwin_scanline_buffer[qx0 + ix] = 1;
+            int tile_x  = px % 8; // x coordinate of pixel within tile
+            int tile_y  = py % 8; // y coordinate of pixel within tile
+            int block_x = px / 8; // x coordinate of tile in vram
+            int block_y = py / 8; // y coordinate of tile in vram
 
+            int tileno = attr.tileno;
+            int pixel;
+
+            // 8bpp
+            if (attr.color_mode == 1)
+            {
+                // 1d
+                if (stat->dispcnt.obj_map_mode == 1)
+                    tileno += block_y * (attr.width / 4);
+
+                // 2d
+                else
+                    tileno = (tileno & ~1) + block_y * 32;
+                
+                tileno += block_x * 2;
+
+                pixel = getObjPixel8BPP(tileno * 32, tile_x, tile_y);
+            }
+
+            // 8bpp
             else
             {
-                // pixel doesn't fall in object window, so skip
-                if (obj_in_objwin && !objwin_scanline_buffer[qx0 + ix])
-                    continue;
+                // 1d
+                if (stat->dispcnt.obj_map_mode == 1)
+                    tileno += block_y * (attr.width / 8);
 
-                scanline_buffer[qx0 + ix] = u16ToU32Color(pixel);
+                // 2d
+                else
+                    tileno += block_y * 32;
+
+                tileno += block_x;
+                
+                pixel = getObjPixel4BPP(tileno * 32, attr.palbank, tile_x, tile_y);
+            }
+            
+            if (pixel != TRANSPARENT)
+            {
+                // don't render, but signify that this pixel serves in the object window mask
+                if (attr.gfx_mode == 2)
+                    objwin_scanline_buffer[qx0 + ix] = 1;
+                
+                else if (attr.priority <= obj_scanline_buffer[qx0 + ix].priority)
+                {
+                    obj_scanline_buffer[qx0 + ix].color = pixel;
+                    obj_scanline_buffer[qx0 + ix].priority = attr.priority;
+                }
             }
         }
     }
@@ -705,6 +695,10 @@ void PPU::renderScanlineObj(ObjAttr const &attr, bool obj_win)
 
 void PPU::updateAttr()
 {
+    // no need to refresh oam data structure if no changes have been made
+    if (!stat->oam_changed)
+        return;
+
     int attr_ptr = 0;
     u16 attr0, attr1, attr2;
 
@@ -811,170 +805,8 @@ void PPU::updateAttr()
             obj.h_flip = 0;
         }
 
-        // add index to stack to be displayed
-        if (obj.obj_mode != 2)
-            oam_render[obj.priority].push(obj);
-        
-        // add obj's non-transparent pixels to obj window
-        if (obj.gfx_mode == 2)
-            renderScanlineObj(obj, true);
+        stat->oam_changed = false;
     }
-}
-
-void PPU::composeWindow()
-{
-    // win1 enabled
-     if (stat->dispcnt.win_enabled & 2)
-    {
-        u16 win1v  = mem->read16Unsafe(REG_WIN1V);
-        u16 win1h  = mem->read16Unsafe(REG_WIN1H);
-        
-        auto &window = win[1];
-        window.left   = win1h >> 8;
-        window.right  = win1h & 0xFF;
-        window.top    = win1v >> 8;
-        window.bottom = win1v & 0xFF;
-
-        // illegal values
-        if (window.right > 240 || window.left > window.right)
-            window.right = 240;
-
-        if (window.bottom > 160 || window.top > window.bottom)
-            window.bottom = 160;
-
-        // window content
-        u8 win1content = mem->read16Unsafe(REG_WININ) >> 8;
-
-        // check if bgs are in window content
-        int mask;
-        for (int i = 0; i < 4; ++i)
-        {
-            mask = 1 << i;
-            if (win1content & mask)
-            {
-                stat->bgcnt[i].minx = window.left;
-                stat->bgcnt[i].maxx = window.right;
-                stat->bgcnt[i].miny = window.top;
-                stat->bgcnt[i].maxy = window.bottom;
-                stat->bgcnt[i].in_winin = true;
-            }
-        }
-
-        // objs in win1
-        if (win1content & 0x10)
-        {
-            objminx        = window.left;
-            objmaxx        = window.right;
-            objminy        = window.top;
-            objmaxy        = window.bottom;
-            obj_in_winout  = false;
-        }
-    }
-
-    // // win0 enabled
-    if (stat->dispcnt.win_enabled & 1)
-    {
-        u16 win0v  = mem->read16Unsafe(REG_WIN0V);
-        u16 win0h  = mem->read16Unsafe(REG_WIN0H);
-
-        auto &window = win[0];
-        window.left   = win0h >> 8;
-        window.right  = win0h & 0xFF;
-        window.top    = win0v >> 8;
-        window.bottom = win0v & 0xFF;
-
-        // illegal values
-        if (window.right > 240 || window.left > window.right)
-            window.right = 240;
-
-        if (window.bottom > 160 || window.top > window.bottom)
-            window.bottom = 160;
-
-        // window content
-        u8 win0content = mem->read16Unsafe(REG_WININ) & 0xFF;
-
-        // check if bgs are in window content
-        int mask;
-        for (int i = 0; i < 4; ++i)
-        {
-            mask = 1 << i;
-            if (win0content & mask)
-            {
-                stat->bgcnt[i].minx = window.left;
-                stat->bgcnt[i].maxx = window.right;
-                stat->bgcnt[i].miny = window.top;
-                stat->bgcnt[i].maxy = window.bottom;
-                stat->bgcnt[i].in_winin = true;
-            }
-        }
-
-        // objs in win0
-        if (win0content & 0x10)
-        {
-            objminx        = window.left;
-            objmaxx        = window.right;
-            objminy        = window.top;
-            objmaxy        = window.bottom;
-            obj_in_winout  = false;
-        }
-    }
-
-    // // winout
-    u8 winoutcontent = mem->read16Unsafe(REG_WINOUT) & 0xFF;
-
-    // check if bgs are in winout content
-    int mask;
-    for (int i = 0; i < 4; ++i)
-    {
-        mask = 1 << i;
-        if (winoutcontent & mask)
-        {
-            stat->bgcnt[i].minx = 0;
-            stat->bgcnt[i].miny = 0;
-            stat->bgcnt[i].maxx = 240;
-            stat->bgcnt[i].maxy = 160;
-            stat->bgcnt[i].in_winout = true;
-        }
-    }
-
-    // objs in winout
-    if (winoutcontent & 0x10)
-        obj_in_winout = true;
-
-    // obj window enabled
-    if (stat->dispcnt.win_enabled & 4)
-    {
-        // window content
-        u8 objwincontent = mem->read16Unsafe(REG_WINOUT) >> 8;
-        //std::cout << "Win obj enabled\n";
-
-        // check if bgs are in window content
-        // int mask;
-        // for (int i = 0; i < 4; ++i)
-        // {
-        //     mask = 1 << i;
-        //     if (win1content & mask)
-        //     {
-        //         stat->bgcnt[i].minx = window.left;
-        //         stat->bgcnt[i].maxx = window.right;
-        //         stat->bgcnt[i].miny = window.top;
-        //         stat->bgcnt[i].maxy = window.bottom;
-        //         stat->bgcnt[i].in_winin = true;
-        //     }
-        // }
-        
-
-        // objs in objwin
-        if (objwincontent & 0x10)
-        {
-            // objminx        = window.left;
-            // objmaxx        = window.right;
-            // objminy        = window.top;
-            // objmaxy        = window.bottom;
-            obj_in_objwin  = true;
-        }
-    }
-   
 }
 
 inline u16 PPU::getObjPixel4BPP(u32 addr, int palbank, int x, int y)
@@ -1048,18 +880,9 @@ inline u16 PPU::getBGPixel8BPP(u32 addr, int x, int y)
     return palram[idx + 1] << 8 | palram[idx];
 }
 
-// returns true if (x, y) is currently in winOut, true otherwise
-bool PPU::isInWinOut(int x, int y)
+inline bool PPU::isInWindow(int win, int x, int y)
 {
-    if ((stat->dispcnt.win_enabled & 1)         &&
-        x >= win[0].left && x <= win[0].right   &&
-        y >= win[0].top  && y <= win[0].bottom) return false;
-
-    if ((stat->dispcnt.win_enabled & 2)         &&
-        x >= win[1].left && x <= win[1].right   &&
-        y >= win[1].top  && y <= win[1].bottom) return false;
-    
-    return true;
+    return (x >= stat->winh[win].left) && (x < stat->winh[win].right) && (y >= stat->winv[win].top) && (y < stat->winv[win].bottom);
 }
 
 inline u32 PPU::u16ToU32Color(u16 color_u16) { return color_lut[color_u16]; }

@@ -78,11 +78,11 @@ PPU::~PPU()
 
 void PPU::reset()
 {
-    cycles         = 0;
-    scanline       = 0;
-    frame          = 0;
-    fps            = 0;
-    old_time       = clock();
+    cycles   = 0;
+    scanline = 0;
+    frame    = 0;
+    fps      = 0;
+    old_time = clock();
 
     std::memset(screen_buffer, 0, sizeof(screen_buffer));
 

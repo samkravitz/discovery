@@ -336,7 +336,6 @@ void PPU::renderScanline()
                 priority = stat->bgcnt[bg].priority;
             }
         }
-               
 
         if (obj_in_current_window && (obj_scanline_buffer[x].priority <= priority) && (obj_scanline_buffer[x].color != TRANSPARENT))
             pixel = obj_scanline_buffer[x].color;

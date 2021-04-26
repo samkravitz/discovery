@@ -19,6 +19,7 @@
 
 extern IRQ *irq;
 
+
 // transparent pixel color
 constexpr int TRANSPARENT = 0x8000;
 

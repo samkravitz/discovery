@@ -7,6 +7,7 @@
  * DATE: July 13, 2020
  * DESCRIPTION: Implementation of the core emulator class
  */
+
 #include <iostream>
 #include <iomanip>
 

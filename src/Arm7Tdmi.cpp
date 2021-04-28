@@ -51,8 +51,6 @@ Arm7Tdmi::Arm7Tdmi(Memory *mem) : mem(mem)
     #endif
 }
 
-Arm7Tdmi::~Arm7Tdmi() { }
-
 Mode Arm7Tdmi::getMode()
 {
     switch (registers.cpsr.mode)
@@ -180,10 +178,12 @@ void Arm7Tdmi::fetch()
     }
 }
 
-void Arm7Tdmi::decode(u32 instruction) { }
+void Arm7Tdmi::decode() { }
 
-void Arm7Tdmi::execute(u32 instruction)
-{  
+int Arm7Tdmi::execute(u32 instruction)
+{
+    cycles = 0;
+
     if (PRINT) {
     std::cout << "Executing: " << std::hex << instruction << "\n";
     if (instruction == 0)
@@ -199,7 +199,7 @@ void Arm7Tdmi::execute(u32 instruction)
             {
                 incrementPC();
                 tick(0, 0, 1); // 1I
-                return;
+                return cycles;
             }
             
             switch(util::getInstructionFormat(instruction))
@@ -255,40 +255,10 @@ void Arm7Tdmi::execute(u32 instruction)
     if (pipeline_full)
         incrementPC();
 
-    if (PRINT) {
-    std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << getRegister(0) << 
-				" -- R4  : 0x" << std::setw(8) << std::setfill('0') << getRegister(4) << 
-				" -- R8  : 0x" << std::setw(8) << std::setfill('0') << getRegister(8) << 
-				" -- R12 : 0x" << std::setw(8) << std::setfill('0') << getRegister(12) << "\n";
+    if (PRINT)
+        print();
 
-			std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << getRegister(1) << 
-				" -- R5  : 0x" << std::setw(8) << std::setfill('0') << getRegister(5) << 
-				" -- R9  : 0x" << std::setw(8) << std::setfill('0') << getRegister(9) << 
-				" -- R13 : 0x" << std::setw(8) << std::setfill('0') << getRegister(13) << "\n";
-
-			std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << getRegister(2) << 
-				" -- R6  : 0x" << std::setw(8) << std::setfill('0') << getRegister(6) << 
-				" -- R10 : 0x" << std::setw(8) << std::setfill('0') << getRegister(10) << 
-				" -- R14 : 0x" << std::setw(8) << std::setfill('0') << getRegister(14) << "\n";
-
-			std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << getRegister(3) << 
-				" -- R7  : 0x" << std::setw(8) << std::setfill('0') << getRegister(7) << 
-				" -- R11 : 0x" << std::setw(8) << std::setfill('0') << getRegister(11) << 
-				" -- R15 : 0x" << std::setw(8) << std::setfill('0') << getRegister(15) << "\n";
-
-	
-			std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << registers.cpsr.raw << "\t";
-            if (getConditionCodeFlag(ConditionFlag::N))
-                std::cout << "N";
-            if (getConditionCodeFlag(ConditionFlag::Z))
-                std::cout << "Z";
-            if (getConditionCodeFlag(ConditionFlag::C))
-                std::cout << "C";
-            if (getConditionCodeFlag(ConditionFlag::V))
-                std::cout << "V";
-            std::cout << "\n";
-            //std:: cout << std::dec << ii << " instructions\n";
-    }
+    return cycles;
 }
 
 u32 Arm7Tdmi::getRegister(u32 reg)
@@ -1317,6 +1287,41 @@ bool Arm7Tdmi::checkState()
 
     return valid;
 }
+
+void Arm7Tdmi::print() {
+    std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << getRegister(0) << 
+				" -- R4  : 0x" << std::setw(8) << std::setfill('0') << getRegister(4) << 
+				" -- R8  : 0x" << std::setw(8) << std::setfill('0') << getRegister(8) << 
+				" -- R12 : 0x" << std::setw(8) << std::setfill('0') << getRegister(12) << "\n";
+
+			std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << getRegister(1) << 
+				" -- R5  : 0x" << std::setw(8) << std::setfill('0') << getRegister(5) << 
+				" -- R9  : 0x" << std::setw(8) << std::setfill('0') << getRegister(9) << 
+				" -- R13 : 0x" << std::setw(8) << std::setfill('0') << getRegister(13) << "\n";
+
+			std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << getRegister(2) << 
+				" -- R6  : 0x" << std::setw(8) << std::setfill('0') << getRegister(6) << 
+				" -- R10 : 0x" << std::setw(8) << std::setfill('0') << getRegister(10) << 
+				" -- R14 : 0x" << std::setw(8) << std::setfill('0') << getRegister(14) << "\n";
+
+			std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << getRegister(3) << 
+				" -- R7  : 0x" << std::setw(8) << std::setfill('0') << getRegister(7) << 
+				" -- R11 : 0x" << std::setw(8) << std::setfill('0') << getRegister(11) << 
+				" -- R15 : 0x" << std::setw(8) << std::setfill('0') << getRegister(15) << "\n";
+
+	
+			std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << registers.cpsr.raw << "\t";
+            if (getConditionCodeFlag(ConditionFlag::N))
+                std::cout << "N";
+            if (getConditionCodeFlag(ConditionFlag::Z))
+                std::cout << "Z";
+            if (getConditionCodeFlag(ConditionFlag::C))
+                std::cout << "C";
+            if (getConditionCodeFlag(ConditionFlag::V))
+                std::cout << "V";
+            std::cout << "\n";
+            //std:: cout << std::dec << ii << " instructions\n";
+    }
 
 // #include "HandlerArm.cpp"
 // #include "HandlerThumb.cpp"

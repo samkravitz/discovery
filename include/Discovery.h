@@ -20,27 +20,27 @@
 
 class Discovery
 {
-    public:
-        Discovery();
+public:
+    Discovery();
 
-        Arm7Tdmi  *cpu;
-        PPU       *ppu;
-        APU       *apu;
-        Memory    *mem;
-        LcdStat   *stat;
-        Gamepad   *gamepad;
-        Timer     *timer;
+    Arm7Tdmi  *cpu;
+    PPU       *ppu;
+    APU       *apu;
+    Memory    *mem;
+    LcdStat   *stat;
+    Gamepad   *gamepad;
+    Timer     *timer;
 
-        long system_cycles;
-        bool running;
-
-        SDL_Event e;
+    void parseArgs();
+    void printArgHelp();
+    void gameLoop();
 
         std::vector<std::string> argv;
-
-        void gameLoop();
-        void tick();
-        void parseArgs();
-        void printArgHelp();
-        void shutdown();
+private:
+    u64  cycles;
+    bool running;
+    SDL_Event e;
+    
+    void tick();
+    void shutdown();
 };

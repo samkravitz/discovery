@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 
 Discovery::Discovery()
 {
-    system_cycles = 0;
+    cycles = 0;
     running = true;
 
     gamepad = new Gamepad();
@@ -71,7 +71,8 @@ Discovery::Discovery()
 
 void Discovery::gameLoop()
 {
-    u32 old_cycles = 0;
+    int cycles_elapsed;
+
     while (running)
     {
         // tick hardware (not cpu) if in halt state
@@ -85,8 +86,8 @@ void Discovery::gameLoop()
         }
 
         cpu->fetch();
-        cpu->decode(cpu->pipeline[0]);
-        cpu->execute(cpu->pipeline[0]);
+        cpu->decode();
+        cycles_elapsed = cpu->execute(cpu->pipeline[0]);
 
         cpu->handleInterrupt();
 
@@ -95,9 +96,10 @@ void Discovery::gameLoop()
         cpu->pipeline[1] = cpu->pipeline[2];
 
         // run hardware for as many clock cycles as cpu used
-        old_cycles = cpu->cycles;
-        while (system_cycles < old_cycles)
+        while (cycles_elapsed-- > 0)
             this->tick();
+        
+        //std::cout << "hi\n";
     }
 
     shutdown();
@@ -106,12 +108,12 @@ void Discovery::gameLoop()
 // clock hardware components
 void Discovery::tick()
 {
-    system_cycles++;
+    cycles++;
     ppu->tick();
     timer->tick();
 
     // poll for key presses at start of vblank
-    if (system_cycles % 197120 == 0)
+    if (cycles % 197120 == 0)
     {
         while (SDL_PollEvent(&e))
         {

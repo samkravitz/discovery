@@ -11,24 +11,22 @@
 
 #include <iostream>
 #include <ctime>
-#include <functional>
 #include <stack>
 #include <array>
 #include <vector>
 
 #include "Memory.h"
+#include "Scheduler.h"
 #include "common.h"
 #include "mmio.h"
 
 constexpr int SCREEN_WIDTH        = 240;
 constexpr int SCREEN_HEIGHT       = 160;
-constexpr int MAX_X               = 512;
-constexpr int MAX_Y               = 256;
 
-constexpr int HDRAW               = 960; // # of cycles in HDraw
-constexpr int HBLANK              = 272; // # of cycles in HBlank
-constexpr int VDRAW               = 160; // # of scanlines in VDraw
-constexpr int VBLANK              = 68;  // # of scanlines in VBlank
+constexpr int HDRAW_CYCLES        = 960;    // # of cycles in hbraw
+constexpr int HBLANK_CYCLES       = 272;    // # of cycles in hblank
+constexpr int VDRAW_CYCLES        = 197120; // # of cycles in vbraw
+constexpr int VBLANK_CYCLES       = 83776;  // # of cycles in vblank
 
 constexpr int CHARBLOCK_LEN       = 0x4000;
 constexpr int SCREENBLOCK_LEN     = 0x800;
@@ -48,17 +46,17 @@ constexpr u32 SPRITE_PALETTE      = 0x5000200;
 class PPU
 {
 public:
-    PPU(Memory *, LcdStat *);
+    PPU(Memory *, LcdStat *, Scheduler *);
 
     Memory *mem;
     LcdStat *stat;
+    Scheduler *scheduler;
 
     u32 screen_buffer[SCREEN_HEIGHT][SCREEN_WIDTH];
 
     u32 cycles;
     u8 scanline;
 
-    void tick();
     void reset();
 
 private:
@@ -131,6 +129,9 @@ private:
     void renderScanlineAffine(int);
     void renderScanlineBitmap(int);
     void renderScanlineObj();
+
+    void hblank();
+    void vblank();
 
     // misc
     inline u16 getObjPixel4BPP(u32, int, int, int);

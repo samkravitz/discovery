@@ -21,22 +21,22 @@ IRQ *irq;
 
 Discovery::Discovery()
 {
-    gamepad = new Gamepad();
-    stat    = new LcdStat();
-    timer   = new Timer();
+    gamepad   = new Gamepad();
+    stat      = new LcdStat();
+    timer     = new Timer();
+    scheduler = new Scheduler();
 
-    mem     = new Memory(stat, timer, gamepad);
-    cpu     = new Arm7Tdmi(mem);
-    ppu     = new PPU(mem, stat);
+    mem       = new Memory(stat, timer, gamepad);
+    cpu       = new Arm7Tdmi(mem);
+    ppu       = new PPU(mem, stat, scheduler);
     //apu     = new APU(mem);
-
-    irq     = new IRQ();
+    irq       = new IRQ();
 }
 
 // clock hardware components
 void Discovery::tick()
 {
-    ppu->tick();
+    //ppu->tick();
     timer->tick();
 }
 
@@ -82,6 +82,7 @@ void Discovery::shutdown()
     delete gamepad;
     delete timer;
     delete irq;
+    delete scheduler;
 }
 
 void Discovery::frame()
@@ -104,6 +105,7 @@ void Discovery::frame()
         cpu->fetch();
         cpu->decode();
         cycles_elapsed = cpu->execute(cpu->pipeline[0]);
+        scheduler->advance(cycles_elapsed);
 
         cpu->handleInterrupt();
 

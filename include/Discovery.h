@@ -17,6 +17,7 @@
 #include "Memory.h"
 #include "Timer.h"
 #include "Gamepad.h"
+#include "Scheduler.h"
 
 class Discovery
 {
@@ -30,6 +31,7 @@ public:
     LcdStat   *stat;
     Gamepad   *gamepad;
     Timer     *timer;
+    Scheduler *scheduler;
 
     std::vector<std::string> argv;
 

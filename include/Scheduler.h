@@ -3,6 +3,7 @@
 #include "common.h"
 #include <queue>
 #include <functional>
+#include <vector>
 
 class Scheduler
 {
@@ -19,8 +20,8 @@ private:
         u64 timestamp;
         std::function<void(void)> handler;
 
-        inline bool operator < (Event const &rhs) const { return timestamp > rhs.timestamp; }
+        inline bool operator > (Event const &rhs) const { return timestamp > rhs.timestamp; }
     };
 
-    std::priority_queue<Event> events;
+    std::priority_queue<Event, std::vector<Event>, std::greater<Event>> events;
 };

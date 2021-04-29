@@ -40,6 +40,7 @@ private:
             
         };
 
+        bool registered;
         u16 initial;
         u16 data;
         int prescalar;

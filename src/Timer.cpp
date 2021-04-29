@@ -21,10 +21,11 @@ Timer::Timer(Scheduler *scheduler) :
     // zero channels
     for (int i = 0; i < 4; ++i)
     {
-        channel[i].cnt       = 0;
-        channel[i].data      = 0;
-        channel[i].initial   = 0;
-        channel[i].prescalar = 1;
+        channel[i].cnt        = 0;
+        channel[i].data       = 0;
+        channel[i].initial    = 0;
+        channel[i].prescalar  = 1;
+        channel[i].registered = false;
     }
 }
 
@@ -56,19 +57,21 @@ void Timer::writeCnt(int ch, u16 value)
        return;
 
     if (tmr.enable)
-    {
+    {   
         // Set scheduler callback handler
         std::function<void(void)> tick_handler = [ch, this]() {
             return std::bind(&Timer::tick, this, ch);
         }();
 
-        scheduler->add(tmr.prescalar, tick_handler);
+        scheduler->add(tmr.prescalar, tick_handler, ch);
+        tmr.registered = true;
     }
 
-    else
+    else if (tmr.registered)
     {
         // remove tick event from scheduler
-        LOG("disabling timer {}\n", ch);
+        scheduler->remove(ch);
+        tmr.registered = false;
     }
 }
 
@@ -93,7 +96,7 @@ void Timer::cascade(int ch)
 }
 
 void Timer::tick(int ch)
-{
+{   
     auto &tmr = channel[ch];
 
     tmr.data += 1; // increment timer
@@ -124,6 +127,6 @@ void Timer::tick(int ch)
     std::function<void(void)> tick_handler = [ch, this]() {
         return std::bind(&Timer::tick, this, ch);
     }();
-
-    scheduler->add(tmr.prescalar, tick_handler);
+    
+    scheduler->add(tmr.prescalar, tick_handler, ch);
 }

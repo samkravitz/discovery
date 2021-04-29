@@ -41,5 +41,4 @@ public:
     void shutdown();
 
 private:
-    void tick();
 };

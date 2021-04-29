@@ -9,13 +9,15 @@
 
 #include "Timer.h"
 #include "IRQ.h"
+#include <iostream>
+
+#include <functional>
 
 extern IRQ *irq;
 
-Timer::Timer()
-{
-    ticks = 0;
-    
+Timer::Timer(Scheduler *scheduler) :
+    scheduler(scheduler)
+{   
     // zero channels
     for (int i = 0; i < 4; ++i)
     {
@@ -25,8 +27,6 @@ Timer::Timer()
         channel[i].prescalar = 1;
     }
 }
-
-Timer::~Timer() { }
 
 u16 Timer::read(int ch) { return channel[ch].data; }
 
@@ -38,60 +38,37 @@ void Timer::write(int ch, u16 value)
 
 void Timer::writeCnt(int ch, u16 value)
 {
-    channel[ch].cnt = value;
+    auto &tmr = channel[ch];
+
+    tmr.cnt = value;
 
     // set actual freq
-    switch (channel[ch].freq)
+    switch (tmr.freq)
     {
-        case 0: channel[ch].prescalar =    1; break;
-        case 1: channel[ch].prescalar =   64; break;
-        case 2: channel[ch].prescalar =  256; break;
-        case 3: channel[ch].prescalar = 1024; break;
+        case 0: tmr.prescalar =    1; break;
+        case 1: tmr.prescalar =   64; break;
+        case 2: tmr.prescalar =  256; break;
+        case 3: tmr.prescalar = 1024; break;
     }
-}
 
-void Timer::tick()
-{
-    ++ticks;
+    // Don't schedule callback when cascade is set
+    if (tmr.cascade)
+       return;
 
-    for (int i = 0; i < 4; ++i)
+    if (tmr.enable)
     {
-        // ignore if timer is disabled
-        if (!channel[i].enable)
-            continue;
+        // Set scheduler callback handler
+        std::function<void(void)> tick_handler = [ch, this]() {
+            return std::bind(&Timer::tick, this, ch);
+        }();
 
-        // ignore if cascade bit is set (timer will be incremented by previous timer)
-        if (channel[i].cascade)
-            continue;
+        scheduler->add(tmr.prescalar, tick_handler);
+    }
 
-        // increment counter by 1
-        if (ticks % channel[i].prescalar == 0)
-        {
-            channel[i].data += 1; // increment timer
-
-            // timer overflowed
-            if (channel[i].data == 0x0000)
-            {
-                // reset timer
-                channel[i].data = channel[i].initial;
-
-                // overflow irq
-                if (channel[i].irq)
-                {
-                    //LOG("Timer {} overflow IRQ request\n", i);
-                    switch (i)
-                    {
-                        case 0: irq->raise(InterruptOccasion::TIMER0); break;
-                        case 1: irq->raise(InterruptOccasion::TIMER1); break;
-                        case 2: irq->raise(InterruptOccasion::TIMER2); break;
-                        case 3: irq->raise(InterruptOccasion::TIMER3); break;
-                    }
-                }
-
-                // cascade
-                cascade(i);
-            }
-        }
+    else
+    {
+        // remove tick event from scheduler
+        LOG("disabling timer {}\n", ch);
     }
 }
 
@@ -113,4 +90,40 @@ void Timer::cascade(int ch)
         }
             
     }
+}
+
+void Timer::tick(int ch)
+{
+    auto &tmr = channel[ch];
+
+    tmr.data += 1; // increment timer
+
+    // timer overflowed
+    if (tmr.data == 0x0000)
+    {
+        // reset timer
+        tmr.data = tmr.initial;
+
+        // overflow irq
+        if (tmr.irq)
+        {
+            //LOG("Timer {} overflow IRQ request\n", i);
+            switch (ch)
+            {
+                case 0: irq->raise(InterruptOccasion::TIMER0); break;
+                case 1: irq->raise(InterruptOccasion::TIMER1); break;
+                case 2: irq->raise(InterruptOccasion::TIMER2); break;
+                case 3: irq->raise(InterruptOccasion::TIMER3); break;
+            }
+        }
+
+        // cascade
+        cascade(ch);
+    }
+
+    std::function<void(void)> tick_handler = [ch, this]() {
+        return std::bind(&Timer::tick, this, ch);
+    }();
+
+    scheduler->add(tmr.prescalar, tick_handler);
 }

@@ -31,16 +31,13 @@ public:
     Gamepad   *gamepad;
     Timer     *timer;
 
+    std::vector<std::string> argv;
+
+    void frame();
     void parseArgs();
     void printArgHelp();
-    void gameLoop();
-
-        std::vector<std::string> argv;
-private:
-    u64  cycles;
-    bool running;
-    SDL_Event e;
-    
-    void tick();
     void shutdown();
+
+private:
+    void tick();
 };

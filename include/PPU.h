@@ -9,7 +9,6 @@
  */
 #pragma once
 
-#include <SDL2/SDL.h>
 #include <iostream>
 #include <ctime>
 #include <functional>
@@ -50,10 +49,11 @@ class PPU
 {
 public:
     PPU(Memory *, LcdStat *);
-    ~PPU();
 
     Memory *mem;
     LcdStat *stat;
+
+    u32 screen_buffer[SCREEN_HEIGHT][SCREEN_WIDTH];
 
     u32 cycles;
     u8 scanline;
@@ -62,11 +62,6 @@ public:
     void reset();
 
 private:
-    SDL_Window  *window;
-    SDL_Surface *final_screen;
-    SDL_Surface *original_screen;
-    SDL_Rect    scale_rect;
-
     // internal buffers linked from memory
     u8 *palram;
     u8 *vram;
@@ -88,8 +83,6 @@ private:
 
     std::array<u16, SCREEN_WIDTH> bg_buffer[NUM_BG];
     std::vector<int> bg_list; // list of currently enabled bgs
-
-    u32 screen_buffer[SCREEN_HEIGHT][SCREEN_WIDTH];
 
     // oam data structure
     struct ObjAttr

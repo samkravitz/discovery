@@ -7,11 +7,7 @@
  * DATE: January 6th, 2021
  * DESCRIPTION: Implementation of PPU class
  */
-#include <ctime>
-#include <sstream>
-#include <iomanip>
 #include <cstring>
-#include <cassert>
 
 #include "PPU.h"
 #include "util.h"
@@ -22,33 +18,16 @@ extern IRQ *irq;
 // transparent pixel color
 constexpr int TRANSPARENT = 0x8000;
 
-PPU::PPU(Memory *mem, LcdStat *stat) : mem(mem), stat(stat)
+PPU::PPU(Memory *mem, LcdStat *stat) :
+    mem(mem),
+    stat(stat)
 {
-    assert(SDL_Init(SDL_INIT_VIDEO) >= 0);
-
-    window = SDL_CreateWindow("discovery", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2, 0);
-    assert(window);
-
-    // discovery icon logo
-    SDL_Surface *logo = SDL_LoadBMP("assets/discovery.bmp");
-    assert(logo);
-
-    SDL_SetWindowIcon(window, logo);
-
-    final_screen = SDL_GetWindowSurface(window);
-    original_screen = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32, 0, 0, 0, 0);
-    
-    scale_rect.w = SCREEN_WIDTH  * 2;
-    scale_rect.h = SCREEN_HEIGHT * 2;
-    scale_rect.x = 0;
-    scale_rect.y = 0;
-
     // internal ptrs linked to memory's
     palram = &mem->memory[MEM_PALETTE_RAM_START];
     vram   = &mem->memory[MEM_VRAM_START];
     oam    = &mem->memory[MEM_OAM_START];
 
-    original_screen->pixels = (u32 *) screen_buffer;
+    //original_screen->pixels = (u32 *) screen_buffer;
 
     // initialize color LUT
     // algorithm adapted from
@@ -68,12 +47,6 @@ PPU::PPU(Memory *mem, LcdStat *stat) : mem(mem), stat(stat)
     }
 
     reset();
-}
-
-PPU::~PPU()
-{
-    LOG("PPU: Shutdown\n");
-    SDL_Quit();
 }
 
 void PPU::reset()
@@ -154,25 +127,6 @@ void PPU::tick()
                     LOG(LogLevel::Debug, "DMA {} VBLANK\n", i);
                 }
             }
-
-            // calculate fps
-            if (++frame == 60)
-            {
-                frame = 0;
-
-                double duration;
-                clock_t new_time = std::clock();
-                duration = (new_time - old_time) / (double) CLOCKS_PER_SEC;
-                old_time = new_time;
-
-                std::stringstream stream;
-                stream << std::fixed << std::setprecision(1) << (60 / duration);
-                std::string title("");
-                title += "discovery - ";
-                title += stream.str();
-                title += " fps";
-                SDL_SetWindowTitle(window, title.c_str());
-            }
         }
     }
 
@@ -221,11 +175,7 @@ void PPU::render()
 {
     //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
 
-    // scale screen buffer
-    SDL_BlitScaled(original_screen, nullptr, final_screen, &scale_rect);
-
-    // draw final_screen pixels on screen
-    SDL_UpdateWindowSurface(window);
+    
 }
 
 void PPU::renderScanline()

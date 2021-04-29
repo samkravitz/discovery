@@ -19,44 +19,8 @@
 // global IRQ handler
 IRQ *irq;
 
-int main(int argc, char **argv)
-{
-    if (argc < 2)
-    {
-        LOG(LogLevel::Error, "Error: No ROM file given\n");
-        LOG("Usage: ./discovery /path/to/rom\n");
-        return 1;
-    }
-
-    Discovery emulator;
-
-    // collect command line args
-    for (int i = 1; i < argc; ++i)
-        emulator.argv.push_back(argv[i]);
-
-    // parse command line args
-    emulator.parseArgs();
-	if(config::show_help)
-	{
-		emulator.printArgHelp();
-		return 0;
-	}
-
-	LOG("Welcome to Discovery!\n");
-
-    // load bios, rom, and launch game loop
-    emulator.mem->loadBios(config::bios_name);
-    emulator.mem->loadRom(config::rom_name);
-    emulator.gameLoop();
-
-    return 0;
-}
-
 Discovery::Discovery()
 {
-    cycles = 0;
-    running = true;
-
     gamepad = new Gamepad();
     stat    = new LcdStat();
     timer   = new Timer();
@@ -69,65 +33,11 @@ Discovery::Discovery()
     irq     = new IRQ();
 }
 
-void Discovery::gameLoop()
-{
-    int cycles_elapsed;
-
-    while (running)
-    {
-        // tick hardware (not cpu) if in halt state
-        if (mem->haltcnt)
-        {   
-            while ((irq->getIE() & irq->getIF()) == 0)
-                tick();
-
-            mem->haltcnt = 0;
-            cpu->handleInterrupt();
-        }
-
-        cpu->fetch();
-        cpu->decode();
-        cycles_elapsed = cpu->execute(cpu->pipeline[0]);
-
-        cpu->handleInterrupt();
-
-        // update pipeline
-        cpu->pipeline[0] = cpu->pipeline[1];
-        cpu->pipeline[1] = cpu->pipeline[2];
-
-        // run hardware for as many clock cycles as cpu used
-        while (cycles_elapsed-- > 0)
-            this->tick();
-        
-        //std::cout << "hi\n";
-    }
-
-    shutdown();
-}
-
 // clock hardware components
 void Discovery::tick()
 {
-    cycles++;
     ppu->tick();
     timer->tick();
-
-    // poll for key presses at start of vblank
-    if (cycles % 197120 == 0)
-    {
-        while (SDL_PollEvent(&e))
-        {
-            // Click X on window
-            if (e.type == SDL_QUIT)
-                running = false;
-            
-            // Press Escape key
-            if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)
-                running = false;
-        }
-
-        gamepad->poll();
-    }
 }
 
 // parse command line args
@@ -172,4 +82,41 @@ void Discovery::shutdown()
     delete gamepad;
     delete timer;
     delete irq;
+}
+
+void Discovery::frame()
+{
+    int cycles = 0;
+    int cycles_elapsed;
+
+    while (cycles < 280896)
+    {
+        // tick hardware (not cpu) if in halt state
+        if (mem->haltcnt)
+        {   
+            while ((irq->getIE() & irq->getIF()) == 0)
+                tick();
+
+            mem->haltcnt = 0;
+            cpu->handleInterrupt();
+        }
+
+        cpu->fetch();
+        cpu->decode();
+        cycles_elapsed = cpu->execute(cpu->pipeline[0]);
+
+        cpu->handleInterrupt();
+
+        // update pipeline
+        cpu->pipeline[0] = cpu->pipeline[1];
+        cpu->pipeline[1] = cpu->pipeline[2];
+
+        // run hardware for as many clock cycles as cpu used
+        while (cycles_elapsed-- > 0)
+        {
+            tick();
+            ++cycles;
+        }
+    }
+
 }

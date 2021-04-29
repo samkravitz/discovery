@@ -5,7 +5,7 @@ BIN = bin/
 SOURCEDIR = src/
 INCLUDEDIR = include/
 BACKUPDIR = $(INCLUDEDIR)backup
-OBJECTS = Arm7Tdmi.o util.o Memory.o PPU.o Gamepad.o Timer.o IRQ.o APU.o HandlerArm.o HandlerThumb.o swi.o Flash.o None.o SRAM.o config.o
+OBJECTS = Discovery.o Arm7Tdmi.o util.o Memory.o PPU.o Gamepad.o Timer.o IRQ.o APU.o HandlerArm.o HandlerThumb.o swi.o Flash.o None.o SRAM.o config.o
 LIST=$(addprefix $(BIN), $(OBJECTS))
 VPATH = $(SOURCEDIR) $(SOURCEDIR)backup
 
@@ -17,8 +17,8 @@ endif
 
 all: discovery
 
-discovery: $(LIST) Discovery.cpp
-	$(CXX) $(CXXFLAGS) -o discovery $(SOURCEDIR)Discovery.cpp $(LIST) $(LIBARIES)
+discovery: $(LIST) main.cpp
+	$(CXX) $(CXXFLAGS) -o discovery $(SOURCEDIR)main.cpp $(LIST) $(LIBARIES)
 
 $(BIN)%.o : %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@

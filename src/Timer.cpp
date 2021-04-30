@@ -11,8 +11,6 @@
 #include "IRQ.h"
 #include <iostream>
 
-#include <functional>
-
 extern IRQ *irq;
 
 Timer::Timer(Scheduler *scheduler) :
@@ -26,6 +24,9 @@ Timer::Timer(Scheduler *scheduler) :
         channel[i].initial    = 0;
         channel[i].prescalar  = 1;
         channel[i].registered = false;
+        channel[i].event_handler = [i, this]() {
+            return std::bind(&Timer::tick, this, i);
+        }();
     }
 }
 
@@ -58,13 +59,14 @@ void Timer::writeCnt(int ch, u16 value)
 
     if (tmr.enable)
     {   
-        // Set scheduler callback handler
-        std::function<void(void)> tick_handler = [ch, this]() {
-            return std::bind(&Timer::tick, this, ch);
-        }();
+       if (!tmr.registered) {
+            // Set scheduler callback handler
+        scheduler->add(tmr.prescalar, tmr.event_handler, ch);
+        LOG("{} {}\n", ch, tmr.prescalar);
+        
+       }
 
-        scheduler->add(tmr.prescalar, tick_handler, ch);
-        tmr.registered = true;
+       tmr.registered = true;
     }
 
     else if (tmr.registered)
@@ -123,10 +125,6 @@ void Timer::tick(int ch)
         // cascade
         cascade(ch);
     }
-
-    std::function<void(void)> tick_handler = [ch, this]() {
-        return std::bind(&Timer::tick, this, ch);
-    }();
     
-    scheduler->add(tmr.prescalar, tick_handler, ch);
+    scheduler->add(tmr.prescalar, tmr.event_handler, ch);
 }

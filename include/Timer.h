@@ -11,6 +11,8 @@
 
 #include "common.h"
 #include "Scheduler.h"
+#include <functional>
+
 
 class Timer
 {
@@ -44,6 +46,8 @@ private:
         u16 initial;
         u16 data;
         int prescalar;
+
+        std::function<void(void)> event_handler;
     } channel[4];
 
     Scheduler *scheduler;

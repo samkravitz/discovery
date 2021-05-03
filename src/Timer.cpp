@@ -26,8 +26,6 @@ Timer::Timer()
     }
 }
 
-Timer::~Timer() { }
-
 u16 Timer::read(int ch) { return channel[ch].data; }
 
 void Timer::write(int ch, u16 value)

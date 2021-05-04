@@ -12,6 +12,7 @@
 
 extern IRQ *irq;
 
+
 Timer::Timer()
 {
     ticks = 0;

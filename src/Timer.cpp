@@ -60,7 +60,7 @@ void Timer::writeCnt(int ch, u16 value)
     if (tmr.enable)
     {   
        if (!tmr.registered) {
-            // Set scheduler callback handler
+        // Set scheduler callback handler
         scheduler->add(tmr.prescalar, tmr.event_handler, ch);
         LOG("{} {}\n", ch, tmr.prescalar);
         

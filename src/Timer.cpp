@@ -13,6 +13,7 @@
 
 extern IRQ *irq;
 
+
 Timer::Timer(Scheduler *scheduler) :
     scheduler(scheduler)
 {   

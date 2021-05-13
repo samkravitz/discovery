@@ -13,7 +13,6 @@
 
 extern IRQ *irq;
 
-
 Timer::Timer(Scheduler *scheduler) :
     scheduler(scheduler)
 {   
@@ -70,9 +69,9 @@ void Timer::writeCnt(int ch, u16 value)
        tmr.registered = true;
     }
 
+    // remove tick event from scheduler
     else if (tmr.registered)
     {
-        // remove tick event from scheduler
         scheduler->remove(ch);
         tmr.registered = false;
     }

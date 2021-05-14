@@ -112,7 +112,6 @@ void Timer::tick(int ch)
         // overflow irq
         if (tmr.irq)
         {
-            //LOG("Timer {} overflow IRQ request\n", i);
             switch (ch)
             {
                 case 0: irq->raise(InterruptOccasion::TIMER0); break;

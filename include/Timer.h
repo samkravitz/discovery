@@ -10,20 +10,21 @@
 #pragma once
 
 #include "common.h"
-#include "Scheduler.h"
-#include <functional>
-
 
 class Timer
 {
 public:
-    Timer(Scheduler *);
+    Timer();
 
-    u16  read(int);
+    u16 read(int);
+
+    void tick();
     void write(int, u16);
     void writeCnt(int, u16);
 
 private:
+    long ticks;
+
     struct Channel
     {
         union
@@ -47,11 +48,7 @@ private:
         u16 data;
         int prescalar;
 
-        std::function<void(void)> event_handler;
     } channel[4];
 
-    Scheduler *scheduler;
-
     void cascade(int);
-    void tick(int ch);
 };

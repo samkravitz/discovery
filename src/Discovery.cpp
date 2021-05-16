@@ -24,7 +24,7 @@ Discovery::Discovery()
     gamepad   = new Gamepad();
     stat      = new LcdStat();
     scheduler = new Scheduler();
-    timer     = new Timer(scheduler);
+    timer     = new Timer();
 
     mem       = new Memory(stat, timer, gamepad);
     cpu       = new Arm7Tdmi(mem);
@@ -88,14 +88,10 @@ void Discovery::frame()
         // tick hardware (not cpu) if in halt state
         if (mem->haltcnt)
         {   
-            LOG("HALT\n");
-            
             while ((irq->getIE() & irq->getIF()) == 0)
 
             mem->haltcnt = 0;
             cpu->handleInterrupt();
-            LOG("UNHALT\n");
-            
         }
 
         cpu->fetch();
@@ -111,7 +107,10 @@ void Discovery::frame()
 
         // run hardware for as many clock cycles as cpu used
         while (cycles_elapsed-- > 0)
+        {
             ++cycles;
+            timer->tick();
+        }
     }
 
 }

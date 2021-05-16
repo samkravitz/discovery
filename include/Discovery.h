@@ -39,6 +39,4 @@ public:
     void parseArgs();
     void printArgHelp();
     void shutdown();
-
-private:
 };

@@ -24,7 +24,7 @@ Discovery::Discovery()
     gamepad   = new Gamepad();
     stat      = new LcdStat();
     scheduler = new Scheduler();
-    timer     = new Timer();
+    timer     = new Timer(scheduler);
 
     mem       = new Memory(stat, timer, gamepad);
     cpu       = new Arm7Tdmi(mem);
@@ -107,10 +107,7 @@ void Discovery::frame()
 
         // run hardware for as many clock cycles as cpu used
         while (cycles_elapsed-- > 0)
-        {
             ++cycles;
-            timer->tick();
-        }
     }
 
 }

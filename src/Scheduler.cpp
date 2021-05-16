@@ -13,21 +13,14 @@ void Scheduler::add(int until, std::function<void(void)> handler, int id)
 
 void Scheduler::advance(int amount)
 {
-    LOG("start\n");
-    
-    cycles += amount;
-
-    
-        while (!events.empty() && events.top().timestamp < cycles) {
+    cycles += amount;   
+    while (!events.empty() && events.top().timestamp < cycles)
+    {
         auto event = events.top();
-        LOG("{} {} {} {}\n", event.id, event.timestamp, amount, cycles);
         
         event.handler();
         events.pop();
-        }
-    LOG("end\n");
-    
-        
+    }
 }
 
 void Scheduler::remove(int id)

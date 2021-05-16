@@ -13,7 +13,6 @@
 #include "Scheduler.h"
 #include <functional>
 
-
 class Timer
 {
 public:

@@ -5,28 +5,32 @@
 
 void Scheduler::add(int until, std::function<void(void)> handler, int id)
 {
-    events.push({ cycles + until, handler, id });
+    auto iter = events.begin();
+    while (iter != events.end() && (iter->timestamp < cycles + until))
+        iter++;
+    
+    events.insert(iter, { cycles + until, handler, id });
 }
 
 void Scheduler::advance(int amount)
 {
     cycles += amount;   
-    while (!events.empty() && events.top().timestamp < cycles)
+    while (!events.empty() && events.front().timestamp < cycles)
     {
-        auto event = events.top();
+        auto event = events.front();
         
         event.handler();
-        events.pop();
+        events.pop_front();
     }
 }
 
 void Scheduler::remove(int id)
 {   
-    for (auto iter = events.container().begin(); iter != events.container().end(); iter++)
+    for (auto iter = events.begin(); iter != events.end(); iter++)
     {
         if (iter->id == id)
         {
-            events.container().erase(iter);
+            events.erase(iter);
             break;
         }
     }

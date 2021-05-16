@@ -8,6 +8,7 @@
  * DESCRIPTION: Implementation of PPU class
  */
 #include <cstring>
+#include <functional>
 
 #include "PPU.h"
 #include "util.h"
@@ -18,9 +19,10 @@ extern IRQ *irq;
 // transparent pixel color
 constexpr int TRANSPARENT = 0x8000;
 
-PPU::PPU(Memory *mem, LcdStat *stat) :
+PPU::PPU(Memory *mem, LcdStat *stat, Scheduler *scheduler) :
     mem(mem),
-    stat(stat)
+    stat(stat),
+    scheduler(scheduler)
 {
     // internal ptrs linked to memory's
     palram = &mem->memory[MEM_PALETTE_RAM_START];
@@ -46,6 +48,10 @@ PPU::PPU(Memory *mem, LcdStat *stat) :
         color_lut[i + 32768] = r << 16 | g << 8 |  b;
     }
 
+    // Schedule the first hdraw and vdraw
+    scheduler->add(HDRAW_CYCLES, std::bind(&PPU::hblank, this));
+    scheduler->add(VDRAW_CYCLES, std::bind(&PPU::vblank, this));
+
     reset();
 }
 
@@ -69,106 +75,6 @@ void PPU::reset()
     // zero bg buffer
     for (int i = 0; i < NUM_BG; ++i)
         bg_buffer[i].fill(TRANSPARENT);
-}
-
-// 1 clock cycle of the PPU
-void PPU::tick()
-{
-    cycles++;
-
-    // start HBlank
-    if (cycles == HDRAW)
-    {
-        if (scanline < SCREEN_HEIGHT)
-            renderScanline();
-
-        stat->dispstat.in_hBlank = true;
-
-        // fire HBlank interrupt if necessary
-        if (stat->dispstat.hbi)
-        {
-            irq->raise(InterruptOccasion::HBLANK);
-            //LOG(LogLevel::Debug, "HBlank interrupt\n");
-        }
-
-        // check for DMA HBlank requests
-        // TODO - Don't fire DMA Hblank in VBlank
-        if (!stat->dispstat.in_vBlank)
-        {
-            for (int i = 0; i < 4; ++i)
-            {
-                if (mem->dma[i].enable && mem->dma[i].mode == 2) // start at HBLANK
-                {
-                    mem->_dma(i);
-                    //LOG(LogLevel::Debug, "DMA {} HBLANK\n", i);
-                }
-            }
-        }
-
-        // start VBlank
-        if (scanline == VDRAW)
-        {
-            render();
-            stat->dispstat.in_vBlank = true;
-
-            // fire Vblank interrupt if necessary
-            if (stat->dispstat.vbi)
-            {
-                irq->raise(InterruptOccasion::VBLANK);
-                //LOG(LogLevel::Debug, "VBlank interrupt\n");
-            }
-
-            // check for DMA VBLANK requests
-            for (int i = 0; i < 4; ++i)
-            {
-                if (mem->dma[i].enable && mem->dma[i].mode == 1) // start at VBLANK
-                {
-                    mem->_dma(i);
-                    LOG(LogLevel::Debug, "DMA {} VBLANK\n", i);
-                }
-            }
-        }
-    }
-
-    // completed HBlank
-    else if (cycles == HDRAW + HBLANK)
-    {
-        // completed full refresh
-        if (scanline == VDRAW + VBLANK)
-        {
-            stat->dispstat.in_vBlank = false;
-            scanline = 0;
-            stat->scanline = 0;
-        }
-
-        else
-        {
-            scanline++;
-            stat->scanline++;
-        }
-
-        // scanline has reached trigger value
-        if (scanline == stat->dispstat.vct)
-        {
-            // set trigger status
-            stat->dispstat.vcs = 1;
-
-            // scanline interrupt is triggered if requested
-            if (stat->dispstat.vci)
-            {
-                irq->raise(InterruptOccasion::VCOUNT);
-                // std::cout << "Scanline interrupt\n";
-            }
-
-        }
-
-        // scanline is not equal to trigger value, reset this bit
-        else
-            stat->dispstat.vcs = 0;
-
-        cycles = 0;
-        stat->dispstat.in_hBlank = false;
-    }
 }
 
 void PPU::render()
@@ -835,3 +741,101 @@ inline bool PPU::isInWindow(int win, int x, int y)
 }
 
 inline u32 PPU::u16ToU32Color(u16 color_u16) { return color_lut[color_u16]; }
+
+void PPU::hblank()
+{
+    // hblank starting
+    if (!stat->dispstat.in_hBlank)
+    {
+        stat->dispstat.in_hBlank = true;
+
+        if (scanline < SCREEN_HEIGHT)
+            renderScanline();
+
+        // fire HBlank interrupt if necessary
+        if (stat->dispstat.hbi)
+            irq->raise(InterruptOccasion::HBLANK);
+
+        // check for DMA HBlank requests
+        // TODO - Don't fire DMA Hblank in VBlank
+        if (!stat->dispstat.in_vBlank)
+        {
+            for (int i = 0; i < 4; ++i)
+            {
+                if (mem->dma[i].enable && mem->dma[i].mode == 2) // start at HBLANK
+                    mem->_dma(i);
+            }
+        }
+
+        // scanline has reached trigger value
+        if (scanline == stat->dispstat.vct)
+        {
+            // set trigger status
+            stat->dispstat.vcs = 1;
+
+            // scanline interrupt is triggered if requested
+            if (stat->dispstat.vci)
+                irq->raise(InterruptOccasion::VCOUNT);
+
+        }
+
+        // scanline is not equal to trigger value, reset this bit
+        else
+            stat->dispstat.vcs = 0;
+
+        // Schedule the end of hblank
+        scheduler->add(HBLANK_CYCLES, std::bind(&PPU::hblank, this));
+    }
+
+    // hblank ending
+    else
+    {
+        stat->dispstat.in_hBlank = false;
+    
+        scanline++;
+        stat->scanline++;
+
+        // Schedule next hblank
+        scheduler->add(HDRAW_CYCLES, std::bind(&PPU::hblank, this));
+    }
+}
+
+void PPU::vblank()
+{
+    // vblank starting
+    if (!stat->dispstat.in_vBlank)
+    {
+        stat->dispstat.in_vBlank = true;
+
+        render();
+
+        // fire Vblank interrupt if necessary
+        if (stat->dispstat.vbi)
+            irq->raise(InterruptOccasion::VBLANK);
+
+        // check for DMA VBLANK requests
+        for (int i = 0; i < 4; ++i)
+        {
+            if (mem->dma[i].enable && mem->dma[i].mode == 1) // start at VBLANK
+            {
+                mem->_dma(i);
+                LOG(LogLevel::Debug, "DMA {} VBLANK\n", i);
+            }
+        }
+
+        // Schedule the end of vblank
+        scheduler->add(VBLANK_CYCLES, std::bind(&PPU::vblank, this));
+    }
+
+    // vblank ending
+    else
+    {
+        stat->dispstat.in_vBlank = false;
+
+        scanline = 0;
+        stat->scanline = 0;
+
+        // Schedule the next vblank
+        scheduler->add(VDRAW_CYCLES, std::bind(&PPU::vblank, this));
+    }
+}

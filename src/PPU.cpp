@@ -40,12 +40,11 @@ PPU::PPU(Memory *mem, LcdStat *stat, Scheduler *scheduler) :
         double lb = pow(((i & 31744) >> 10) / 31.0, 4.0);
         double lg = pow(((i &   992) >>  5) / 31.0, 4.0);
         double lr = pow(((i &    31) >>  0) / 31.0, 4.0);
-        int r = trunc(pow((  0 * lb +  50 * lg + 220 * lr) / 255, 1 / 2.2) * (0xffff / 280));
-        int g = trunc(pow(( 30 * lb + 230 * lg +  10 * lr) / 255, 1 / 2.2) * (0xffff / 280));
-        int b = trunc(pow((220 * lb +  10 * lg +  10 * lr) / 255, 1 / 2.2) * (0xffff / 280));
+        int r = trunc(pow((  0 * lb +  50 * lg + 220 * lr) / 255, 1 / 2.2) * (0xFFFF / 280));
+        int g = trunc(pow(( 30 * lb + 230 * lg +  10 * lr) / 255, 1 / 2.2) * (0xFFFF / 280));
+        int b = trunc(pow((220 * lb +  10 * lg +  10 * lr) / 255, 1 / 2.2) * (0xFFFF / 280));
 
         color_lut[i] = r << 16 | g << 8 |  b;
-        color_lut[i + 32768] = r << 16 | g << 8 |  b;
     }
 
     // Schedule the first hdraw and vdraw
@@ -740,7 +739,7 @@ inline bool PPU::isInWindow(int win, int x, int y)
     return (x >= stat->winh[win].left) && (x < stat->winh[win].right) && (y >= stat->winv[win].top) && (y < stat->winv[win].bottom);
 }
 
-inline u32 PPU::u16ToU32Color(u16 color_u16) { return color_lut[color_u16]; }
+inline u32 PPU::u16ToU32Color(u16 color_u16) { return color_lut[color_u16 & 0x7FFF]; }
 
 void PPU::hblank()
 {

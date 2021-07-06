@@ -174,8 +174,8 @@ void PPU::renderScanline()
 
             active_window_content = stat->window_content[active_window];
             
-            //LOG("{} {} {} {}\n", x, scanline, isInWindow(1, x, scanline), debug);
-            //LOG("stats = {} {} {} {}\n", stat->winh[1].left, stat->winh[1].right, stat->winv[1].top, stat->winv[1].bottom);
+            //log("{} {} {} {}\n", x, scanline, isInWindow(1, x, scanline), debug);
+            //log("stats = {} {} {} {}\n", stat->winh[1].left, stat->winh[1].right, stat->winv[1].top, stat->winv[1].bottom);
         }
 
         bool obj_in_current_window = window ? active_window_content[4] : true;
@@ -212,7 +212,7 @@ void PPU::renderScanlineText(int bg)
 
     int pitch; // pitch of screenblocks
 
-    //LOG("({}, {}) ({}, {}) {}\n", bgcnt.minx, bgcnt.miny, bgcnt.maxx, bgcnt.maxy, scanline);
+    //log("({}, {}) ({}, {}) {}\n", bgcnt.minx, bgcnt.miny, bgcnt.maxx, bgcnt.maxy, scanline);
 
     // width, height of map in pixels
     int width, height;
@@ -466,8 +466,8 @@ void PPU::renderScanlineObj()
         int iy = -attr.hheight + (scanline - attr.y);
 
 
-        //LOG("{} {} {} {}\n", attr.x, attr.y, attr.hheight, attr.hwidth);
-        //LOG("{} {} {} {}\n", attr.x0, attr.y0, attr.hheight, attr.hwidth);
+        //log("{} {} {} {}\n", attr.x, attr.y, attr.hheight, attr.hwidth);
+        //log("{} {} {} {}\n", attr.x0, attr.y0, attr.hheight, attr.hwidth);
 
         for (int ix = -attr.hwidth; ix < attr.hwidth; ++ix)
         {
@@ -818,7 +818,7 @@ void PPU::vblank()
             if (mem->dma[i].enable && mem->dma[i].mode == 1) // start at VBLANK
             {
                 mem->_dma(i);
-                LOG(LogLevel::Debug, "DMA {} VBLANK\n", i);
+                log(LogLevel::Debug, "DMA {} VBLANK\n", i);
             }
         }
 

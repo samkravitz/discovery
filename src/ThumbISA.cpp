@@ -234,7 +234,7 @@ void Arm7Tdmi::aluThumb(u16 instruction)
             break;
 
         default:
-            LOG(LogLevel::Error, "Error: Invalid thumb ALU opcode\n");
+            log(LogLevel::Error, "Error: Invalid thumb ALU opcode\n");
             return;
     }
 
@@ -268,7 +268,7 @@ void Arm7Tdmi::hiRegisterOps(u16 instruction)
         case 0b00: // ADD
             if (!H1 && !H2)
             {
-                LOG(LogLevel::Error, "Error: H1 = 0 and H2 = 0 for thumb ADD is not defined\n");
+                log(LogLevel::Error, "Error: H1 = 0 and H2 = 0 for thumb ADD is not defined\n");
                 return;
             }
 
@@ -293,7 +293,7 @@ void Arm7Tdmi::hiRegisterOps(u16 instruction)
         case 0b01: // CMP
             if (!H1 && !H2)
             {
-                LOG(LogLevel::Error, "Error: H1 = 0 and H2 = 0 for thumb CMP is not defined\n");
+                log(LogLevel::Error, "Error: H1 = 0 and H2 = 0 for thumb CMP is not defined\n");
                 return;
             }
 
@@ -303,7 +303,7 @@ void Arm7Tdmi::hiRegisterOps(u16 instruction)
         case 0b10: // MOV
             if (!H1 && !H2)
             {
-                LOG(LogLevel::Error, "Error: H1 = 0 and H2 = 0 for thumb MOV is not defined\n");
+                log(LogLevel::Error, "Error: H1 = 0 and H2 = 0 for thumb MOV is not defined\n");
                 return;
             }
 
@@ -327,7 +327,7 @@ void Arm7Tdmi::hiRegisterOps(u16 instruction)
         case 0b11: // BX
             if (H1)
             {
-                LOG(LogLevel::Error, "Error: H1 = 1 for thumb BX is not defined\n");
+                log(LogLevel::Error, "Error: H1 = 1 for thumb BX is not defined\n");
                 return;
             }
 
@@ -888,7 +888,7 @@ void Arm7Tdmi::conditionalBranch(u16 instruction)
 
 void Arm7Tdmi::softwareInterruptThumb(u16 instruction)
 {
-    //LOG(LogLevel::Debug, "Thumb SWI: {:x}\n", (int) (instruction & 0xFF));
+    //log(LogLevel::Debug, "Thumb SWI: {:x}\n", (int) (instruction & 0xFF));
     last_read_bios = bios_read_state[3];
     pipeline_full = false;
 

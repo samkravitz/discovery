@@ -82,7 +82,7 @@ void Gamepad::checkInterrupt()
     // raise keypad interrupt
     if (raise_interrupt)
     {
-        LOG("Raising gamepad interrupt\n");
+        log("Raising gamepad interrupt\n");
         irq->raise(InterruptOccasion::KEYPAD);
     }
 }

@@ -52,16 +52,16 @@ void Discovery::parseArgs()
 
 void Discovery::printArgHelp()
 {
-	LOG("Usage:\n");
-	LOG("./discovery ./path/to/rom.gba\n");
-	LOG("\n");
-	LOG("Flags:\n");
-	LOG("-i, --input\n");
-	LOG("  Specifies input file for rom\n");
-	LOG("-b, --bios\n");
-	LOG("  Specifies GBA bios file\n");
-	LOG("-h, --help\n");
-	LOG("  Show help...\n");
+	log("Usage:\n");
+	log("./discovery ./path/to/rom.gba\n");
+	log("\n");
+	log("Flags:\n");
+	log("-i, --input\n");
+	log("  Specifies input file for rom\n");
+	log("-b, --bios\n");
+	log("  Specifies GBA bios file\n");
+	log("-h, --help\n");
+	log("  Show help...\n");
 }
 
 void Discovery::shutdown()

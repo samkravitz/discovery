@@ -142,7 +142,7 @@ void Arm7Tdmi::swiDivision()
     // divide by 0
     if (denom == 0)
     {
-        LOG(LogLevel::Error, "SWI DIV: dividing by 0!\n");
+        log(LogLevel::Error, "SWI DIV: dividing by 0!\n");
         return;
     }
 

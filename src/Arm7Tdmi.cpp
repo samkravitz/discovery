@@ -216,7 +216,7 @@ int Arm7Tdmi::execute(u32 instruction)
                 case ArmInstruction::SWP:  singleDataSwap(instruction);       break;
                 case ArmInstruction::INT:  softwareInterruptArm(instruction); break;
                 default:
-                    LOG(LogLevel::Error, "Cannot execute instruction {:x}, pc {:x}\n", (int) instruction, (int) registers.r15);
+                    log(LogLevel::Error, "Cannot execute instruction {:x}, pc {:x}\n", (int) instruction, (int) registers.r15);
                     registers.r15 &= ~0x3;
             }
             break;
@@ -676,7 +676,7 @@ void Arm7Tdmi::updateCPSR(u32 value, bool flags_only)
     registers.cpsr.raw = value;
 
     if (registers.cpsr.t != sr.t)
-        LOG(LogLevel::Warning, "Software is changing T-Bit in CPSR!\n");
+        log(LogLevel::Warning, "Software is changing T-Bit in CPSR!\n");
 
     // validate CPSR wasn't given an invalid state
     assert(getMode());
@@ -725,7 +725,7 @@ void Arm7Tdmi::updateSPSR(u32 value, bool flags_only)
             case Mode::ABT: registers.spsr_abt = old_spsr; break;
             case Mode::IRQ: registers.spsr_irq = old_spsr; break;
             case Mode::UND: registers.spsr_und = old_spsr; break;
-            case Mode::SYS: LOG("SYS in SPSR flags\n");
+            case Mode::SYS: log("SYS in SPSR flags\n");
         }
         
         return;
@@ -739,7 +739,7 @@ void Arm7Tdmi::updateSPSR(u32 value, bool flags_only)
         case Mode::ABT: registers.spsr_abt = new_spsr; break;
         case Mode::IRQ: registers.spsr_irq = new_spsr; break;
         case Mode::UND: registers.spsr_und = new_spsr; break;
-        case Mode::SYS: LOG("SYS in SPSR\n");    break;
+        case Mode::SYS: log("SYS in SPSR\n");    break;
     }
 }
 
@@ -910,7 +910,7 @@ u8 Arm7Tdmi::read8(u32 address)
     // reading from BIOS memory
     if (address <= 0x3FFF && registers.r15 > 0x3FFF)
     {
-        LOG(LogLevel::Error, "Invalid read from BIOS u8: {0:#x}\n", last_read_bios);
+        log(LogLevel::Error, "Invalid read from BIOS u8: {0:#x}\n", last_read_bios);
 
         //u32 value = last_read_bios;
         
@@ -927,7 +927,7 @@ u8 Arm7Tdmi::read8(u32 address)
 
     if ((address >= 0x4000 && address <= 0x1FFFFFF) || address >= 0x10000000)
     {
-        LOG(LogLevel::Warning, "UNUSED U8\n");
+        log(LogLevel::Warning, "UNUSED U8\n");
         switch (getState())
         {
             case State::ARM: return mem->read32(registers.r15);
@@ -960,7 +960,7 @@ u32 Arm7Tdmi::read16(u32 address, bool sign)
     // reading from BIOS memory
     if (address <= 0x3FFF && registers.r15 > 0x3FFF)
     {
-        //LOG(LogLevel::Error, "Invalid read from BIOS u16: 0x{x}\n", last_read_bios);
+        //log(LogLevel::Error, "Invalid read from BIOS u16: 0x{x}\n", last_read_bios);
 
         u32 value = last_read_bios;
         return value & 0xFFFF;
@@ -1014,7 +1014,7 @@ u32 Arm7Tdmi::read16(u32 address, bool sign)
         case REG_DMA3SAD:
         case REG_DMA3DAD:
         case REG_DMA3CNT:
-            LOG(LogLevel::Error, "Invalid read from BIOS u166\n");
+            log(LogLevel::Error, "Invalid read from BIOS u166\n");
             return 0;
     }
 

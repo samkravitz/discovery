@@ -18,8 +18,8 @@ int main(int argc, char **argv)
 {
     if (argc < 2)
     {
-        LOG(LogLevel::Error, "Error: No ROM file given\n");
-        LOG("Usage: ./discovery /path/to/rom\n");
+        log(LogLevel::Error, "Error: No ROM file given\n");
+        log("Usage: ./discovery /path/to/rom\n");
         return 1;
     }
 
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 
     init();
 
-	LOG("Welcome to Discovery!\n");
+	log("Welcome to Discovery!\n");
 
     // load bios, rom, and launch game loop
     emulator.mem->loadBios(config::bios_name);

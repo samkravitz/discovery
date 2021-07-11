@@ -6,7 +6,6 @@ set(SOURCES
     Discovery.cpp
     Gamepad.cpp
     IRQ.cpp
-    main.cpp
     Memory.cpp
     PPU.cpp
     Scheduler.cpp
@@ -18,6 +17,8 @@ set(SOURCES
     backup/Flash.cpp
     backup/None.cpp
     backup/SRAM.cpp
+
+    platform/imgui/main.cpp
 )
 
 PREPEND(SOURCES)

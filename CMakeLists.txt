@@ -3,9 +3,13 @@
 
 cmake_minimum_required(VERSION 3.17)
 
+project(discovery)
+
 set(CMAKE_CXX_STANDARD 17)
 
-project(discovery)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
 
 set(CMAKE_CXX_FLAGS "-lSDL2")
 
@@ -26,6 +30,8 @@ include_directories(${SDL2_INCLUDE_DIRS})
 
 find_package(fmt)
 
+find_package(Qt5 COMPONENTS Widgets REQUIRED)
+
 include_directories(include)
 include_directories(include/backup)
 
@@ -33,4 +39,4 @@ add_subdirectory(src)
 add_subdirectory(include)
 
 add_executable(discovery ${SOURCES} ${HEADERS})
-target_link_libraries(discovery ${SDL2_LIBRARIES} stdc++fs fmt::fmt)
+target_link_libraries(discovery ${SDL2_LIBRARIES} stdc++fs fmt::fmt Qt5::Widgets)

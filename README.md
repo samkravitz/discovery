@@ -23,21 +23,33 @@ Discovery will attempt to load a BIOS in the same directory as the executable ca
 `./discovery path/to/rom -b path/to/bios`
 
 ## Building on Linux based systems
-Discovery has the following dependencies:
-- make
+### Discovery has 2 options for bulding: a debugger mode and a non-debugger mode
+
+The non-debugger mode has the following dependencies:
 - [SDL](https://www.libsdl.org)
 - [fmt](https://www.github.com/fmtlib/fmt)
 
-If fmt is already installed on your system, simply run `make` to build.
+If fmt is already installed on your system, simply run `make` to build. Optionally run `make opt=1` to build with compiler optimizations for a dramatic speed increase.
 
-Otherwise, follow the instructions from fmt to install it.
+If fmt is not installed on your system, follow the instructions from fmt to install it.
 
-Coming soon:
-- cmake build process to automatically install fmt
-- C++20 std::format support to make fmt library obsolete 
+The debugger mode has all of the dependencies of the non-debugger mode plus the following:
+- [Qt](https://www.qt.io)
+- [cmake](https://cmake.org)
+
+To build the debugger:
+- `mkdir build`
+- `cd build`
+- `cmake ..`
+- `make`
+
+Optionally run `cmake .. -DOPT=1` to use cmake build system with compiler optimizations.
 
 ## Building on MacOS & Windows
 As the only dependencies are make & SDL, discovery should be just as easy to build on non-Linux systems. However, I do not develop for these systems, so you're on your own there ;)
+
+## Planned features
+- C++20 std::format support to make fmt library obsolete
 
 ## License
 Discovery is licensed under the GPL (version 2). See LICENSE for full license text.

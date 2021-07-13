@@ -35,7 +35,7 @@ public:
 
     std::vector<std::string> argv;
 
-    void frame();
+    void frame() const;
     void parseArgs();
     void printArgHelp();
     void shutdown();

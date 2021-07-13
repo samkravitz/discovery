@@ -78,7 +78,7 @@ void Discovery::shutdown()
     delete scheduler;
 }
 
-void Discovery::frame()
+void Discovery::frame() const
 {
     int cycles = 0;
     int cycles_elapsed;

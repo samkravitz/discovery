@@ -1,28 +1,15 @@
+#include <cassert>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
+#include <SDL2/SDL.h>
+
 #include <QApplication>
 #include <QWidget>
 
-// int main(int argc, char *argv[]) {
-
-//     QApplication app(argc, argv);
-
-//     QWidget window;
-
-//     window.resize(250, 150);
-//     window.setWindowTitle("Simple example");
-//     window.show();
-
-//     return app.exec();
-// }
-
-
-#include "Discovery.h"
 #include "config.h"
-
-#include <SDL2/SDL.h>
-#include <cassert>
-#include <ctime>
-#include <sstream>
-#include <iomanip>
+#include "DebugMainWindow.h"
+#include "Discovery.h"
 
 SDL_Window  *window;
 SDL_Surface *final_screen;
@@ -30,6 +17,19 @@ SDL_Surface *original_screen;
 SDL_Rect     scale_rect;
 
 void init();
+
+void frame(Discovery const &emulator)
+{
+    emulator.frame();
+
+    original_screen->pixels = (u32 *) emulator.ppu->screen_buffer;
+
+    // scale screen buffer
+    SDL_BlitScaled(original_screen, nullptr, final_screen, &scale_rect);
+
+    // draw final_screen pixels on screen
+    SDL_UpdateWindowSurface(window);
+}
 
 int main(int argc, char **argv)
 {
@@ -54,82 +54,18 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-    init();
-
 	log("Welcome to Discovery!\n");
+
+    init();
 
     // load bios, rom, and launch game loop
     emulator.mem->loadBios(config::bios_name);
     emulator.mem->loadRom(config::rom_name);
 
     QApplication app(argc, argv);
-
-    QWidget win;
-
-    win.resize(250, 150);
-    win.setWindowTitle("Simple example");
-    win.show();
-
+    DebugMainWindow dmw(emulator);
+    dmw.show();
     return app.exec();
-    
-
-    bool running = true;
-    SDL_Event e;
-    int frame = 0;
-    clock_t old_time = std::clock();
-
-    while (running)
-    {
-        emulator.frame();
-
-        original_screen->pixels = (u32 *) emulator.ppu->screen_buffer;
-        // scale screen buffer
-        SDL_BlitScaled(original_screen, nullptr, final_screen, &scale_rect);
-
-        // draw final_screen pixels on screen
-        SDL_UpdateWindowSurface(window);
-        
-        // calculate fps
-        if (++frame == 60)
-        {
-            frame = 0;
-
-            double duration;
-            clock_t new_time = std::clock();
-            duration = (new_time - old_time) / (double) CLOCKS_PER_SEC;
-            old_time = new_time;
-
-            std::stringstream stream;
-            stream << std::fixed << std::setprecision(1) << (60 / duration);
-            std::string title("");
-            title += "discovery - ";
-            title += stream.str();
-            title += " fps";
-            SDL_SetWindowTitle(window, title.c_str());
-        }
-
-        while (SDL_PollEvent(&e))
-        {
-            // Click X on window
-            if (e.type == SDL_QUIT)
-                running = false;
-        
-            // Key press event
-            if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)
-            {
-                if (e.key.keysym.sym == SDLK_ESCAPE)
-                    running = false;
-
-                emulator.gamepad->poll();
-            }
-        }
-    }
-
-    emulator.shutdown();
-
-    SDL_Quit();
-
-    return 0;
 }
 
 void init()

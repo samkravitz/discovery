@@ -19,6 +19,8 @@ set(SOURCES
     backup/SRAM.cpp
 
     platform/qt/main.cpp
+    platform/qt/DebugMainWindow.cpp
+    platform/qt/DebugMainWindow.h
 )
 
 PREPEND(SOURCES)

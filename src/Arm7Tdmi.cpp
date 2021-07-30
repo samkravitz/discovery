@@ -679,7 +679,7 @@ void Arm7Tdmi::updateCPSR(u32 value, bool flags_only)
         LOG(LogLevel::Warning, "Software is changing T-Bit in CPSR!\n");
 
     // validate CPSR wasn't given an invalid state
-    assert(getMode());
+    // assert(getMode());
 
     // if (sr.state == IRQ && registers.cpsr.i == 1) return; // irq disabled bit set
     // if (sr.state == FIQ && registers.cpsr.f == 1) return; // fiq disabled bit set

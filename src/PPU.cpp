@@ -13,6 +13,7 @@
 #include "PPU.h"
 #include "util.h"
 #include "IRQ.h"
+#include "log.h"
 
 extern IRQ *irq;
 
@@ -80,7 +81,6 @@ void PPU::reset()
 void PPU::render()
 {
     //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
-
     
 }
 
@@ -431,7 +431,7 @@ void PPU::renderScanlineBitmap(int mode)
             if (stat->dispcnt.ps)
                 pal_ptr += 0xA000;
 
-            for (int x = 0; x < 160; +x)
+            for (int x = 0; x < 160; ++x)
             {
                 // multiply by 2 because each entry in palram is 2 bytes
                 palette_index = vram[pal_ptr++] * 2;
@@ -740,7 +740,17 @@ inline bool PPU::isInWindow(int win, int x, int y)
     return (x >= stat->winh[win].left) && (x < stat->winh[win].right) && (y >= stat->winv[win].top) && (y < stat->winv[win].bottom);
 }
 
-inline u32 PPU::u16ToU32Color(u16 color_u16) { return color_lut[color_u16]; }
+inline u32 PPU::u16ToU32Color(u16 color_u16) { 
+    u8 a = 0x1F;
+    u32 r, g, b;
+    u32 color = 0; // alpha value 255 ?
+
+    r = color_u16 & 0x1F; color_u16 >>= 5; // bits  0 - 5
+    g = color_u16 & 0x1F; color_u16 >>= 5; // bits  6 - 10
+    b = color_u16 & 0x1F; color_u16 >>= 5; // bits 11 - 15
+
+    return r << 19 | g << 11 | b << 3;
+}
 
 void PPU::hblank()
 {

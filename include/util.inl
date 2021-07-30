@@ -7,7 +7,7 @@
  * ex: bitseq<7, 4>(0b11110000) = 0b1111
  */
 template <int end, int start>
-inline u32 bitseq(u32 val)
+inline u32 util::bitseq(u32 val)
 {
 	if (end < start)
 		return 0;
@@ -19,7 +19,7 @@ inline u32 bitseq(u32 val)
 }
 
 template <int end, int start>
-inline u16 bitseq(u16 val)
+inline u16 util::bitseq(u16 val)
 {
 	if (end < start)
 		return 0;
@@ -30,7 +30,7 @@ inline u16 bitseq(u16 val)
     return val;
 }
 
-inline s8 signum(double val) 
+inline s8 util::signum(double val) 
 {
     if(std::isnan(val)) throw std::invalid_argument("Invalid argument passed to util::signum");
     else return (s8) (0. < val) - (val < 0.);

@@ -44,7 +44,6 @@ int main(int argc, char **argv)
     // load bios, rom, and launch game loop
     emulator.mem->loadBios(config::bios_name);
     emulator.mem->loadRom(config::rom_name);
-    
 
     bool running = true;
     SDL_Event e;

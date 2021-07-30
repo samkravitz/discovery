@@ -7,14 +7,13 @@
  * DATE: Feb 13, 2021
  * DESCRIPTION: Implements the audio processing unit
  */
-#include "APU.h"
-#include "util.h"
-
 #include <iostream>
 #include <queue>
 #include <cmath>
 #include <vector>
 #include <cassert>
+#include "APU.h"
+#include "util.h"
 
 constexpr int AMPLITUDE   = 14000;
 constexpr int SAMPLE_RATE = 44100;
@@ -112,8 +111,8 @@ void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count)
 		double sweep_shift = stream[i-1] + sweep_freq_direction
 			? (time / std::pow(2, n_sweep_shifts))
 			: -1 * (time / std::pow(2, n_sweep_shifts));
-		// double sweep_time = (64 - sound_len_reg) / 256;
-		stream[i] = wave + sweep_shift;
+		double sweep_time = (64 - sound_len_reg) / 256;
+		stream[i] = wave + sweep_shift + sweep_time;
 		sample_count += 1;
 	}
 }

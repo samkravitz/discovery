@@ -7,17 +7,18 @@
  * DATE: Feb 13, 2021
  * DESCRIPTION: Implements the audio processing unit
  */
+
 #include <iostream>
 #include <queue>
 #include <cmath>
 #include <vector>
 #include <cassert>
 #include "APU.h"
-#include "include/util.h"
+#include "util.h"
 
 constexpr int AMPLITUDE   = 14000;
 constexpr int SAMPLE_RATE = 44100;
-constexpr int BUFFER_SIZE = 2048;
+constexpr int BUFFER_SIZE = 4096;
 
 APU::APU(Memory *mem)
 	:mem(mem)
@@ -100,17 +101,25 @@ void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count)
 	bool sound_reset = util::bitseq<0xF,0xF>(ch1_x);
 	
 	// sample length, AUDIO_S16SYS is 2 bits
-	int sample_len = buffer_len/2;
+	int sample_len = buffer_len / 2;
 
 	// generate sound
 	for(int i = 1; i < sample_len; i++) {
+		double wave_amplitude = AMPLITUDE;
 		double time = (double) sample_count / (double) SAMPLE_RATE;
-		double wave = (s16) AMPLITUDE * util::signum(std::sin(2.0 * M_PI * sound_freq * time));
+		double wave = wave_amplitude * util::signum(std::sin(2.0 * M_PI * sound_freq * time));
 		double sweep_shift = stream[i-1] + sweep_freq_direction
 			? (time / std::pow(2, n_sweep_shifts))
 			: -1 * (time / std::pow(2, n_sweep_shifts));
 		double sweep_time = (64 - sound_len_reg) / 256;
-		stream[i] = wave + sweep_shift + sweep_time;
+
+		double sample_progress_ratio = (double) i / (double) BUFFER_SIZE;
+		std::cout << "sample ratio vs wave cylce: " << (double)sample_progress_ratio << ", " << (double)wave_cycle_ratio << std::endl;
+		if(wave_cycle_ratio <= sample_progress_ratio) {
+			stream[i] = wave * sweep_shift + sweep_time;
+		} else {
+			stream[i] = 0.;
+		}
 		sample_count += 1;
 	}
 }
@@ -147,7 +156,7 @@ void APU::generateChannel2(s16 *stream, int buffer_len, int sample_count) {
 	// generate sound
 	for(int i = 1; i < sample_len; i++) {
 		double time = (double) sample_count / (double) SAMPLE_RATE;
-		double wave = ((s16) AMPLITUDE) * std::sin(2.0 * M_PI * sound_freq * time);
+		double wave = (s16) AMPLITUDE * std::sin(2.0 * M_PI * sound_freq * time);
 		stream[i] = wave;
 		sample_count += 1;
 	}
@@ -176,7 +185,7 @@ void sdlAudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len)
 	SDL_PauseAudioDevice(apu->getDriverID(), 0);
 
 	apu->generateChannel1(ch1_stream, buffer_len, sample_count);
-	// apu->generateChannel2(&ch2_stream, buffer_len, sample_count);
+	// apu->generateChannel2(ch2_stream, buffer_len, sample_count);
 	// apu->generateChannel3(&ch3_stream, buffer_len, sample_count);
 	// apu->generateChannel4(&ch4_stream, buffer_len, sample_count);
 

@@ -134,8 +134,23 @@ void APU::generateChannel2(s16 *stream, int buffer_len, int sample_count) {
 		default: assert(!"Invalid wave_cycle_ratio register value");
 	}
 
+	// dmg channel 2, frequency, reset, loop control
+	u16 ch2_h = (s16) this->mem->read8(REG_SOUND2CNT_H);
+	u16 sound_freq_reg = util::bitseq<0xA, 0>(ch2_h);
+	u16 sound_freq = 4194304 / (32 * (2048 - sound_freq_reg));
+	bool timed_mode = util::bitseq<0xE, 0xE>(ch2_h);
+	bool sound_reset = util::bitseq<0xF, 0xF>(ch2_h);
+
 	// sample length, AUDIO_S16SYS is 2 bits
 	int sample_len = buffer_len/2;
+
+	// generate sound
+	for(int i = 1; i < sample_len; i++) {
+		double time = (double) sample_count / (double) SAMPLE_RATE;
+		double wave = ((s16) AMPLITUDE) * std::sin(2.0 * M_PI * sound_freq * time);
+		stream[i] = wave;
+		sample_count += 1;
+	}
 }
 
 void sdlAudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len) 

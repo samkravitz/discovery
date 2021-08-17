@@ -13,7 +13,7 @@
 #include <vector>
 #include <cassert>
 #include "APU.h"
-#include "util.h"
+#include "include/util.h"
 
 constexpr int AMPLITUDE   = 14000;
 constexpr int SAMPLE_RATE = 44100;
@@ -75,7 +75,7 @@ void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count)
 	// init envelope value => 1111 max vol, 0000 silence
 	u16 ch1_h = (s16) this->mem->read16(REG_SOUND1CNT_H);
 	u16 sound_len_reg = util::bitseq<5,0>(ch1_h);
-	u16 sound_len = (64 - sound_len_reg)/256;
+	u16 sound_len = (64 - sound_len_reg) / 256;
 	u16 wave_duty_cycle_reg = util::bitseq<7,6>(ch1_h);
 	u16 envelope_step_time_reg = util::bitseq<0xA,8>(ch1_h);
 	u16 envelope_step_time = envelope_step_time_reg / 64;
@@ -84,14 +84,12 @@ void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count)
 
 	// calculate quadrangular wave ratio
 	float wave_cycle_ratio;
-	switch(wave_duty_cycle_reg)
-	{
+	switch(wave_duty_cycle_reg) {
 		case 0b00: wave_cycle_ratio = .125; break;
 		case 0b01: wave_cycle_ratio = .250; break;
 		case 0b10: wave_cycle_ratio = .500; break;
 		case 0b11: wave_cycle_ratio = .750; break;
-		default: 
-			assert(!"Invalid wave_cycle_ratio register value");
+		default: assert(!"Invalid wave_cycle_ratio register value");
 	}
 
 	// dmg channel 1 frequency, reset, loop control
@@ -115,6 +113,29 @@ void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count)
 		stream[i] = wave + sweep_shift + sweep_time;
 		sample_count += 1;
 	}
+}
+
+void APU::generateChannel2(s16 *stream, int buffer_len, int sample_count) {
+	// dmg channel 2, wave duty and envelope control
+	u16 ch2_l = (s16) this->mem->read8(REG_SOUND2CNT_L);
+	u16 sound_len_reg = util::bitseq<5,0>(ch2_l);
+	u16 sound_len = (64 - sound_len_reg) / 256;
+	u16 wave_duty_cycle_reg = util::bitseq<7,6>(ch2_l);
+	u16 env_step_time = util::bitseq<0xA, 8>(ch2_l);
+	bool env_mode = util::bitseq<0xB, 0xB>(ch2_l);
+	u16 init_env_value = util::bitseq<0xF, 0xC>(ch2_l);
+
+	float wave_cycle_ratio;
+	switch(wave_duty_cycle_reg) {
+		case 0b00: wave_cycle_ratio = .125; break;
+		case 0b01: wave_cycle_ratio = .250; break;
+		case 0b10: wave_cycle_ratio = .500; break;
+		case 0b11: wave_cycle_ratio = .750; break;
+		default: assert(!"Invalid wave_cycle_ratio register value");
+	}
+
+	// sample length, AUDIO_S16SYS is 2 bits
+	int sample_len = buffer_len/2;
 }
 
 void sdlAudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len) 

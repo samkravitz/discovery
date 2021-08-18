@@ -1,13 +1,36 @@
 CXX = g++
-LIBARIES = -lstdc++fs -lSDL2 -DFMT_HEADER_ONLY
-CXXFLAGS = -g -std=c++2a -I $(INCLUDEDIR) -I $(BACKUPDIR)
-BIN = bin/
-SOURCEDIR = src/
-INCLUDEDIR = include/
-BACKUPDIR = $(INCLUDEDIR)backup
-OBJECTS = Discovery.o Arm7Tdmi.o util.o Memory.o PPU.o Gamepad.o Timer.o IRQ.o APU.o ArmISA.o ThumbISA.o swi.o Flash.o None.o SRAM.o config.o Scheduler.o
-LIST=$(addprefix $(BIN), $(OBJECTS))
-VPATH = $(SOURCEDIR) $(SOURCEDIR)backup
+LIBARIES = -lstdc++fs -lSDL2 -lfmt -lGL -lGLEW
+CXXFLAGS = -g -std=c++2a -I $(INCLUDEDIR) -I $(BACKUPDIR) -I $(IMGUI_DIR)
+BIN = bin
+SOURCEDIR = src
+INCLUDEDIR = include
+BACKUPDIR = $(INCLUDEDIR)/backup
+OBJ = \
+	APU.o \
+	Arm7Tdmi.o \
+	ArmISA.o \
+	config.o \
+	Discovery.o \
+	Flash.o \
+	Gamepad.o \
+	IRQ.o \
+	Memory.o \
+	None.o \
+	PPU.o \
+	Scheduler.o \
+	SRAM.o \
+	swi.o \
+	ThumbISA.o \
+	Timer.o \
+	util.o \
+
+LIST = $(addprefix $(BIN)/, $(OBJ) $(IMGUI_OBJECTS))
+VPATH = $(SOURCEDIR) $(SOURCEDIR)/backup $(IMGUI_DIR) $(IMGUI_DIR)/backends
+
+# Add ImGui files to compile
+IMGUI_DIR = third_party/imgui
+IMGUI_OBJECTS = imgui.o imgui_draw.o imgui_widgets.o imgui_demo.o imgui_tables.o imgui_impl_sdl.o imgui_impl_opengl3.o
+CXXFLAGS += -I -DIMGUI_IMPL_OPENGL_LOADER_GLEW
 
 # Use compiler optimizations
 # run `make opt=1`
@@ -16,11 +39,10 @@ CXXFLAGS += -Ofast
 endif
 
 all: discovery
-
 discovery: $(LIST) main.cpp
-	$(CXX) $(CXXFLAGS) -o discovery $(SOURCEDIR)main.cpp $(LIST) $(LIBARIES)
+	$(CXX) $(CXXFLAGS) -o discovery $(SOURCEDIR)/main.cpp $(LIST) $(LIBARIES)
 
-$(BIN)%.o : %.cpp
+$(BIN)/%.o : %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 .PHONY: clean

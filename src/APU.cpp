@@ -16,12 +16,13 @@
 #include "APU.h"
 #include "util.h"
 
-constexpr int AMPLITUDE   = 14000;
-constexpr int SAMPLE_RATE = 44100;
-constexpr int BUFFER_SIZE = 4096;
+// constexpr int AMPLITUDE   = 14000;
+// constexpr int SAMPLE_RATE = 44100;
+// constexpr int BUFFER_SIZE = 4096;
 
+// construct APU with discovery memory management unit
 APU::APU(Memory *mem)
-	:mem(mem)
+:mem(mem)
 {
 	SDL_Init(SDL_INIT_AUDIO);
 	
@@ -61,8 +62,9 @@ APU::~APU()
 }
 
 // generate GBA channel 1 sounds, including square wave and frequency shifts
-void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count) 
-{
+void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count) {
+
+
 	// dmg channel 1 sweep control
 	// sweep shifts unit (s)
 	// sweep_freq_direction => freq asc == 0, desc == 1
@@ -102,26 +104,50 @@ void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count)
 	
 	// sample length, AUDIO_S16SYS is 2 bits
 	int sample_len = buffer_len / 2;
+	double time = 0;
 
 	// generate sound
 	for(int i = 1; i < sample_len; i++) {
+		// time = (double) sample_count / (double) SAMPLE_RATE;
+		double base_wave = std::sin(time);
 		double wave_amplitude = AMPLITUDE;
-		double time = (double) sample_count / (double) SAMPLE_RATE;
-		double wave = wave_amplitude * util::signum(std::sin(2.0 * M_PI * sound_freq * time));
-		double sweep_shift = stream[i-1] + sweep_freq_direction
+		double sq_wave = wave_amplitude * util::signum(base_wave);
+
+		time += sound_freq * (2. * M_PI) / SAMPLE_RATE;
+		if(time >= (2. * M_PI)) {
+			time -= (2. * M_PI);
+		}
+
+		// double wave = wave_amplitude * util::signum(std::sin(2.0 * M_PI * sound_freq * time));
+		// // if(sweep_time > 0) {
+		// 	// apply sweep effect
+		// 	double sweep_shift = stream[i-1] + sweep_freq_direction
+		// 		? (time / std::pow(2, n_sweep_shifts))
+		// 		: -1 * (time / std::pow(2, n_sweep_shifts));
+		// 	std::cout<<"stream[i-1]: "<<stream[i-1]<<std::endl;
+		// 	stream[i] = stream[i-1]  + sweep_shift;
+		// // } else {
+		// 	// frequency does not sweep
+
+		// // }
+		double sample_progress_ratio = (double) i / (double) sample_len;
+		double sweep_shift = stream[i-1] * sweep_freq_direction
 			? (time / std::pow(2, n_sweep_shifts))
 			: -1 * (time / std::pow(2, n_sweep_shifts));
 		double sweep_time = (64 - sound_len_reg) / 256;
 
-		double sample_progress_ratio = (double) i / (double) BUFFER_SIZE;
 		std::cout << "sample ratio vs wave cylce: " << (double)sample_progress_ratio << ", " << (double)wave_cycle_ratio << std::endl;
-		if(wave_cycle_ratio <= sample_progress_ratio) {
-			stream[i] = wave * sweep_shift + sweep_time;
-		} else {
-			stream[i] = 0.;
-		}
+		// SDL_Delay(sweep_time);
+		stream[i] += sq_wave + sweep_shift;
+		// if(sample_progress_ratio <= wave_cycle_ratio) {
+		// 	stream[i] = 0;
+		// } else {
+		// 	stream[i] = sq_wave * sweep_shift + sweep_time;
+		// }
 		sample_count += 1;
 	}
+
+	std::cout << "end for loop -------------------" << std::endl;
 }
 
 void APU::generateChannel2(s16 *stream, int buffer_len, int sample_count) {

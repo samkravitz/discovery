@@ -19,14 +19,14 @@
 constexpr int DS_MODE_DMA = 0;
 constexpr int DS_MODE_INTERRUPT = 1;
 
-class APU
-{
+class APU {
 	public:
 	APU(Memory *mem);
 	~APU();
 
 	Memory *mem;
 
+	// generate channel sound data
 	void generateChannel1(s16*, int, int);
 	void generateChannel2(s16*, int, int);
 	void generateChannel3(s16*, int, int);
@@ -34,11 +34,34 @@ class APU
 	void generateDirectSoundA(s16*, int, int);
 	void generateDirectSoundB(s16*, int, int);
 
+	// system sound getters & setters
+	inline int getAmplitude(void);
+	inline void setAmplitude(int val);
+
+	inline int getSampleRate(void);
+	inline void setSampleRate(int val);
+
+	inline int getBufferSize(void);
+	inline void setBufferSize(int val);
+
 	inline s8 getDriverID(void);
+	inline void setDriverID(s8 val);
 	
 	private:
+	// system sound config
+	int AMPLITUDE = 14000;
+	int SAMPLE_RATE = 441000;
+	int BUFFER_SIZE = 4096;
+	
 	// device audio driver
 	SDL_AudioDeviceID driver_id;
+
+	// sound channels 1 - 4
+	struct output_channel {
+		u16 sound_frequency;
+		double output_ampliude;
+
+	} channel [4];
 };
 
 void sdlAudioCallback(void*, Uint8*, int);

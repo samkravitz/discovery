@@ -139,9 +139,8 @@ void APU::generateChannel1() {
 			: -1 * (time / std::pow(2, n_sweep_shifts));
 		double sweep_time = (64 - sound_len_reg) / 256;
 
-		// std::cout << "sample ratio vs wave cylce: " << (double)sample_progress_ratio << ", " << (double)wave_cycle_ratio << std::endl;
 		// SDL_Delay(sweep_time);
-		this->channel[0].stream[i] += sq_wave + sweep_shift;
+		this->channel[0].stream[i] += sq_wave + sweep_shift + time;
 		// if(sample_progress_ratio <= wave_cycle_ratio) {
 		// 	stream[i] = 0;
 		// } else {

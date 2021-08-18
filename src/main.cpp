@@ -106,16 +106,16 @@ int main(int argc, char **argv)
 
 void init()
 {
-    assert(SDL_Init(SDL_INIT_VIDEO) >= 0);
+    // assert(SDL_Init(SDL_INIT_VIDEO) >= 0);
 
     window = SDL_CreateWindow("discovery", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2, 0);
     assert(window);
 
     // discovery icon logo
-    SDL_Surface *logo = SDL_LoadBMP("assets/discovery.bmp");
-    assert(logo);
+    // SDL_Surface *logo = SDL_LoadBMP("assets/discovery.bmp");
+    // assert(logo);
 
-    SDL_SetWindowIcon(window, logo);
+    // SDL_SetWindowIcon(window, logo);
 
     final_screen = SDL_GetWindowSurface(window);
     original_screen = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32, 0, 0, 0, 0);

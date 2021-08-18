@@ -27,19 +27,32 @@ class APU {
 	Memory *mem;
 
 	// generate channel sound data
-	void generateChannel1(s16*, int, int);
+	void generateChannel1();
+	// void generateChannel1(s16*, int, int);
 	void generateChannel2(s16*, int, int);
 	void generateChannel3(s16*, int, int);
 	void generateChannel4(s16*, int, int);
 	void generateDirectSoundA(s16*, int, int);
 	void generateDirectSoundB(s16*, int, int);
 
-	// system sound getters & setters
+	// allocate channel memory with buffer length
+	void allocateChannelMemory(u16);
+
+	// silence all output channels by clearing all four channel streams
+	void clearChannelStreams(void);
+
+	// inline system sound getters & setters
+	inline s16 getChannelStream(int, int);
+	inline void setChannelStream(int, u16, s16*);
+
 	inline int getAmplitude(void);
 	inline void setAmplitude(int);
 
 	inline int getSampleRate(void);
 	inline void setSampleRate(int);
+
+	inline int getSampleSize(void);
+	inline void setSampleSize(int);
 
 	inline int getBufferSize(void);
 	inline void setBufferSize(int);
@@ -55,15 +68,27 @@ class APU {
 	
 	// device audio driver
 	SDL_AudioDeviceID driver_id;
+	
+	int sample_size;
+	u16 buffer_len;
 
 	// sound channels 1 - 4
 	struct output_channel {
+		s16 *stream;
 		u16 sound_frequency;
 		double output_ampliude;
+
+		bool is_playing;
 
 	} channel [4];
 };
 
+/**
+ * sdl audio callback function
+ * @param _apu_ref reference to the system apu
+ * @param _stream_buffer reference to an array of data representing the stream data
+ * @param _buffer_len size of the data stream
+ */ 
 void sdlAudioCallback(void*, Uint8*, int);
 
 #include "APU.inl"

@@ -56,13 +56,16 @@ APU::APU(Memory *mem)
 	std::cout << "SDL_SOUNDISPLAYING: " << SDL_AUDIO_PLAYING << std::endl;
 }
 
-APU::~APU()
-{
+APU::~APU() {
+	for(int i = 0; i < 4; i++) {
+		delete[] this->channel[i].stream;
+	}
 	SDL_CloseAudio();
 }
 
 // generate GBA channel 1 sounds, including square wave and frequency shifts
-void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count) {
+// void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count) {
+void APU::generateChannel1() {
 
 
 	// dmg channel 1 sweep control
@@ -131,20 +134,20 @@ void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count) {
 
 		// // }
 		double sample_progress_ratio = (double) i / (double) sample_len;
-		double sweep_shift = stream[i-1] * sweep_freq_direction
+		double sweep_shift = this->channel[0].stream[i-1] * sweep_freq_direction
 			? (time / std::pow(2, n_sweep_shifts))
 			: -1 * (time / std::pow(2, n_sweep_shifts));
 		double sweep_time = (64 - sound_len_reg) / 256;
 
-		std::cout << "sample ratio vs wave cylce: " << (double)sample_progress_ratio << ", " << (double)wave_cycle_ratio << std::endl;
+		// std::cout << "sample ratio vs wave cylce: " << (double)sample_progress_ratio << ", " << (double)wave_cycle_ratio << std::endl;
 		// SDL_Delay(sweep_time);
-		stream[i] += sq_wave + sweep_shift;
+		this->channel[0].stream[i] += sq_wave + sweep_shift;
 		// if(sample_progress_ratio <= wave_cycle_ratio) {
 		// 	stream[i] = 0;
 		// } else {
 		// 	stream[i] = sq_wave * sweep_shift + sweep_time;
 		// }
-		sample_count += 1;
+		this->sample_size += 1;
 	}
 
 	std::cout << "end for loop -------------------" << std::endl;
@@ -188,35 +191,62 @@ void APU::generateChannel2(s16 *stream, int buffer_len, int sample_count) {
 	}
 }
 
+void APU::allocateChannelMemory(u16 buffer_len) {
+	this->channel[0].stream = new s16[buffer_len];
+	this->channel[1].stream = new s16[buffer_len];
+	this->channel[2].stream = new s16[buffer_len];
+	this->channel[3].stream = new s16[buffer_len];
+}
+
+void APU::clearChannelStreams() {
+	// clear all four streams
+	for(int i = 0; i < this->buffer_len; i++) {
+		this->channel[0].stream[i] = 0;
+		this->channel[1].stream[i] = 0;
+		this->channel[2].stream[i] = 0;
+		this->channel[3].stream[i] = 0;
+	}
+}
+
 void sdlAudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len) 
 {
 	APU *apu = (APU*) _apu_ref;
 	s16 *stream = (s16*) _stream_buffer;
 	int buffer_len = _buffer_len/2;
 	int sample_count = 0;
+	// std::cout <<"the _buffer_len is " << _buffer_len << std::endl;
 
-	s16 *ch1_stream = new s16[buffer_len];
-	s16 *ch2_stream = new s16[buffer_len];
-	s16 *ch3_stream = new s16[buffer_len];
-	s16 *ch4_stream = new s16[buffer_len];
+	apu->setSampleSize(0);
+	apu->allocateChannelMemory(buffer_len);
+	apu->clearChannelStreams();
 
-	// initialize audio buffer with silence
-	for(int i = 0; i < buffer_len; i++) {
-		ch1_stream[i] = 0;
-		ch2_stream[i] = 0;
-		ch3_stream[i] = 0;
-		ch4_stream[i] = 0;
-	}
+	// s16 *ch1_stream = new s16[buffer_len];
+	// s16 *ch2_stream = new s16[buffer_len];
+	// s16 *ch3_stream = new s16[buffer_len];
+	// s16 *ch4_stream = new s16[buffer_len];
+
+	// // initialize audio buffer with silence
+	// for(int i = 0; i < buffer_len; i++) {
+	// 	ch1_stream[i] = 0;
+	// 	ch2_stream[i] = 0;
+	// 	ch3_stream[i] = 0;
+	// 	ch4_stream[i] = 0;
+	// }
 
 	SDL_PauseAudioDevice(apu->getDriverID(), 0);
 
-	apu->generateChannel1(ch1_stream, buffer_len, sample_count);
+	apu->generateChannel1();
+	// apu->generateChannel1(ch1_stream, buffer_len, sample_count);
 	// apu->generateChannel2(ch2_stream, buffer_len, sample_count);
 	// apu->generateChannel3(&ch3_stream, buffer_len, sample_count);
 	// apu->generateChannel4(&ch4_stream, buffer_len, sample_count);
 
 	for(int i = 0; i < buffer_len; i++) {
-		s32 merged_stream_data = ch1_stream[i] + ch2_stream[i] + ch3_stream[i] + ch4_stream[i];
+		s16 ch1 = apu->getChannelStream(0, i);
+		s16 ch2 = apu->getChannelStream(1, i);
+		s16 ch3 = apu->getChannelStream(2, i);
+		s16 ch4 = apu->getChannelStream(3, i);
+		s32 merged_stream_data = ch1 + ch2 + ch3 + ch4;
 		stream[i] = merged_stream_data;
 	}
 }

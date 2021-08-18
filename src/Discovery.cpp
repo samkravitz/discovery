@@ -45,6 +45,8 @@ void Discovery::parseArgs()
 			config::rom_name = argv[++i];
         else if ((argv[i] == "-b" || argv[i] == "--bios") && i != argv.size() - 1)
             config::bios_name = argv[++i];
+		else if ((argv[i] == "-d" || argv[i] == "--debug"))
+			config::debug = true;
 		else if ((argv[i] == "-h" || argv[i] == "--help") && i == 0)
 			config::show_help = true;
     }
@@ -53,13 +55,14 @@ void Discovery::parseArgs()
 void Discovery::printArgHelp()
 {
 	log("Usage:\n");
-	log("./discovery ./path/to/rom.gba\n");
-	log("\n");
+	log("./discovery ./path/to/rom.gba\n\n");
 	log("Flags:\n");
 	log("-i, --input\n");
 	log("  Specifies input file for rom\n");
 	log("-b, --bios\n");
 	log("  Specifies GBA bios file\n");
+	log("-d, --debug\n");
+	log("  Launches graphical debugger\n");
 	log("-h, --help\n");
 	log("  Show help...\n");
 }

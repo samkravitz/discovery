@@ -51,11 +51,14 @@ class APU {
 	inline int getSampleRate(void);
 	inline void setSampleRate(int);
 
+	inline int getBufferSize(void);
+	inline void setBufferSize(int);
+
 	inline int getSampleSize(void);
 	inline void setSampleSize(int);
 
-	inline int getBufferSize(void);
-	inline void setBufferSize(int);
+	inline u16 getBufferLength(void);
+	inline void setBufferLength(u16);
 
 	inline s8 getDriverID(void);
 	inline void setDriverID(s8);

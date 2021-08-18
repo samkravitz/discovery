@@ -64,9 +64,8 @@ APU::~APU() {
 }
 
 // generate GBA channel 1 sounds, including square wave and frequency shifts
-// void APU::generateChannel1(s16 *stream, int buffer_len, int sample_count) {
 void APU::generateChannel1() {
-
+	s16 *stream = this->channel[0].stream;
 
 	// dmg channel 1 sweep control
 	// sweep shifts unit (s)
@@ -140,16 +139,12 @@ void APU::generateChannel1() {
 		double sweep_time = (64 - sound_len_reg) / 256;
 
 		// SDL_Delay(sweep_time);
-		this->channel[0].stream[i] += sq_wave + sweep_shift + time;
-		// if(sample_progress_ratio <= wave_cycle_ratio) {
-		// 	stream[i] = 0;
-		// } else {
-		// 	stream[i] = sq_wave * sweep_shift + sweep_time;
-		// }
+		// stream[i] += stream[i-1] + sq_wave + sweep_shift + time;
+		stream[i] += stream[i-1] + sweep_shift;
 		this->sample_size += 1;
 	}
 
-	std::cout << "end for loop -------------------" << std::endl;
+	// std::cout << "end for loop -------------------" << std::endl;
 }
 
 void APU::generateChannel2(s16 *stream, int buffer_len, int sample_count) {
@@ -191,6 +186,7 @@ void APU::generateChannel2(s16 *stream, int buffer_len, int sample_count) {
 }
 
 void APU::allocateChannelMemory(u16 buffer_len) {
+	this->buffer_len = buffer_len;
 	this->channel[0].stream = new s16[buffer_len];
 	this->channel[1].stream = new s16[buffer_len];
 	this->channel[2].stream = new s16[buffer_len];

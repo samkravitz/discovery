@@ -36,16 +36,16 @@ class APU {
 
 	// system sound getters & setters
 	inline int getAmplitude(void);
-	inline void setAmplitude(int val);
+	inline void setAmplitude(int);
 
 	inline int getSampleRate(void);
-	inline void setSampleRate(int val);
+	inline void setSampleRate(int);
 
 	inline int getBufferSize(void);
-	inline void setBufferSize(int val);
+	inline void setBufferSize(int);
 
 	inline s8 getDriverID(void);
-	inline void setDriverID(s8 val);
+	inline void setDriverID(s8);
 	
 	private:
 	// system sound config

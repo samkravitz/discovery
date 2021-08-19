@@ -58,14 +58,14 @@ APU::APU(Memory *mem)
 
 APU::~APU() {
 	for(int i = 0; i < 4; i++) {
-		delete[] this->channel[i].stream;
+		// delete[] this->channel[i].stream;
 	}
 	SDL_CloseAudio();
 }
 
 // generate GBA channel 1 sounds, including square wave and frequency shifts
 void APU::generateChannel1() {
-	s16 *stream = this->channel[0].stream;
+	std::vector<s16> &stream = this->channel[0].stream;
 
 	// dmg channel 1 sweep control
 	// sweep shifts unit (s)
@@ -110,41 +110,41 @@ void APU::generateChannel1() {
 
 	// generate sound
 	for(int i = 1; i < sample_len; i++) {
-		// time = (double) sample_count / (double) SAMPLE_RATE;
-		double base_wave = std::sin(time);
+		time = (double) this->sample_size / (double) SAMPLE_RATE;
+		// double base_wave = std::sin(time);
 		double wave_amplitude = AMPLITUDE;
-		double sq_wave = wave_amplitude * util::signum(base_wave);
+		// double sq_wave = wave_amplitude * util::signum(base_wave);
 
-		time += sound_freq * (2. * M_PI) / SAMPLE_RATE;
-		if(time >= (2. * M_PI)) {
-			time -= (2. * M_PI);
-		}
+		// time += sound_freq * (2. * M_PI) / SAMPLE_RATE;
+		// if(time >= (2. * M_PI)) {
+		// 	time -= (2. * M_PI);
+		// }
 
-		// double wave = wave_amplitude * util::signum(std::sin(2.0 * M_PI * sound_freq * time));
-		// // if(sweep_time > 0) {
-		// 	// apply sweep effect
-		// 	double sweep_shift = stream[i-1] + sweep_freq_direction
-		// 		? (time / std::pow(2, n_sweep_shifts))
-		// 		: -1 * (time / std::pow(2, n_sweep_shifts));
-		// 	std::cout<<"stream[i-1]: "<<stream[i-1]<<std::endl;
-		// 	stream[i] = stream[i-1]  + sweep_shift;
-		// // } else {
-		// 	// frequency does not sweep
+		double wave = wave_amplitude * util::signum(std::sin(2.0 * M_PI * sound_freq * time));
+		// if(sweep_time > 0) {
+			// apply sweep effect
+			double sweep_shift = stream[i-1] + sweep_freq_direction
+				? (time / std::pow(2, n_sweep_shifts))
+				: -1 * (time / std::pow(2, n_sweep_shifts));
+			std::cout<<"stream[i-1]: "<<stream[i-1]<<std::endl;
+			stream[i] = wave  + sweep_shift;
+		// } else {
+			// frequency does not sweep
 
-		// // }
-		double sample_progress_ratio = (double) i / (double) sample_len;
-		double sweep_shift = this->channel[0].stream[i-1] * sweep_freq_direction
-			? (time / std::pow(2, n_sweep_shifts))
-			: -1 * (time / std::pow(2, n_sweep_shifts));
-		double sweep_time = (64 - sound_len_reg) / 256;
+		// }
 
-		// SDL_Delay(sweep_time);
-		// stream[i] += stream[i-1] + sq_wave + sweep_shift + time;
-		stream[i] += stream[i-1] + sweep_shift;
+
+		// double sample_progress_ratio = (double) i / (double) sample_len;
+		// double sweep_shift = stream[i-1] + sweep_freq_direction
+		// 	? (time / std::pow(2, n_sweep_shifts))
+		// 	: -1 * (time / std::pow(2, n_sweep_shifts));
+		// double sweep_time = (64 - sound_len_reg) / 256;
+
+		// // SDL_Delay(sweep_time);
+		// // stream[i] += stream[i-1] + sq_wave + sweep_shift + time;
+		// stream[i] += stream[i-1] + sweep_shift;
 		this->sample_size += 1;
 	}
-
-	// std::cout << "end for loop -------------------" << std::endl;
 }
 
 void APU::generateChannel2(s16 *stream, int buffer_len, int sample_count) {
@@ -185,22 +185,29 @@ void APU::generateChannel2(s16 *stream, int buffer_len, int sample_count) {
 	}
 }
 
-void APU::allocateChannelMemory(u16 buffer_len) {
-	this->buffer_len = buffer_len;
-	this->channel[0].stream = new s16[buffer_len];
-	this->channel[1].stream = new s16[buffer_len];
-	this->channel[2].stream = new s16[buffer_len];
-	this->channel[3].stream = new s16[buffer_len];
+void APU::allocateChannelMemory() {
+	this->channel[0].stream.resize(this->buffer_len);
+	this->channel[1].stream.resize(this->buffer_len);
+	this->channel[2].stream.resize(this->buffer_len);
+	this->channel[3].stream.resize(this->buffer_len);
 }
 
 void APU::clearChannelStreams() {
-	// clear all four streams
-	for(int i = 0; i < this->buffer_len; i++) {
-		this->channel[0].stream[i] = 0;
-		this->channel[1].stream[i] = 0;
-		this->channel[2].stream[i] = 0;
-		this->channel[3].stream[i] = 0;
-	}
+	// zero all four streams
+	// std::memset(this->channel[0].stream, 0, this->buffer_len * sizeof(this->channel[0].stream));
+	// std::memset(this->channel[1].stream, 0, this->buffer_len * sizeof(this->channel[1].stream));
+	// std::memset(this->channel[2].stream, 0, this->buffer_len * sizeof(this->channel[2].stream));
+	// std::memset(this->channel[3].stream, 0, this->buffer_len * sizeof(this->channel[3].stream));
+	std::fill(this->channel[0].stream.begin(), this->channel[0].stream.end(), 0);
+	std::fill(this->channel[1].stream.begin(), this->channel[1].stream.end(), 0);
+	std::fill(this->channel[2].stream.begin(), this->channel[2].stream.end(), 0);
+	std::fill(this->channel[3].stream.begin(), this->channel[3].stream.end(), 0);
+	// for(int i = 0; i < this->buffer_len; i++) {
+	// 	this->channel[0].stream.assign(this->buffer_len, 0);
+	// 	this->channel[1].stream.assign(this->buffer_len, 0);
+	// 	this->channel[2].stream.assign(this->buffer_len, 0);
+	// 	this->channel[3].stream.assign(this->buffer_len, 0);
+	// }
 }
 
 void sdlAudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len) 
@@ -212,7 +219,8 @@ void sdlAudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len)
 	// std::cout <<"the _buffer_len is " << _buffer_len << std::endl;
 
 	apu->setSampleSize(0);
-	apu->allocateChannelMemory(buffer_len);
+	apu->setBufferLength(buffer_len);
+	apu->allocateChannelMemory();
 	apu->clearChannelStreams();
 
 	// s16 *ch1_stream = new s16[buffer_len];

@@ -1,15 +1,13 @@
 // apu inline methods
 
 inline s16 APU::getChannelStream(int channel_index, int buffer_index) {
-	// std::cout<<"ch_index: "<<channel_index<<", buf_ind: "<<buffer_index<<std::endl;
 	return this->channel[channel_index].stream[buffer_index];
 }
 
-inline void APU::setChannelStream(int channel_index, u16 data_buffer_len, s16 *stream_data) {
-	std::cout<<"bufflen: "<<data_buffer_len<<", sizeof: "<<sizeof(stream_data)<<std::endl;
-	this->buffer_len = data_buffer_len;
-	std::memcpy(this->channel[channel_index].stream, stream_data, sizeof(&stream_data));
-}
+// inline void APU::setChannelStream(int channel_index, u16 data_buffer_len, s16 *stream_data) {
+// 	this->buffer_len = data_buffer_len;
+// 	std::memcpy(this->channel[channel_index].stream, stream_data, data_buffer_len * sizeof(stream_data));
+// }
 
 inline int APU::getAmplitude() {
 	return this->AMPLITUDE;

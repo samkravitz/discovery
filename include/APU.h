@@ -13,6 +13,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_audio.h>
 #include <iostream>
+#include <vector>
 #include "Memory.h"
 
 // Direct Sound modes
@@ -27,7 +28,7 @@ class APU {
 	Memory *mem;
 
 	// generate channel sound data
-	void generateChannel1();
+	void generateChannel1(void);
 	// void generateChannel1(s16*, int, int);
 	void generateChannel2(s16*, int, int);
 	void generateChannel3(s16*, int, int);
@@ -36,7 +37,7 @@ class APU {
 	void generateDirectSoundB(s16*, int, int);
 
 	// allocate channel memory with buffer length
-	void allocateChannelMemory(u16);
+	void allocateChannelMemory(void);
 
 	// silence all output channels by clearing all four channel streams
 	void clearChannelStreams(void);
@@ -77,7 +78,7 @@ class APU {
 
 	// sound channels 1 - 4
 	struct output_channel {
-		s16 *stream;
+		std::vector<s16> stream;
 		u16 sound_frequency;
 		double output_ampliude;
 

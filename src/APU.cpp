@@ -16,10 +16,6 @@
 #include "APU.h"
 #include "util.h"
 
-// constexpr int AMPLITUDE   = 14000;
-// constexpr int SAMPLE_RATE = 44100;
-// constexpr int BUFFER_SIZE = 4096;
-
 // construct APU with discovery memory management unit
 APU::APU(Memory *mem)
 :mem(mem)
@@ -186,28 +182,17 @@ void APU::generateChannel2(s16 *stream, int buffer_len, int sample_count) {
 }
 
 void APU::allocateChannelMemory() {
-	this->channel[0].stream.resize(this->buffer_len);
-	this->channel[1].stream.resize(this->buffer_len);
-	this->channel[2].stream.resize(this->buffer_len);
-	this->channel[3].stream.resize(this->buffer_len);
+	// resize all streams
+	for(int i = 0; i < 4; i++) {
+		this->channel[i].stream.resize(this->buffer_len);
+	}
 }
 
 void APU::clearChannelStreams() {
 	// zero all four streams
-	// std::memset(this->channel[0].stream, 0, this->buffer_len * sizeof(this->channel[0].stream));
-	// std::memset(this->channel[1].stream, 0, this->buffer_len * sizeof(this->channel[1].stream));
-	// std::memset(this->channel[2].stream, 0, this->buffer_len * sizeof(this->channel[2].stream));
-	// std::memset(this->channel[3].stream, 0, this->buffer_len * sizeof(this->channel[3].stream));
-	std::fill(this->channel[0].stream.begin(), this->channel[0].stream.end(), 0);
-	std::fill(this->channel[1].stream.begin(), this->channel[1].stream.end(), 0);
-	std::fill(this->channel[2].stream.begin(), this->channel[2].stream.end(), 0);
-	std::fill(this->channel[3].stream.begin(), this->channel[3].stream.end(), 0);
-	// for(int i = 0; i < this->buffer_len; i++) {
-	// 	this->channel[0].stream.assign(this->buffer_len, 0);
-	// 	this->channel[1].stream.assign(this->buffer_len, 0);
-	// 	this->channel[2].stream.assign(this->buffer_len, 0);
-	// 	this->channel[3].stream.assign(this->buffer_len, 0);
-	// }
+	for(int i = 0; i < 4; i++) {
+		std::fill(this->channel[i].stream.begin(), this->channel[i].stream.end(), 0);
+	}
 }
 
 void sdlAudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len) 
@@ -216,25 +201,11 @@ void sdlAudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len)
 	s16 *stream = (s16*) _stream_buffer;
 	int buffer_len = _buffer_len/2;
 	int sample_count = 0;
-	// std::cout <<"the _buffer_len is " << _buffer_len << std::endl;
 
 	apu->setSampleSize(0);
 	apu->setBufferLength(buffer_len);
 	apu->allocateChannelMemory();
 	apu->clearChannelStreams();
-
-	// s16 *ch1_stream = new s16[buffer_len];
-	// s16 *ch2_stream = new s16[buffer_len];
-	// s16 *ch3_stream = new s16[buffer_len];
-	// s16 *ch4_stream = new s16[buffer_len];
-
-	// // initialize audio buffer with silence
-	// for(int i = 0; i < buffer_len; i++) {
-	// 	ch1_stream[i] = 0;
-	// 	ch2_stream[i] = 0;
-	// 	ch3_stream[i] = 0;
-	// 	ch4_stream[i] = 0;
-	// }
 
 	SDL_PauseAudioDevice(apu->getDriverID(), 0);
 

@@ -24,10 +24,10 @@ APU::APU(Memory *mem)
 	
 	// define audio spec
 	SDL_AudioSpec requested, obtained;
-	requested.freq = SAMPLE_RATE;
+	requested.freq = this->SAMPLE_RATE;
 	requested.format = AUDIO_S16SYS;
 	requested.channels = 2;
-	requested.samples = BUFFER_SIZE;
+	requested.samples = this->BUFFER_SIZE;
 	requested.callback = sdlAudioCallback;
 	requested.userdata = this;
 
@@ -50,6 +50,7 @@ APU::APU(Memory *mem)
 
 	SDL_PauseAudioDevice(this->driver_id, 0);
 	std::cout << "SDL_SOUNDISPLAYING: " << SDL_AUDIO_PLAYING << std::endl;
+
 }
 
 APU::~APU() {
@@ -111,36 +112,21 @@ void APU::generateChannel1() {
 		double wave_amplitude = AMPLITUDE;
 		// double sq_wave = wave_amplitude * util::signum(base_wave);
 
-		// time += sound_freq * (2. * M_PI) / SAMPLE_RATE;
-		// if(time >= (2. * M_PI)) {
-		// 	time -= (2. * M_PI);
-		// }
+		// double angular_freq = 
 
-		double wave = wave_amplitude * util::signum(std::sin(2.0 * M_PI * sound_freq * time));
-		// if(sweep_time > 0) {
-			// apply sweep effect
-			double sweep_shift = stream[i-1] + sweep_freq_direction
-				? (time / std::pow(2, n_sweep_shifts))
-				: -1 * (time / std::pow(2, n_sweep_shifts));
-			std::cout<<"stream[i-1]: "<<stream[i-1]<<std::endl;
-			stream[i] = wave  + sweep_shift;
-		// } else {
-			// frequency does not sweep
-
-		// }
-
-
-		// double sample_progress_ratio = (double) i / (double) sample_len;
-		// double sweep_shift = stream[i-1] + sweep_freq_direction
-		// 	? (time / std::pow(2, n_sweep_shifts))
-		// 	: -1 * (time / std::pow(2, n_sweep_shifts));
-		// double sweep_time = (64 - sound_len_reg) / 256;
-
-		// // SDL_Delay(sweep_time);
-		// // stream[i] += stream[i-1] + sq_wave + sweep_shift + time;
-		// stream[i] += stream[i-1] + sweep_shift;
+		// y[i] = ampl * sin(2pi * (i - phase))
+		double phase = wave_cycle_ratio * sound_len;
+		double wave = wave_amplitude * util::signum(std::sin(sound_freq * (i - phase)));
+		// double wave = wave_amplitude * std::sin(sound_freq * (i - phase));
+		// double wave = wave_amplitude * util::signum(std::sin(2.0 * M_PI * (sound_freq)));
+		double sweep_shift = stream[i-1] + sweep_freq_direction
+			? (time / std::pow(2, n_sweep_shifts))
+			: -1 * (time / std::pow(2, n_sweep_shifts));
+		std::cout<<"stream[i-1]: "<<stream[i-1]<<std::endl;
+		stream[i] = wave + sweep_shift;
 		this->sample_size += 1;
 	}
+	SDL_Delay(sound_len);
 }
 
 void APU::generateChannel2(s16 *stream, int buffer_len, int sample_count) {
@@ -223,4 +209,5 @@ void sdlAudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len)
 		s32 merged_stream_data = ch1 + ch2 + ch3 + ch4;
 		stream[i] = merged_stream_data;
 	}
+	
 }

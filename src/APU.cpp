@@ -21,6 +21,7 @@ APU::APU(Memory *mem)
 :mem(mem)
 {
 	SDL_Init(SDL_INIT_AUDIO);
+	std::cout<<"drive: "<<SDL_GetCurrentAudioDriver()<<std::endl;
 	
 	// define audio spec
 	SDL_AudioSpec requested, obtained;
@@ -30,6 +31,12 @@ APU::APU(Memory *mem)
 	requested.samples = this->BUFFER_SIZE;
 	requested.callback = sdlAudioCallback;
 	requested.userdata = this;
+
+	int ndevises = SDL_GetNumAudioDevices(1);
+	std::cout<<ndevises<<std::endl;
+	for(int i = 0; i < ndevises; i++) {
+		std::cout<<SDL_GetAudioDeviceName(i,1)<<std::endl;
+	}
 
 	// select primary sound driver, nullptr here selects system default
 	this->driver_id = SDL_OpenAudioDevice(nullptr, 0, &requested, &obtained, SDL_AUDIO_ALLOW_ANY_CHANGE);

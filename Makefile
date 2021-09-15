@@ -1,6 +1,6 @@
-CXX = clang++
-LIBARIES = -lSDL2 -DFMT_HEADER_ONLY
-CXXFLAGS = -g -std=gnu++2a -stdlib=libc++ -I $(INCLUDEDIR) -I $(BACKUPDIR)
+CXX = g++
+LIBARIES = -lSDL2 -DFMT_HEADER_ONLY -lstdc++fs
+CXXFLAGS = -g -std=gnu++2a -I $(INCLUDEDIR) -I $(BACKUPDIR)
 BIN = bin/
 SOURCEDIR = src/
 INCLUDEDIR = include/

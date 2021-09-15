@@ -43,7 +43,7 @@ APU::APU(Memory *mem)
 	if(this->driver_id <= 0) std::cout << "SDL Error: " << SDL_GetError() << std::endl;	
 	
 	// sound output control
-	this->mem->write16(REG_SOUNDCNT_L, 0x1177);
+	this->mem->write16(REG_SOUNDCNT_L, 0x0B0F);
 	u16 sound_cnt_l = (s16) this->mem->read16(REG_SOUNDCNT_L);
 	std::cout << "sound_cnt_l: " << sound_cnt_l << std::endl;
 
@@ -51,6 +51,7 @@ APU::APU(Memory *mem)
 	u16 sound_cnt_h = (s16) this->mem->read16(REG_SOUNDCNT_H);
 	std::cout << "sound_cnt_h: " << sound_cnt_h << std::endl;
 
+	// turn sound on
 	this->mem->write16(REG_SOUNDCNT_X, 0x80);
 	u16 sound_cnt_x = (s16) this->mem->read16(REG_SOUNDCNT_X);
 	std::cout << "sound_cnt_x: " << sound_cnt_x << std::endl;
@@ -75,62 +76,68 @@ void APU::generateChannel1() {
 	// sweep shifts unit (s)
 	// sweep_freq_direction => freq asc == 0, desc == 1
 	u16 ch1_l = (s16) this->mem->read8(REG_SOUND1CNT_L);
-	u16 n_sweep_shifts = util::bitseq<2,0>(ch1_l);
-	u16 sweep_freq_direction = util::bitseq<3,3>(ch1_l);
-	u16 sweep_time = util::bitseq<6,4>(ch1_l);
+	
+	// N -> sweep shift number (not rate, but a factor applied to rate)
+	u16 N = util::bitseq<2,0>(ch1_l);
+
+	// M -> sweep direction mode (inc, dec)
+	u16 M = util::bitseq<3,3>(ch1_l);
+	
+	// T -> sweep step time
+	u16 T = util::bitseq<6,4>(ch1_l);
 	
 	// dmg channel 1 wave and envelope control
 	// envelope_mode => volume asc == 1, desc == 0
 	// init envelope value => 1111 max vol, 0000 silence
 	u16 ch1_h = (s16) this->mem->read16(REG_SOUND1CNT_H);
-	u16 sound_len_reg = util::bitseq<5,0>(ch1_h);
-	u16 sound_len = (64 - sound_len_reg) / 256;
-	u16 wave_duty_cycle_reg = util::bitseq<7,6>(ch1_h);
-	u16 envelope_step_time_reg = util::bitseq<0xA,8>(ch1_h);
-	u16 envelope_step_time = envelope_step_time_reg / 64;
-	u16 envelope_mode = util::bitseq<0xB,0xB>(ch1_h);
-	u16 envelope_init_value = util::bitseq<0xF,0xC>(ch1_h);
 
-	// calculate quadrangular wave ratio
-	float wave_cycle_ratio;
+	// L -> length of sound being played in seconds
+	u16 sound_len_reg = util::bitseq<5,0>(ch1_h);
+	u16 L = ( 64 - sound_len_reg ) / 256;
+
+	// D -> wave duty cycle, ratio between on/off time
+	u16 wave_duty_cycle_reg = util::bitseq<7,6>(ch1_h);
+	float D;
 	switch(wave_duty_cycle_reg) {
-		case 0b00: wave_cycle_ratio = .125; break;
-		case 0b01: wave_cycle_ratio = .250; break;
-		case 0b10: wave_cycle_ratio = .500; break;
-		case 0b11: wave_cycle_ratio = .750; break;
-		default: assert(!"Invalid wave_cycle_ratio register value");
+		// calculate quadrangular wave ratio
+		case 0b00: D = .125; break;
+		case 0b01: D = .250; break;
+		case 0b10: D = .500; break;
+		case 0b11: D = .750; break;
+		default: assert(!"Invalid wave cycle ratio register value");
 	}
+
+	// Et -> envelope step time
+	u16 envelope_step_time_reg = util::bitseq<0xA,8>(ch1_h);
+	u16 Et = envelope_step_time_reg / 64;
+
+	// Me -> envelope direction mode (inc, dec)
+	u16 Me = util::bitseq<0xB,0xB>(ch1_h);
+	
+	// V0 -> initial volume, envelope initial value
+	u16 V0 = util::bitseq<0xF,0xC>(ch1_h);
 
 	// dmg channel 1 frequency, reset, loop control
 	u16 ch1_x = (s16) this->mem->read16(REG_SOUND1CNT_X);
-	u16 sound_freq_reg = util::bitseq<0xA,0>(ch1_x);
-	u16 sound_freq = 131072 / (2048 - sound_freq_reg);
-	bool timed_mode = util::bitseq<0xE,0xE>(ch1_x);
-	bool sound_reset = util::bitseq<0xF,0xF>(ch1_x);
 	
-	// sample length, AUDIO_S16SYS is 2 bits
-	int sample_len = buffer_len / 2;
+	// F -> sound frequency 
+	u16 sound_freq_reg = util::bitseq<0xA,0>(ch1_x);
+	u16 F = std::pow(2, 17) / ( 2048 - sound_freq_reg );
+	
+	// Mt -> Timed mode, if 0, sound plays forever, if 1, plays until decays to 0
+	bool Mt = util::bitseq<0xE,0xE>(ch1_x);
+	
+	// Re -> sound reset, resets sound to initial volume
+	bool Re = util::bitseq<0xF,0xF>(ch1_x);
+	
+	// L -> sample length, AUDIO_S16SYS is 2 bits
+	int L = buffer_len / 2;
 	double time = 0;
 
 	// generate sound
 	for(int i = 1; i < sample_len; i++) {
-		time = (double) this->sample_size / (double) SAMPLE_RATE;
-		// double base_wave = std::sin(time);
-		double wave_amplitude = AMPLITUDE;
-		// double sq_wave = wave_amplitude * util::signum(base_wave);
-
-		// double angular_freq = 
-
-		// y[i] = ampl * sin(2pi * (i - phase))
-		double phase = wave_cycle_ratio * sound_len;
-		double wave = wave_amplitude * util::signum(std::sin(sound_freq * (i - phase)));
-		// double wave = wave_amplitude * std::sin(sound_freq * (i - phase));
-		// double wave = wave_amplitude * util::signum(std::sin(2.0 * M_PI * (sound_freq)));
-		double sweep_shift = stream[i-1] + sweep_freq_direction
-			? (time / std::pow(2, n_sweep_shifts))
-			: -1 * (time / std::pow(2, n_sweep_shifts));
-		std::cout<<"stream[i-1]: "<<stream[i-1]<<std::endl;
-		stream[i] = wave + sweep_shift;
+		
+		stream[i] = ;
 		this->sample_size += 1;
 	}
 	SDL_Delay(sound_len);

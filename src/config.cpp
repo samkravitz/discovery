@@ -15,4 +15,5 @@ namespace config
     std::string bios_name = "gba_bios.bin";
     bool show_help = false;
     bool debug = false;
+    double framerate = 0.;
 }

@@ -67,7 +67,7 @@ class APU {
 	private:
 	// system sound config
 	int AMPLITUDE = 14000;
-	int SAMPLE_RATE = 441000;
+	int SAMPLE_RATE = 44100;
 	int BUFFER_SIZE = 4096;
 	
 	// device audio driver
@@ -75,6 +75,9 @@ class APU {
 	
 	int sample_size;
 	u16 buffer_len;
+
+	// using dma mode (1) vs interrupt mode (0)
+	bool using_dma_mode;
 
 	// sound channels 1 - 4
 	struct output_channel {

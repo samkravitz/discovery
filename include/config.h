@@ -17,4 +17,5 @@ namespace config
     extern std::string bios_name;
     extern bool show_help;
     extern bool debug;
+    extern double framerate;
 }

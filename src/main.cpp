@@ -70,6 +70,7 @@ int main(int argc, char **argv)
             clock_t new_time = std::clock();
             duration = (new_time - old_time) / (double) CLOCKS_PER_SEC;
             old_time = new_time;
+            config::framerate = 60. / duration;
 
             std::stringstream stream;
             stream << std::fixed << std::setprecision(1) << (60 / duration);

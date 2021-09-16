@@ -94,7 +94,8 @@ void APU::generateChannel1() {
 
 	// L -> length of sound being played in seconds
 	u16 sound_len_reg = util::bitseq<5, 0>(ch1_h);
-	u16 L = ( 64 - sound_len_reg ) / 256;
+	double L = ( 64 - (double) sound_len_reg ) / 256.;
+	std::cout<<"L: "<<L<<std::endl;
 
 	// D -> wave duty cycle, ratio between on/off time
 	u16 wave_duty_cycle_reg = util::bitseq<7,6>(ch1_h);
@@ -163,20 +164,17 @@ void APU::generateChannel1() {
 			// }
 			return A0;
 		};
-		std::cout<<"A(t): "<<A(i)<<", f(t): "<<f(i)<<std::endl;
+		// std::cout<<"A(t): "<<A(i)<<", f(t): "<<f(i)<<std::endl;
 		x[i] = A(i) * f(i);
 		this->sample_size += 1;
-		
-		this->wait(L);
-
-		// std::cout<<"Mt: "<<Mt<<std::endl;
-		// if(Mt) {
-		// 	// play sound for L (in milliseconds)
-		// 	SDL_Delay(L * 1000);
-		// } else {
-		// 	// play sound continuously
-		// }
 	}
+
+	if(!Mt) {
+		// play sound for L (in milliseconds)
+		// otherwise sound is played continuously
+		this->wait(L);
+	}
+
 }
 
 void APU::generateChannel2(s16 *stream, int buffer_len, int sample_count) {
@@ -217,9 +215,9 @@ void APU::generateChannel2(s16 *stream, int buffer_len, int sample_count) {
 	}
 }
 
-void APU::wait(u32 ns) {
-	// std::cout<<"waiting for s: "<<ns<<std::endl;
-	SDL_Delay(ns * 1000);
+void APU::wait(double ns) {
+	std::cout<<"waiting for s: "<<ns<<std::endl;
+	SDL_Delay(u32(ns * 1000));
 }
 
 void APU::allocateChannelMemory() {

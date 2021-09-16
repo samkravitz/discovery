@@ -50,7 +50,7 @@ class APU {
 	void clearChannelStreams(void);
 
 	// wait for sound to play for n seconds
-	void wait(u32);
+	void wait(double);
 
 	// inline system sound getters & setters
 	inline s16 getChannelStream(int, int);

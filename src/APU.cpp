@@ -119,7 +119,7 @@ void APU::generateChannel1() {
 	u16 Me = util::bitseq<0xB, 0xB>(ch1_h);
 	
 	// A0 -> initial ampliude, envelope initial value
-	u16 A0 = util::bitseq<0xF, 0xC>(ch1_h) + AMPLITUDE;
+	double A0 = ( util::bitseq<0xF, 0xC>(ch1_h) / (double) 0b1111 ) * AMPLITUDE;
 
 	// dmg channel 1 frequency, reset, loop control
 	u16 ch1_x = (s16) this->mem->read16(REG_SOUND1CNT_X);
@@ -148,9 +148,9 @@ void APU::generateChannel1() {
 	for(int i = 1; i < sample_length; i++) {
 		std::function<double(int)> f = [R0, N, M](double t) -> double {
 			// std::cout<<"t: "<<t<<std::endl;
-			double Ri = std::pow(R0, ( -1 * N * t )); // R0 >> ( N * t );
+			double Ri = R0 >> int( N * t );
 			double Rt = R0 + M ? Ri : ( -1 * Ri );
-			double ft = std::pow(2, 17) / ( 2048 - R0 );
+			double ft = std::pow(2, 17) / ( 2048 - Rt );
 			// std::cout<<"ft: "<<ft<<std::endl;
 			return util::signum( std::sin(t * ft) );
 		};
@@ -163,11 +163,20 @@ void APU::generateChannel1() {
 			// }
 			return A0;
 		};
-		// std::cout<<"A(t): "<<A(i)<<", f(t): "<<f(i)<<std::endl;
+		std::cout<<"A(t): "<<A(i)<<", f(t): "<<f(i)<<std::endl;
 		x[i] = A(i) * f(i);
 		this->sample_size += 1;
+		
+		this->wait(L);
+
+		// std::cout<<"Mt: "<<Mt<<std::endl;
+		// if(Mt) {
+		// 	// play sound for L (in milliseconds)
+		// 	SDL_Delay(L * 1000);
+		// } else {
+		// 	// play sound continuously
+		// }
 	}
-	// SDL_Delay(sound_len);
 }
 
 void APU::generateChannel2(s16 *stream, int buffer_len, int sample_count) {
@@ -206,6 +215,11 @@ void APU::generateChannel2(s16 *stream, int buffer_len, int sample_count) {
 		stream[i] = wave;
 		sample_count += 1;
 	}
+}
+
+void APU::wait(u32 ns) {
+	// std::cout<<"waiting for s: "<<ns<<std::endl;
+	SDL_Delay(ns * 1000);
 }
 
 void APU::allocateChannelMemory() {

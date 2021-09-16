@@ -49,6 +49,9 @@ class APU {
 	// silence all output channels by clearing all four channel streams
 	void clearChannelStreams(void);
 
+	// wait for sound to play for n seconds
+	void wait(u32);
+
 	// inline system sound getters & setters
 	inline s16 getChannelStream(int, int);
 	inline void setChannelStream(int, u16, s16*);

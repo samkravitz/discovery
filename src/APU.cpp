@@ -11,6 +11,7 @@
 #include <iostream>
 #include <queue>
 #include <cmath>
+#include <functional>
 #include <vector>
 #include <cassert>
 #include "APU.h"
@@ -70,7 +71,7 @@ APU::~APU() {
 
 // generate GBA channel 1 sounds, including square wave and frequency shifts
 void APU::generateChannel1() {
-	std::vector<s16> &stream = this->channel[0].stream;
+	std::vector<s16> &x = this->channel[0].stream;
 
 	// dmg channel 1 sweep control
 	// sweep shifts unit (s)
@@ -78,13 +79,13 @@ void APU::generateChannel1() {
 	u16 ch1_l = (s16) this->mem->read8(REG_SOUND1CNT_L);
 	
 	// N -> sweep shift number (not rate, but a factor applied to rate)
-	u16 N = util::bitseq<2,0>(ch1_l);
+	u16 N = util::bitseq<2, 0>(ch1_l);
 
 	// M -> sweep direction mode (inc, dec)
-	u16 M = util::bitseq<3,3>(ch1_l);
+	u16 M = util::bitseq<3, 3>(ch1_l);
 	
-	// T -> sweep step time
-	u16 T = util::bitseq<6,4>(ch1_l);
+	// T -> sweep step time in seconds
+	u16 T = util::bitseq<6, 4>(ch1_l);
 	
 	// dmg channel 1 wave and envelope control
 	// envelope_mode => volume asc == 1, desc == 0
@@ -92,7 +93,7 @@ void APU::generateChannel1() {
 	u16 ch1_h = (s16) this->mem->read16(REG_SOUND1CNT_H);
 
 	// L -> length of sound being played in seconds
-	u16 sound_len_reg = util::bitseq<5,0>(ch1_h);
+	u16 sound_len_reg = util::bitseq<5, 0>(ch1_h);
 	u16 L = ( 64 - sound_len_reg ) / 256;
 
 	// D -> wave duty cycle, ratio between on/off time
@@ -107,40 +108,66 @@ void APU::generateChannel1() {
 		default: assert(!"Invalid wave cycle ratio register value");
 	}
 
-	// Et -> envelope step time
+	// used to calculate envelope step time
 	u16 envelope_step_time_reg = util::bitseq<0xA,8>(ch1_h);
+	
+	// Et -> envelope step time in seconds, functions as attack/decay rate
 	u16 Et = envelope_step_time_reg / 64;
 
-	// Me -> envelope direction mode (inc, dec)
-	u16 Me = util::bitseq<0xB,0xB>(ch1_h);
+	// Me -> envelope direction mode, default to descending (inc, desc)
+	// when 0 wave volume decays at rate Et, when 1 wave has attack of Et
+	u16 Me = util::bitseq<0xB, 0xB>(ch1_h);
 	
-	// V0 -> initial volume, envelope initial value
-	u16 V0 = util::bitseq<0xF,0xC>(ch1_h);
+	// A0 -> initial ampliude, envelope initial value
+	u16 A0 = util::bitseq<0xF, 0xC>(ch1_h) + AMPLITUDE;
 
 	// dmg channel 1 frequency, reset, loop control
 	u16 ch1_x = (s16) this->mem->read16(REG_SOUND1CNT_X);
 	
-	// F -> sound frequency 
-	u16 sound_freq_reg = util::bitseq<0xA,0>(ch1_x);
-	u16 F = std::pow(2, 17) / ( 2048 - sound_freq_reg );
+	// R0 -> initial sound rate
+	u16 R0 = util::bitseq<0xA, 0>(ch1_x);
+
+	// R -> current sound rate, used to find current frequency
+	u16 R = R;
+	
+	// f0 -> initial sound wave frequency 
+	u16 f0 = std::pow(2, 17) / ( 2048 - R );
 	
 	// Mt -> Timed mode, if 0, sound plays forever, if 1, plays until decays to 0
-	bool Mt = util::bitseq<0xE,0xE>(ch1_x);
+	bool Mt = util::bitseq<0xE, 0xE>(ch1_x);
 	
 	// Re -> sound reset, resets sound to initial volume
-	bool Re = util::bitseq<0xF,0xF>(ch1_x);
+	bool Re = util::bitseq<0xF, 0xF>(ch1_x);
 	
-	// L -> sample length, AUDIO_S16SYS is 2 bits
-	int L = buffer_len / 2;
+	// sample length, AUDIO_S16SYS is 2 bits
+	int sample_length = buffer_len / 2;
 	double time = 0;
 
 	// generate sound
-	for(int i = 1; i < sample_len; i++) {
+	x[0] = f0;
+	for(int i = 1; i < sample_length; i++) {
+		std::function<double(int)> f = [R0, N, M](double t) -> double {
+			// std::cout<<"t: "<<t<<std::endl;
+			double Ri = std::pow(R0, ( -1 * N * t )); // R0 >> ( N * t );
+			double Rt = R0 + M ? Ri : ( -1 * Ri );
+			double ft = std::pow(2, 17) / ( 2048 - R0 );
+			// std::cout<<"ft: "<<ft<<std::endl;
+			return util::signum( std::sin(t * ft) );
+		};
 		
-		stream[i] = ;
+		std::function<double(int)> A = [A0, Et, Me](double t) -> double {
+			double Ai = std::pow(A0, int( -1 * t ));
+			double At = A0 + Me ? Me : ( -1 * Ai );
+			// if(Me) {
+			// 	// Et becomes attack value
+			// }
+			return A0;
+		};
+		// std::cout<<"A(t): "<<A(i)<<", f(t): "<<f(i)<<std::endl;
+		x[i] = A(i) * f(i);
 		this->sample_size += 1;
 	}
-	SDL_Delay(sound_len);
+	// SDL_Delay(sound_len);
 }
 
 void APU::generateChannel2(s16 *stream, int buffer_len, int sample_count) {
@@ -202,14 +229,22 @@ void sdlAudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len)
 	int buffer_len = _buffer_len/2;
 	int sample_count = 0;
 
+	std::cout<<"bufferlen: "<<buffer_len<<std::endl;
+
 	apu->setSampleSize(0);
 	apu->setBufferLength(buffer_len);
 	apu->allocateChannelMemory();
 	apu->clearChannelStreams();
 
+	// silence actual stream
+	for(int i = 0; i < buffer_len; i++) {
+		stream[i] = 0;
+	}
+
 	SDL_PauseAudioDevice(apu->getDriverID(), 0);
 
 	apu->generateChannel1();
+	std::cout<<"callback"<<std::endl;
 	// apu->generateChannel1(ch1_stream, buffer_len, sample_count);
 	// apu->generateChannel2(ch2_stream, buffer_len, sample_count);
 	// apu->generateChannel3(&ch3_stream, buffer_len, sample_count);
@@ -223,5 +258,5 @@ void sdlAudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len)
 		s32 merged_stream_data = ch1 + ch2 + ch3 + ch4;
 		stream[i] = merged_stream_data;
 	}
-	
+	// _buffer_len -= 1;
 }

@@ -14,11 +14,18 @@
 #include <SDL2/SDL_audio.h>
 #include <iostream>
 #include <vector>
+#include <queue>
 #include "Memory.h"
 
 // Direct Sound modes
 constexpr int DS_MODE_DMA = 0;
 constexpr int DS_MODE_INTERRUPT = 1;
+
+struct APU_Output {
+	double freq;
+	double ampl;
+	int samplesLeft;
+};
 
 class APU {
 	public:
@@ -69,15 +76,14 @@ class APU {
 	int AMPLITUDE = 14000;
 	int SAMPLE_RATE = 44100;
 	int BUFFER_SIZE = 4096;
+
+	std::queue<APU_Output> output_queue;
 	
 	// device audio driver
 	SDL_AudioDeviceID driver_id;
 	
 	int sample_size;
 	u16 buffer_len;
-
-	// using dma mode (1) vs interrupt mode (0)
-	bool using_dma_mode;
 
 	// sound channels 1 - 4
 	struct output_channel {

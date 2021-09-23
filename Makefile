@@ -1,13 +1,31 @@
 CXX = g++
-LIBARIES = -lstdc++fs -lSDL2 -DFMT_HEADER_ONLY
-CXXFLAGS = -g -std=c++2a -I $(INCLUDEDIR) -I $(BACKUPDIR)
-BIN = bin/
-SOURCEDIR = src/
-INCLUDEDIR = include/
-BACKUPDIR = $(INCLUDEDIR)backup
-OBJECTS = Discovery.o Arm7Tdmi.o util.o Memory.o PPU.o Gamepad.o Timer.o IRQ.o APU.o ArmISA.o ThumbISA.o swi.o Flash.o None.o SRAM.o config.o Scheduler.o
-LIST=$(addprefix $(BIN), $(OBJECTS))
-VPATH = $(SOURCEDIR) $(SOURCEDIR)backup
+LIBS = -lstdc++fs -lSDL2 -lfmt
+CXXFLAGS = -g -std=c++2a -I $(INCLUDE) -I $(BACKUPDIR)
+BIN = bin
+SOURCE = src
+INCLUDE = include
+BACKUPDIR = $(INCLUDE)/backup
+OBJ = \
+	APU.o \
+	Arm7Tdmi.o \
+	ArmISA.o \
+	config.o \
+	Discovery.o \
+	Flash.o \
+	Gamepad.o \
+	IRQ.o \
+	Memory.o \
+	None.o \
+	PPU.o \
+	Scheduler.o \
+	SRAM.o \
+	swi.o \
+	ThumbISA.o \
+	Timer.o \
+	util.o \
+
+LIST = $(addprefix $(BIN)/, $(OBJ))
+VPATH = $(SOURCE) $(SOURCE)/backup
 
 # Use compiler optimizations
 # run `make opt=1`
@@ -16,11 +34,10 @@ CXXFLAGS += -Ofast
 endif
 
 all: discovery
-
 discovery: $(LIST) main.cpp
-	$(CXX) $(CXXFLAGS) -o discovery $(SOURCEDIR)main.cpp $(LIST) $(LIBARIES)
+	$(CXX) $(CXXFLAGS) -o discovery $(SOURCE)/main.cpp $(LIST) $(LIBS)
 
-$(BIN)%.o : %.cpp
+$(BIN)/%.o : %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 .PHONY: clean

@@ -33,11 +33,11 @@ APU::APU(Memory *mem)
 	requested.callback = sdlAudioCallback;
 	requested.userdata = this;
 
-	int ndevises = SDL_GetNumAudioDevices(1);
-	std::cout<<ndevises<<std::endl;
-	for(int i = 0; i < ndevises; i++) {
-		std::cout<<SDL_GetAudioDeviceName(i,1)<<std::endl;
-	}
+	// int ndevises = SDL_GetNumAudioDevices(1);
+	// std::cout<<ndevises<<std::endl;
+	// for(int i = 0; i < ndevises; i++) {
+	// 	std::cout<<SDL_GetAudioDeviceName(i,1)<<std::endl;
+	// }
 
 	// select primary sound driver, nullptr here selects system default
 	this->driver_id = SDL_OpenAudioDevice(nullptr, 0, &requested, &obtained, SDL_AUDIO_ALLOW_ANY_CHANGE);
@@ -132,7 +132,7 @@ void APU::generateChannel1() {
 	u16 R = R;
 	
 	// f0 -> initial sound wave frequency 
-	u16 f0 = std::pow(2, 17) / ( 2048 - R );
+	u16 f0 = std::pow(2, 17) / ( 32 * ( 2048 - R ) );
 	
 	// Mt -> Timed mode, if 0, sound plays forever, if 1, plays until decays to 0
 	bool Mt = util::bitseq<0xE, 0xE>(ch1_x);
@@ -147,15 +147,15 @@ void APU::generateChannel1() {
 	// generate sound
 	x[0] = f0;
 	for(int i = 1; i < sample_length; i++) {
+		// frequency function
 		std::function<double(int)> f = [R0, N, M](double t) -> double {
-			// std::cout<<"t: "<<t<<std::endl;
 			double Ri = R0 >> int( N * t );
 			double Rt = R0 + M ? Ri : ( -1 * Ri );
-			double ft = std::pow(2, 17) / ( 2048 - Rt );
-			// std::cout<<"ft: "<<ft<<std::endl;
+			double ft = std::pow(2, 17) / ( 32 * ( 2048 - Rt ) );
 			return util::signum( std::sin(t * ft) );
 		};
 		
+		// amplitude function
 		std::function<double(int)> A = [A0, Et, Me](double t) -> double {
 			double Ai = std::pow(A0, int( -1 * t ));
 			double At = A0 + Me ? Me : ( -1 * Ai );
@@ -243,6 +243,7 @@ void sdlAudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len)
 
 	std::cout<<"bufferlen: "<<buffer_len<<std::endl;
 
+	// initialize stream buffer to zero
 	apu->setSampleSize(0);
 	apu->setBufferLength(buffer_len);
 	apu->allocateChannelMemory();
@@ -256,11 +257,11 @@ void sdlAudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len)
 	SDL_PauseAudioDevice(apu->getDriverID(), 0);
 
 	apu->generateChannel1();
-	std::cout<<"callback"<<std::endl;
 	// apu->generateChannel1(ch1_stream, buffer_len, sample_count);
 	// apu->generateChannel2(ch2_stream, buffer_len, sample_count);
 	// apu->generateChannel3(&ch3_stream, buffer_len, sample_count);
 	// apu->generateChannel4(&ch4_stream, buffer_len, sample_count);
+	
 
 	for(int i = 0; i < buffer_len; i++) {
 		s16 ch1 = apu->getChannelStream(0, i);
@@ -270,5 +271,10 @@ void sdlAudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len)
 		s32 merged_stream_data = ch1 + ch2 + ch3 + ch4;
 		stream[i] = merged_stream_data;
 	}
+	for(int i = 0; i < buffer_len; i++) {
+		std::cout<<stream[i];
+	}
+	std::cout<<std::endl;
+	std::cout<<"==================="<<std::endl;
 	// _buffer_len -= 1;
 }

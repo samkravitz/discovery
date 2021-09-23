@@ -76,6 +76,9 @@ class APU {
 	
 	private:
 	// system sound config
+	// amplitude -> ~volume
+	// sample rate -> number of sample frames sent to the computer's sound device per second
+	// buffer size -> the size of the audio buffer in sample frames
 	int AMPLITUDE = 14000;
 	int SAMPLE_RATE = 44100;
 	int BUFFER_SIZE = 4096;

@@ -16,6 +16,7 @@
 #include <vector>
 #include <queue>
 #include "Memory.h"
+#include "Scheduler.h"
 
 // Direct Sound modes
 constexpr int DS_MODE_DMA = 0;
@@ -29,10 +30,11 @@ struct APU_Output {
 
 class APU {
 	public:
-	APU(Memory *mem);
+	APU(Memory *, Scheduler *);
 	~APU();
 
 	Memory *mem;
+	Scheduler *scheduler;
 
 	// generate channel sound data
 	void generateChannel1(void);
@@ -77,7 +79,7 @@ class APU {
 	private:
 	// system sound config
 	// amplitude -> ~volume
-	// sample rate -> number of sample frames sent to the computer's sound device per second
+	// sample rate (frequency) -> number of sample frames sent to the computer's sound device per second
 	// buffer size -> the size of the audio buffer in sample frames
 	int AMPLITUDE = 14000;
 	int SAMPLE_RATE = 44100;

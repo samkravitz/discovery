@@ -798,6 +798,11 @@ void Memory::write8(u32 address, u8 value)
         case REG_IME + 1:
             irq->setIME(memory[REG_IME + 1] << 8 | memory[REG_IME]);
             break;
+        case REG_SOUNDCNT_L:
+            
+        case REG_SOUNDCNT_H:
+        case REG_SOUNDCNT_X:
+
     }
 }
 

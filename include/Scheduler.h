@@ -10,6 +10,12 @@ public:
     Scheduler() { cycles = 0; }
 
     u64 cycles;
+
+    /**
+     * @param until n cycles until the callback function is called
+     * @param handler callback function
+     * @param id event id
+     */
     void add(int, std::function<void(void)>, int id = -1);
     void advance(int);
     void remove(int);

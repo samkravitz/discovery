@@ -41,6 +41,8 @@ namespace util
     inline u16 bitseq(u16);
 
     inline s8 signum(double);
+
+    u32 msToCycles(double);
 };
 
 // util inline functions

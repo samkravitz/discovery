@@ -18,8 +18,9 @@
 #include "util.h"
 
 // construct APU with discovery memory management unit
-APU::APU(Memory *mem)
+APU::APU(Memory *mem, Scheduler *scheduler)
 :mem(mem)
+,scheduler(scheduler)
 {
 	SDL_Init(SDL_INIT_AUDIO);
 	std::cout<<"drive: "<<SDL_GetCurrentAudioDriver()<<std::endl;
@@ -215,9 +216,11 @@ void APU::generateChannel2(s16 *stream, int buffer_len, int sample_count) {
 	}
 }
 
-void APU::wait(double ns) {
-	std::cout<<"waiting for s: "<<ns<<std::endl;
-	SDL_Delay(u32(ns * 1000));
+void APU::wait(double ms) {
+	std::cout<<"waiting for ms: "<<ms<<std::endl;
+
+	this->scheduler->add();
+	SDL_Delay(u32(ms * 1000));
 }
 
 void APU::allocateChannelMemory() {

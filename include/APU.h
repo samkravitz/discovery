@@ -38,8 +38,9 @@ class APU {
 
 	// generate channel sound data
 	void generateChannel1(void);
+	void generateChannel2(void);
 	// void generateChannel1(s16*, int, int);
-	void generateChannel2(s16*, int, int);
+	// void generateChannel2(s16*, int, int);
 	void generateChannel3(s16*, int, int);
 	void generateChannel4(s16*, int, int);
 	void generateDirectSoundA(s16*, int, int);

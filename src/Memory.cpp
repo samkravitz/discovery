@@ -42,7 +42,8 @@ Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad) :
 Memory::~Memory()
 {
     // dump cart ram contents to backup file
-    backup->writeChip();    
+    backup->writeChip();
+    delete this->watcher;    
 }
 
 void Memory::reset()
@@ -319,14 +320,12 @@ void Memory::write32(u32 address, u32 value)
     write8(address + 1, (value >>  8) & 0xFF);
     write8(address + 2, (value >> 16) & 0xFF);
     write8(address + 3, (value >> 24) & 0xFF);
-    this->watcher->checkRegister(address);
 }
 
 void Memory::write16(u32 address, u16 value)
 {
     write8(address    , (value >> 0) & 0xFF);
     write8(address + 1, (value >> 8) & 0xFF);
-    this->watcher->checkRegister(address);
 }
 
 void Memory::write8(u32 address, u8 value)
@@ -413,7 +412,7 @@ void Memory::write8(u32 address, u8 value)
     //game rom
     if (address >= MEM_SIZE)
     {
-        //std::cerr << "Warning: writing to game rom\n";
+        // std::cerr << "Warning: writing to game rom\n";
         cart_rom[address - MEM_SIZE] = value;
         // std::cerr << "Done\n";
         return;
@@ -808,6 +807,8 @@ void Memory::write8(u32 address, u8 value)
         // case REG_SOUNDCNT_X:
 
     }
+    this->watcher->checkRegister(address, value);
+
 }
 
 u32 Memory::read32Unsafe(u32 address)
@@ -845,6 +846,7 @@ void Memory::write16Unsafe(u32 address, u16 value)
 void Memory::write8Unsafe(u32 address, u8 value)
 {
     memory[address] = value;
+    this->watcher->checkRegister(address, value);
 }
 
 void Memory::_dma(int n)

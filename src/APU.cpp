@@ -40,6 +40,18 @@ APU::APU(Memory *mem, Scheduler *scheduler)
 	// 	std::cout<<SDL_GetAudioDeviceName(i,1)<<std::endl;
 	// }
 
+	this->mem->watcher->add(REG_SOUND1CNT_X, [](u32 reg) -> void {
+		std::cout << "REG_SOUND1CNT_X changed" << std::endl;
+	});
+
+	this->mem->watcher->add(REG_SOUND1CNT_L, [](u32 reg) -> void {
+		std::cout << "REG_SOUND1CNT_L changed" << std::endl;
+	});
+
+	this->mem->watcher->add(REG_SOUND1CNT_H, [](u32 reg) -> void {
+		std::cout << "REG_SOUND1CNT_H changed" << std::endl;
+	});
+
 	// select primary sound driver, nullptr here selects system default
 	this->driver_id = SDL_OpenAudioDevice(nullptr, 0, &requested, &obtained, SDL_AUDIO_ALLOW_ANY_CHANGE);
 	if(this->driver_id <= 0) std::cout << "SDL Error: " << SDL_GetError() << std::endl;	
@@ -96,7 +108,7 @@ void APU::generateChannel1() {
 	// L -> length of sound being played in seconds
 	u16 sound_len_reg = util::bitseq<5, 0>(ch1_h);
 	double L = ( 64 - (double) sound_len_reg ) / 256.;
-	std::cout<<"L: "<<L<<std::endl;
+	// std::cout<<"L: "<<L<<std::endl;
 
 	// D -> wave duty cycle, ratio between on/off time
 	u16 wave_duty_cycle_reg = util::bitseq<7,6>(ch1_h);
@@ -217,9 +229,8 @@ void APU::generateChannel2(s16 *stream, int buffer_len, int sample_count) {
 }
 
 void APU::wait(double ms) {
-	std::cout<<"waiting for ms: "<<ms<<std::endl;
+	// std::cout<<"waiting for ms: "<<ms<<std::endl;
 
-	this->scheduler->add();
 	SDL_Delay(u32(ms * 1000));
 }
 
@@ -274,10 +285,10 @@ void sdlAudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len)
 		s32 merged_stream_data = ch1 + ch2 + ch3 + ch4;
 		stream[i] = merged_stream_data;
 	}
-	for(int i = 0; i < buffer_len; i++) {
-		std::cout<<stream[i];
-	}
-	std::cout<<std::endl;
-	std::cout<<"==================="<<std::endl;
+	// for(int i = 0; i < buffer_len; i++) {
+	// 	std::cout<<stream[i];
+	// }
+	// std::cout<<std::endl;
+	// std::cout<<"==================="<<std::endl;
 	// _buffer_len -= 1;
 }

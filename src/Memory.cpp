@@ -31,6 +31,8 @@ Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad) :
     timer(timer),
     gamepad(gamepad)
 {
+    this->watcher = new Watcher();
+    std::cout<<"constructed watcher"<<std::endl;
     backup = nullptr;
     cart_ram = nullptr;
 
@@ -317,12 +319,14 @@ void Memory::write32(u32 address, u32 value)
     write8(address + 1, (value >>  8) & 0xFF);
     write8(address + 2, (value >> 16) & 0xFF);
     write8(address + 3, (value >> 24) & 0xFF);
+    this->watcher->checkRegister(address);
 }
 
 void Memory::write16(u32 address, u16 value)
 {
     write8(address    , (value >> 0) & 0xFF);
     write8(address + 1, (value >> 8) & 0xFF);
+    this->watcher->checkRegister(address);
 }
 
 void Memory::write8(u32 address, u8 value)
@@ -798,10 +802,10 @@ void Memory::write8(u32 address, u8 value)
         case REG_IME + 1:
             irq->setIME(memory[REG_IME + 1] << 8 | memory[REG_IME]);
             break;
-        case REG_SOUNDCNT_L:
-            
-        case REG_SOUNDCNT_H:
-        case REG_SOUNDCNT_X:
+        // case REG_SOUNDCNT_L:
+            // 
+        // case REG_SOUNDCNT_H:
+        // case REG_SOUNDCNT_X:
 
     }
 }

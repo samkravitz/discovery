@@ -28,7 +28,7 @@ public:
     PPU       *ppu;
     APU       *apu;
     Memory    *mem;
-    LcdStat   *stat;
+    LcdStat   *lcdStat;
     Gamepad   *gamepad;
     Timer     *timer;
     Scheduler *scheduler;

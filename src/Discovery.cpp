@@ -22,13 +22,13 @@ IRQ *irq;
 Discovery::Discovery()
 {
     gamepad   = new Gamepad();
-    stat      = new LcdStat();
+    lcdStat   = new LcdStat();
     scheduler = new Scheduler();
     timer     = new Timer(scheduler);
 
-    mem       = new Memory(stat, timer, gamepad);
+    mem       = new Memory(lcdStat, timer, gamepad);
     cpu       = new Arm7Tdmi(mem);
-    ppu       = new PPU(mem, stat, scheduler);
+    ppu       = new PPU(mem, lcdStat, scheduler);
     apu       = new APU(mem, scheduler);
     irq       = new IRQ();
 }
@@ -71,7 +71,7 @@ void Discovery::shutdown()
     delete ppu;
     delete apu;
     delete mem;
-    delete stat;
+    delete lcdStat;
     delete gamepad;
     delete timer;
     delete irq;

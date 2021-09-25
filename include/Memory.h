@@ -19,6 +19,7 @@
 #include "mmio.h"
 #include "log.h"
 #include "Backup.h"
+#include "Watcher.h"
 
 // start and end addresses of internal memory regions
 constexpr u32 MEM_BIOS_END          = 0x3FFF;
@@ -53,6 +54,8 @@ class Memory
     public:
         Memory(LcdStat *, Timer *, Gamepad *);
         ~Memory();
+
+        Watcher *watcher;
 
         u8 memory[MEM_SIZE];
 
@@ -109,6 +112,8 @@ class Memory
 
         // DMA transfer routine
         void _dma(int);
+
+
 
     private:
         void dma0();

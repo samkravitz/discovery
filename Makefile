@@ -23,6 +23,7 @@ OBJ = \
 	ThumbISA.o \
 	Timer.o \
 	util.o \
+	Watcher.o \
 
 LIST = $(addprefix $(BIN)/, $(OBJ))
 VPATH = $(SOURCE) $(SOURCE)/backup

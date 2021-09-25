@@ -451,7 +451,7 @@ void Arm7::loadStoreSignedHalfword(u16 instruction)
     // load halfword
     else if (!S && H)
     {
-        u32 value = read16(base, false);
+        u32 value = read16(base);
         setRegister(Rd, value);
         n = 1;
         s = 1;
@@ -562,7 +562,7 @@ void Arm7::loadStoreHalfword(u16 instruction)
 
     if (load)
     {
-        setRegister(Rd, read16(base, false));
+        setRegister(Rd, read16(base));
         n = 1;
         s = 1;
         i = 1;
@@ -745,14 +745,14 @@ void Arm7::pushPop(u16 instruction)
         i = 1;
         for (int i = 0; i < num_registers; ++i)
         {
-            setRegister(set_registers[i], read32(base, false));
+            setRegister(set_registers[i], read32(base));
             base += 4; // decrement stack pointer (4 bytes for word alignment)
             ++s;
         }
 
         if (R) // pop pc
         {
-            setRegister(r15, read32(base, false) & ~1); // guaruntee halfword alignment
+            setRegister(r15, read32(base) & ~1); // guaruntee halfword alignment
             pipeline_full = false;
             base += 4; // decrement stack pointer (4 bytes for word alignment)
             ++s;
@@ -799,7 +799,7 @@ void Arm7::multipleLoadStore(u16 instruction)
     {
         if (load) // load r15
         { 
-            setRegister(r15, read32(base, false));
+            setRegister(r15, read32(base));
             pipeline_full = false;
         }
 
@@ -818,7 +818,7 @@ void Arm7::multipleLoadStore(u16 instruction)
     { 
         for (int i = 0; i < num_registers; ++i)
         {
-            setRegister(set_registers[i], read32(base, false));
+            setRegister(set_registers[i], read32(base));
             base += 4; // decrement stack pointer (4 bytes for word alignment)
             ++s;
         }

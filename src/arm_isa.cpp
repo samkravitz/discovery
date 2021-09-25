@@ -697,7 +697,7 @@ void Arm7::halfwordDataTransfer(u32 instruction)
     {
         case 0b01: // unsigned halfwords
             if (load)
-                setRegister(Rd, read16(base, false));
+                setRegister(Rd, read16(base));
             else
                 write16(base, getRegister(Rd) & 0xFFFF);
             break;
@@ -805,7 +805,7 @@ void Arm7::blockDataTransfer(u32 instruction)
     {
         if (load) // load r15
         { 
-            setRegister(r15, read32(base, false));
+            setRegister(r15, read32(base));
             pipeline_full = false;
         }
 
@@ -860,7 +860,7 @@ void Arm7::blockDataTransfer(u32 instruction)
                 if (pre_index) // pre increment
                     base += 4;
 
-                setRegister(set_registers[i], read32(base, false));
+                setRegister(set_registers[i], read32(base));
                 if (set_registers[i] == r15) // loading into r15
                 {
                     pipeline_full = false; 
@@ -883,7 +883,7 @@ void Arm7::blockDataTransfer(u32 instruction)
                 if (pre_index) // pre decrement
                     base -= 4;
 
-                setRegister(set_registers[i], read32(base, false));
+                setRegister(set_registers[i], read32(base));
                 if (set_registers[i] == r15) // loading into r15
                 {
                     pipeline_full = false; 

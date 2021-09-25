@@ -183,9 +183,9 @@ private:
     };
 
     // safely interface with memory
-    u8   read8(u32);
-    u32  read16(u32, bool);
-    u32  read32(u32, bool);
+    u32  read8(u32);
+    u32  read16(u32, bool sign = false);
+    u32  read32(u32, bool ldr = false);
     void write8(u32, u8);
     void write16(u32, u16);
     void write32(u32, u32);

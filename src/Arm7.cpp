@@ -152,14 +152,14 @@ void Arm7::fetch()
         switch (getState())
         {
             case State::ARM:
-                pipeline[0] = read32(registers.r15, false); registers.r15 += 4;
-                pipeline[1] = read32(registers.r15, false); registers.r15 += 4;
-                pipeline[2] = read32(registers.r15, false);
+                pipeline[0] = read32(registers.r15); registers.r15 += 4;
+                pipeline[1] = read32(registers.r15); registers.r15 += 4;
+                pipeline[2] = read32(registers.r15);
                 break;
             case State::THUMB:
-                pipeline[0] = read16(registers.r15, false); registers.r15 += 2;
-                pipeline[1] = read16(registers.r15, false); registers.r15 += 2;
-                pipeline[2] = read16(registers.r15, false);
+                pipeline[0] = read16(registers.r15); registers.r15 += 2;
+                pipeline[1] = read16(registers.r15); registers.r15 += 2;
+                pipeline[2] = read16(registers.r15);
                 break;
         }
 
@@ -170,10 +170,10 @@ void Arm7::fetch()
     switch (getState())
     {
         case State::ARM:
-            pipeline[2] = read32(registers.r15, false);
+            pipeline[2] = read32(registers.r15);
             break;
         case State::THUMB:
-            pipeline[2] = (u16) read16(registers.r15, false);
+            pipeline[2] = read16(registers.r15);
             break;
     }
 }
@@ -222,8 +222,8 @@ int Arm7::execute(u32 instruction)
             break;
 
         case State::THUMB:
-            u16 instr = (u16) instruction;
-            switch(util::getInstructionFormat((u16) instruction))
+            u16 instr = static_cast<u16>(instruction);
+            switch(util::getInstructionFormat(instr))
             {
                 case ThumbInstruction::MSR:    moveShiftedRegister(instr);     break;
                 case ThumbInstruction::ADDSUB: addSubtract(instr);             break;
@@ -905,7 +905,7 @@ void Arm7::handleInterrupt()
 }
 int i = 0xFFFF;
 
-u8 Arm7::read8(u32 address)
+u32 Arm7::read8(u32 address)
 {
     // reading from BIOS memory
     if (address <= 0x3FFF && registers.r15 > 0x3FFF)
@@ -1014,7 +1014,7 @@ u32 Arm7::read16(u32 address, bool sign)
         case REG_DMA3SAD:
         case REG_DMA3DAD:
         case REG_DMA3CNT:
-            log(LogLevel::Error, "Invalid read from BIOS u166\n");
+            log(LogLevel::Error, "Invalid read from u16 mmio\n");
             return 0;
     }
 
@@ -1030,12 +1030,6 @@ u32 Arm7::read16(u32 address, bool sign)
                 break;
         }
     }
-
-    // if (!mem_check_read(address))
-    // {
-    //     std::cout << "mem check u16 failed " << std::hex << address << "\n";
-    //     //return last_read_bios & 0xFFFFFF;
-    // }
 
     u32 data;
 

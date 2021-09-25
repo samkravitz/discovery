@@ -30,7 +30,7 @@ void SRAM::writeChip()
 
     backup.write((char *) &cart_ram[0], size);
     backup.close();
-    LOG("Wrote save to file {}\n", config::backup_path);
+    log("Wrote save to file {}\n", config::backup_path);
 }
 
 // load contents of backup .sav file to cart_ram

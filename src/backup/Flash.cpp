@@ -25,7 +25,7 @@ Flash::Flash(int size) :
 
 void Flash::write(int index, u8 value)
 {
-    //LOG("WRITING: {:x} {:x} state={} bank={}\n", (int) value, (int) index, state, bank);
+    //log("WRITING: {:x} {:x} state={} bank={}\n", (int) value, (int) index, state, bank);
 
     // First check for single write
     if (state == PREPARE_TO_WRITE)
@@ -41,7 +41,7 @@ void Flash::write(int index, u8 value)
         u8 n = index >> 12 & 0xF; // page to be erased
         int i = n * 0x1000;        // index of first erased cell
 
-        //LOG("ERASING SECTOR: {:x} {} bank={} {} {}\n", (int) n, i, bank, (int) (i + bank * 0x10000), prepare_to_erase);
+        //log("ERASING SECTOR: {:x} {} bank={} {} {}\n", (int) n, i, bank, (int) (i + bank * 0x10000), prepare_to_erase);
         
         std::memset(&cart_ram[i + bank * 0x10000], 0xFF, 0x1000);
         prepare_to_erase = false;
@@ -107,7 +107,7 @@ void Flash::write(int index, u8 value)
             case 0x30: // Erase 4K sector
                 if (state == CMD_2 && prepare_to_erase)
                 {
-                    LOG(LogLevel::Error, "Got to wrong Flash Erase4K\n");
+                    log(LogLevel::Error, "Got to wrong Flash Erase4K\n");
                     state = READY;
                 }
                 break;
@@ -167,7 +167,7 @@ void Flash::writeChip()
 
     backup.write((char *) &cart_ram[0], size);
     backup.close();
-    LOG("Wrote save to file {}\n", config::backup_path);
+    log("Wrote save to file {}\n", config::backup_path);
 }
 
 // load contents of backup .sav file to cart_ram

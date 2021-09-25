@@ -84,7 +84,7 @@ bool Memory::loadRom(std::string const &name)
 
     if (!rom || !rom.good())
     {
-        LOG(LogLevel::Error, "Error: Unable to open ROM file {}\n", name);
+        log(LogLevel::Error, "Error: Unable to open ROM file {}\n", name);
         exit(1);
     }
 
@@ -99,13 +99,13 @@ bool Memory::loadRom(std::string const &name)
     // eeprom
     if (rom_temp.find("EEPROM_V") != std::string::npos)
     {
-        LOG(LogLevel::Warning, "Cart RAM EEPROM detected\n");
+        log(LogLevel::Warning, "Cart RAM EEPROM detected\n");
     }
 
     // flash 1M
     if (rom_temp.find("FLASH1M_V") != std::string::npos)
     {
-        LOG(LogLevel::Warning, "Cart RAM FLASH128 detected\n");
+        log(LogLevel::Warning, "Cart RAM FLASH128 detected\n");
         ram_size = 0x20000;
         backup   = new Flash(ram_size); 
     }
@@ -113,7 +113,7 @@ bool Memory::loadRom(std::string const &name)
     // flash 512
     if (rom_temp.find("FLASH512_V") != std::string::npos)
     {
-        LOG(LogLevel::Warning, "Cart RAM FLASH512 detected\n");
+        log(LogLevel::Warning, "Cart RAM FLASH512 detected\n");
         ram_size = 0x10000;
         backup   = new Flash(ram_size); 
     }
@@ -121,7 +121,7 @@ bool Memory::loadRom(std::string const &name)
     // flashv
     if (rom_temp.find("FLASH_V") != std::string::npos)
     {
-        LOG(LogLevel::Warning, "Cart RAM FLASH detected\n");
+        log(LogLevel::Warning, "Cart RAM FLASH detected\n");
         ram_size = 0x10000;
         backup   = new Flash(ram_size); 
     }
@@ -129,7 +129,7 @@ bool Memory::loadRom(std::string const &name)
     // sram
     if (rom_temp.find("SRAM") != std::string::npos)
     {
-        LOG(LogLevel::Warning, "Cart RAM SRAM detected\n");
+        log(LogLevel::Warning, "Cart RAM SRAM detected\n");
         ram_size    = 0x10000;
         backup = new SRAM(0x10000);
     }
@@ -137,7 +137,7 @@ bool Memory::loadRom(std::string const &name)
     // no cart RAM detected
     if (ram_size == 0)
     {
-        LOG(LogLevel::Warning, "No cart RAM detected!\n");
+        log(LogLevel::Warning, "No cart RAM detected!\n");
         backup = new None(0x8000);
         return true;
     }
@@ -146,13 +146,13 @@ bool Memory::loadRom(std::string const &name)
     config::backup_path = name + ".sav";
     if (util::pathExists(config::backup_path))
     {
-        LOG("Save file {} detected. Loading now.\n", config::backup_path);
+        log("Save file {} detected. Loading now.\n", config::backup_path);
         backup->loadChip();
     }
 
     else
     {
-        LOG("Save file {} not found. Creating now\n", config::backup_path);
+        log("Save file {} not found. Creating now\n", config::backup_path);
         std::fstream backup { config::backup_path, std::ios::out };
         assert(backup);
         backup.close();
@@ -168,7 +168,7 @@ bool Memory::loadBios(std::string const &name)
 
     if (!bios || !bios.good())
     {
-        LOG(LogLevel::Error, "Error: Unable to open BIOS file {}\n", name);
+        log(LogLevel::Error, "Error: Unable to open BIOS file {}\n", name);
         exit(1);
     }
 
@@ -395,14 +395,14 @@ void Memory::write8(u32 address, u8 value)
             return;
 
         default:
-            LOG(LogLevel::Error, "Invalid address to write: 0x{x}\n", address);
+            log(LogLevel::Error, "Invalid address to write: 0x{x}\n", address);
             return;
     }
 
     // BIOS
     if (address <= 0x3FFF)
     {
-        LOG(LogLevel::Error, "Error: Writing to BIOS\n");
+        log(LogLevel::Error, "Error: Writing to BIOS\n");
         return;
     }
 
@@ -633,7 +633,7 @@ void Memory::write8(u32 address, u8 value)
 
             if (dma[0].enable && dma[0].mode == 0) // immediate mode
             {
-                //LOG(LogLevel::Message, "DMA0 immediate\n");
+                //log(LogLevel::Message, "DMA0 immediate\n");
                 _dma(0);
 
                 // disable DMA after immediate transfer
@@ -662,7 +662,7 @@ void Memory::write8(u32 address, u8 value)
 
             if (dma[1].enable && dma[1].mode == 0) // immediate mode
             {
-                //LOG(LogLevel::Message, "DMA1 immediate\n");
+                //log(LogLevel::Message, "DMA1 immediate\n");
                 _dma(1);
 
                 // disable DMA after immediate transfer
@@ -720,7 +720,7 @@ void Memory::write8(u32 address, u8 value)
 
             if (dma[3].enable && dma[3].mode == 0) // immediate mode
             {
-                //LOG(LogLevel::Message, "DMA3 immediate\n");
+                //log(LogLevel::Message, "DMA3 immediate\n");
                 _dma(3);
 
                 // disable DMA after immediate transfer
@@ -848,20 +848,20 @@ void Memory::_dma(int n)
         case 3: dma3(); break;
 
         default: // should never happen
-            LOG(LogLevel::Error, "Error: accessing unknown DMA: {}\n", n);
+            log(LogLevel::Error, "Error: accessing unknown DMA: {}\n", n);
     }
 }
 
 void Memory::dma0()
 {
-    // LOG(LogLevel::Message, "DMA 0\n");
+    // log(LogLevel::Message, "DMA 0\n");
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = read32Unsafe(REG_DMA0SAD) & 0x7FFFFFF; // 27 bit
     dest_ptr = original_dest = read32Unsafe(REG_DMA0DAD) & 0x7FFFFFF; // 27 bit;
 
-    // LOG(LogLevel::Debug, "DMA 0 start addr: 0x{x}\n", src_ptr);
-    // LOG(LogLevel::Debug, "DMA 0 dest  addr: 0x{x}\n", dest_ptr);
-    // LOG(LogLevel::Debug, "DMA 0 num transfers: {}\n", dma[0].num_transfers);
+    // log(LogLevel::Debug, "DMA 0 start addr: 0x{x}\n", src_ptr);
+    // log(LogLevel::Debug, "DMA 0 dest  addr: 0x{x}\n", dest_ptr);
+    // log(LogLevel::Debug, "DMA 0 num transfers: {}\n", dma[0].num_transfers);
 
     // increment for destination, src
     int dest_inc, src_inc;
@@ -874,7 +874,7 @@ void Memory::dma0()
         case 2: dest_inc =  0; break;  // leave unchanged
         case 3: dest_inc =  1; break;  // increment after each copy, reset after transfer
         default: // should never happen
-            LOG(LogLevel::Error, "Error: Illegal option for DMA 0 dest adjust: {}\n", (int) dma[0].dest_adjust);
+            log(LogLevel::Error, "Error: Illegal option for DMA 0 dest adjust: {}\n", (int) dma[0].dest_adjust);
             break;
     }
 
@@ -885,7 +885,7 @@ void Memory::dma0()
         case 1: src_inc = -1; break; // decrement after each copy
         case 2: src_inc =  0; break; // leave unchanged
         default: // should never happen
-            LOG(LogLevel::Error, "Error: Illegal option for DMA 0 src adjust: {}\n", (int) dma[0].src_adjust);
+            log(LogLevel::Error, "Error: Illegal option for DMA 0 src adjust: {}\n", (int) dma[0].src_adjust);
             break;
     }
 
@@ -935,23 +935,23 @@ void Memory::dma0()
     // IRQ request
     if (dma[0].irq)
     {
-        LOG(LogLevel::Debug, "DMA0 IRQ request\n");
+        log(LogLevel::Debug, "DMA0 IRQ request\n");
         irq->raise(InterruptOccasion::DMA0);
     }
 
-    //LOG(LogLevel::Debug, "DMA 0 Done\n");
+    //log(LogLevel::Debug, "DMA 0 Done\n");
 }
 
 void Memory::dma1()
 {
-    //LOG(LogLevel::Debug, "DMA 1\n");
+    //log(LogLevel::Debug, "DMA 1\n");
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = read32Unsafe(REG_DMA1SAD) & 0xFFFFFFF; // 28 bit
     dest_ptr = original_dest = read32Unsafe(REG_DMA1DAD) & 0x7FFFFFF; // 27 bit
 
-    // LOG(LogLevel::Debug, "DMA 1 start addr: 0x{x}\n", src_ptr);
-    // LOG(LogLevel::Debug, "DMA 1 dest  addr: 0x{x}\n", dest_ptr);
-    // LOG(LogLevel::Debug, "DMA 1 num transfers: {}\n", dma[1].num_transfers);
+    // log(LogLevel::Debug, "DMA 1 start addr: 0x{x}\n", src_ptr);
+    // log(LogLevel::Debug, "DMA 1 dest  addr: 0x{x}\n", dest_ptr);
+    // log(LogLevel::Debug, "DMA 1 num transfers: {}\n", dma[1].num_transfers);
 
     // increment for destination, src
     int dest_inc, src_inc;
@@ -964,7 +964,7 @@ void Memory::dma1()
         case 2: dest_inc =  0; break;  // leave unchanged
         case 3: dest_inc =  1; break;  // increment after each copy, reset after transfer
         default: // should never happen
-            LOG(LogLevel::Error, "Error: Illegal option for DMA 1 dest adjust: {}\n", (int) dma[1].dest_adjust);
+            log(LogLevel::Error, "Error: Illegal option for DMA 1 dest adjust: {}\n", (int) dma[1].dest_adjust);
         break;
     }
 
@@ -975,7 +975,7 @@ void Memory::dma1()
         case 1: src_inc = -1; break; // decrement after each copy
         case 2: src_inc =  0; break; // leave unchanged
         default: // should never happen
-            LOG(LogLevel::Error, "Error: Illegal option for DMA 1 src adjust: {}\n", (int) dma[1].src_adjust);
+            log(LogLevel::Error, "Error: Illegal option for DMA 1 src adjust: {}\n", (int) dma[1].src_adjust);
             break;
     }
 
@@ -1025,23 +1025,23 @@ void Memory::dma1()
     // IRQ request
     if (dma[1].irq)
     {
-        LOG(LogLevel::Debug, "DMA1 IRQ request\n");
+        log(LogLevel::Debug, "DMA1 IRQ request\n");
         irq->raise(InterruptOccasion::DMA1);
     }
 
-    //LOG(LogLevel::Debug, "DMA 1 Done\n");
+    //log(LogLevel::Debug, "DMA 1 Done\n");
 }
 
 void Memory::dma2()
 {
-    //LOG(LogLevel::Debug, "DMA 2\n");
+    //log(LogLevel::Debug, "DMA 2\n");
     u32 dest_ptr, src_ptr, original_src, original_dest;
     src_ptr  = original_src  = read32Unsafe(REG_DMA2SAD) & 0xFFFFFFF; // 28 bit
     dest_ptr = original_dest = read32Unsafe(REG_DMA2DAD) & 0x7FFFFFF; // 27 bit;
 
-    // LOG(LogLevel::Debug, "DMA 2 start addr: 0x{x}\n", src_ptr);
-    // LOG(LogLevel::Debug, "DMA 2 dest  addr: 0x{x}\n", dest_ptr);
-    // LOG(LogLevel::Debug, "DMA 2 num transfers: {}\n", dma[2].num_transfers);
+    // log(LogLevel::Debug, "DMA 2 start addr: 0x{x}\n", src_ptr);
+    // log(LogLevel::Debug, "DMA 2 dest  addr: 0x{x}\n", dest_ptr);
+    // log(LogLevel::Debug, "DMA 2 num transfers: {}\n", dma[2].num_transfers);
 
     // increment for destination, src
     int dest_inc, src_inc;
@@ -1054,7 +1054,7 @@ void Memory::dma2()
         case 2: dest_inc =  0; break;  // leave unchanged
         case 3: dest_inc =  1; break;  // increment after each copy, reset after transfer
         default: // should never happen
-            LOG(LogLevel::Error, "Error: Illegal option for DMA 2 dest adjust: {}\n", (int) dma[2].dest_adjust);
+            log(LogLevel::Error, "Error: Illegal option for DMA 2 dest adjust: {}\n", (int) dma[2].dest_adjust);
             break;
     }
 
@@ -1065,7 +1065,7 @@ void Memory::dma2()
         case 1: src_inc = -1; break; // decrement after each copy
         case 2: src_inc =  0; break; // leave unchanged
         default: // should never happen
-            LOG(LogLevel::Error, "Error: Illegal option for DMA 2 src adjust: {}\n", (int) dma[2].src_adjust);
+            log(LogLevel::Error, "Error: Illegal option for DMA 2 src adjust: {}\n", (int) dma[2].src_adjust);
             break;
     }
 
@@ -1115,11 +1115,11 @@ void Memory::dma2()
     // IRQ request
     if (dma[2].irq)
     {
-        LOG(LogLevel::Debug, "DMA2 IRQ request\n");
+        log(LogLevel::Debug, "DMA2 IRQ request\n");
         irq->raise(InterruptOccasion::DMA2);
     }
 
-    //LOG(LogLevel::Debug, "DMA 2 Done\n");
+    //log(LogLevel::Debug, "DMA 2 Done\n");
 }
 
 void Memory::dma3()
@@ -1133,9 +1133,9 @@ void Memory::dma3()
     int dest_inc, src_inc;
 
 
-    // LOG(LogLevel::Debug, "DMA 3 start addr: 0x{x}\n", (int) src_ptr);
-    // LOG(LogLevel::Debug, "DMA 3 dest  addr: 0x{x}\n", (int) dest_ptr);
-    // LOG(LogLevel::Debug, "DMA 3 num transfers: {}\n", dma[3].num_transfers);
+    // log(LogLevel::Debug, "DMA 3 start addr: 0x{x}\n", (int) src_ptr);
+    // log(LogLevel::Debug, "DMA 3 dest  addr: 0x{x}\n", (int) dest_ptr);
+    // log(LogLevel::Debug, "DMA 3 num transfers: {}\n", dma[3].num_transfers);
 
     // get increment mode for destination
     switch (dma[3].dest_adjust)
@@ -1145,7 +1145,7 @@ void Memory::dma3()
         case 2: dest_inc =  0; break;  // leave unchanged
         case 3: dest_inc =  1; break;  // increment after each copy, reset after transfer
         default: // should never happen
-            LOG(LogLevel::Error, "Error: Illegal option for DMA 3 dest adjust: {}\n", (int) dma[3].dest_adjust);
+            log(LogLevel::Error, "Error: Illegal option for DMA 3 dest adjust: {}\n", (int) dma[3].dest_adjust);
             break;
     }
 
@@ -1156,7 +1156,7 @@ void Memory::dma3()
         case 1: src_inc = -1; break; // decrement after each copy
         case 2: src_inc =  0; break; // leave unchanged
         default: // should never happen
-            LOG(LogLevel::Error, "Error: Illegal option for DMA 3 src adjust: {}\n", (int) dma[3].src_adjust);
+            log(LogLevel::Error, "Error: Illegal option for DMA 3 src adjust: {}\n", (int) dma[3].src_adjust);
             break;
     }
 
@@ -1211,11 +1211,11 @@ void Memory::dma3()
     // IRQ request
     if (dma[3].irq)
     {
-        LOG(LogLevel::Debug, "DMA3 IRQ request\n");
+        log(LogLevel::Debug, "DMA3 IRQ request\n");
         irq->raise(InterruptOccasion::DMA3);
     }
         
-    //LOG(LogLevel::Debug, "DMA 3 Done\n");
+    //log(LogLevel::Debug, "DMA 3 Done\n");
 }
 
 // std::cout << "([a-zA-Z0-9 \\n]+)"

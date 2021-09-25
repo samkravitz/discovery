@@ -104,7 +104,7 @@ void Timer::cascade(int ch)
         // cascade caused overflow (deal with this later)
         if (channel[ch + 1].data == 0x0000)
         {
-            LOG("Timer {} cascade overflow\n", ch + 1);
+            log("Timer {} cascade overflow\n", ch + 1);
             cascade(ch + 1);
         }
     }
@@ -118,7 +118,7 @@ void Timer::overflow(int ch)
     // overflow irq
     if (tmr.irq)
     {
-        LOG("Timer {} IRQ\n", ch);
+        log("Timer {} IRQ\n", ch);
         
         switch (ch)
         {

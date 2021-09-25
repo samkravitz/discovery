@@ -18,8 +18,8 @@ int main(int argc, char **argv)
 {
     if (argc < 2)
     {
-        LOG(LogLevel::Error, "Error: No ROM file given\n");
-        LOG("Usage: ./discovery /path/to/rom\n");
+        log(LogLevel::Error, "Error: No ROM file given\n");
+        log("Usage: ./discovery /path/to/rom\n");
         return 1;
     }
 
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 
     init();
 
-	LOG("Welcome to Discovery!\n");
+	log("Welcome to Discovery!\n");
 
     // load bios, rom, and launch game loop
     emulator.mem->loadBios(config::bios_name);
@@ -111,12 +111,6 @@ void init()
 
     window = SDL_CreateWindow("discovery", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2, 0);
     assert(window);
-
-    // discovery icon logo
-    // SDL_Surface *logo = SDL_LoadBMP("assets/discovery.bmp");
-    // assert(logo);
-
-    // SDL_SetWindowIcon(window, logo);
 
     final_screen = SDL_GetWindowSurface(window);
     original_screen = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32, 0, 0, 0, 0);

@@ -141,6 +141,6 @@ private:
     void updateAttr();
     inline bool isInWindow(int, int, int);
 
-    u32 color_lut[0x10000];
+    u32 color_lut[0x8000];
     inline u32 u16ToU32Color(u16);
 };

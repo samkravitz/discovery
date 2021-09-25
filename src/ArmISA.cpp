@@ -20,7 +20,7 @@ void Arm7Tdmi::branchExchange(u32 instruction)
 
     if (Rn == r15)
     {
-        LOG(LogLevel::Error, "BranchExchange: Undefined behavior: r15 as operand: 0x{x}\n", registers.r15);
+        log(LogLevel::Error, "BranchExchange: Undefined behavior: r15 as operand: 0x{x}\n", registers.r15);
         setMode(Mode::UND);
         exit(0);
         return;
@@ -245,7 +245,7 @@ void Arm7Tdmi::branchLink(u32 instruction)
             if (set_condition_code) updateFlagsLogical(result, carry);
             break;
         default:
-            LOG(LogLevel::Error, "Unrecognized data processing opcode: {}\n", util::bitseq<24, 21>(instruction));
+            log(LogLevel::Error, "Unrecognized data processing opcode: {}\n", util::bitseq<24, 21>(instruction));
             break;
     }
 
@@ -281,7 +281,7 @@ void Arm7Tdmi::multiply(u32 instruction)
     
     if (Rd == r15 || Rm == r15)
     {
-        LOG(LogLevel::Error, "Multiply: Register 15 may not be used as destination nor operand register\n");
+        log(LogLevel::Error, "Multiply: Register 15 may not be used as destination nor operand register\n");
         return;
     }
 
@@ -336,14 +336,14 @@ void Arm7Tdmi::multiplyLong(u32 instruction)
 
     if (RdHi == r15 || RdLo == r15 || Rm == r15 || Rs == r15)
     {
-        LOG(LogLevel::Error, "Multiply: Register 15 may not be used as destination nor operand register\n");
+        log(LogLevel::Error, "Multiply: Register 15 may not be used as destination nor operand register\n");
         return;
     }
 
     // RdHi, RdLo, and Rm must all specify different registers
     if (RdHi == RdLo || RdHi == Rm || RdLo == Rm)
     {
-        LOG(LogLevel::Error, "Multiply: RdHi, RdLo, and Rm must all specify different registers\n");
+        log(LogLevel::Error, "Multiply: RdHi, RdLo, and Rm must all specify different registers\n");
         return;
     }
 
@@ -477,7 +477,7 @@ void Arm7Tdmi::multiplyLong(u32 instruction)
         u32 Rd = util::bitseq<15, 12>(instruction);
         if (Rd == r15) 
         {
-            LOG(LogLevel::Error, "Can't use r15 as an MRS destination register\n");
+            log(LogLevel::Error, "Can't use r15 as an MRS destination register\n");
             return;
         }
 
@@ -511,7 +511,7 @@ void Arm7Tdmi::multiplyLong(u32 instruction)
             u32 Rm = util::bitseq<3, 0>(instruction);
             if (Rm == r15)
             {
-                LOG(LogLevel::Error, "Can't use r15 as an MSR source register\n");
+                log(LogLevel::Error, "Can't use r15 as an MSR source register\n");
                 return;
             }
 
@@ -557,7 +557,7 @@ void Arm7Tdmi::singleDataTransfer(u32 instruction)
 
         if (offset_register == r15)
         {
-            LOG(LogLevel::Error, "r15 may not be used as the offset register of SDT\n");
+            log(LogLevel::Error, "r15 may not be used as the offset register of SDT\n");
             return;
         }
 
@@ -669,7 +669,7 @@ void Arm7Tdmi::halfwordDataTransfer(u32 instruction)
 
     if (Rm == r15)
     {
-        LOG(LogLevel::Error, "r15 cannot be used as offset register for HDT\n");
+        log(LogLevel::Error, "r15 cannot be used as offset register for HDT\n");
         return;
     }
 
@@ -713,7 +713,7 @@ void Arm7Tdmi::halfwordDataTransfer(u32 instruction)
             
             else
             {
-                LOG(LogLevel::Error, "Cannot store a signed byte in HDT\n");
+                log(LogLevel::Error, "Cannot store a signed byte in HDT\n");
                 return;
             }
             break;
@@ -728,13 +728,13 @@ void Arm7Tdmi::halfwordDataTransfer(u32 instruction)
             
             else
             {
-                LOG(LogLevel::Error, "Cannot store a signed byte in HDT\n");
+                log(LogLevel::Error, "Cannot store a signed byte in HDT\n");
                 return;
             }
             break;
         
         default:
-            LOG(LogLevel::Error, "SH bits are 00! SWP instruction was decoded as HDT!\n");
+            log(LogLevel::Error, "SH bits are 00! SWP instruction was decoded as HDT!\n");
             return;
     }
 
@@ -796,7 +796,7 @@ void Arm7Tdmi::blockDataTransfer(u32 instruction)
 
     if (Rb == r15)
     {
-        LOG(LogLevel::Error, "r15 cannot be used as base register in BDT!\n");
+        log(LogLevel::Error, "r15 cannot be used as base register in BDT!\n");
         return;
     }
 
@@ -984,7 +984,7 @@ void Arm7Tdmi::singleDataSwap(u32 instruction)
 
     if (Rn == r15 || Rd == r15 || Rm == r15)
     {
-        LOG(LogLevel::Error, "r15 can't be used as an operand in SWP!\n");
+        log(LogLevel::Error, "r15 can't be used as an operand in SWP!\n");
         return;
     }
 
@@ -1014,7 +1014,7 @@ void Arm7Tdmi::singleDataSwap(u32 instruction)
 
 void Arm7Tdmi::softwareInterruptArm(u32 instruction)
 {
-    LOG(LogLevel::Debug, "ARM SWI: {:x}\n", (int) (instruction >> 16 & 0xFF));
+    log(LogLevel::Debug, "ARM SWI: {:x}\n", (int) (instruction >> 16 & 0xFF));
 
     // LLE BIOS calls - handle thru BIOS
     u32 old_cpsr = getRegister(cpsr);

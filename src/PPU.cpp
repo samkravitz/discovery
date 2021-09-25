@@ -41,12 +41,11 @@ PPU::PPU(Memory *mem, LcdStat *stat, Scheduler *scheduler) :
         double lb = pow(((i & 31744) >> 10) / 31.0, 4.0);
         double lg = pow(((i &   992) >>  5) / 31.0, 4.0);
         double lr = pow(((i &    31) >>  0) / 31.0, 4.0);
-        int r = trunc(pow((  0 * lb +  50 * lg + 220 * lr) / 255, 1 / 2.2) * (0xffff / 280));
-        int g = trunc(pow(( 30 * lb + 230 * lg +  10 * lr) / 255, 1 / 2.2) * (0xffff / 280));
-        int b = trunc(pow((220 * lb +  10 * lg +  10 * lr) / 255, 1 / 2.2) * (0xffff / 280));
+        int r = trunc(pow((  0 * lb +  50 * lg + 220 * lr) / 255, 1 / 2.2) * (0xFFFF / 280));
+        int g = trunc(pow(( 30 * lb + 230 * lg +  10 * lr) / 255, 1 / 2.2) * (0xFFFF / 280));
+        int b = trunc(pow((220 * lb +  10 * lg +  10 * lr) / 255, 1 / 2.2) * (0xFFFF / 280));
 
         color_lut[i] = r << 16 | g << 8 |  b;
-        color_lut[i + 32768] = r << 16 | g << 8 |  b;
     }
 
     // Schedule the first hdraw and vdraw
@@ -175,8 +174,8 @@ void PPU::renderScanline()
 
             active_window_content = stat->window_content[active_window];
             
-            //LOG("{} {} {} {}\n", x, scanline, isInWindow(1, x, scanline), debug);
-            //LOG("stats = {} {} {} {}\n", stat->winh[1].left, stat->winh[1].right, stat->winv[1].top, stat->winv[1].bottom);
+            //log("{} {} {} {}\n", x, scanline, isInWindow(1, x, scanline), debug);
+            //log("stats = {} {} {} {}\n", stat->winh[1].left, stat->winh[1].right, stat->winv[1].top, stat->winv[1].bottom);
         }
 
         bool obj_in_current_window = window ? active_window_content[4] : true;
@@ -213,7 +212,7 @@ void PPU::renderScanlineText(int bg)
 
     int pitch; // pitch of screenblocks
 
-    //LOG("({}, {}) ({}, {}) {}\n", bgcnt.minx, bgcnt.miny, bgcnt.maxx, bgcnt.maxy, scanline);
+    //log("({}, {}) ({}, {}) {}\n", bgcnt.minx, bgcnt.miny, bgcnt.maxx, bgcnt.maxy, scanline);
 
     // width, height of map in pixels
     int width, height;
@@ -467,8 +466,8 @@ void PPU::renderScanlineObj()
         int iy = -attr.hheight + (scanline - attr.y);
 
 
-        //LOG("{} {} {} {}\n", attr.x, attr.y, attr.hheight, attr.hwidth);
-        //LOG("{} {} {} {}\n", attr.x0, attr.y0, attr.hheight, attr.hwidth);
+        //log("{} {} {} {}\n", attr.x, attr.y, attr.hheight, attr.hwidth);
+        //log("{} {} {} {}\n", attr.x0, attr.y0, attr.hheight, attr.hwidth);
 
         for (int ix = -attr.hwidth; ix < attr.hwidth; ++ix)
         {
@@ -740,17 +739,7 @@ inline bool PPU::isInWindow(int win, int x, int y)
     return (x >= stat->winh[win].left) && (x < stat->winh[win].right) && (y >= stat->winv[win].top) && (y < stat->winv[win].bottom);
 }
 
-inline u32 PPU::u16ToU32Color(u16 color_u16) { 
-    u8 a = 0x1F;
-    u32 r, g, b;
-    u32 color = 0; // alpha value 255 ?
-
-    r = color_u16 & 0x1F; color_u16 >>= 5; // bits  0 - 5
-    g = color_u16 & 0x1F; color_u16 >>= 5; // bits  6 - 10
-    b = color_u16 & 0x1F; color_u16 >>= 5; // bits 11 - 15
-
-    return r << 19 | g << 11 | b << 3;
-}
+inline u32 PPU::u16ToU32Color(u16 color_u16) { return color_lut[color_u16 & 0x7FFF]; }
 
 void PPU::hblank()
 {
@@ -829,7 +818,7 @@ void PPU::vblank()
             if (mem->dma[i].enable && mem->dma[i].mode == 1) // start at VBLANK
             {
                 mem->_dma(i);
-                LOG(LogLevel::Debug, "DMA {} VBLANK\n", i);
+                log(LogLevel::Debug, "DMA {} VBLANK\n", i);
             }
         }
 

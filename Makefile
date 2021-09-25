@@ -8,7 +8,7 @@ BACKUPDIR = $(INCLUDE)/backup
 OBJ = \
 	APU.o \
 	Arm7.o \
-	ArmISA.o \
+	arm_isa.o \
 	config.o \
 	Discovery.o \
 	Flash.o \
@@ -20,7 +20,7 @@ OBJ = \
 	Scheduler.o \
 	SRAM.o \
 	swi.o \
-	ThumbISA.o \
+	thumb_isa.o \
 	Timer.o \
 	util.o \
 

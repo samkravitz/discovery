@@ -23,7 +23,7 @@ APU::APU(Memory *mem, Scheduler *scheduler)
 ,scheduler(scheduler)
 {
 	SDL_Init(SDL_INIT_AUDIO);
-	std::cout<<"drive: "<<SDL_GetCurrentAudioDriver()<<std::endl;
+	std::cout<<"driver: "<<SDL_GetCurrentAudioDriver()<<std::endl;
 	
 	// define audio spec
 	SDL_AudioSpec requested, obtained;
@@ -169,20 +169,7 @@ APU::APU(Memory *mem, Scheduler *scheduler)
 		this->is_enabled = util::bitseq<7, 7>(sound_cnt_x);
 	});
 
-	// sound output control
-	// this->mem->write16(REG_SOUNDCNT_L, 0x1177);
-	u16 sound_cnt_l = (s16) this->mem->read16(REG_SOUNDCNT_L);
-	std::cout << "sound_cnt_l: " << sound_cnt_l << std::endl;
-
-	// this->mem->write16(REG_SOUNDCNT_H, 0x2);
-	u16 sound_cnt_h = (s16) this->mem->read16(REG_SOUNDCNT_H);
-	std::cout << "sound_cnt_h: " << sound_cnt_h << std::endl;
-
-	// turn sound on
-	// this->mem->write16(REG_SOUNDCNT_X, 0x80);
-	u16 sound_cnt_x = (s16) this->mem->read16(REG_SOUNDCNT_X);
-	std::cout << "sound_cnt_x: " << sound_cnt_x << std::endl;
-
+	// enable SDL, calls audio callback function {SAMPLE_RATE} times / second
 	SDL_PauseAudioDevice(this->driver_id, 0);
 	std::cout << "SDL_SOUNDISPLAYING: " << SDL_AUDIO_PLAYING << std::endl;
 

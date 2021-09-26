@@ -106,10 +106,12 @@ class APU {
 
 	// system sound config
 	// amplitude -> ~volume
-	// sample rate (frequency) -> number of sample frames sent to the computer's sound device per second
-	// buffer size -> the size of the audio buffer in sample frames
 	int AMPLITUDE = 14000;
+	
+	// sample rate (frequency) -> number of sample frames sent to the computer's sound device per second
 	int SAMPLE_RATE = 44100;
+	
+	// buffer size -> the size of the audio buffer in sample frames
 	int BUFFER_SIZE = 4096;
 
 	std::queue<APU_Channel_Output> output_queue;
@@ -132,7 +134,8 @@ class APU {
 };
 
 /**
- * sdl audio callback function
+ * sdl audio callback function, calls audio 
+ * callback function {SAMPLE_RATE} times / second
  * @param _apu_ref reference to the system apu
  * @param _stream_buffer reference to an array of data representing the stream data
  * @param _buffer_len size of the data stream

@@ -3,7 +3,6 @@
 #include "Watcher.h"
 
 Watcher::Watcher() {
-  std::cout<<"constructing watcher"<<std::endl;
   this->watching = std::vector<std::tuple<u32, std::function<void(u32, u32)>>>();
 }
 

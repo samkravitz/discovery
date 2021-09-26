@@ -55,28 +55,28 @@ APU::APU(Memory *mem, Scheduler *scheduler)
 	this->mem->watcher->add(REG_SOUND1CNT_L, [this](u32 reg, u32 val) -> void {
 		std::cout << "REG_SOUND1CNT_L changed" << std::endl;
 		this->generateChannel1();
-		SDL_Delay(10);
+		// SDL_Delay(10);
 		this->clearChannelStreams();
 	});
 
 	this->mem->watcher->add(REG_SOUND1CNT_H, [this](u32 reg, u32 val) -> void {
 		std::cout << "REG_SOUND1CNT_H changed" << std::endl;
 		this->generateChannel1();
-		SDL_Delay(10);
+		// SDL_Delay(10);
 		this->clearChannelStreams();
 	});
 
 	this->mem->watcher->add(REG_SOUND2CNT_L, [this](u32 reg, u32 val) -> void {
 		std::cout << "REG_SOUND2CNT_L changed" << std::endl;
 		this->generateChannel2();
-		SDL_Delay(10);
+		// SDL_Delay(10);
 		this->clearChannelStreams();
 	});
 
 	this->mem->watcher->add(REG_SOUND2CNT_H, [this](u32 reg, u32 val) -> void {
 		std::cout << "REG_SOUND2CNT_H changed" << std::endl;
 		this->generateChannel2();
-		SDL_Delay(10);
+		// SDL_Delay(10);
 		this->clearChannelStreams();
 	});
 
@@ -113,6 +113,7 @@ APU::~APU() {
 // generate GBA channel 1 sounds, including square wave and frequency shifts
 void APU::generateChannel1() {
 	std::vector<s16> &x = this->channel[0].stream;
+	std::vector<s16> &A = this->channel[0].amplitude;
 
 	// dmg channel 1 sweep control
 	// sweep shifts unit (s)
@@ -139,8 +140,8 @@ void APU::generateChannel1() {
 	// std::cout<<"L: "<<L<<std::endl;
 
 	// D -> wave duty cycle, ratio between on/off time
-	u16 wave_duty_cycle_reg = util::bitseq<7,6>(ch1_h);
 	float D;
+	u16 wave_duty_cycle_reg = util::bitseq<7,6>(ch1_h);
 	switch(wave_duty_cycle_reg) {
 		// calculate quadrangular wave ratio
 		case 0b00: D = .125; break;
@@ -183,11 +184,13 @@ void APU::generateChannel1() {
 	
 	// sample length, AUDIO_S16SYS is 2 bits
 	int sample_length = buffer_len / 2;
+	int P = buffer_len / 2;
 	double time = 0;
 
 	// generate sound
 	x[0] = f0;
-	for(int i = 1; i < sample_length; i++) {
+	A[0] = A0;
+	for(int i = 1; i < P; i++) {
 		// frequency function
 		std::function<double(int)> f = [R0, N, M](double t) -> double {
 			double Ri = R0 >> int( N * t );
@@ -205,6 +208,23 @@ void APU::generateChannel1() {
 			// }
 			return A0;
 		};
+
+		// std::function<double(int)> S = [A, N, P, R0, M, i](int t) -> double {
+			// double Ri = R0 >> int( N * t );
+			// double Rt = R0 + M ? Ri : ( -1 * Ri );
+			// double ft = std::pow(2, 17) / ( 32 * ( 2048 - Rt ) );
+			// double sum = 0;
+			// for(int j = 1; j < N; j++) {
+				// sum += A[j] * std::cos( ( M_PI_2 * j * i * ft) / P );
+			// }
+			// return sum;
+		// };
+
+		std::function<double(int)> S = [A, N, P, R0, M, i](int t) -> double {
+			
+		};
+
+
 		// std::cout<<"A(t): "<<A(i)<<", f(t): "<<f(i)<<std::endl;
 		x[i] = A(i) * f(i);
 		this->sample_size += 1;
@@ -307,15 +327,15 @@ void APU::generateChannel2() {
 }
 
 void APU::wait(double ms) {
-	// std::cout<<"waiting for ms: "<<ms<<std::endl;
-
-	// SDL_Delay(u32(ms));
+	std::cout<<"waiting for ms: "<<ms<<std::endl;
+	SDL_Delay(u32(ms));
 }
 
 void APU::allocateChannelMemory() {
 	// resize all streams
 	for(int i = 0; i < 4; i++) {
 		this->channel[i].stream.resize(this->buffer_len);
+		this->channel[i].amplitude.resize(this->buffer_len);
 	}
 }
 
@@ -323,6 +343,7 @@ void APU::clearChannelStreams() {
 	// zero all four streams
 	for(int i = 0; i < 4; i++) {
 		std::fill(this->channel[i].stream.begin(), this->channel[i].stream.end(), 0);
+		std::fill(this->channel[i].amplitude.begin(), this->channel[i].amplitude.end(), 0);
 	}
 }
 
@@ -334,20 +355,20 @@ void sdlAudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len)
 	int sample_count = 0;
 
 	// initialize stream buffer to zero
+	
 	// apu->setSampleSize(0);
+	
 	apu->setBufferLength(buffer_len);
 	apu->allocateChannelMemory();
-	// apu->clearChannelStreams();
 
-	if(buffer_len % 20 == 0)
-	std::cout<<"sdlCallback"<<std::endl;
+	// apu->clearChannelStreams();
 
 	// silence actual stream
 	for(int i = 0; i < buffer_len; i++) {
 		stream[i] = 0;
 	}
 
-	SDL_PauseAudioDevice(apu->getDriverID(), 0);
+	// SDL_PauseAudioDevice(apu->getDriverID(), 0);
 
 	// apu->generateChannel1();
 	// apu->generateChannel2();

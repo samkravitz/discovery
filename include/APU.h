@@ -97,8 +97,8 @@ class APU {
 	// sound channels 1 - 4
 	struct output_channel {
 		std::vector<s16> stream;
+		std::vector<s16> amplitude;
 		u16 sound_frequency;
-		double output_ampliude;
 
 		bool is_playing;
 

@@ -39,12 +39,6 @@ APU::APU(Memory *mem, Scheduler *scheduler)
 	this->allocateChannelMemory();
 	this->clearChannelStreams();
 
-	// int ndevises = SDL_GetNumAudioDevices(1);
-	// std::cout<<ndevises<<std::endl;
-	// for(int i = 0; i < ndevises; i++) {
-	// 	std::cout<<SDL_GetAudioDeviceName(i,1)<<std::endl;
-	// }
-
 	this->mem->watcher->add(REG_SOUND1CNT_X, [this](u32 reg, u32 val) -> void {
 		std::cout << "REG_SOUND1CNT_X changed" << std::endl;
 		this->generateChannel1();
@@ -84,17 +78,108 @@ APU::APU(Memory *mem, Scheduler *scheduler)
 	this->driver_id = SDL_OpenAudioDevice(nullptr, 0, &requested, &obtained, SDL_AUDIO_ALLOW_ANY_CHANGE);
 	if(this->driver_id <= 0) std::cout << "SDL Error: " << SDL_GetError() << std::endl;	
 	
+	this->mem->watcher->add(REG_SOUNDCNT_L, [this](u32 reg, u32 val) -> void {
+		// parse REG_SOUNDCNT_L
+		// 2-0: DMG Left Volume
+		// 3: Vin to Left on/off (?)
+		// 6-4: DMG Right Volume
+		// 7: Vin to Right on/off (?)
+		// 8: DMG Sound 1 to left output
+		// 9: DMG Sound 2 to left output
+		// A: DMG Sound 3 to left output
+		// B: DMG Sound 4 to left output
+		// C: DMG Sound 1 to right output
+		// D: DMG Sound 2 to right output
+		// E: DMG Sound 3 to right output
+		// F: DMG Sound 4 to right output 
+		
+		u16 sound_cnt_l = this->mem->read16(REG_SOUNDCNT_L);
+
+		this->dmg_left_volume = util::bitseq<2,0>(sound_cnt_l);
+		this->vin_left_on = (bool) util::bitseq<3,3>(sound_cnt_l);
+		
+		this->dmg_right_volume = (bool) util::bitseq<6,4>(sound_cnt_l);
+		this->vin_right_on = (bool) util::bitseq<7,7>(sound_cnt_l);
+		
+		// left output
+		this->channel[0].use_left_output = (bool) util::bitseq<8, 8>(sound_cnt_l);
+		this->channel[1].use_left_output = (bool) util::bitseq<9, 9>(sound_cnt_l);
+		this->channel[2].use_left_output = (bool) util::bitseq<0xA, 0xA>(sound_cnt_l);
+		this->channel[3].use_left_output = (bool) util::bitseq<0xB, 0xB>(sound_cnt_l);
+
+		// right output
+		this->channel[0].use_right_output = (bool) util::bitseq<0xC, 0xC>(sound_cnt_l);
+		this->channel[1].use_right_output = (bool) util::bitseq<0xD, 0xD>(sound_cnt_l);
+		this->channel[2].use_right_output = (bool) util::bitseq<0xE, 0xE>(sound_cnt_l);
+		this->channel[3].use_right_output = (bool) util::bitseq<0xF, 0xF>(sound_cnt_l);
+	});
+
+	this->mem->watcher->add(REG_SOUNDCNT_H, [this](u32 reg, u32 val) -> void {
+		// 1-0: Output sound ratio for chan.1-4 (0=25%,1=50%,2=100%)
+		// 2: Direct sound A output ratio (0=50%, 1=100%)
+		// 3: Direct sound B output ratio (0=50%, 1=100%)
+		// 7-4: Unused
+		// 8: Direct sound A to right output
+		// 9: Direct sound A to left output
+		// A: Direct sound A Sampling rate timer (timer 0 or 1)
+		// B: Direct sound A FIFO reset
+		// C: Direct sound B to right output
+		// D: Direct sound B to left output
+		// E: Direct sound B Sampling rate timer (timer 0 or 1)
+		// F: Direct sound B FIFO reset 
+	
+		u16 sound_cnt_h = this->mem->read16(REG_SOUNDCNT_H);
+
+		// output ratios
+		this->channels_output_ratio = util::bitseq<1, 0>(sound_cnt_h);
+		this->direct_sound_ratio_A = util::bitseq<2, 2>(sound_cnt_h);
+		this->direct_sound_ratio_B = util::bitseq<3, 3>(sound_cnt_h);
+
+		// direct sound a
+		this->direct_sound[0].use_right_output = util::bitseq<8, 8>(sound_cnt_h);
+		this->direct_sound[0].use_left_output = util::bitseq<9, 9>(sound_cnt_h);
+		this->direct_sound[0].sample_rate_timer = util::bitseq<0xA, 0xA>(sound_cnt_h);
+		this->direct_sound[0].fifo_reset = util::bitseq<0xB, 0xB>(sound_cnt_h);
+
+		// direct sound b
+		this->direct_sound[1].use_right_output = util::bitseq<0xC, 0xC>(sound_cnt_h);
+		this->direct_sound[1].use_left_output = util::bitseq<0xD, 0xD>(sound_cnt_h);
+		this->direct_sound[1].sample_rate_timer = util::bitseq<0xE, 0xE>(sound_cnt_h);
+		this->direct_sound[1].fifo_reset = util::bitseq<0xF, 0xF>(sound_cnt_h);
+	});
+
+	this->mem->watcher->add(REG_SOUNDCNT_X, [this](u32 reg, u32 val) -> void {
+		// 0: DMG Sound 1 status
+		// 1: DMG Sound 2 status
+		// 2: DMG Sound 3 status
+		// 3: DMG Sound 4 status
+		// 6-4: Unused
+		// 7: All Sound circuit enable (0=off, 1=on)
+		// F-8: Unused 
+
+		u16 sound_cnt_x = this->mem->read16(REG_SOUNDCNT_X);
+		
+		// dmg sound status
+		this->channel[0].is_playing = util::bitseq<0, 0>(sound_cnt_x);
+		this->channel[1].is_playing = util::bitseq<1, 1>(sound_cnt_x);
+		this->channel[2].is_playing = util::bitseq<2, 2>(sound_cnt_x);
+		this->channel[3].is_playing = util::bitseq<3, 3>(sound_cnt_x);
+		
+		// all sound circuits enabled
+		this->is_enabled = util::bitseq<7, 7>(sound_cnt_x);
+	});
+
 	// sound output control
-	this->mem->write16(REG_SOUNDCNT_L, 0x1177);
+	// this->mem->write16(REG_SOUNDCNT_L, 0x1177);
 	u16 sound_cnt_l = (s16) this->mem->read16(REG_SOUNDCNT_L);
 	std::cout << "sound_cnt_l: " << sound_cnt_l << std::endl;
 
-	this->mem->write16(REG_SOUNDCNT_H, 0x2);
+	// this->mem->write16(REG_SOUNDCNT_H, 0x2);
 	u16 sound_cnt_h = (s16) this->mem->read16(REG_SOUNDCNT_H);
 	std::cout << "sound_cnt_h: " << sound_cnt_h << std::endl;
 
 	// turn sound on
-	this->mem->write16(REG_SOUNDCNT_X, 0x80);
+	// this->mem->write16(REG_SOUNDCNT_X, 0x80);
 	u16 sound_cnt_x = (s16) this->mem->read16(REG_SOUNDCNT_X);
 	std::cout << "sound_cnt_x: " << sound_cnt_x << std::endl;
 
@@ -104,9 +189,9 @@ APU::APU(Memory *mem, Scheduler *scheduler)
 }
 
 APU::~APU() {
-	for(int i = 0; i < 4; i++) {
-		// delete[] this->channel[i].stream;
-	}
+	// for(int i = 0; i < 4; i++) {
+	// 	// delete[] this->channel[i].stream;
+	// }
 	SDL_CloseAudio();
 }
 
@@ -208,22 +293,6 @@ void APU::generateChannel1() {
 			// }
 			return A0;
 		};
-
-		// std::function<double(int)> S = [A, N, P, R0, M, i](int t) -> double {
-			// double Ri = R0 >> int( N * t );
-			// double Rt = R0 + M ? Ri : ( -1 * Ri );
-			// double ft = std::pow(2, 17) / ( 32 * ( 2048 - Rt ) );
-			// double sum = 0;
-			// for(int j = 1; j < N; j++) {
-				// sum += A[j] * std::cos( ( M_PI_2 * j * i * ft) / P );
-			// }
-			// return sum;
-		// };
-
-		std::function<double(int)> S = [A, N, P, R0, M, i](int t) -> double {
-			
-		};
-
 
 		// std::cout<<"A(t): "<<A(i)<<", f(t): "<<f(i)<<std::endl;
 		x[i] = A(i) * f(i);

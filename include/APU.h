@@ -22,10 +22,24 @@
 constexpr int DS_MODE_DMA = 0;
 constexpr int DS_MODE_INTERRUPT = 1;
 
-struct APU_Output {
-	double freq;
-	double ampl;
-	int samplesLeft;
+struct APU_Channel_Output {
+	// output
+	std::vector<s16> stream;
+	std::vector<s16> amplitude;
+
+	u16 sound_frequency;
+
+	bool use_left_output;
+	bool use_right_output;
+	bool is_playing;
+};
+
+struct APU_Direct_Sound_Output {
+	u8 sample_rate_timer;
+	bool fifo_reset;
+	bool use_left_output;
+	bool use_right_output;
+	bool is_playing;
 };
 
 class APU {
@@ -78,6 +92,18 @@ class APU {
 	inline void setDriverID(s8);
 	
 	private:
+
+	// dmg output control
+	u8 dmg_left_volume;
+	bool vin_left_on;
+
+	u8 dmg_right_volume;
+	bool vin_right_on;
+
+	u8 channels_output_ratio;
+	u8 direct_sound_ratio_A;
+	u8 direct_sound_ratio_B;
+
 	// system sound config
 	// amplitude -> ~volume
 	// sample rate (frequency) -> number of sample frames sent to the computer's sound device per second
@@ -86,7 +112,7 @@ class APU {
 	int SAMPLE_RATE = 44100;
 	int BUFFER_SIZE = 4096;
 
-	std::queue<APU_Output> output_queue;
+	std::queue<APU_Channel_Output> output_queue;
 	
 	// device audio driver
 	SDL_AudioDeviceID driver_id;
@@ -94,15 +120,15 @@ class APU {
 	int sample_size;
 	u16 buffer_len;
 
+	// apu enabled/disabled
+	bool is_enabled;
+
 	// sound channels 1 - 4
-	struct output_channel {
-		std::vector<s16> stream;
-		std::vector<s16> amplitude;
-		u16 sound_frequency;
+	struct APU_Channel_Output channel [4];
 
-		bool is_playing;
+	// direct sound channels A and B
+	struct APU_Direct_Sound_Output direct_sound [2];
 
-	} channel [4];
 };
 
 /**

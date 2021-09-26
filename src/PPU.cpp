@@ -411,9 +411,9 @@ void PPU::renderScanlineBitmap(int mode)
 
             for (int x = 0; x < SCREEN_WIDTH; ++x)
             {
-                // multiply by 2 because each entry in palram is 2 bytes
-                palette_index = vram[pal_ptr++] * 2;
-                pixel = palram[palette_index + 1] << 8 | palram[palette_index];
+                palette_index = vram[pal_ptr++];
+                // multiply by 2 because each palette is 2 bytes
+                pixel = palram[palette_index * 2 + 1] << 8 | palram[palette_index * 2];
                 bg_buffer[0][x] = pixel;
             }
 

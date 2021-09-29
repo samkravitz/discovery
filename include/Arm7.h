@@ -3,7 +3,7 @@
  * See LICENSE.txt for full license text
  * Author: Sam Kravitz
  * 
- * FILE: Arm7Tdmi.h
+ * FILE: Arm7.h
  * DATE: July 13, 2020
  * DESCRIPTION: class definition for arm7tdmi
  */
@@ -16,10 +16,10 @@
 #include "APU.h"
 #include "mmio.h"
 
-class Arm7Tdmi
+class Arm7
 {
 public:
-    Arm7Tdmi(Memory *mem);
+    Arm7(Memory *mem);
     
     Memory *mem;
 

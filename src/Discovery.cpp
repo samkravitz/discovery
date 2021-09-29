@@ -27,7 +27,7 @@ Discovery::Discovery()
     timer     = new Timer(scheduler);
 
     mem       = new Memory(stat, timer, gamepad);
-    cpu       = new Arm7Tdmi(mem);
+    cpu       = new Arm7(mem);
     ppu       = new PPU(mem, stat, scheduler);
     //apu     = new APU(mem);
     irq       = new IRQ();
@@ -88,6 +88,7 @@ void Discovery::frame()
         // tick hardware (not cpu) if in halt state
         if (mem->haltcnt)
         {   
+            std::cout << "hi\n";
             while ((irq->getIE() & irq->getIF()) == 0)
 
             mem->haltcnt = 0;

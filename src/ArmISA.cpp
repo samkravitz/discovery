@@ -7,14 +7,14 @@
  * DESCRIPTION: execution of arm instructions
  */
 
-#include "Arm7Tdmi.h"
+#include "Arm7.h"
 
 /*
  * Copies the contents of Rn (bits 3-0) of instruction into the PC,
  * flushes the pipeline, and restarts execution from the address
  * contained in Rn. If bit 0 of Rn is 1, switch to THUMB mode
  */
-void Arm7Tdmi::branchExchange(u32 instruction)
+void Arm7::branchExchange(u32 instruction)
 {
     u32 Rn = util::bitseq<3, 0>(instruction);
 
@@ -44,7 +44,7 @@ void Arm7Tdmi::branchExchange(u32 instruction)
     tick(1, 2, 0);
 }
 
-void Arm7Tdmi::branchLink(u32 instruction)
+void Arm7::branchLink(u32 instruction)
 {
     bool link  = util::bitseq<24, 24>(instruction);
     u32 offset = util::bitseq<23, 0>(instruction);
@@ -77,7 +77,7 @@ void Arm7Tdmi::branchLink(u32 instruction)
     tick(1, 2, 0);
 }
 
- void Arm7Tdmi::dataProcessing(u32 instruction)
+ void Arm7::dataProcessing(u32 instruction)
  {
     u32 Rd = util::bitseq<15, 12>(instruction); // destination register
     u32 Rn = util::bitseq<19, 16>(instruction); // source register
@@ -263,7 +263,7 @@ void Arm7Tdmi::branchLink(u32 instruction)
     tick(n, s, i); 
 }
 
-void Arm7Tdmi::multiply(u32 instruction)
+void Arm7::multiply(u32 instruction)
 {
     // assign registers
     u32 Rm = util::bitseq<3, 0>(instruction);   // first operand
@@ -324,7 +324,7 @@ void Arm7Tdmi::multiply(u32 instruction)
     tick(0, 1, m);
 }
 
-void Arm7Tdmi::multiplyLong(u32 instruction)
+void Arm7::multiplyLong(u32 instruction)
 {
     u32 RdHi                = util::bitseq<19, 16>(instruction);
     u32 RdLo                = util::bitseq<15, 12>(instruction);
@@ -466,7 +466,7 @@ void Arm7Tdmi::multiplyLong(u32 instruction)
 }
 
 // allow access to CPSR and SPSR registers
- void Arm7Tdmi::psrTransfer(u32 instruction)
+ void Arm7::psrTransfer(u32 instruction)
  {
     bool use_spsr = util::bitseq<22, 22>(instruction) == 1;
     u32 opcode    = util::bitseq<21, 21>(instruction);
@@ -529,7 +529,7 @@ void Arm7Tdmi::multiplyLong(u32 instruction)
 }
 
 // store or load single value to/from memory
-void Arm7Tdmi::singleDataTransfer(u32 instruction)
+void Arm7::singleDataTransfer(u32 instruction)
 {
     bool immediate  = util::bitseq<25, 25>(instruction) == 0;
     bool pre_index  = util::bitseq<24, 24>(instruction) == 1; // bit 24 set = pre index, bit 24 0 = post index
@@ -649,7 +649,7 @@ void Arm7Tdmi::singleDataTransfer(u32 instruction)
 }
 
 // transfer halfword and signed data
-void Arm7Tdmi::halfwordDataTransfer(u32 instruction)
+void Arm7::halfwordDataTransfer(u32 instruction)
 {
     bool pre_index  = util::bitseq<24, 24>(instruction) == 1; // bit 24 set = pre index, bit 24 0 = post index
     bool up         = util::bitseq<23, 23>(instruction) == 1; // bit 23 set = up, bit 23 0 = down
@@ -772,7 +772,7 @@ void Arm7Tdmi::halfwordDataTransfer(u32 instruction)
     tick(n, s, i);
 }
 
-void Arm7Tdmi::blockDataTransfer(u32 instruction)
+void Arm7::blockDataTransfer(u32 instruction)
 {
     bool pre_index    = util::bitseq<24, 24>(instruction) == 1; // bit 24 set = pre index, bit 24 0 = post index
     bool up           = util::bitseq<23, 23>(instruction) == 1; // bit 23 set = up, bit 23 0 = down
@@ -975,7 +975,7 @@ void Arm7Tdmi::blockDataTransfer(u32 instruction)
     tick(n, s, i);
 }
 
-void Arm7Tdmi::singleDataSwap(u32 instruction)
+void Arm7::singleDataSwap(u32 instruction)
 {
     bool byte = util::bitseq<22, 22>(instruction);
     u32 Rn    = util::bitseq<19, 16>(instruction); // base register
@@ -1012,7 +1012,7 @@ void Arm7Tdmi::singleDataSwap(u32 instruction)
     tick(2, 1, 1);
 }
 
-void Arm7Tdmi::softwareInterruptArm(u32 instruction)
+void Arm7::softwareInterruptArm(u32 instruction)
 {
     log(LogLevel::Debug, "ARM SWI: {:x}\n", (int) (instruction >> 16 & 0xFF));
 

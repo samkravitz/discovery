@@ -7,7 +7,7 @@ INCLUDE = include
 BACKUPDIR = $(INCLUDE)/backup
 OBJ = \
 	APU.o \
-	Arm7Tdmi.o \
+	Arm7.o \
 	ArmISA.o \
 	config.o \
 	Discovery.o \

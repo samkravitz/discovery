@@ -1,7 +1,7 @@
 // apu inline methods
 
 inline s16 APU::getChannelStream(int channel_index, int buffer_index) {
-	return this->channel[channel_index].stream[buffer_index];
+	return this->channel[channel_index].stream.front();
 }
 
 // inline void APU::setChannelStream(int channel_index, u16 data_buffer_len, s16 *stream_data) {
@@ -55,4 +55,12 @@ inline s8 APU::getDriverID() {
 
 inline void APU::setDriverID(s8 val) {
 	this->driver_id = val;
+}
+
+inline u32 APU::getInternalBufferSize(u8 channel) {
+	return this->channel[channel].stream.size();
+}
+
+inline void APU::popInternalBuffer(u8 channel) {
+	this->channel[channel].stream.pop();
 }

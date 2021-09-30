@@ -42,7 +42,7 @@ namespace util
 
     inline s8 signum(double);
 
-    u32 msToCycles(double);
+    inline u32 secondsToSamples(double);
 };
 
 // util inline functions

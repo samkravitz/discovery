@@ -24,7 +24,7 @@ constexpr int DS_MODE_INTERRUPT = 1;
 
 struct APU_Channel_Output {
 	// output
-	std::vector<s16> stream;
+	std::queue<s16> stream;
 	std::vector<s16> amplitude;
 
 	u16 sound_frequency;
@@ -90,6 +90,9 @@ class APU {
 
 	inline s8 getDriverID(void);
 	inline void setDriverID(s8);
+
+	inline u32 getInternalBufferSize(u8);
+	inline void popInternalBuffer(u8);
 	
 	private:
 
@@ -114,7 +117,7 @@ class APU {
 	// buffer size -> the size of the audio buffer in sample frames
 	int BUFFER_SIZE = 4096;
 
-	std::queue<APU_Channel_Output> output_queue;
+	std::queue<s16> output_queue;
 	
 	// device audio driver
 	SDL_AudioDeviceID driver_id;

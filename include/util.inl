@@ -36,3 +36,8 @@ inline s8 util::signum(double val)
     else return (s8) (0. < val) - (val < 0.);
 }
 
+inline u32 util::secondsToSamples(double s) 
+{
+    return s / 44100.0;
+}
+

@@ -1,6 +1,0 @@
-// for(int i = 0; i < SDL_GetNumAudioDrivers(); ++i) {
-	// 	const char *driver_name = SDL_GetAudioDriver(i);
-	// 	std::cout << "driver: " << driver_name << std::endl;
-	// }
-
-  later: user selecting audio divise

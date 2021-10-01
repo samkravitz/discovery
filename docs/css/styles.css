@@ -1,0 +1,83 @@
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 1.05rem;
+  padding: 0;
+  margin: 0;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  width: auto;
+}
+
+.content {
+  width: 81.3333333%;
+  display: flex;
+  flex-direction: column;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.image {
+  margin-top: 12px;
+}
+
+a.router-link-exact-active {
+  color: cornflowerblue;
+}
+
+li {
+  margin-bottom: 4px;
+}
+
+.paragraph {
+  width: 66%;
+}
+
+.section {
+  font-style: italic;
+  font-size: 1.1rem;
+  color: black;
+  /* text-decoration: none; */
+  width: 100%;
+}
+
+hr {
+  border-bottom-width: 1px;
+  border-color: black;
+  width: 81.3333333%;
+}
+
+.toc {
+  font-style: italic;
+  text-align: left;
+  width: 81.3333333%;
+}
+
+.toc-container {
+  width: 45.484848%;
+}
+
+.toc-header {
+  margin-bottom: .5rem;
+}
+
+/* big list */
+.bl {
+  margin-bottom: 16px;
+}

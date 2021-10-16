@@ -58,6 +58,7 @@ public:
     u8 scanline;
 
     void reset();
+    void tick();
 
 private:
     // internal buffers linked from memory
@@ -129,9 +130,6 @@ private:
     void renderScanlineAffine(int);
     void renderScanlineBitmap(int);
     void renderScanlineObj();
-
-    void hblank();
-    void vblank();
 
     // misc
     inline u16 getObjPixel4BPP(u32, int, int, int);

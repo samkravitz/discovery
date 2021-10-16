@@ -108,7 +108,10 @@ void Discovery::frame()
 
         // run hardware for as many clock cycles as cpu used
         while (cycles_elapsed-- > 0)
+        {
             ++cycles;
+            ppu->tick();
+        }
     }
 
 }

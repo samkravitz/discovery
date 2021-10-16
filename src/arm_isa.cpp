@@ -2,7 +2,7 @@
  * License: GPLv2
  * See LICENSE.txt for full license text
  * 
- * FILE: ArmISA.cpp
+ * FILE: arm_isa.cpp
  * DATE: June 27, 2020
  * DESCRIPTION: execution of arm instructions
  */

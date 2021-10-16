@@ -2,7 +2,7 @@
  * License: GPLv2
  * See LICENSE.txt for full license text
  * 
- * FILE: ThumbISA.cpp
+ * FILE: thumb_isa.cpp
  * DATE: October 8th, 2020
  * DESCRIPTION: execution of thumb instructions
  */

@@ -74,34 +74,49 @@
               <a href="#sound-resources" class="section"><li>Sound resources</li></a>
               <ul>
                 <li>Register details:
-                <a href=">http://www.belogic.com/gba/registers.shtml">http://www.belogic.com/gba/registers.shtml></a></li>
+                <a href="http://www.belogic.com/gba/registers.shtml">http://www.belogic.com/gba/registers.shtml></a></li>
 
                 <li>SDL sound spec:
-                <a href=">https://wiki.libsdl.org/SDL_AudioSpec">https://wiki.libsdl.org/SDL_AudioSpec></a></li>
+                <a href="https://wiki.libsdl.org/SDL_AudioSpec">https://wiki.libsdl.org/SDL_AudioSpec></a></li>
 
                 <li>Sound generator:
-                <a href=">https://stackoverflow.com/questions/10110905/simple-sound-wave-generator-with-sdl-in-c">https://stackoverflow.com/questions/10110905/simple-sound-wave-generator-with-sdl-in-c></a></li>
+                <a href="https://stackoverflow.com/questions/10110905/simple-sound-wave-generator-with-sdl-in-c">https://stackoverflow.com/questions/10110905/simple-sound-wave-generator-with-sdl-in-c></a></li>
 
                 <li>Sound / opening the audio device:
-                <a href=">https://web.archive.org/web/20130724194546/http://www.libsdl.org:80/intro.en/usingsound.html">https://web.archive.org/web/20130724194546/http://www.libsdl.org:80/intro.en/usingsound.html></a></li>
+                <a href="https://web.archive.org/web/20130724194546/http://www.libsdl.org:80/intro.en/usingsound.html">https://web.archive.org/web/20130724194546/http://www.libsdl.org:80/intro.en/usingsound.html></a></li>
 
                 <li>Tone generator reference:
-                <a href=">https://github.com/psycotica0/tone-generator/blob/master/generator.c">https://github.com/psycotica0/tone-generator/blob/master/generator.c></a></li>
+                <a href="https://github.com/psycotica0/tone-generator/blob/master/generator.c">https://github.com/psycotica0/tone-generator/blob/master/generator.c></a></li>
 
                 <li>GBA audio in depth:
-                <a href=">https://www.coranac.com/tonc/text/sndsqr.htm#sec-intro">https://www.coranac.com/tonc/text/sndsqr.htm#sec-intro></a></li>
+                <a href="https://www.coranac.com/tonc/text/sndsqr.htm#sec-intro">https://www.coranac.com/tonc/text/sndsqr.htm#sec-intro></a></li>
 
                 <li>SDL sine wave generator:
-                <a href=">https://gist.github.com/MasterQ32/46ffd78a6cf261c73a1fddb93a478ebe">https://gist.github.com/MasterQ32/46ffd78a6cf261c73a1fddb93a478ebe></a></li>
+                <a href="https://gist.github.com/MasterQ32/46ffd78a6cf261c73a1fddb93a478ebe">https://gist.github.com/MasterQ32/46ffd78a6cf261c73a1fddb93a478ebe></a></li>
 
                 <li>Spongebob square wave:
-                <a href=">https://davidgow.net/handmadepenguin/ch8.html">https://davidgow.net/handmadepenguin/ch8.html></a></li>
+                <a href="https://davidgow.net/handmadepenguin/ch8.html">https://davidgow.net/handmadepenguin/ch8.html></a></li>
 
                 <li>More details :
-                <a href=">https://www.problemkaputt.de/gbatek.htm#gbasoundchannel1tonesweep">https://www.problemkaputt.de/gbatek.htm#gbasoundchannel1tonesweep></a></li>
+                <a href="https://www.problemkaputt.de/gbatek.htm#gbasoundchannel1tonesweep">https://www.problemkaputt.de/gbatek.htm#gbasoundchannel1tonesweep></a></li>
 
                 <li>Sound timing:
-                <a href=">http://ianfinlayson.net/class/cpsc305/notes/19-sound">http://ianfinlayson.net/class/cpsc305/notes/19-sound></a></li>
+                <a href="http://ianfinlayson.net/class/cpsc305/notes/19-sound">http://ianfinlayson.net/class/cpsc305/notes/19-sound></a></li>
+
+                <li>
+                  Fourier transform within window function:
+                  <a href="https://stackoverflow.com/questions/43479528/how-can-i-perform-a-realtime-fft-on-sdl2-audio-stream-data">https://stackoverflow.com/questions/43479528/how-can-i-perform-a-realtime-fft-on-sdl2-audio-stream-data</a>
+                </li>
+                <li>SDL Audio callback locking:
+                <a href="https://wiki.libsdl.org/SDL_LockAudioDevice">https://wiki.libsdl.org/SDL_LockAudioDevice</a>i
+                </li>
+                <li>
+                  Nyquist-Shannon sampling theorem for brudging between continuous-time 
+                  signals and discrete-time signals
+                  <a href="https://en.wikipedia.org/wiki/Nyquist%E2%80%93Shannon_sampling_theorem">
+                    https://en.wikipedia.org/wiki/Nyquist%E2%80%93Shannon_sampling_theorem
+                  </a>
+                </li>
               </ul>
             </div>
 
@@ -111,13 +126,63 @@
             <div class="bl">
               <a href="#fourier" class="section"><li>Fourier transform</li></a>
               
-              <div class="equation" id="eq1.0"></div>
+              <p>
+                There is a fundamental conflict or incongruence between how we think of 
+                think of sound generation, and how sound is
+                modelled digitally. When we think of sound &mdash; especially its generation or
+                production &mdash; we conceptualize it a wave, oscillating at a specific rate
+                at any given time. Perhaps this is a result of how additive 
+                synthesis is implemented on analogue synthisizers: by providing a simple and 
+                mathematically pure base wave, such as a sine, then providing the means 
+                for users to construct timbres by adding additional waves together. 
+                This form of conceptualizing sound is intuitive when looking at pure waves
+                
+
+                <div class="figure">
+                  <img 
+                    src="./assets/Minimoog_1979_left_2017_right.jpg" 
+                    alt="two minimoogs placed next to eachother"
+                    class="figure-image"
+                  />
+  
+                  <span class="figure-text">
+                    <b>Figure 1.0</b> A dial in the first row and third column of the oscillator bank of the minimoogs
+                    pictured above lets a user select the base wave 
+                  </span>
+                </div>
+
+
+                The following equation <b>(eq1.0)</b> describes one form of Fourier transform.
+                <div class="equation" id="eq1.0"></div>
+                Where <span class="xi"></span> is frequency, and <span class="t"></span>
+                is time. Because SDL measures time in seconds, <span class="t"></span> 
+                also has a unit of seconds, and thus, frequency <span class="xi"></span>
+                has a unit of hertz (hz). 
+
+
+              </p>
+
               <script>
+                // fourier
                 el = document.getElementById("eq1.0")
                 eq = `
-                  \\hat{f}(\\xi) = \\int_{-\\infty}^{\\infty}f(x)e^{-2 \\pi i x \\xi}\\, dx
+                  \\hat{f}(\\xi) = \\int_{t_0}^{t_1}f(t)e^{-2 \\pi i t \\xi}\\, dt
                 `
                 this.latex.render(eq, el)
+
+                // xi
+                el = [...document.getElementsByClassName("xi")]
+                eq = `
+                  \\xi
+                `
+                this.latex.render(eq, el, false)
+
+                // t
+                el = [...document.getElementsByClassName("t")]
+                eq = `
+                  t
+                `
+                this.latex.render(eq, el, false)
               </script>
               Just trying out <span id="latex0"></span> in HTML
               <script>

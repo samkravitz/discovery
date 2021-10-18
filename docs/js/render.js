@@ -10,13 +10,14 @@ const renderEl = (str, el, displayMode, handleErr) => {
 const render = (str, el, displayMode=true, handleErr=false) => {
   if(window.katex) {
     if(el instanceof Array) {
-      if(str instanceof String) {
-        el.forEach((e, i) => {
-          renderEl(str[i], e, displayMode, handleErr)
+      if(typeof str === "string") {
+        el.forEach((e) => {
+          console.log(e)
+          renderEl(str, e, displayMode, handleErr)
         })
       } else {
-        el.forEach((e) => {
-          renderEl(str, e, displayMode, handleErr)
+        el.forEach((e, i) => {
+          renderEl(str[i], e, displayMode, handleErr)
         })
       }
     } else if(str && el) {

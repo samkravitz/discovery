@@ -9,13 +9,15 @@
  */
 
 #include <iostream>
-#include <queue>
+#include <vector>
 #include <cmath>
 #include <functional>
 #include <vector>
 #include <cassert>
+#include <complex>
 #include "APU.h"
 #include "util.h"
+#include "dmath.h"
 
 // construct APU with discovery memory management unit
 APU::APU(Memory *mem, Scheduler *scheduler)
@@ -29,8 +31,9 @@ APU::APU(Memory *mem, Scheduler *scheduler)
 	SDL_AudioSpec requested, obtained;
 	requested.freq = this->SAMPLE_RATE;
 	requested.format = AUDIO_S16SYS;
-	requested.channels = 1;
-	requested.samples = this->BUFFER_SIZE;
+	requested.channels = this->NUM_CHANNELS;
+	requested.samples = this->NUM_SAMPLES;
+	requested.padding = 0;
 	requested.callback = sdlAudioCallback;
 	requested.userdata = this;
 
@@ -42,21 +45,21 @@ APU::APU(Memory *mem, Scheduler *scheduler)
 	this->mem->watcher->add(REG_SOUND1CNT_X, [this](u32 reg, u32 val) -> void {
 		std::cout << "REG_SOUND1CNT_X changed" << std::endl;
 		this->generateChannel1();
-		SDL_Delay(10);
+		// SDL_Delay(10);
 		// this->clearChannelStreams();
 	});
 
 	this->mem->watcher->add(REG_SOUND1CNT_L, [this](u32 reg, u32 val) -> void {
 		std::cout << "REG_SOUND1CNT_L changed" << std::endl;
 		this->generateChannel1();
-		SDL_Delay(10);
+		// SDL_Delay(10);
 		// this->clearChannelStreams();
 	});
 
 	this->mem->watcher->add(REG_SOUND1CNT_H, [this](u32 reg, u32 val) -> void {
 		std::cout << "REG_SOUND1CNT_H changed" << std::endl;
 		this->generateChannel1();
-		SDL_Delay(10);
+		// SDL_Delay(10);
 		// this->clearChannelStreams();
 	});
 
@@ -69,7 +72,7 @@ APU::APU(Memory *mem, Scheduler *scheduler)
 
 	// this->mem->watcher->add(REG_SOUND2CNT_H, [this](u32 reg, u32 val) -> void {
 	// 	std::cout << "REG_SOUND2CNT_H changed" << std::endl;
-	// 	this->generateChannel2();
+	//  this->generateChannel2();
 	// 	// SDL_Delay(10);
 	// 	this->clearChannelStreams();
 	// });
@@ -184,7 +187,7 @@ APU::~APU() {
 
 // generate GBA channel 1 sounds, including square wave and frequency shifts
 void APU::generateChannel1() {
-	std::queue<s16> &x = this->channel[0].stream;
+	std::vector<s16> &x = this->channel[0].stream;
 	std::vector<s16> &A = this->channel[0].amplitude;
 
 	// dmg channel 1 sweep control
@@ -255,48 +258,75 @@ void APU::generateChannel1() {
 	bool Re = util::bitseq<0xF, 0xF>(ch1_x);
 	
 	// sample length, AUDIO_S16SYS is 2 bits
-	int sample_length = buffer_len / 2;
-	int P = buffer_len / 2;
+	int sample_length = this->BUFFER_LEN / 2;
+	int P = this->BUFFER_LEN / 2;
 	double time = 0;
 
 	// generate sound
 	// x[0] = f0;
 	// A[0] = A0;
 	int t = 0;
+	std::vector<std::complex<double>> freqs;
 	u32 samples = util::secondsToSamples(L);
-	std::cout<<"before"<<std::endl;
-	while(1) {
+	for(u16 i = 0; i < this->SAMPLE_RATE; i++) {
+		// frequency function
+		// std::function<double(int)> f = [R0, N, M](double t) -> double {
+		// 	double Ri = R0 >> int( N * t );
+		// 	double Rt = R0 + M ? Ri : ( -1 * Ri );
+		// 	double ft = std::pow(2, 17) / ( 32 * ( 2048 - Rt ) );
+		// 	return util::signum( std::sin(t * ft) );
+		// };
 
-		double ft = f(t);
-		s16 At = A(t);
+		std::function<std::complex<double>(int)> f = [A0, this](double t) -> std::complex<double> {
+			// std::cout<<std::sin(t)<<std::endl;
+			return std::complex<double>(A0 * std::sin(440/this->SAMPLE_RATE * t), 0.);
+		};
+
+		// // amplitude function
+		std::function<double(int)> A = [A0, Et, Me](double t) -> double {
+			double Ai = std::pow(A0, int( -1 * t ));
+			double At = A0 + Me ? Me : ( -1 * Ai );
+			// if(Me) {
+			// 	// Et becomes attack value
+			// }
+			return A0;
+		};
+
+		
+		freqs.push_back(f(t));
 		// s16 At = A(t);
-		s16 xt = ft;
+		// // s16 At = A(t);
+		// s16 xt = ft;
 
 
-		if(ft <= 0) break;
-		if(ft >= 131 * 1024) break;
-		if(At <= 0) break;
-		if(Mt && t > samples) break;
+		// if(ft <= 0) break;
+		// if(ft >= 131 * 1024) break;
+		// if(At <= 0) break;
+		// if(Mt && t > samples) break;
 		// if(!this->mem->read16(REG_SOUND1CNT_L)) break;
 		// if(!this->mem->read16(REG_SOUND1CNT_H)) break;
 
-		x.push(xt);
+		// x.push_back(ft);
 		t++;
 		// this->sample_size += 1;
 	}
-	std::cout<<"after"<<std::endl;
+	freqs = dmath::fourier(freqs);
+	for(int i = 0; i < x.size();i++){
+		x[i] = std::abs(freqs[i]);
+		std::cout<<x[i]<< ',';
+	}
+	std::cout<<std::endl<<"endl"<<std::endl;
 
 	// if(!Mt) {
 	// 	// play sound for L (in milliseconds)
 	// 	// otherwise sound is played continuously
 	// 	this->wait(L);
 	// }
-	std::cout<<x.size()<<std::endl;
 	std::cout<<"generated channel 1"<<std::endl;
 }
 
 void APU::generateChannel2() {
-	std::queue<s16> &x = this->channel[1].stream;
+	std::vector<s16> &x = this->channel[1].stream;
 
 	// dmg channel 1 sweep control
 	// sweep shifts unit (s)
@@ -349,7 +379,7 @@ void APU::generateChannel2() {
 	bool Re = util::bitseq<0xF, 0xF>(ch2_h);
 	
 	// sample length, AUDIO_S16SYS is 2 bits
-	int sample_length = buffer_len / 2;
+	int sample_length = this->BUFFER_LEN / 2;
 	double time = 0;
 
 	// generate sound
@@ -388,45 +418,62 @@ void APU::wait(double ms) {
 	SDL_Delay(u32(ms));
 }
 
-void sdlAudioCallback(void *_apu_ref, Uint8 *_stream_buffer, int _buffer_len) 
+void APU::allocateChannelMemory() {
+	// resize all streams
+	for(int i = 0; i < 4; i++) {
+		this->channel[i].stream.resize(this->BUFFER_LEN);
+		this->channel[i].amplitude.resize(this->NUM_SAMPLES);
+	}
+}
+
+void sdlAudioCallback(void *_apu_ref, u8 *_stream_buffer, int _buffer_len) 
 {
 	APU *apu = (APU*) _apu_ref;
 	s16 *stream = (s16*) _stream_buffer;
-	int buffer_len = _buffer_len/2;
-	int sample_count = 0;
+	u16 buffer_len = _buffer_len;
+	u16 sample_count = 0;
 
+	
 	// initialize stream buffer to zero
-	
-	// apu->setSampleSize(0);
-	
 	apu->setBufferLength(buffer_len);
-	// apu->allocateChannelMemory();
-
-	// apu->clearChannelStreams();
+	apu->allocateChannelMemory();
 
 	// silence actual stream
-	for(int i = 0; i < buffer_len; i++) {
-		stream[i] = 0;
+	SDL_memset(stream, 0, buffer_len);
+
+	// adjust the sample size per frame that needs to be passed to SDL
+	if(buffer_len > apu->getBytesPerFrame()) {
+		buffer_len = apu->getBytesPerFrame();
 	}
+	apu->setBufferLength(buffer_len);
 
-	// SDL_PauseAudioDevice(apu->getDriverID(), 0);
+	// todo: params: stream, source,  AUDIO_S16SYS, len, volume
+	// SDL_MixAudioFormat(stream, merged_stream_data, AUDIO_S16SYS, )
 
-	for(int i = 0; i < buffer_len; i+=1) {
-		s32 merged_stream_data = 0;
-		s16 ch1 = 0;
+	for(int i = 0; i < buffer_len/2; i+=1) {
+		// s32 merged_stream_data = 0;
+		// s16 ch1 = 0;
 		
-		if(apu->getInternalBufferSize(0) > 0) {
-			ch1 = apu->getChannelStream(0, i);
-			merged_stream_data += ch1;
-			apu->popInternalBuffer(0);
-		}
+		// if(apu->getInternalBufferSize(0) > 0) {
+		// 	ch1 = apu->getChannelStream(0, i);
+		// 	merged_stream_data += ch1;
+		// 	apu->popInternalBuffer(0);
+		// }
 
+		s16 ch1 = apu->getChannelStream(0, i);
 		// s16 ch2 = apu->getChannelStream(1, i);
 		// s16 ch3 = apu->getChannelStream(2, i);
 		// s16 ch4 = apu->getChannelStream(3, i);
+
 		
-		// s32 merged_stream_data = ch1;// + ch2 + ch3 + ch4;
+		s32 merged_stream_data = ch1;// + ch2 + ch3 + ch4;
 		stream[i] = merged_stream_data;
 		sample_count++;
 	}
+	std::cout<<"stream:"<<buffer_len<<std::endl;
+	for(int i = 0; i < buffer_len/2; i++) {
+		std::cout<<stream[i]<<",";
+	}
+	std::cout<<std::endl<<"end stream"<<std::endl;
+
 }

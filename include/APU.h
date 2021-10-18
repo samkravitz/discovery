@@ -17,6 +17,7 @@
 #include <queue>
 #include "Memory.h"
 #include "Scheduler.h"
+#include "config.h"
 
 // Direct Sound modes
 constexpr int DS_MODE_DMA = 0;
@@ -24,7 +25,7 @@ constexpr int DS_MODE_INTERRUPT = 1;
 
 struct APU_Channel_Output {
 	// output
-	std::queue<s16> stream;
+	std::vector<s16> stream;
 	std::vector<s16> amplitude;
 
 	u16 sound_frequency;
@@ -93,7 +94,25 @@ class APU {
 
 	inline u32 getInternalBufferSize(u8);
 	inline void popInternalBuffer(u8);
+
+	/**
+	 * @return the number of samples that should be 
+	 * provided to SDL per frame (ie, per fraction of a second
+	 * based on current running speed of discovery)
+	 */
+	inline double getSamplesPerFrame(void);
+
+	/**
+	 * @return the size of the samples in bytes per frame,
+	 */
+	inline double getBytesPerFrame(void);
+
+	/**
+	 * @return the total size in bytes of the audio buffer
+	 */
+	inline double getAudioBufferSize(void);
 	
+	// PRIVATE DATA
 	private:
 
 	// dmg output control
@@ -108,14 +127,19 @@ class APU {
 	u8 direct_sound_ratio_B;
 
 	// system sound config
-	// amplitude -> ~volume
-	int AMPLITUDE = 14000;
+	// amplitude -> ~max volume
+	s16 AMPLITUDE = 14000;
 	
 	// sample rate (frequency) -> number of sample frames sent to the computer's sound device per second
-	int SAMPLE_RATE = 44100;
+	u32 SAMPLE_RATE = 44100;
 	
-	// buffer size -> the size of the audio buffer in sample frames
-	int BUFFER_SIZE = 4096;
+	/** num samples -> the number of sample frames (in the size of the audio buffer,
+	 *	divided by the number of channels)
+	 */ 
+	u16 NUM_SAMPLES = 4096;
+
+	// number of audio channels -> will always be 2
+	u8 NUM_CHANNELS = 2;
 
 	std::queue<s16> output_queue;
 	
@@ -123,7 +147,7 @@ class APU {
 	SDL_AudioDeviceID driver_id;
 	
 	int sample_size;
-	u16 buffer_len;
+	u16 BUFFER_LEN;
 
 	// apu enabled/disabled
 	bool is_enabled;

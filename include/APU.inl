@@ -1,7 +1,7 @@
 // apu inline methods
 
 inline s16 APU::getChannelStream(int channel_index, int buffer_index) {
-	return this->channel[channel_index].stream.front();
+	return this->channel[channel_index].stream[buffer_index];
 }
 
 // inline void APU::setChannelStream(int channel_index, u16 data_buffer_len, s16 *stream_data) {
@@ -26,11 +26,11 @@ inline void APU::setSampleRate(int val) {
 }
 
 inline int APU::getBufferSize() {
-	return this->BUFFER_SIZE;
+	return this->NUM_SAMPLES;
 }
 
 inline void APU::setBufferSize(int val) {
-	this->BUFFER_SIZE = val;
+	this->NUM_SAMPLES = val;
 }
 
 inline int APU::getSampleSize() {
@@ -42,11 +42,11 @@ inline void APU::setSampleSize(int val) {
 }
 
 inline u16 APU::getBufferLength() {
-	return this->buffer_len;
+	return this->BUFFER_LEN;
 }
 
 inline void APU::setBufferLength(u16 val) {
-	this->buffer_len = val;
+	this->BUFFER_LEN = val;
 }
 
 inline s8 APU::getDriverID() { 
@@ -62,5 +62,17 @@ inline u32 APU::getInternalBufferSize(u8 channel) {
 }
 
 inline void APU::popInternalBuffer(u8 channel) {
-	this->channel[channel].stream.pop();
+	this->channel[channel].stream.pop_back();
+}
+
+inline double APU::getSamplesPerFrame() {
+	return this->SAMPLE_RATE / config::framerate * 2;
+}
+
+inline double APU::getBytesPerFrame() {
+	return this->getSamplesPerFrame() * this->NUM_SAMPLES;
+}
+
+inline double APU::getAudioBufferSize() {
+	return this->getBytesPerFrame() * 10;
 }

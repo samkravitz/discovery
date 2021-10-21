@@ -29,7 +29,7 @@ T CircularBuffer<T>::front()
 {
   try 
   {
-    return this->data[this->front_];
+    return this->data[this->_front];
   }
   catch(...) 
   {
@@ -77,7 +77,7 @@ void CircularBuffer<T>::enqueue(T el)
   this->increment_rear(); 
   if(this->_cursor > this->_size)
   {
-    this->increment_head();
+    this->increment_front();
   } 
   this->data[this->_rear] = el;
 }

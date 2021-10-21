@@ -128,7 +128,7 @@ class APU {
 	/** num samples -> the number of sample frames (in the size of the audio buffer,
 	 *	divided by the number of channels)
 	 */ 
-	s16 NUM_SAMPLES = 4096;
+	u16 NUM_SAMPLES = 4096;
 
 	// number of audio channels -> will always be 2
 	u8 NUM_CHANNELS = 2;

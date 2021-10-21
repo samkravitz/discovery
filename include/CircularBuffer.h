@@ -65,7 +65,7 @@ class CircularBuffer {
 
   s16 _front, _rear, _cursor;
   
-  std::unique_ptr<T> data;
+  T *data;
 
   void increment_front(void);
 
@@ -73,3 +73,9 @@ class CircularBuffer {
   
 };
 
+// compile a template for AUDIO_S16 sound buffers
+// eventually this might need to be changed
+// to accomodate other driver types
+// see https://wiki.libsdl.org/SDL_AudioFormat
+// for all types
+template class CircularBuffer<s16>;

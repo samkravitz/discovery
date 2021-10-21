@@ -9,14 +9,14 @@
  */
 
 #include <cmath>
-#include "Arm7Tdmi.h"
+#include "Arm7.h"
 
 /*
  *
  * 
  * 
  */
-void Arm7Tdmi::swiSoftReset()
+void Arm7::swiSoftReset()
 {
     
 }
@@ -37,7 +37,7 @@ void Arm7Tdmi::swiSoftReset()
  * The function always switches the screen into forced blank by setting DISPCNT=0080h
  * (regardless of incoming R0, screen becomes white).
  */
-void Arm7Tdmi::swiRegisterRamReset()
+void Arm7::swiRegisterRamReset()
 {
     u8 flags = getRegister(r0) & 0xFF;
 
@@ -103,7 +103,7 @@ void Arm7Tdmi::swiRegisterRamReset()
  * 
  * Halts execution until a VBlank interrupt arises
  */
-void Arm7Tdmi::swiVBlankIntrWait()
+void Arm7::swiVBlankIntrWait()
 {
     // force interrupts to be enabled
     // mem->write32Unsafe(REG_IME, 0x1);
@@ -134,7 +134,7 @@ void Arm7Tdmi::swiVBlankIntrWait()
  * r1 - number MOD denom, signed
  * r3 - abs(number DIV) denom, unsigned
  */
-void Arm7Tdmi::swiDivision()
+void Arm7::swiDivision()
 {
     s32 num   = (s32) getRegister(r0);
     s32 denom = (s32) getRegister(r1);
@@ -158,7 +158,7 @@ void Arm7Tdmi::swiDivision()
  * return:
  * r0 - u16 result
  */
-void Arm7Tdmi::swiSqrt()
+void Arm7::swiSqrt()
 {
     u32 num    = getRegister(r0);
     u16 result = (u16) sqrt(num);
@@ -174,7 +174,7 @@ void Arm7Tdmi::swiSqrt()
  * return:
  * r0 - 0x0000 - 0xFFFF for 0 <= theta <= 2π
  */
-void Arm7Tdmi::swiArctan2()
+void Arm7::swiArctan2()
 {
     s16 x = getRegister(r0);
     s16 y = getRegister(r1);
@@ -189,7 +189,7 @@ void Arm7Tdmi::swiArctan2()
     setRegister(r0, (u16) result);
 }
 
-void Arm7Tdmi::swiCpuSet()
+void Arm7::swiCpuSet()
 {
     u32 src_ptr  = getRegister(r0);
     u32 dest_ptr = getRegister(r1);
@@ -248,7 +248,7 @@ void Arm7Tdmi::swiCpuSet()
 /*
  * ObjAffineSet
  */
-void Arm7Tdmi::swiObjAffineSet()
+void Arm7::swiObjAffineSet()
 {
     //return;
     u32 src_ptr          = getRegister(r0);
@@ -301,7 +301,7 @@ void Arm7Tdmi::swiObjAffineSet()
  *      8bit   Width of Destination Units in bits (only 1,2,4,8,16,32 supported)
  *      32bit  Data Offset (Bit 0-30), and Zero Data Flag (Bit 31)
  */
-void Arm7Tdmi::swiBitUnpack()
+void Arm7::swiBitUnpack()
 {
     u32 src_ptr     = getRegister(r0);
     u32 dest_ptr    = getRegister(r1) & ~0x3;
@@ -388,7 +388,7 @@ void Arm7Tdmi::swiBitUnpack()
     // std::cout << "dest_width: " << (int) dest_width << "\n";
 }
 
-void Arm7Tdmi::swiRLUnCompVRAM()
+void Arm7::swiRLUnCompVRAM()
 {
     u32 src_ptr, dest_ptr;
     src_ptr  = getRegister(r0) & ~0x3; // word aligned

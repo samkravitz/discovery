@@ -11,11 +11,12 @@
 
 template <typename T>
 CircularBuffer<T>::CircularBuffer(size_t size):
-size(size),
-data(new T[size]]),
-front(-1),
-rear(-1)
-{}
+_size(size),
+data(new T[size])
+{
+  this->_front = -1;
+  this->_rear = -1;
+}
 
 template <typename T>
 CircularBuffer<T>::~CircularBuffer()
@@ -39,7 +40,7 @@ T CircularBuffer<T>::front()
 template <typename T>
 s16 CircularBuffer<T>::fronti()
 {
-  return this->front;
+  return this->_front;
 }
 
 
@@ -48,7 +49,7 @@ T CircularBuffer<T>::rear()
 {
   try
   {
-    return this->data[this->rear_];
+    return this->data[this->_rear];
   }
   catch(...)
   {
@@ -60,24 +61,24 @@ T CircularBuffer<T>::rear()
 template <typename T>
 s16 CircularBuffer<T>::reari() 
 {
-  return this->rear_;
+  return this->_rear;
 }
 
 template <typename T>
 size_t CircularBuffer<T>::size()
 {
-  return this->size_;
+  return this->_size;
 }
 
 template <typename T>
 void CircularBuffer<T>::enqueue(T el) 
 {
   this->increment_rear(); 
-  if(this->cursor > this->size_)
+  if(this->_cursor > this->_size)
   {
     this->increment_head();
   } 
-  this->data[this->rear_] = el;
+  this->data[this->_rear] = el;
 }
 
 template <typename T>
@@ -109,7 +110,7 @@ bool CircularBuffer<T>::is_empty()
 template <typename T>
 bool CircularBuffer<T>::is_full()
 {
-  return (this->cursor == this->_size);
+  return (this->_cursor == this->_size);
 }
 
 template <typename T>
@@ -121,20 +122,20 @@ T CircularBuffer<T>::at(s16 index)
 template <typename T>
 void CircularBuffer<T>::increment_front() 
 {
-  if(this->cursor > 0) 
+  if(this->_cursor > 0) 
   {
-    this->front += 1;
-    this->cursor -= 1;
+    this->_front += 1;
+    this->_cursor -= 1;
   }
-  if(this->front == this->size) this->front = 0;
+  if(this->_front == this->_size) this->_front = 0;
 }
 
 template <typename T>
 void CircularBuffer<T>::increment_rear() 
 {
-  this->rear += 1;
-  this->cursor += 1;
-  if(this->rear == this->size) this->rear = 0;
+  this->_rear += 1;
+  this->_cursor += 1;
+  if(this->_rear == this->_size) this->_rear = 0;
 }
 
 

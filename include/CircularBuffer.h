@@ -7,6 +7,8 @@
  * Description: CircularBuffer for audio
  */
 
+#pragma once
+
 #include "common.h"
 #include <string>
 

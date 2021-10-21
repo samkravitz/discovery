@@ -11,7 +11,7 @@
 
 #include <vector>
 
-#include "Arm7Tdmi.h"
+#include "Arm7.h"
 #include "PPU.h"
 #include "APU.h"
 #include "Memory.h"
@@ -24,11 +24,11 @@ class Discovery
 public:
     Discovery();
 
-    Arm7Tdmi  *cpu;
+    Arm7      *cpu;
     PPU       *ppu;
     APU       *apu;
     Memory    *mem;
-    LcdStat   *lcdStat;
+    LcdStat   *stat;
     Gamepad   *gamepad;
     Timer     *timer;
     Scheduler *scheduler;

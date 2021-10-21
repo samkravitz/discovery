@@ -22,14 +22,14 @@ IRQ *irq;
 Discovery::Discovery()
 {
     gamepad   = new Gamepad();
-    lcdStat   = new LcdStat();
+    stat   = new LcdStat();
     scheduler = new Scheduler();
     timer     = new Timer(scheduler);
 
-    mem       = new Memory(lcdStat, timer, gamepad);
-    cpu       = new Arm7Tdmi(mem);
-    ppu       = new PPU(mem, lcdStat, scheduler);
-    apu       = new APU(mem, scheduler);
+    mem       = new Memory(stat, timer, gamepad);
+    cpu       = new Arm7(mem);
+    ppu       = new PPU(mem, stat, scheduler);
+    //apu     = new APU(mem);
     irq       = new IRQ();
 }
 
@@ -71,7 +71,7 @@ void Discovery::shutdown()
     delete ppu;
     delete apu;
     delete mem;
-    delete lcdStat;
+    delete stat;
     delete gamepad;
     delete timer;
     delete irq;
@@ -88,6 +88,7 @@ void Discovery::frame()
         // tick hardware (not cpu) if in halt state
         if (mem->haltcnt)
         {   
+            std::cout << "hi\n";
             while ((irq->getIE() & irq->getIF()) == 0)
 
             mem->haltcnt = 0;
@@ -107,7 +108,10 @@ void Discovery::frame()
 
         // run hardware for as many clock cycles as cpu used
         while (cycles_elapsed-- > 0)
+        {
             ++cycles;
+            ppu->tick();
+        }
     }
 
 }

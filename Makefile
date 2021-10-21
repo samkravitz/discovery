@@ -6,9 +6,11 @@ SOURCE = src
 INCLUDE = include
 BACKUPDIR = $(INCLUDE)/backup
 OBJ = \
-	Arm7Tdmi.o \
-	ArmISA.o \
+	APU.o \
+	Arm7.o \
+	arm_isa.o \
 	Watcher.o \
+  CircularBuffer.o \
 	config.o \
 	Discovery.o \
 	Flash.o \
@@ -21,11 +23,10 @@ OBJ = \
 	Scheduler.o \
 	SRAM.o \
 	swi.o \
-	ThumbISA.o \
+	thumb_isa.o \
 	Timer.o \
 	util.o \
 	dmath.o \
-  CircularBuffer.o \
 
 LIST = $(addprefix $(BIN)/, $(OBJ))
 VPATH = $(SOURCE) $(SOURCE)/backup

@@ -3,7 +3,7 @@
  * See LICENSE.txt for full license text
  * Author: Sam Kravitz
  * 
- * FILE: Arm7Tdmi.cpp
+ * FILE: Arm7.cpp
  * DATE: July 13, 2020
  * DESCRIPTION: Implementation of arm7tdmi functions
  */
@@ -11,7 +11,7 @@
 #include <iomanip>
 #include <cassert>
 
-#include "Arm7Tdmi.h"
+#include "Arm7.h"
 #include "IRQ.h"
 
 extern IRQ *irq;
@@ -21,7 +21,7 @@ extern IRQ *irq;
 
 int PRINT = 0;
 
-Arm7Tdmi::Arm7Tdmi(Memory *mem) : mem(mem)
+Arm7::Arm7(Memory *mem) : mem(mem)
 {
     registers = {0};               // zero out registers
     registers.r15 = 0x8000000;     // starting address of gamepak flash rom
@@ -51,7 +51,7 @@ Arm7Tdmi::Arm7Tdmi(Memory *mem) : mem(mem)
     #endif
 }
 
-Mode Arm7Tdmi::getMode()
+Mode Arm7::getMode()
 {
     switch (registers.cpsr.mode)
     {
@@ -63,12 +63,12 @@ Mode Arm7Tdmi::getMode()
         case 0b11111: return Mode::SYS;
         case 0b11011: return Mode::UND;
         default:
-            assert(!"Error: unrecognized mode in Arm7Tdmi::getMode");
+            assert(!"Error: unrecognized mode in Arm7::getMode");
             return (Mode) 0;
     } 
 }
 
-void Arm7Tdmi::setMode(Mode mode)
+void Arm7::setMode(Mode mode)
 {
     switch (mode)
     {
@@ -80,11 +80,11 @@ void Arm7Tdmi::setMode(Mode mode)
         case Mode::SYS: registers.cpsr.mode = 0b11111; break;
         case Mode::UND: registers.cpsr.mode = 0b11011; break;
         default:
-            assert(!"Error: unrecognized mode in Arm7Tdmi::setMode");
+            assert(!"Error: unrecognized mode in Arm7::setMode");
     }
 }
 
-u8 Arm7Tdmi::getConditionCodeFlag(ConditionFlag flag)
+u8 Arm7::getConditionCodeFlag(ConditionFlag flag)
 {
     switch (flag)
     {
@@ -93,12 +93,12 @@ u8 Arm7Tdmi::getConditionCodeFlag(ConditionFlag flag)
         case ConditionFlag::C: return registers.cpsr.c;
         case ConditionFlag::V: return registers.cpsr.v;
         default:
-            assert(!"Error: unrecognized flag in Arm7Tdmi::getFlag");
+            assert(!"Error: unrecognized flag in Arm7::getFlag");
             return -1;
     }
 }
 
-void Arm7Tdmi::setConditionCodeFlag(ConditionFlag flag, u8 bit)
+void Arm7::setConditionCodeFlag(ConditionFlag flag, u8 bit)
 {
     // bit can only be 0 or 1
     if (bit > 1)
@@ -114,12 +114,12 @@ void Arm7Tdmi::setConditionCodeFlag(ConditionFlag flag, u8 bit)
         case ConditionFlag::C: registers.cpsr.c = bit; break;
         case ConditionFlag::V: registers.cpsr.v = bit; break;
         default:
-            assert(!"Error: unrecognized flag in Arm7Tdmi::setConditionCodeFlag");
+            assert(!"Error: unrecognized flag in Arm7::setConditionCodeFlag");
     }
 }
 
 // determine if the condition field of an instruction is true, given the state of the CPSR
-bool Arm7Tdmi::conditionMet(Condition condition)
+bool Arm7::conditionMet(Condition condition)
 {
     switch (condition)
     {
@@ -139,12 +139,12 @@ bool Arm7Tdmi::conditionMet(Condition condition)
         case Condition::LE: return getConditionCodeFlag(ConditionFlag::Z) || (getConditionCodeFlag(ConditionFlag::N) != getConditionCodeFlag(ConditionFlag::V));  // Z set OR (N not equal to V)
         case Condition::AL: return true; // always
         default: // should never happen
-            assert(!"Error: unrecognized condition in Arm7Tdmi::conditionMet");
+            assert(!"Error: unrecognized condition in Arm7::conditionMet");
             return false;
     }
 }
 
-void Arm7Tdmi::fetch()
+void Arm7::fetch()
 {
     if (!pipeline_full)
     {
@@ -152,14 +152,14 @@ void Arm7Tdmi::fetch()
         switch (getState())
         {
             case State::ARM:
-                pipeline[0] = read32(registers.r15, false); registers.r15 += 4;
-                pipeline[1] = read32(registers.r15, false); registers.r15 += 4;
-                pipeline[2] = read32(registers.r15, false);
+                pipeline[0] = read32(registers.r15); registers.r15 += 4;
+                pipeline[1] = read32(registers.r15); registers.r15 += 4;
+                pipeline[2] = read32(registers.r15);
                 break;
             case State::THUMB:
-                pipeline[0] = read16(registers.r15, false); registers.r15 += 2;
-                pipeline[1] = read16(registers.r15, false); registers.r15 += 2;
-                pipeline[2] = read16(registers.r15, false);
+                pipeline[0] = read16(registers.r15); registers.r15 += 2;
+                pipeline[1] = read16(registers.r15); registers.r15 += 2;
+                pipeline[2] = read16(registers.r15);
                 break;
         }
 
@@ -170,17 +170,17 @@ void Arm7Tdmi::fetch()
     switch (getState())
     {
         case State::ARM:
-            pipeline[2] = read32(registers.r15, false);
+            pipeline[2] = read32(registers.r15);
             break;
         case State::THUMB:
-            pipeline[2] = (u16) read16(registers.r15, false);
+            pipeline[2] = read16(registers.r15);
             break;
     }
 }
 
-void Arm7Tdmi::decode() { }
+void Arm7::decode() { }
 
-int Arm7Tdmi::execute(u32 instruction)
+int Arm7::execute(u32 instruction)
 {
     cycles = 0;
 
@@ -222,8 +222,8 @@ int Arm7Tdmi::execute(u32 instruction)
             break;
 
         case State::THUMB:
-            u16 instr = (u16) instruction;
-            switch(util::getInstructionFormat((u16) instruction))
+            u16 instr = static_cast<u16>(instruction);
+            switch(util::getInstructionFormat(instr))
             {
                 case ThumbInstruction::MSR:    moveShiftedRegister(instr);     break;
                 case ThumbInstruction::ADDSUB: addSubtract(instr);             break;
@@ -261,7 +261,7 @@ int Arm7Tdmi::execute(u32 instruction)
     return cycles;
 }
 
-u32 Arm7Tdmi::getRegister(u32 reg)
+u32 Arm7::getRegister(u32 reg)
 {
     switch (reg)
     {
@@ -345,15 +345,15 @@ u32 Arm7Tdmi::getRegister(u32 reg)
             }
             break;
         default:
-            assert(!"Error: unknown register in Arm7Tdmi::getRegister");
+            assert(!"Error: unknown register in Arm7::getRegister");
             return -1;
     }
 
-    assert(!"Error: unknown register in Arm7Tdmi::getRegister");
+    assert(!"Error: unknown register in Arm7::getRegister");
     return -1;
 }
 
-void Arm7Tdmi::setRegister(u32 reg, u32 val)
+void Arm7::setRegister(u32 reg, u32 val)
 {
     switch (reg)
     {
@@ -478,12 +478,12 @@ void Arm7Tdmi::setRegister(u32 reg, u32 val)
         case r15:  registers.r15      = val; break; // all banks share r15
         case cpsr: registers.cpsr.raw = val; break; // all banks share cpsr
         default:
-            assert(!"Error: unknown register in Arm7Tdmi::setRegister");
+            assert(!"Error: unknown register in Arm7::setRegister");
     }
 }
 
 // update cpsr flags after a logical operation
-void Arm7Tdmi::updateFlagsLogical(u32 result, u8 carry_out)
+void Arm7::updateFlagsLogical(u32 result, u8 carry_out)
 {
     // C flag will be set to the carry out from the barrel shifter
     setConditionCodeFlag(ConditionFlag::C, carry_out);
@@ -498,7 +498,7 @@ void Arm7Tdmi::updateFlagsLogical(u32 result, u8 carry_out)
 }
 
 // update cpsr flags after an addition operation
-void Arm7Tdmi::updateFlagsAddition(u32 op1, u32 op2, u32 result)
+void Arm7::updateFlagsAddition(u32 op1, u32 op2, u32 result)
 {
     // C flag will be set to the carry out of bit 31 of the ALU
     if (op1 > result || op2 > result)
@@ -528,7 +528,7 @@ void Arm7Tdmi::updateFlagsAddition(u32 op1, u32 op2, u32 result)
 }
 
 // update cpsr flags after a subtraction operation
-void Arm7Tdmi::updateFlagsSubtraction(u32 op1, u32 op2, u32 result)
+void Arm7::updateFlagsSubtraction(u32 op1, u32 op2, u32 result)
 {
     // C flag will be set to the carry out of bit 31 of the ALU
     // ARM uses an inverted carry flag for borrow
@@ -567,7 +567,7 @@ void Arm7Tdmi::updateFlagsSubtraction(u32 op1, u32 op2, u32 result)
  *  num - the number that will actually be shifted
  *  opcode - an encoding of which type of shift to be performed
  */
-u8 Arm7Tdmi::barrelShift(u32 shift_amount, u32 &num, u8 opcode)
+u8 Arm7::barrelShift(u32 shift_amount, u32 &num, u8 opcode)
 {
     u8 carry_out = getConditionCodeFlag(ConditionFlag::C); // preserve C flag
 
@@ -649,7 +649,7 @@ u8 Arm7Tdmi::barrelShift(u32 shift_amount, u32 &num, u8 opcode)
     return carry_out;
 }
 
-inline void Arm7Tdmi::incrementPC()
+inline void Arm7::incrementPC()
 {
     registers.r15 += getState() == State::ARM ? 4 : 2;
 }
@@ -658,7 +658,7 @@ inline void Arm7Tdmi::incrementPC()
  * Updates the value in the cpsr
  * Can also change the emulator's state or mode depending on the value
  */ 
-void Arm7Tdmi::updateCPSR(u32 value, bool flags_only)
+void Arm7::updateCPSR(u32 value, bool flags_only)
 {
     StatusRegister sr;
     sr.raw = value;
@@ -688,7 +688,7 @@ void Arm7Tdmi::updateCPSR(u32 value, bool flags_only)
 /*
  * Updates the value in the spsr <mode>
  */ 
-void Arm7Tdmi::updateSPSR(u32 value, bool flags_only)
+void Arm7::updateSPSR(u32 value, bool flags_only)
 {
     StatusRegister old_spsr;
 
@@ -746,7 +746,7 @@ void Arm7Tdmi::updateSPSR(u32 value, bool flags_only)
 // advances the cpu clock
 // address is the current access address
 // type is the cycle type, either 'n', 's', or 'i'
-void Arm7Tdmi::tick(u8 n, u8 s, u8 i)
+void Arm7::tick(u8 n, u8 s, u8 i)
 {
     u16 access_cycles = 0;
 
@@ -766,7 +766,7 @@ void Arm7Tdmi::tick(u8 n, u8 s, u8 i)
     cycles += access_cycles;
 }
 
-void Arm7Tdmi::handleInterrupt()
+void Arm7::handleInterrupt()
 {
     // exit interrupt
     if (in_interrupt && getRegister(r15) == 0x138)
@@ -905,7 +905,7 @@ void Arm7Tdmi::handleInterrupt()
 }
 int i = 0xFFFF;
 
-u8 Arm7Tdmi::read8(u32 address)
+u32 Arm7::read8(u32 address)
 {
     // reading from BIOS memory
     if (address <= 0x3FFF && registers.r15 > 0x3FFF)
@@ -955,7 +955,7 @@ u8 Arm7Tdmi::read8(u32 address)
  * pass true if the halfword is signed, false otherwise
  * This needs to be known for misalignment reasons
  */
-u32 Arm7Tdmi::read16(u32 address, bool sign)
+u32 Arm7::read16(u32 address, bool sign)
 {
     // reading from BIOS memory
     if (address <= 0x3FFF && registers.r15 > 0x3FFF)
@@ -1014,7 +1014,7 @@ u32 Arm7Tdmi::read16(u32 address, bool sign)
         case REG_DMA3SAD:
         case REG_DMA3DAD:
         case REG_DMA3CNT:
-            log(LogLevel::Error, "Invalid read from BIOS u166\n");
+            log(LogLevel::Error, "Invalid read from u16 mmio\n");
             return 0;
     }
 
@@ -1030,12 +1030,6 @@ u32 Arm7Tdmi::read16(u32 address, bool sign)
                 break;
         }
     }
-
-    // if (!mem_check_read(address))
-    // {
-    //     std::cout << "mem check u16 failed " << std::hex << address << "\n";
-    //     //return last_read_bios & 0xFFFFFF;
-    // }
 
     u32 data;
 
@@ -1075,7 +1069,7 @@ u32 Arm7Tdmi::read16(u32 address, bool sign)
  * pass true if this is a LDR or SWP operation false otherwise
  * This needs to be known for misalignment reasons
  */
-u32 Arm7Tdmi::read32(u32 address, bool ldr)
+u32 Arm7::read32(u32 address, bool ldr)
 {
     // reading from BIOS memory
     if (address <= 0x3FFF)
@@ -1131,7 +1125,7 @@ u32 Arm7Tdmi::read32(u32 address, bool ldr)
 }
 
 
-void Arm7Tdmi::write8(u32 address, u8 value)
+void Arm7::write8(u32 address, u8 value)
 {
     if (!memCheckWrite(address)) return;
 
@@ -1188,7 +1182,7 @@ void Arm7Tdmi::write8(u32 address, u8 value)
     mem->write8(address, value);
 }
 
-void Arm7Tdmi::write16(u32 address, u16 value)
+void Arm7::write16(u32 address, u16 value)
 {
     // align address to halfword
     address &= ~0x1;
@@ -1197,7 +1191,7 @@ void Arm7Tdmi::write16(u32 address, u16 value)
     mem->write16(address, value);
 }
 
-void Arm7Tdmi::write32(u32 address, u32 value)
+void Arm7::write32(u32 address, u32 value)
 {
     // align address to word
     address &= ~0x3;
@@ -1211,7 +1205,7 @@ void Arm7Tdmi::write32(u32 address, u32 value)
 }
 
 // determine if a read at the specified address is allowed
-inline bool Arm7Tdmi::memCheckRead(u32 &address)
+inline bool Arm7::memCheckRead(u32 &address)
 {
     // upper 4 bits of address bus are unused
     // if (address >= 0x10000000)
@@ -1250,7 +1244,7 @@ inline bool Arm7Tdmi::memCheckRead(u32 &address)
 }
 
 // determine if a write at the specified address is allowed
-inline bool Arm7Tdmi::memCheckWrite(u32 &address)
+inline bool Arm7::memCheckWrite(u32 &address)
 {
     // upper 4 bits of address bus are unused, so mirror it if trying to access
     if (address >= 0x10000000)
@@ -1269,7 +1263,7 @@ inline bool Arm7Tdmi::memCheckWrite(u32 &address)
     return true;
 }
 
-bool Arm7Tdmi::checkState()
+bool Arm7::checkState()
 {
     bool valid = false;
 
@@ -1288,41 +1282,37 @@ bool Arm7Tdmi::checkState()
     return valid;
 }
 
-void Arm7Tdmi::print() {
-    std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << getRegister(0) << 
-				" -- R4  : 0x" << std::setw(8) << std::setfill('0') << getRegister(4) << 
-				" -- R8  : 0x" << std::setw(8) << std::setfill('0') << getRegister(8) << 
-				" -- R12 : 0x" << std::setw(8) << std::setfill('0') << getRegister(12) << "\n";
+void Arm7::print() {
+std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << getRegister(0) << 
+            " -- R4  : 0x" << std::setw(8) << std::setfill('0') << getRegister(4) << 
+            " -- R8  : 0x" << std::setw(8) << std::setfill('0') << getRegister(8) << 
+            " -- R12 : 0x" << std::setw(8) << std::setfill('0') << getRegister(12) << "\n";
 
-			std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << getRegister(1) << 
-				" -- R5  : 0x" << std::setw(8) << std::setfill('0') << getRegister(5) << 
-				" -- R9  : 0x" << std::setw(8) << std::setfill('0') << getRegister(9) << 
-				" -- R13 : 0x" << std::setw(8) << std::setfill('0') << getRegister(13) << "\n";
+        std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << getRegister(1) << 
+            " -- R5  : 0x" << std::setw(8) << std::setfill('0') << getRegister(5) << 
+            " -- R9  : 0x" << std::setw(8) << std::setfill('0') << getRegister(9) << 
+            " -- R13 : 0x" << std::setw(8) << std::setfill('0') << getRegister(13) << "\n";
 
-			std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << getRegister(2) << 
-				" -- R6  : 0x" << std::setw(8) << std::setfill('0') << getRegister(6) << 
-				" -- R10 : 0x" << std::setw(8) << std::setfill('0') << getRegister(10) << 
-				" -- R14 : 0x" << std::setw(8) << std::setfill('0') << getRegister(14) << "\n";
+        std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << getRegister(2) << 
+            " -- R6  : 0x" << std::setw(8) << std::setfill('0') << getRegister(6) << 
+            " -- R10 : 0x" << std::setw(8) << std::setfill('0') << getRegister(10) << 
+            " -- R14 : 0x" << std::setw(8) << std::setfill('0') << getRegister(14) << "\n";
 
-			std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << getRegister(3) << 
-				" -- R7  : 0x" << std::setw(8) << std::setfill('0') << getRegister(7) << 
-				" -- R11 : 0x" << std::setw(8) << std::setfill('0') << getRegister(11) << 
-				" -- R15 : 0x" << std::setw(8) << std::setfill('0') << getRegister(15) << "\n";
+        std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << getRegister(3) << 
+            " -- R7  : 0x" << std::setw(8) << std::setfill('0') << getRegister(7) << 
+            " -- R11 : 0x" << std::setw(8) << std::setfill('0') << getRegister(11) << 
+            " -- R15 : 0x" << std::setw(8) << std::setfill('0') << getRegister(15) << "\n";
 
-	
-			std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << registers.cpsr.raw << "\t";
-            if (getConditionCodeFlag(ConditionFlag::N))
-                std::cout << "N";
-            if (getConditionCodeFlag(ConditionFlag::Z))
-                std::cout << "Z";
-            if (getConditionCodeFlag(ConditionFlag::C))
-                std::cout << "C";
-            if (getConditionCodeFlag(ConditionFlag::V))
-                std::cout << "V";
-            std::cout << "\n";
-            //std:: cout << std::dec << ii << " instructions\n";
-    }
 
-// #include "HandlerArm.cpp"
-// #include "HandlerThumb.cpp"
-// #include "swi.cpp"
+        std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << registers.cpsr.raw << "\t";
+        if (getConditionCodeFlag(ConditionFlag::N))
+            std::cout << "N";
+        if (getConditionCodeFlag(ConditionFlag::Z))
+            std::cout << "Z";
+        if (getConditionCodeFlag(ConditionFlag::C))
+            std::cout << "C";
+        if (getConditionCodeFlag(ConditionFlag::V))
+            std::cout << "V";
+        std::cout << "\n";
+        //std:: cout << std::dec << ii << " instructions\n";
+}

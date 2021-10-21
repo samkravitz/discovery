@@ -84,9 +84,6 @@ class APU {
 	inline int getBufferSize(void);
 	inline void setBufferSize(int);
 
-	inline int getSampleSize(void);
-	inline void setSampleSize(int);
-
 	inline u16 getBufferLength(void);
 	inline void setBufferLength(u16);
 
@@ -116,28 +113,37 @@ class APU {
 	// PRIVATE DATA
 	private:
 
-	// the APU audio buffer
-
 	// system sound config
 	// amplitude -> ~max volume
 	s16 AMPLITUDE = 14000;
 	
-	// sample rate (frequency) -> number of sample frames sent to the computer's sound device per second
+	// sample rate (samples / second) -> number of sample frames sent to the computer's sound device per second
 	u32 SAMPLE_RATE = 44100;
 	
-	/** num samples -> the number of sample frames (in the size of the audio buffer,
+	/** num samples (count) -> the number of sample frames (in the size of the audio buffer,
 	 *	divided by the number of channels)
 	 */ 
 	u16 NUM_SAMPLES = 4096;
 
-	// number of audio channels -> will always be 2
+	// number of audio channels (count) -> will always be 2
 	u8 NUM_CHANNELS = 2;
+
+	// sample size (bytes / sample)
+	size_t SAMPLE_SIZE = sizeof(s16) * 2;
+
+	// buffer size (bytes)
+	size_t BUFFER_SIZE = SAMPLE_RATE * SAMPLE_SIZE;
 
 	u16 BUFFER_LEN;
 
+	// sdl id of driver currently in use
 	SDL_AudioDeviceID driver_id;
 
+	// the APU's circular audio buffer
 	CircularBuffer<s16> *audio_buffer;
+
+	// current sample index
+	int audio_sample_index;
 
 	// dmg output control
 	u8 dmg_left_volume;
@@ -153,8 +159,6 @@ class APU {
 	// device audio driver
 	std::queue<s16> output_queue;
 	
-	int sample_size;
-
 	// apu enabled/disabled
 	bool is_enabled;
 

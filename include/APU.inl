@@ -33,14 +33,6 @@ inline void APU::setBufferSize(int val) {
 	this->NUM_SAMPLES = val;
 }
 
-inline int APU::getSampleSize() {
-	return this->sample_size;
-}
-
-inline void APU::setSampleSize(int val) {
-	this->sample_size = val;
-}
-
 inline u16 APU::getBufferLength() {
 	return this->BUFFER_LEN;
 }

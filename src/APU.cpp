@@ -24,7 +24,6 @@ APU::APU(Memory *mem, Scheduler *scheduler):
 mem(mem),
 scheduler(scheduler)
 {
-	this->audio_buffer = new CircularBuffer<s16>(this->NUM_SAMPLES);
 	SDL_Init(SDL_INIT_AUDIO);
 	std::cout<<"driver: "<<SDL_GetCurrentAudioDriver()<<std::endl;
 	
@@ -37,7 +36,10 @@ scheduler(scheduler)
 	requested.padding = 0;
 	requested.callback = sdlAudioCallback;
 	requested.userdata = this;
-	// this->audio_buffer = new CircularBuffer<s16>(sizeof(s16[this->NUM_SAMPLES]));
+
+	// initialize audio buffer
+	this->audio_buffer = new CircularBuffer<s16>(this->BUFFER_SIZE);
+	this->audio_sample_index = 0;
 
 	// this->setSampleSize(0);
 	// this->setBufferLength(buffer_len);
@@ -404,7 +406,7 @@ void APU::generateChannel2() {
 		};
 
 		// x[i] = A(i) * f(i);
-		this->sample_size += 1;
+		// this->sample_size += 1;
 	}
 
 	if(!Mt) {

@@ -25,6 +25,7 @@ OBJ = \
 	Timer.o \
 	util.o \
 	dmath.o \
+  CircularBuffer.o \
 
 LIST = $(addprefix $(BIN)/, $(OBJ))
 VPATH = $(SOURCE) $(SOURCE)/backup

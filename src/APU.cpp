@@ -23,7 +23,7 @@
 APU::APU(Memory *mem, Scheduler *scheduler):
 mem(mem),
 scheduler(scheduler),
-audio_buffer(this->NUM_SAMPLES)
+audio_buffer(new CircularBuffer<s16>(this->NUM_SAMPLES))
 {
 	SDL_Init(SDL_INIT_AUDIO);
 	std::cout<<"driver: "<<SDL_GetCurrentAudioDriver()<<std::endl;

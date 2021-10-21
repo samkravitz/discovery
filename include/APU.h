@@ -18,6 +18,7 @@
 #include "Memory.h"
 #include "Scheduler.h"
 #include "config.h"
+#include "CircularBuffer.h"
 
 // Direct Sound modes
 constexpr int DS_MODE_DMA = 0;
@@ -115,16 +116,7 @@ class APU {
 	// PRIVATE DATA
 	private:
 
-	// dmg output control
-	u8 dmg_left_volume;
-	bool vin_left_on;
-
-	u8 dmg_right_volume;
-	bool vin_right_on;
-
-	u8 channels_output_ratio;
-	u8 direct_sound_ratio_A;
-	u8 direct_sound_ratio_B;
+	// the APU audio buffer
 
 	// system sound config
 	// amplitude -> ~max volume
@@ -136,18 +128,32 @@ class APU {
 	/** num samples -> the number of sample frames (in the size of the audio buffer,
 	 *	divided by the number of channels)
 	 */ 
-	u16 NUM_SAMPLES = 4096;
+	s16 NUM_SAMPLES = 4096;
 
 	// number of audio channels -> will always be 2
 	u8 NUM_CHANNELS = 2;
 
+	u16 BUFFER_LEN;
+
+	SDL_AudioDeviceID driver_id;
+
+	CircularBuffer<s16> *audio_buffer;
+
+	// dmg output control
+	u8 dmg_left_volume;
+	bool vin_left_on;
+
+	u8 dmg_right_volume;
+	bool vin_right_on;
+
+	u8 channels_output_ratio;
+	u8 direct_sound_ratio_A;
+	u8 direct_sound_ratio_B;
+
+	// device audio driver
 	std::queue<s16> output_queue;
 	
-	// device audio driver
-	SDL_AudioDeviceID driver_id;
-	
 	int sample_size;
-	u16 BUFFER_LEN;
 
 	// apu enabled/disabled
 	bool is_enabled;

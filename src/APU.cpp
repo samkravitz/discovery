@@ -20,9 +20,10 @@
 #include "dmath.h"
 
 // construct APU with discovery memory management unit
-APU::APU(Memory *mem, Scheduler *scheduler)
-:mem(mem)
-,scheduler(scheduler)
+APU::APU(Memory *mem, Scheduler *scheduler):
+mem(mem),
+scheduler(scheduler),
+audio_buffer(this->NUM_SAMPLES)
 {
 	SDL_Init(SDL_INIT_AUDIO);
 	std::cout<<"driver: "<<SDL_GetCurrentAudioDriver()<<std::endl;
@@ -36,6 +37,7 @@ APU::APU(Memory *mem, Scheduler *scheduler)
 	requested.padding = 0;
 	requested.callback = sdlAudioCallback;
 	requested.userdata = this;
+	// this->audio_buffer = new CircularBuffer<s16>(sizeof(s16[this->NUM_SAMPLES]));
 
 	// this->setSampleSize(0);
 	// this->setBufferLength(buffer_len);

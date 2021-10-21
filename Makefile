@@ -6,11 +6,11 @@ SOURCE = src
 INCLUDE = include
 BACKUPDIR = $(INCLUDE)/backup
 OBJ = \
-	APU.o \
 	Arm7.o \
 	arm_isa.o \
 	Watcher.o \
   CircularBuffer.o \
+	APU.o \
 	config.o \
 	Discovery.o \
 	Flash.o \

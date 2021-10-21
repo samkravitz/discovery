@@ -417,14 +417,67 @@ void APU::generateChannel2() {
 	std::cout<<"generated channel 2"<<std::endl;
 }
 
-void APU::wait(double ms) {
+void APU::wait(double ms) 
+{
 	std::cout<<"waiting for ms: "<<ms<<std::endl;
 	SDL_Delay(u32(ms));
 }
 
-void APU::allocateChannelMemory() {
+void APU::bufferAudio() 
+{
+	// identify which section of the audio buffer needs to be written to
+	SDL_LockAudio();
+
+	// byte number to lock
+	int lock_byte = this->audio_sample_index * this->SAMPLE_SIZE % this->BUFFER_SIZE;
+
+	// number of bytes to write (length) -> calculate how many bytes are written
+	int n_write_bytes;
+	if(lock_byte == this->audio_buffer->cursori())
+	{
+		// write whole buffer
+		n_write_bytes = this->BUFFER_SIZE;
+	}
+	else if(lock_byte > this->audio_buffer->cursori())
+	{
+		// write buffer from the locked byte
+		n_write_bytes = this->BUFFER_SIZE - lock_byte;
+		n_write_bytes += this->audio_buffer->cursori();
+	}
+	else 
+	{
+		// write between cursor and locked byte
+		n_write_bytes = this->audio_buffer->cursori() - lock_byte;
+	}
+
+	// get buffers 0 and 1 to write to SDL audio stream
+	void *buffer_0 = (u8 *)this->audio_buffer->cursori() - lock_byte;
+	void *buffer_1 = this->audio_buffer->data();
+
+	// find buffer sizes
+	int buffer_0_size = n_write_bytes;
+	if(buffer_0_size + lock_byte > this->BUFFER_SIZE) 
+	{
+		buffer_0_size = this->BUFFER_SIZE - lock_byte;
+	}
+	int buffer_size_1 = n_write_bytes - buffer_0_size;
+	SDL_UnlockAudio();
+
+	// calculate number of samples in first buffer
+	int buffer_0_samples = buffer_0_size / this->SAMPLE_SIZE;
+
+	s16 *current_sample = (s16 *) buffer_0;
+
+	// generate samples from each channel, then the sdl callback will
+	// place copy the generated signal into its output stream
+
+}
+
+void APU::allocateChannelMemory() 
+{
 	// resize all streams
-	for(int i = 0; i < 4; i++) {
+	for(int i = 0; i < 4; i++) 
+	{
 		this->channel[i].stream.resize(this->BUFFER_LEN);
 		this->channel[i].amplitude.resize(this->NUM_SAMPLES);
 	}
@@ -432,52 +485,69 @@ void APU::allocateChannelMemory() {
 
 void sdlAudioCallback(void *_apu_ref, u8 *_stream_buffer, int _buffer_len) 
 {
+	// get apu and audio buffer from discovery
 	APU *apu = (APU*) _apu_ref;
+	CircularBuffer<s16> *audio_buffer = (CircularBuffer<s16> *) apu->getAudioBufferRef();
+
+	// 
 	s16 *stream = (s16*) _stream_buffer;
 	u16 buffer_len = _buffer_len;
 	u16 sample_count = 0;
 
-	
-	// initialize stream buffer to zero
-	apu->setBufferLength(buffer_len);
-	apu->allocateChannelMemory();
-
 	// silence actual stream
 	SDL_memset(stream, 0, buffer_len);
 
-	// adjust the sample size per frame that needs to be passed to SDL
-	if(buffer_len > apu->getBytesPerFrame()) {
-		buffer_len = apu->getBytesPerFrame();
+	// divide buffer into two sections
+	int buffer_size_0 =_buffer_len;
+	int buffer_size_1 = 0;
+
+	if((audio_buffer->cursori() + buffer_len) > audio_buffer->size()) {
+		buffer_size_0 = audio_buffer->size() - audio_buffer->cursori();
+		buffer_size_1 = buffer_len - buffer_size_0;
 	}
-	apu->setBufferLength(buffer_len);
+
+	memcpy(_stream_buffer, (u8 *)audio_buffer->data() + audio_buffer->cursori(), buffer_size_0);
+	memcpy(&_stream_buffer[buffer_size_1], audio_buffer->data(), buffer_size_1);
+	// adjust cursor?
+	std::cout<<"callback over"<<std::endl;
+
+	// // initialize stream buffer to zero
+	// apu->setBufferLength(buffer_len);
+	// apu->allocateChannelMemory();
+
+	// // adjust the sample size per frame that needs to be passed to SDL
+	// if(buffer_len > apu->getBytesPerFrame()) {
+	// 	buffer_len = apu->getBytesPerFrame();
+	// }
+	// apu->setBufferLength(buffer_len);
 
 	// todo: params: stream, source,  AUDIO_S16SYS, len, volume
 	// SDL_MixAudioFormat(stream, merged_stream_data, AUDIO_S16SYS, )
 
-	for(int i = 0; i < buffer_len/2; i+=1) {
-		// s32 merged_stream_data = 0;
-		// s16 ch1 = 0;
+	// for(int i = 0; i < buffer_len/2; i+=1) {
+	// 	// s32 merged_stream_data = 0;
+	// 	// s16 ch1 = 0;
 		
-		// if(apu->getInternalBufferSize(0) > 0) {
-		// 	ch1 = apu->getChannelStream(0, i);
-		// 	merged_stream_data += ch1;
-		// 	apu->popInternalBuffer(0);
-		// }
+	// 	// if(apu->getInternalBufferSize(0) > 0) {
+	// 	// 	ch1 = apu->getChannelStream(0, i);
+	// 	// 	merged_stream_data += ch1;
+	// 	// 	apu->popInternalBuffer(0);
+	// 	// }
 
-		s16 ch1 = apu->getChannelStream(0, i);
-		// s16 ch2 = apu->getChannelStream(1, i);
-		// s16 ch3 = apu->getChannelStream(2, i);
-		// s16 ch4 = apu->getChannelStream(3, i);
+	// 	s16 ch1 = apu->getChannelStream(0, i);
+	// 	// s16 ch2 = apu->getChannelStream(1, i);
+	// 	// s16 ch3 = apu->getChannelStream(2, i);
+	// 	// s16 ch4 = apu->getChannelStream(3, i);
 
 		
-		s32 merged_stream_data = ch1;// + ch2 + ch3 + ch4;
-		stream[i] = merged_stream_data;
-		sample_count++;
-	}
-	std::cout<<"stream:"<<buffer_len<<std::endl;
-	for(int i = 0; i < buffer_len/2; i++) {
-		std::cout<<stream[i]<<",";
-	}
-	std::cout<<std::endl<<"end stream"<<std::endl;
+	// 	s32 merged_stream_data = ch1;// + ch2 + ch3 + ch4;
+	// 	stream[i] = merged_stream_data;
+	// 	sample_count++;
+	// }
+	// std::cout<<"stream:"<<buffer_len<<std::endl;
+	// for(int i = 0; i < buffer_len/2; i++) {
+	// 	std::cout<<stream[i]<<",";
+	// }
+	// std::cout<<std::endl<<"end stream"<<std::endl;
 
 }

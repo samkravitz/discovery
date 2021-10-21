@@ -68,3 +68,7 @@ inline double APU::getBytesPerFrame() {
 inline double APU::getAudioBufferSize() {
 	return this->getBytesPerFrame() * 10;
 }
+
+inline CircularBuffer<s16> *APU::getAudioBufferRef() {
+	return this->audio_buffer;
+}

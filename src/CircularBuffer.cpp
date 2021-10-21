@@ -13,7 +13,7 @@
 template <typename T>
 CircularBuffer<T>::CircularBuffer(size_t size):
 _size(size),
-data(new T[size])
+_data(new T[size])
 {
   this->_front = -1;
   this->_rear = -1;
@@ -29,7 +29,7 @@ T CircularBuffer<T>::front()
 {
   try 
   {
-    return this->data[this->_front];
+    return this->_data[this->_front];
   }
   catch(...) 
   {
@@ -50,7 +50,7 @@ T CircularBuffer<T>::rear()
 {
   try
   {
-    return this->data[this->_rear];
+    return this->_data[this->_rear];
   }
   catch(...)
   {
@@ -72,6 +72,32 @@ size_t CircularBuffer<T>::size()
 }
 
 template <typename T>
+T CircularBuffer<T>::cursor() 
+{
+  try
+  {
+    return this->_data[this->_cursor];
+  }
+  catch(...)
+  {
+    std::cout << "Error accessing cursor" << std::endl;
+    exit(1);
+  }
+}
+
+template <typename T>
+s16 CircularBuffer<T>::cursori() 
+{
+  return this->_cursor;
+}
+
+template <typename T>
+size_t CircularBuffer<T>::size()
+{
+  return this->_size;
+}
+
+template <typename T>
 void CircularBuffer<T>::enqueue(T el) 
 {
   this->increment_rear(); 
@@ -79,7 +105,7 @@ void CircularBuffer<T>::enqueue(T el)
   {
     this->increment_front();
   } 
-  this->data[this->_rear] = el;
+  this->_data[this->_rear] = el;
 }
 
 template <typename T>
@@ -87,7 +113,6 @@ T CircularBuffer<T>::dequeue()
 {
   
 }
-
 
 template <typename T>
 void CircularBuffer<T>::fill(T)
@@ -117,7 +142,7 @@ bool CircularBuffer<T>::is_full()
 template <typename T>
 T CircularBuffer<T>::at(s16 index)
 {
-  return this->data[index];
+  return this->_data[index];
 }
 
 template <typename T>
@@ -137,6 +162,12 @@ void CircularBuffer<T>::increment_rear()
   this->_rear += 1;
   this->_cursor += 1;
   if(this->_rear == this->_size) this->_rear = 0;
+}
+
+template <typename T>
+T *CircularBuffer<T>::data() 
+{
+  return this->_data;
 }
 
 

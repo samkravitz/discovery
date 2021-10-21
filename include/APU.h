@@ -71,6 +71,9 @@ class APU {
 	// wait for sound to play for n seconds
 	void wait(double);
 
+	// buffer audio to internal circular buffer
+	void bufferAudio(void);
+
 	// inline system sound getters & setters
 	inline s16 getChannelStream(int, int);
 	inline void setChannelStream(int, u16, s16*);
@@ -92,6 +95,8 @@ class APU {
 
 	inline u32 getInternalBufferSize(u8);
 	inline void popInternalBuffer(u8);
+
+	inline CircularBuffer<s16> *getAudioBufferRef(void);
 
 	/**
 	 * @return the number of samples that should be 
@@ -159,8 +164,11 @@ class APU {
 	// device audio driver
 	std::queue<s16> output_queue;
 	
-	// apu enabled/disabled
+	// all apu circuits are enabled/disabled
 	bool is_enabled;
+
+	// apu is playing sound
+	bool is_playing;
 
 	// sound channels 1 - 4
 	struct APU_Channel_Output channel [4];

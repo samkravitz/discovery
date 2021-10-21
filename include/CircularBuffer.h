@@ -35,6 +35,12 @@ class CircularBuffer {
   // get rear index
   s16 reari(void);
 
+  // get element at cursor
+  T cursor(void);
+
+  // get cursor index
+  s16 cursori(void);
+
   // get size
   size_t size(void);
 
@@ -59,13 +65,16 @@ class CircularBuffer {
   // element at index
   T at(s16);
 
+  // access buffer data
+  T *data(void);
+
   private:
 
   size_t _size;
 
   s16 _front, _rear, _cursor;
   
-  T *data;
+  T *_data;
 
   void increment_front(void);
 

@@ -17,7 +17,6 @@ OBJ = \
 	Gamepad.o \
 	IRQ.o \
 	Memory.o \
-	APU.o \
 	None.o \
 	PPU.o \
 	Scheduler.o \
@@ -35,6 +34,12 @@ VPATH = $(SOURCE) $(SOURCE)/backup
 # run `make opt=1`
 ifdef opt
 CXXFLAGS += -Ofast
+endif
+
+# Use verbose output
+# run `make verbose=1`
+ifdef verbose
+CXXFLAGS += -Wall -pedantic
 endif
 
 all: discovery

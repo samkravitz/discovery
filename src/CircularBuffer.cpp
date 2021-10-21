@@ -8,6 +8,7 @@
  */
 
 #include "CircularBuffer.h"
+#include <iostream>
 
 template <typename T>
 CircularBuffer<T>::CircularBuffer(size_t size):

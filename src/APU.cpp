@@ -48,21 +48,24 @@ scheduler(scheduler)
 
 	this->mem->watcher->add(REG_SOUND1CNT_X, [this](u32 reg, u32 val) -> void {
 		std::cout << "REG_SOUND1CNT_X changed" << std::endl;
-		this->generateChannel1();
+		// this->generateChannel1();
+		this->bufferAudio();
 		// SDL_Delay(10);
 		// this->clearChannelStreams();
 	});
 
 	this->mem->watcher->add(REG_SOUND1CNT_L, [this](u32 reg, u32 val) -> void {
 		std::cout << "REG_SOUND1CNT_L changed" << std::endl;
-		this->generateChannel1();
+		// this->generateChannel1();
+		this->bufferAudio();
 		// SDL_Delay(10);
 		// this->clearChannelStreams();
 	});
 
 	this->mem->watcher->add(REG_SOUND1CNT_H, [this](u32 reg, u32 val) -> void {
 		std::cout << "REG_SOUND1CNT_H changed" << std::endl;
-		this->generateChannel1();
+		// this->generateChannel1();
+		this->bufferAudio();
 		// SDL_Delay(10);
 		// this->clearChannelStreams();
 	});
@@ -176,9 +179,7 @@ scheduler(scheduler)
 		this->is_enabled = util::bitseq<7, 7>(sound_cnt_x);
 	});
 
-	// enable SDL, calls audio callback function {SAMPLE_RATE} times / second
-	SDL_PauseAudioDevice(this->driver_id, 0);
-	std::cout << "SDL_SOUNDISPLAYING: " << SDL_AUDIO_PLAYING << std::endl;
+
 
 }
 
@@ -451,7 +452,7 @@ void APU::bufferAudio()
 	}
 
 	// get buffers 0 and 1 to write to SDL audio stream
-	void *buffer_0 = (u8 *)this->audio_buffer->cursori() - lock_byte;
+	void *buffer_0 = (u8 *)this->audio_buffer->data() + lock_byte;
 	void *buffer_1 = this->audio_buffer->data();
 
 	// find buffer sizes
@@ -468,8 +469,24 @@ void APU::bufferAudio()
 
 	s16 *current_sample = (s16 *) buffer_0;
 
+	int freq = 256;
+
 	// generate samples from each channel, then the sdl callback will
 	// place copy the generated signal into its output stream
+	for(int i = 0; i < buffer_0_samples; ++i) 
+	{
+		s16 val = (this->audio_sample_index++  % 2) ? this->AMPLITUDE : -1*this->AMPLITUDE;
+		*current_sample++ = val;
+		*current_sample++ = val;
+	}
+
+	if(!this->is_playing) 
+	{
+		// enable SDL, calls audio callback function {SAMPLE_RATE} times / second
+		SDL_PauseAudioDevice(this->driver_id, 0);
+		std::cout << "SDL_SOUNDISPLAYING: " << SDL_AUDIO_PLAYING << std::endl;
+		this->is_playing = true;
+	}
 
 }
 
@@ -498,7 +515,7 @@ void sdlAudioCallback(void *_apu_ref, u8 *_stream_buffer, int _buffer_len)
 	SDL_memset(stream, 0, buffer_len);
 
 	// divide buffer into two sections
-	int buffer_size_0 =_buffer_len;
+	int buffer_size_0 = buffer_len;
 	int buffer_size_1 = 0;
 
 	if((audio_buffer->cursori() + buffer_len) > audio_buffer->size()) {
@@ -508,8 +525,10 @@ void sdlAudioCallback(void *_apu_ref, u8 *_stream_buffer, int _buffer_len)
 
 	memcpy(_stream_buffer, (u8 *)audio_buffer->data() + audio_buffer->cursori(), buffer_size_0);
 	memcpy(&_stream_buffer[buffer_size_1], audio_buffer->data(), buffer_size_1);
+	audio_buffer->__set_cursor_unsafe(audio_buffer->cursori() + buffer_len);
+	audio_buffer->__set_rear_unsafe(audio_buffer->cursori() + apu->getSampleCount());
+	
 	// adjust cursor?
-	std::cout<<"callback over"<<std::endl;
 
 	// // initialize stream buffer to zero
 	// apu->setBufferLength(buffer_len);

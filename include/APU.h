@@ -85,7 +85,8 @@ class APU {
 	inline void setSampleRate(int);
 
 	inline int getBufferSize(void);
-	inline void setBufferSize(int);
+
+	inline int getSampleCount(void);
 
 	inline u16 getBufferLength(void);
 	inline void setBufferLength(u16);
@@ -120,7 +121,7 @@ class APU {
 
 	// system sound config
 	// amplitude -> ~max volume
-	s16 AMPLITUDE = 14000;
+	s16 AMPLITUDE = 3000;
 	
 	// sample rate (samples / second) -> number of sample frames sent to the computer's sound device per second
 	u32 SAMPLE_RATE = 44100;

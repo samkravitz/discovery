@@ -26,11 +26,11 @@ inline void APU::setSampleRate(int val) {
 }
 
 inline int APU::getBufferSize() {
-	return this->NUM_SAMPLES;
+	return this->BUFFER_SIZE;
 }
 
-inline void APU::setBufferSize(int val) {
-	this->NUM_SAMPLES = val;
+inline int APU::getSampleCount() {
+	return this->NUM_SAMPLES;
 }
 
 inline u16 APU::getBufferLength() {

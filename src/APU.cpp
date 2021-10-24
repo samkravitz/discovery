@@ -86,9 +86,15 @@ scheduler(scheduler)
 
 	// select primary sound driver, nullptr here selects system default
 	this->driver_id = SDL_OpenAudioDevice(nullptr, 0, &requested, &obtained, SDL_AUDIO_ALLOW_ANY_CHANGE);
-	if(this->driver_id <= 0) std::cout << "SDL Error: " << SDL_GetError() << std::endl;	
-	
-	this->mem->watcher->add(REG_SOUNDCNT_L, [this](u32 reg, u32 val) -> void {
+	if(this->driver_id <= 0) std::cout << "SDL Error: " << SDL_GetError() << std::endl;
+
+	this->watch(REG_TM0D, [this](u32, u32 val) -> void {
+		std::cout<<"REG_TM0D changed" << std::endl;
+	});
+
+
+	// REG_SOUNDCNT_L
+	this->watch(REG_SOUNDCNT_L, [this](u32 reg, u32 val) -> void {
 		// parse REG_SOUNDCNT_L
 		// 2-0: DMG Left Volume
 		// 3: Vin to Left on/off (?)
@@ -103,6 +109,7 @@ scheduler(scheduler)
 		// E: DMG Sound 3 to right output
 		// F: DMG Sound 4 to right output 
 		
+		// rewrite to not call read16
 		u16 sound_cnt_l = this->mem->read16(REG_SOUNDCNT_L);
 
 		this->dmg_left_volume = util::bitseq<2,0>(sound_cnt_l);
@@ -124,7 +131,8 @@ scheduler(scheduler)
 		this->channel[3].use_right_output = (bool) util::bitseq<0xF, 0xF>(sound_cnt_l);
 	});
 
-	this->mem->watcher->add(REG_SOUNDCNT_H, [this](u32 reg, u32 val) -> void {
+	// REG_SOUNDCNT_H
+	this->watch(REG_SOUNDCNT_H, [this](u32 reg, u32 val) -> void {
 		// 1-0: Output sound ratio for chan.1-4 (0=25%,1=50%,2=100%)
 		// 2: Direct sound A output ratio (0=50%, 1=100%)
 		// 3: Direct sound B output ratio (0=50%, 1=100%)
@@ -156,9 +164,13 @@ scheduler(scheduler)
 		this->direct_sound[1].use_left_output = util::bitseq<0xD, 0xD>(sound_cnt_h);
 		this->direct_sound[1].sample_rate_timer = util::bitseq<0xE, 0xE>(sound_cnt_h);
 		this->direct_sound[1].fifo_reset = util::bitseq<0xF, 0xF>(sound_cnt_h);
+		std::cout << "Timer 0:: " << this->mem->read32(REG_TM0D) << std::endl;
+
+		std::cout<<"REG_SOUNDCNT_H changed"<<std::endl;
 	});
 
-	this->mem->watcher->add(REG_SOUNDCNT_X, [this](u32 reg, u32 val) -> void {
+	// REG_SOUNDCNT_X
+	this->watch(REG_SOUNDCNT_X, [this](u32 reg, u32 val) -> void {
 		// 0: DMG Sound 1 status
 		// 1: DMG Sound 2 status
 		// 2: DMG Sound 3 status
@@ -469,22 +481,40 @@ void APU::bufferAudio()
 
 	s16 *current_sample = (s16 *) buffer_0;
 
-	int freq = 256;
+	// this->generateChannel1();
+
+	int freq = 512;
+	int semitones0 = 12;
+	int semitones1 = 24;
 
 	// generate samples from each channel, then the sdl callback will
 	// place copy the generated signal into its output stream
 	for(int i = 0; i < buffer_0_samples; ++i) 
 	{
-		s16 val = (this->audio_sample_index++  % 2) ? this->AMPLITUDE : -1*this->AMPLITUDE;
+		s16 val = (std::sin((1.0 / freq) * semitones0 * i) > 0) ? this->AMPLITUDE : -1*this->AMPLITUDE;
+		// std::cout<<"val "<<this->audio_sample_index<<": " <<val<<std::endl;
 		*current_sample++ = val;
 		*current_sample++ = val;
+		this->audio_sample_index++;
+	}
+
+	current_sample = (s16 *) buffer_1;
+	int buffer_1_samples = buffer_size_1 / this->SAMPLE_SIZE;
+	for(int i = 0; i < buffer_1_samples; ++i) 
+	{
+		s16 val = (std::sin((1.0 / freq) * semitones1 * i) > 0) ? this->AMPLITUDE : -1*this->AMPLITUDE;
+		// std::cout<<"val "<<this->audio_sample_index<<": " <<val<<std::endl;
+		*current_sample++ = val;
+		*current_sample++ = val;
+		this->audio_sample_index++;
 	}
 
 	if(!this->is_playing) 
 	{
 		// enable SDL, calls audio callback function {SAMPLE_RATE} times / second
 		SDL_PauseAudioDevice(this->driver_id, 0);
-		std::cout << "SDL_SOUNDISPLAYING: " << SDL_AUDIO_PLAYING << std::endl;
+		std::cout << "SDL_SOUNDISPLAYING: " << SDL_AUDIO_PLAYING<< ", "<<this->driver_id << std::endl;
+		// std::cout << "Timer 0:: " << this->scheduler-> << std::endl;
 		this->is_playing = true;
 	}
 
@@ -512,19 +542,24 @@ void sdlAudioCallback(void *_apu_ref, u8 *_stream_buffer, int _buffer_len)
 	u16 sample_count = 0;
 
 	// silence actual stream
-	SDL_memset(stream, 0, buffer_len);
+	SDL_memset(_stream_buffer, 0, buffer_len);
 
 	// divide buffer into two sections
 	int buffer_size_0 = buffer_len;
 	int buffer_size_1 = 0;
 
-	if((audio_buffer->cursori() + buffer_len) > audio_buffer->size()) {
+	if((audio_buffer->cursori() + buffer_len) > audio_buffer->size()) 
+	{
 		buffer_size_0 = audio_buffer->size() - audio_buffer->cursori();
 		buffer_size_1 = buffer_len - buffer_size_0;
+		if(buffer_size_0 <= 0) buffer_size_0 = 0;
+		if(buffer_size_1 <= 0) buffer_size_1 = 0;
 	}
-
+	// for(int i = 0; i < buffer_len; i++) {
+	// 	_stream_buffer[i] = audio_buffer->data()[i];
+	// }
 	memcpy(_stream_buffer, (u8 *)audio_buffer->data() + audio_buffer->cursori(), buffer_size_0);
-	memcpy(&_stream_buffer[buffer_size_1], audio_buffer->data(), buffer_size_1);
+	memcpy(&_stream_buffer[buffer_size_0], audio_buffer->data(), buffer_size_1);
 	audio_buffer->__set_cursor_unsafe(audio_buffer->cursori() + buffer_len);
 	audio_buffer->__set_rear_unsafe(audio_buffer->cursori() + apu->getSampleCount());
 	
@@ -567,6 +602,11 @@ void sdlAudioCallback(void *_apu_ref, u8 *_stream_buffer, int _buffer_len)
 	// for(int i = 0; i < buffer_len/2; i++) {
 	// 	std::cout<<stream[i]<<",";
 	// }
-	// std::cout<<std::endl<<"end stream"<<std::endl;
+	std::cout<<std::endl<<"end stream"<<std::endl;
 
+}
+
+void APU::watch(u32 reg, std::function<void(u32, u32)> fn) 
+{
+	this->mem->watcher->add(reg, fn);
 }

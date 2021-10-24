@@ -83,7 +83,7 @@ void Discovery::frame()
     int cycles = 0;
     int cycles_elapsed;
 
-    while (cycles < 280896)
+    while (cycles < gba::CYCLES_PER_FRAME)
     {
         // tick hardware (not cpu) if in halt state
         if (mem->haltcnt)

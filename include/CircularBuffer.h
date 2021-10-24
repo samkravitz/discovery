@@ -68,9 +68,9 @@ class CircularBuffer {
   // access buffer data
   T *data(void);
 
-  void __set_rear_unsafe(s16);
+  void __set_rear_unsafe(u16);
 
-  void __set_cursor_unsafe(s16);
+  void __set_cursor_unsafe(u16);
 
   private:
 

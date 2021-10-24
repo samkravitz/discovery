@@ -24,11 +24,15 @@
 constexpr int DS_MODE_DMA = 0;
 constexpr int DS_MODE_INTERRUPT = 1;
 
+// describes gba generational sound channels
 struct APU_Channel_Output {
-	// output
+	// output stream value
 	std::vector<s16> stream;
+
+	// stream of amplitude values
 	std::vector<s16> amplitude;
 
+	// current frequency of the sound wave being generated
 	u16 sound_frequency;
 
 	bool use_left_output;
@@ -36,11 +40,16 @@ struct APU_Channel_Output {
 	bool is_playing;
 };
 
+// describes gba direct sound
 struct APU_Direct_Sound_Output {
+	// decide which gba timer to use, 0 -> timer0, 1 -> timer1
 	u8 sample_rate_timer;
+
 	bool fifo_reset;
 	bool use_left_output;
 	bool use_right_output;
+
+	// sound is playing
 	bool is_playing;
 };
 
@@ -121,7 +130,7 @@ class APU {
 
 	// system sound config
 	// amplitude -> ~max volume
-	s16 AMPLITUDE = 3000;
+	s16 AMPLITUDE = 10000;
 	
 	// sample rate (samples / second) -> number of sample frames sent to the computer's sound device per second
 	u32 SAMPLE_RATE = 44100;
@@ -176,6 +185,9 @@ class APU {
 
 	// direct sound channels A and B
 	struct APU_Direct_Sound_Output direct_sound [2];
+
+	// syntax sugar for adding watcher
+	void watch(u32, std::function<void(u32, u32)>);
 
 };
 

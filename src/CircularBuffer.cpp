@@ -15,8 +15,8 @@ CircularBuffer<T>::CircularBuffer(size_t size):
 _size(size),
 _data(new T[size])
 {
-  this->_front = -1;
-  this->_rear = -1;
+  this->_front = 0;
+  this->_rear = 0;
 }
 
 template <typename T>
@@ -165,7 +165,7 @@ T *CircularBuffer<T>::data()
 }
 
 template <typename T>
-void CircularBuffer<T>::__set_rear_unsafe(s16 i)
+void CircularBuffer<T>::__set_rear_unsafe(u16 i)
 {
   if(i >= this->_size) 
   {
@@ -178,7 +178,7 @@ void CircularBuffer<T>::__set_rear_unsafe(s16 i)
 }
 
 template <typename T>
-void CircularBuffer<T>::__set_cursor_unsafe(s16 i)
+void CircularBuffer<T>::__set_cursor_unsafe(u16 i)
 {
   if(i >= this->_size) 
   {

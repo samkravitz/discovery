@@ -447,12 +447,20 @@ void Memory::write8(u32 address, u8 value)
         case REG_BG0CNT:    [[fallthrough]];
         case REG_BG0CNT + 1:
             stat->bgcnt[0].raw = (memory[REG_BG0CNT + 1] << 8) | (memory[REG_BG0CNT]);
+            // bit 13 (affine_wrap) is unused in BG0CNT
+            stat->bgcnt[0].affine_wrap = 0;
+            memory[REG_BG0CNT + 1] = stat->bgcnt[0].raw >> 8;
+            memory[REG_BG0CNT] = stat->bgcnt[0].raw;
             break;
 
         // REG_BG1CNT
         case REG_BG1CNT:    [[fallthrough]];
         case REG_BG1CNT + 1:
             stat->bgcnt[1].raw = (memory[REG_BG1CNT + 1] << 8) | (memory[REG_BG1CNT]);
+            // bit 13 (affine_wrap) is unused in BG1CNT
+            stat->bgcnt[1].affine_wrap = 0;
+            memory[REG_BG1CNT + 1] = stat->bgcnt[1].raw >> 8;
+            memory[REG_BG1CNT] = stat->bgcnt[1].raw;
             break;
 
         // REG_BG2CNT
@@ -593,21 +601,33 @@ void Memory::write8(u32 address, u8 value)
         
         // REG_WININ
         case REG_WININ:
+            // bits 6 - 7 not used
+            value &= 0x3F;
+            memory[address] = value;
             stat->writeWindowContent(CONTENT_WIN0, value);
             break;
         
         // REG_WININ + 1
         case REG_WININ + 1:
+            // bits 13 - 14 not used
+            value &= 0x3F;
+            memory[address] = value;
             stat->writeWindowContent(CONTENT_WIN1, value);
             break;
         
         // REG_WINOUT
         case REG_WINOUT:
+            // bits 6 - 7 not used
+            value &= 0x3F;
+            memory[address] = value;
             stat->writeWindowContent(CONTENT_WINOUT, value);
             break;
         
         // REG_WINOUT + 1
         case REG_WINOUT + 1:
+            // bits 13 - 14 not used
+            value &= 0x3F;
+            memory[address] = value;
             stat->writeWindowContent(CONTENT_WINOBJ, value);
             break;
 

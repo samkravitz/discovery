@@ -97,7 +97,7 @@ void Discovery::frame()
 
         cpu->fetch();
         cpu->decode();
-        cycles_elapsed = cpu->execute(cpu->pipeline[0]);
+        cycles_elapsed = cpu->execute(cpu->pipeline[0].opcode);
         scheduler->advance(cycles_elapsed);
 
         cpu->handleInterrupt();

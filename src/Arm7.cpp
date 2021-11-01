@@ -152,14 +152,14 @@ void Arm7::fetch()
         switch (getState())
         {
             case State::ARM:
-                pipeline[0] = read32(registers.r15); registers.r15 += 4;
-                pipeline[1] = read32(registers.r15); registers.r15 += 4;
-                pipeline[2] = read32(registers.r15);
+                pipeline[0] = { read32(registers.r15), registers.r15 }; registers.r15 += 4;
+                pipeline[1] = { read32(registers.r15), registers.r15 }; registers.r15 += 4;
+                pipeline[2] = { read32(registers.r15), registers.r15 };
                 break;
             case State::THUMB:
-                pipeline[0] = read16(registers.r15); registers.r15 += 2;
-                pipeline[1] = read16(registers.r15); registers.r15 += 2;
-                pipeline[2] = read16(registers.r15);
+                pipeline[0] = { read16(registers.r15), registers.r15 }; registers.r15 += 2;
+                pipeline[1] = { read16(registers.r15), registers.r15 }; registers.r15 += 2;
+                pipeline[2] = { read16(registers.r15), registers.r15 };
                 break;
         }
 
@@ -170,10 +170,10 @@ void Arm7::fetch()
     switch (getState())
     {
         case State::ARM:
-            pipeline[2] = read32(registers.r15);
+            pipeline[2] = { read32(registers.r15), registers.r15 };
             break;
         case State::THUMB:
-            pipeline[2] = read16(registers.r15);
+            pipeline[2] = { read16(registers.r15), registers.r15 };
             break;
     }
 }

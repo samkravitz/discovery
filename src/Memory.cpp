@@ -1238,4 +1238,29 @@ void Memory::dma3()
     //log(LogLevel::Debug, "DMA 3 Done\n");
 }
 
+Memory::Region Memory::getMemoryRegion(u32 address)
+{
+    switch (address >> 24)
+    {
+        case 0x0: return Region::BIOS;       
+        case 0x2: return Region::EWRAM;
+        case 0x3: return Region::IWRAM;
+        case 0x4: return Region::MMIO;
+        case 0x5: return Region::PALRAM;
+        case 0x6: return Region::VRAM;
+        case 0x7: return Region::OAM;
+        case 0xA:
+        case 0xB:
+        case 0xC:
+        case 0xD: return Region::ROM;
+        case 0xF:
+        case 0xE: return Region::RAM;
+        case 0x1:
+        case 0x8:
+        case 0x9:
+        default:
+            return Region::UNKNOWN;
+    }
+}
+
 // std::cout << "([a-zA-Z0-9 \\n]+)"

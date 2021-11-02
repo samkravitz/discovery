@@ -86,6 +86,20 @@ class Memory
 
         u8 haltcnt;
 
+        enum class Region
+        {
+            BIOS,
+            EWRAM,
+            IWRAM,
+            MMIO,
+            PALRAM,
+            VRAM,
+            OAM,
+            ROM,
+            RAM,
+            UNKNOWN,
+        };
+
         void reset();
         bool loadRom(std::string const &);
         bool loadBios(std::string const &);
@@ -109,6 +123,8 @@ class Memory
 
         // DMA transfer routine
         void _dma(int);
+
+        static Region getMemoryRegion(u32);
 
     private:
         void dma0();

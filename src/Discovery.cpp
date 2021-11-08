@@ -29,7 +29,7 @@ Discovery::Discovery()
     mem       = new Memory(stat, timer, gamepad);
     cpu       = new Arm7(mem);
     ppu       = new PPU(mem, stat, scheduler);
-    //apu     = new APU(mem);
+    apu       = new APU();
     irq       = new IRQ();
 }
 
@@ -69,7 +69,7 @@ void Discovery::shutdown()
     // free resources and shutdown
 	delete cpu;
     delete ppu;
-    //delete apu;
+    delete apu;
     delete mem;
     delete stat;
     delete gamepad;
@@ -112,6 +112,7 @@ void Discovery::frame()
             ++cycles;
             ppu->tick();
             timer->tick();
+            apu->tick();
         }
     }
 

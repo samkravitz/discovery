@@ -24,6 +24,9 @@ using s16 = std::int16_t;
 using s32 = std::int32_t;
 using s64 = std::int64_t;
 
+// clock speed of cpu, in hz
+constexpr u32 CLOCK_SPEED = 16780000;
+
 // register mnemonics
 constexpr u32 r0   = 0;
 constexpr u32 r1   = 1;

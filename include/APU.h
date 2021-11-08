@@ -13,35 +13,21 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_audio.h>
 #include <iostream>
+#include <queue>
 
-#include "Memory.h"
+#include "common.h"
 
-// Direct Sound modes
-constexpr int DS_MODE_DMA = 0;
-constexpr int DS_MODE_INTERRUPT = 1;
 
 class APU
 {
-	public:
-	APU(Memory *mem);
+public:
+	APU();
 	~APU();
 
-	Memory *mem;
-
-	void generateChannel1(s16*, int, int);
-	void generateChannel2(s16*, int, int);
-	void generateChannel3(s16*, int, int);
-	void generateChannel4(s16*, int, int);
-	void generateDirectSoundA(s16*, int, int);
-	void generateDirectSoundB(s16*, int, int);
-
-	inline s8 getDriverID(void);
+    void tick();
 	
-	private:
-	// device audio driver
-	SDL_AudioDeviceID driver_id;
+private:
+	int driver_id; // SDL audio device driver
+    std::queue<s16> audio_buffer;
+    u64 ticks;
 };
-
-void sdlAudioCallback(void*, Uint8*, int);
-
-#include "APU.inl"

@@ -24,7 +24,7 @@ Discovery::Discovery()
     gamepad   = new Gamepad();
     stat      = new LcdStat();
     scheduler = new Scheduler();
-    timer     = new Timer(scheduler);
+    timer     = new Timer();
 
     mem       = new Memory(stat, timer, gamepad);
     cpu       = new Arm7(mem);
@@ -98,7 +98,7 @@ void Discovery::frame()
         cpu->fetch();
         cpu->decode();
         cycles_elapsed = cpu->execute(cpu->pipeline[0].opcode);
-        scheduler->advance(cycles_elapsed);
+        //scheduler->advance(cycles_elapsed);
 
         cpu->handleInterrupt();
 
@@ -111,6 +111,7 @@ void Discovery::frame()
         {
             ++cycles;
             ppu->tick();
+            timer->tick();
         }
     }
 

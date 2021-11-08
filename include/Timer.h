@@ -10,49 +10,43 @@
 #pragma once
 
 #include "common.h"
-#include "Scheduler.h"
-#include <functional>
 
-class Timer
+struct Timer
 {
-public:
-    Timer(Scheduler *);
+    public:
+        Timer();
+        ~Timer();
 
-    u16  read(int);
-    void write(int, u16);
-    void writeCnt(int, u16);
+        long ticks;
 
-private:
-    struct Channel
-    {
-        union
+        struct channel
         {
-            struct 
+            union
             {
-                u8 freq    : 2;
-                u8 cascade : 1;
-                u8 unused1 : 3;
-                u8 irq     : 1;
-                u8 enable  : 1;
-                u8 unused2 : 8;
+                struct 
+                {
+                    u8 freq    : 2;
+                    u8 cascade : 1;
+                    u8 unused1 : 3;
+                    u8 irq     : 1;
+                    u8 enable  : 1;
+                    u8 unused2 : 8;
+                };
+
+                u16 cnt; 
+                
             };
 
-            u16 cnt; 
-            
-        };
+            u16 initial;
+            u16 data;
+            int prescalar;
+        } channel[4];
+        
+        void tick();
+        u16  read(int);
+        void write(int, u16);
+        void writeCnt(int, u16);
 
-        bool registered;
-        u16 reload;
-        u16 data;
-        int prescalar;
-        u64 cycle_started;
-
-        std::function<void(void)> onOverflow;
-    } channel[4];
-
-    Scheduler *scheduler;
-
-    void cascade(int);
-    void tick(int);
-    void overflow(int);
+    private:
+        void cascade(int);
 };

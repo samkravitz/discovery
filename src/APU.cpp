@@ -10,11 +10,9 @@
 #include "APU.h"
 #include "util.h"
 
-#include <iostream>
-#include <queue>
 #include <cmath>
-#include <vector>
-#include <cassert>
+#include <cstring>
+#include <iostream>
 
 constexpr int AMPLITUDE   = 14000;
 constexpr int SAMPLE_RATE = 48000;
@@ -28,14 +26,26 @@ constexpr int BUFFER_SIZE = 2048;
  */
 void callback(void *userdata, u8 *stream, int len)
 {
+    APU *apu = reinterpret_cast<APU*>(userdata);
 	s16 *snd = reinterpret_cast<s16*>(stream);
+
+    // zero stream
+    std::memset(stream, 0, len);
+
+    s16 merged_stream_data;
 	for(int i = 0; i < len / 2; i++)
 	{
-		snd[i] = 32000 * sin(t);
-		
-		t += 440 * M_PI * 2 / 48000.0;
-		if(t >= M_PI * 2)
-			t -= M_PI * 2;
+        merged_stream_data = 0;
+        for (int c = 0; c < 4; c++)
+        {
+            auto &channel = apu->channel[c];
+            if (!channel.empty())
+            {
+                merged_stream_data += channel.front();
+                channel.pop();
+            }
+        }
+        snd[i] = merged_stream_data;
 	}
 }
 
@@ -72,8 +82,20 @@ void APU::tick()
 {
     ++ticks;
 
-    // one frame
+    static bool is_low = true;
+
+    // queue up one frame's worth of audio
     if (ticks % 280896 == 0)
     {
+        constexpr int desired_freq = 440;
+        int period = SAMPLE_RATE / desired_freq;
+        int hperiod = period / 2;
+        for (int i = 0; i < SAMPLE_RATE; i++)
+        {
+            s16 val = is_low ? 10000 : -10000;
+            channel[2].push(val);
+            if (i % hperiod == 0)
+                is_low = !is_low;
+        }
     }
 }

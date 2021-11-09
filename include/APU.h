@@ -24,10 +24,11 @@ public:
 	APU();
 	~APU();
 
+    std::queue<s16> channel[4];
+
     void tick();
 	
 private:
 	int driver_id; // SDL audio device driver
-    std::queue<s16> audio_buffer;
     u64 ticks;
 };

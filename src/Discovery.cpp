@@ -28,10 +28,10 @@ Discovery::Discovery()
     timer     = new Timer();
     auto *audio_stat = new AudioStat();
 
-    mem       = new Memory(stat, timer, gamepad, audio_stat);
+    apu       = new APU(audio_stat);
+    mem       = new Memory(stat, timer, gamepad, audio_stat, apu);
     cpu       = new Arm7(mem);
     ppu       = new PPU(mem, stat, scheduler);
-    apu       = new APU(audio_stat);
     irq       = new IRQ();
 }
 

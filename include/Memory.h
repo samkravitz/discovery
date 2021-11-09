@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <vector>
 
+#include "APU.h"
 #include "Gamepad.h"
 #include "LcdStat.h"
 #include "common.h"
@@ -52,7 +53,7 @@ constexpr u32 MEM_SIZE             = 0x8000000;
 class Memory
 {
     public:
-        Memory(LcdStat *, Timer *, Gamepad *, AudioStat *);
+        Memory(LcdStat *, Timer *, Gamepad *, AudioStat *, APU *);
         ~Memory();
 
         u8 memory[MEM_SIZE];
@@ -135,6 +136,7 @@ class Memory
 
         void writeFlash(u32, u8);
 
+        APU *apu;
         AudioStat *audio_stat;
         Backup *backup;
 };

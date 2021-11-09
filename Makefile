@@ -9,7 +9,6 @@ OBJ = \
 	Arm7.o \
 	arm_isa.o \
 	Watcher.o \
-  CircularBuffer.o \
 	APU.o \
 	config.o \
 	Discovery.o \

@@ -23,54 +23,8 @@ class CircularBuffer {
   // destructor
   ~CircularBuffer(void);
 
-  // get front element
-  T front(void);
-
-  // get front index
-  s16 fronti(void);
-
-  // get rear element
-  T rear(void);
-
-  // get rear index
-  s16 reari(void);
-
-  // get element at cursor
-  T cursor(void);
-
-  // get cursor index
-  s16 cursori(void);
-
-  // get size
-  size_t size(void);
-
-  // place element at rear
-  void enqueue(T);
-
-  // remove element at front
-  T dequeue(void);
-
-  // fill with data
-  void fill(T);
-
-  // clear data
-  void clear(void);
-
-  // is empty
-  bool is_empty(void);
-
-  // is full
-  bool is_full(void);
-
-  // element at index
-  T at(s16);
-
-  // access buffer data
-  T *data(void);
-
-  void __set_rear_unsafe(u16);
-
-  void __set_cursor_unsafe(u16);
+  // place item in buffer
+  void emplace(T);
 
   private:
 

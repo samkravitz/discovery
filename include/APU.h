@@ -18,7 +18,6 @@
 #include "Memory.h"
 #include "Scheduler.h"
 #include "config.h"
-#include "CircularBuffer.h"
 
 // Direct Sound modes
 constexpr int DS_MODE_DMA = 0;
@@ -27,7 +26,7 @@ constexpr int DS_MODE_INTERRUPT = 1;
 // describes gba generational sound channels
 struct APU_Channel_Output {
 	// output stream value
-	std::vector<s16> stream;
+	std::queue<s16> output_queue;
 
 	// stream of amplitude values
 	std::vector<s16> amplitude;
@@ -79,7 +78,13 @@ class APU {
 
 	// wait for sound to play for n seconds
 	void wait(double);
+  
+  // tick 
+  void tick(void);
 
+  // buffer single channel
+  void bufferChannel(u8);
+  
 	// buffer audio to internal circular buffer
 	void bufferAudio(void);
 
@@ -106,7 +111,7 @@ class APU {
 	inline u32 getInternalBufferSize(u8);
 	inline void popInternalBuffer(u8);
 
-	inline CircularBuffer<s16> *getAudioBufferRef(void);
+	// inline CircularBuffer<s16> *getAudioBufferRef(void);
 
 	/**
 	 * @return the number of samples that should be 
@@ -125,7 +130,8 @@ class APU {
 	 */
 	inline double getAudioBufferSize(void);
 	
-	// PRIVATE DATA
+	struct APU_Channel_Output channel [4];
+	// private data  
 	private:
 
 	// system sound config
@@ -155,7 +161,7 @@ class APU {
 	SDL_AudioDeviceID driver_id;
 
 	// the APU's circular audio buffer
-	CircularBuffer<s16> *audio_buffer;
+	// CircularBuffer<s16> *audio_buffer;
 
 	// current sample index
 	int audio_sample_index;
@@ -181,7 +187,7 @@ class APU {
 	bool is_playing;
 
 	// sound channels 1 - 4
-	struct APU_Channel_Output channel [4];
+	// struct APU_Channel_Output channel [4];
 
 	// direct sound channels A and B
 	struct APU_Direct_Sound_Output direct_sound [2];

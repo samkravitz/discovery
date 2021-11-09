@@ -88,15 +88,48 @@ void APU::tick()
     // queue up one frame's worth of audio
     if (ticks % 280896 == 0)
     {
-        constexpr int desired_freq = 440;
-        int period = SAMPLE_RATE / desired_freq;
-        int hperiod = period / 2;
-        for (int i = 0; i < SAMPLE_RATE; i++)
-        {
-            s16 val = is_low ? 10000 : -10000;
-            channel[2].push(val);
-            if (i % hperiod == 0)
-                is_low = !is_low;
-        }
     }
+}
+
+void APU::bufferChannel(int ch)
+{
+    if (ch < 0 || ch >= 4)
+    {
+        log(LogLevel::Error, "Invalid channel given to APU::bufferChannel!\n");
+        return;
+    }
+
+    auto &chan = channel[ch];
+
+    // "gracefully" empty channel
+    std::queue<s16> empty;
+    std::swap(chan, empty);
+
+    int volume = AMPLITUDE;
+
+    float start_freq = 440;
+    
+    int i = 0;
+    int samples_buffered = 0;
+    bool is_low = false;
+
+    while (1)
+    {
+        i++;
+        int period = SAMPLE_RATE / start_freq;
+        int hperiod = period / 2;
+
+        if (volume == 0)
+            break;
+
+        for (int j = 0; j < hperiod; j++)
+            chan.push(volume);
+        
+        for (int j = 0; j < hperiod; j++)
+            chan.push(-volume);
+        
+        if (i % 100 == 0)
+            volume /= 2;
+    }
+
 }

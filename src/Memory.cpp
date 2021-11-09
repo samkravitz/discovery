@@ -26,11 +26,12 @@ extern IRQ *irq;
 
 namespace fs = std::experimental::filesystem;
 
-Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad, AudioStat *audio_stat) :
+Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad, AudioStat *audio_stat, APU *apu) :
     stat(stat),
     timer(timer),
     gamepad(gamepad),
-    audio_stat(audio_stat)
+    audio_stat(audio_stat),
+    apu(apu)
 {
     backup = nullptr;
     cart_ram = nullptr;
@@ -631,6 +632,14 @@ void Memory::write8(u32 address, u8 value)
             memory[address] = value;
             stat->writeWindowContent(CONTENT_WINOBJ, value);
             break;
+        
+        // Sound
+
+        // REG_SOUNDCNT_X
+        case REG_SOUNDCNT_X:
+            apu->bufferChannel(2);
+            break;
+
 
         // DMA
 

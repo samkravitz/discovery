@@ -49,7 +49,8 @@ void callback(void *userdata, u8 *stream, int len)
 	}
 }
 
-APU::APU()
+APU::APU(AudioStat *stat) :
+    stat(stat)
 {
 	SDL_Init(SDL_INIT_AUDIO);
 

@@ -26,10 +26,11 @@ extern IRQ *irq;
 
 namespace fs = std::experimental::filesystem;
 
-Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad) :
+Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad, AudioStat *audio_stat) :
     stat(stat),
     timer(timer),
-    gamepad(gamepad)
+    gamepad(gamepad),
+    audio_stat(audio_stat)
 {
     backup = nullptr;
     cart_ram = nullptr;

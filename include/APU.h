@@ -15,13 +15,14 @@
 #include <iostream>
 #include <queue>
 
+#include "audio_stat.h"
 #include "common.h"
 
 
 class APU
 {
 public:
-	APU();
+	APU(AudioStat *);
 	~APU();
 
     std::queue<s16> channel[4];
@@ -29,6 +30,7 @@ public:
     void tick();
 	
 private:
+    AudioStat *stat;
 	int driver_id; // SDL audio device driver
     u64 ticks;
 };

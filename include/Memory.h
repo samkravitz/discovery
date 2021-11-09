@@ -19,6 +19,7 @@
 #include "mmio.h"
 #include "log.h"
 #include "Backup.h"
+#include "audio_stat.h"
 
 // start and end addresses of internal memory regions
 constexpr u32 MEM_BIOS_END          = 0x3FFF;
@@ -51,7 +52,7 @@ constexpr u32 MEM_SIZE             = 0x8000000;
 class Memory
 {
     public:
-        Memory(LcdStat *, Timer *, Gamepad *);
+        Memory(LcdStat *, Timer *, Gamepad *, AudioStat *);
         ~Memory();
 
         u8 memory[MEM_SIZE];
@@ -134,5 +135,6 @@ class Memory
 
         void writeFlash(u32, u8);
 
+        AudioStat *audio_stat;
         Backup *backup;
 };

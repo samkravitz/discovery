@@ -15,6 +15,7 @@
 #include "util.h"
 #include "IRQ.h"
 #include "config.h"
+#include "audio_stat.h"
 
 // global IRQ handler
 IRQ *irq;
@@ -25,11 +26,12 @@ Discovery::Discovery()
     stat      = new LcdStat();
     scheduler = new Scheduler();
     timer     = new Timer();
+    auto *audio_stat = new AudioStat();
 
-    mem       = new Memory(stat, timer, gamepad);
+    mem       = new Memory(stat, timer, gamepad, audio_stat);
     cpu       = new Arm7(mem);
     ppu       = new PPU(mem, stat, scheduler);
-    apu       = new APU();
+    apu       = new APU(audio_stat);
     irq       = new IRQ();
 }
 

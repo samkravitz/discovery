@@ -106,17 +106,22 @@ void APU::bufferChannel(int ch)
     std::swap(chan, empty);
 
     int volume = AMPLITUDE;
-
-    float start_freq = 440;
     
-    int i = 0;
     int samples_buffered = 0;
     bool is_low = false;
 
+    auto reg_freq_to_hz = [](int reg_freq) -> float
+    {
+        return 4194304 / (32 * (2048 - reg_freq));
+    };
+
+    int start_freq = stat->sndcnt2_h.freq;
+
     while (1)
     {
-        i++;
-        int period = SAMPLE_RATE / start_freq;
+        samples_buffered++;
+        float freq = reg_freq_to_hz(start_freq);
+        int period = SAMPLE_RATE / freq;
         int hperiod = period / 2;
 
         if (volume == 0)
@@ -128,7 +133,7 @@ void APU::bufferChannel(int ch)
         for (int j = 0; j < hperiod; j++)
             chan.push(-volume);
         
-        if (i % 100 == 0)
+        if (samples_buffered % 100 == 0)
             volume /= 2;
     }
 

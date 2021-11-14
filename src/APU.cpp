@@ -119,18 +119,7 @@ void APU::bufferChannel1()
     float freq = reg_freq_to_hz(start_freq);
     int period = SAMPLE_RATE / freq;
     int hperiod = period / 2;
-
-    // number of samples wave will be low or high, per wave duty
-    int lo, hi;
-    switch (stat->sndcnt1_h.wave_duty)
-    {
-        case 0: lo = period * .875f; hi = period * .125f; break;
-        case 1: lo = period * .75f;  hi = period * .25f;  break;
-        case 2: lo = period * .5f;   hi = period * .5f;   break;
-        case 3: lo = period * .25f;  hi = period * .75f;  break;
-        default:
-            log(LogLevel::Error, "Invalid wave duty for sound channel 1!\n");
-    }
+    int target_period = period;
 
     // get sweep data 
     int sweep_shifts = stat->sndcnt1_l.sweep_shifts;
@@ -138,7 +127,7 @@ void APU::bufferChannel1()
     int sweep_time_reg = stat->sndcnt1_l.sweep_time;
 
     bool sweep_enabled;
-    float sweep_time_ms;
+    float sweep_time;
     switch(sweep_time_reg)
     {
         case 0b000:
@@ -154,7 +143,7 @@ void APU::bufferChannel1()
         case 0b111:
             // sweep period is t/128*10^3 hz
             sweep_enabled = 1;
-            sweep_time_ms = sweep_time_reg / 128e3;
+            sweep_time = sweep_time_reg / 128.0f;
             break;
         default:
             log(LogLevel::Error, "Invalid sweep time for sound channel 1!\n");
@@ -170,36 +159,62 @@ void APU::bufferChannel1()
     float step_time = reg_step_to_sec(stat->sndcnt1_h.env_step);
     float time_since_last_env_step = 0, time_since_last_sweep_step = 0;
     int current_step = stat->sndcnt1_h.env_init;
-    int current_sweep = stat->sndcnt1_x.freq;
-
+    int remaining_sweeps = sweep_shifts;
     int volume;
 
     while (1)
     {
         samples_buffered++;
+        
+        if (current_step == 0)
+            break;
 
+        // number of samples wave will be low or high, per wave duty
+        int lo, hi;
+        switch (stat->sndcnt1_h.wave_duty)
+        {
+            case 0: lo = period * .875f; hi = period * .125f; break;
+            case 1: lo = period * .75f;  hi = period * .25f;  break;
+            case 2: lo = period * .5f;   hi = period * .5f;   break;
+            case 3: lo = period * .25f;  hi = period * .75f;  break;
+            default:
+                log(LogLevel::Error, "Invalid wave duty for sound channel 1!\n");
+        }
+        
         // volume envelope
         if (env_enabled)
             volume = current_step / 15.0f * AMPLITUDE;
         else
             volume = AMPLITUDE;
 
-        // sweep shift envelope
-        if (sweep_enabled) 
-            if (sweep_increase)
-                period -= period / std::pow(2, sweep_shifts);
-            else
-                period += period / std::pow(2, sweep_shifts);
-
-        if (current_step == 0)
-            break;
-
+                // push samples according to wave cycle
         for (int i = 0; i < lo; i++)
             chan.push(volume);
-        
         for (int i = 0; i < hi; i++)
             chan.push(-volume);
-        
+       
+        // sweep shift envelope 
+        if (sweep_enabled && time_since_last_sweep_step >= sweep_time)
+        {
+            float factor = static_cast<float>(std::pow(2, sweep_shifts));
+            
+            if (factor >= 1)
+            {
+                float period_diff = period / factor;
+                if (period_diff > 0.0f)
+                    if (sweep_increase)
+                        // frequency increases, so decrease period
+                        period -= period_diff;
+                    else
+                        // frequency decreases, so increase period
+                        period += period_diff;
+            }
+            if(remaining_sweeps > 0)
+                remaining_sweeps--;
+            time_since_last_sweep_step = 0;
+        }
+
+        // calculate time
         time_elapsed += static_cast<float>(period) / SAMPLE_RATE;
         time_since_last_env_step += static_cast<float>(period) / SAMPLE_RATE;
         time_since_last_sweep_step += static_cast<float>(period) / SAMPLE_RATE;
@@ -207,13 +222,6 @@ void APU::bufferChannel1()
         // time has elapsed longer than the sound should be played for
         if (timed && time_elapsed >= max_time)
             return;
-
-        if (sweep_enabled && time_since_last_sweep_step >= sweep_time_ms)
-        {
-            if (sweep_enabled)
-                current_sweep++;
-            time_since_last_sweep_step = 0;
-        }
 
         if (env_enabled && time_since_last_env_step >= step_time)
         {
@@ -223,11 +231,11 @@ void APU::bufferChannel1()
                 current_step--;
             time_since_last_env_step = 0;
         }
-
+        
         // arbitrary check to prevent infinite loop
         // TODO - calculate precisely how many samples this should be
         if (samples_buffered > 1000)
-            break;        
+            break;
     }
 
     // queue up one frame's worth of audio
@@ -301,7 +309,7 @@ void APU::bufferChannel2()
         else
             volume = AMPLITUDE;
         
-         if (current_step == 0)
+        if (current_step == 0)
             break;
 
         for (int i = 0; i < lo; i++)

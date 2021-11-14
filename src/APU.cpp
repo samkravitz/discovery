@@ -104,8 +104,6 @@ void APU::bufferChannel(int ch)
     // "gracefully" empty channel
     std::queue<s16> empty;
     std::swap(chan, empty);
-
-    int volume = AMPLITUDE;
     
     int samples_buffered = 0;
 
@@ -142,11 +140,29 @@ void APU::bufferChannel(int ch)
             log(LogLevel::Error, "Invalid wave duty for sound channel 2!\n");
     }
 
+    // get envelope data
+    int env_step = stat->sndcnt2_l.env_step;
+    bool env_enabled = env_step != 0;
+    auto reg_step_to_sec = [](int reg_step) -> float
+    {
+        return reg_step * (1.0f / 64.0f);
+    };
+    float step_time = reg_step_to_sec(stat->sndcnt2_l.env_step);
+    float time_since_last_env_step = 0;
+    int current_step = stat->sndcnt2_l.env_init;
+
+    int volume;
+
     while (1)
     {
         samples_buffered++;
 
-        if (volume == 0)
+        if (env_enabled)
+            volume = current_step / 15.0f * AMPLITUDE;
+        else
+            volume = AMPLITUDE;
+        
+         if (current_step == 0)
             break;
 
         for (int i = 0; i < lo; i++)
@@ -156,12 +172,25 @@ void APU::bufferChannel(int ch)
             chan.push(-volume);
         
         time_elapsed += static_cast<float>(period) / SAMPLE_RATE;
+        time_since_last_env_step += static_cast<float>(period) / SAMPLE_RATE;
+
         // time has elapsed longer than the sound should be played for
         if (timed && time_elapsed >= max_time)
             return;
-        
-        if (samples_buffered % 100 == 0)
-            volume /= 2;
+
+        if (env_enabled && time_since_last_env_step >= step_time)
+        {
+            if (stat->sndcnt2_l.env_mode)
+                current_step++;
+            else
+                current_step--;
+            time_since_last_env_step = 0;
+        }
+
+        // arbitrary check to prevent infinite loop
+        // TODO - calculate precisely how many samples this should be
+        if (samples_buffered > 1000)
+            break;        
     }
 
 }

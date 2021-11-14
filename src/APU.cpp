@@ -91,15 +91,10 @@ void APU::tick()
     }
 }
 
-void APU::bufferChannel(int ch)
+void APU::bufferChannel1() { }
+void APU::bufferChannel2()
 {
-    if (ch < 0 || ch >= 4)
-    {
-        log(LogLevel::Error, "Invalid channel given to APU::bufferChannel!\n");
-        return;
-    }
-
-    auto &chan = channel[ch];
+    auto &chan = channel[2];
 
     // "gracefully" empty channel
     std::queue<s16> empty;
@@ -194,3 +189,5 @@ void APU::bufferChannel(int ch)
     }
 
 }
+void APU::bufferChannel3() { }
+void APU::bufferChannel4() { }

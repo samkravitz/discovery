@@ -23,7 +23,12 @@ public:
     
     Memory *mem;
 
-    u32  pipeline[3];
+    struct instruction
+    {
+        u32 opcode;
+        u32 address;
+    } pipeline[3];
+
     bool pipeline_full;
     bool in_interrupt;
 
@@ -186,6 +191,7 @@ private:
     u32  read8(u32);
     u32  read16(u32, bool sign = false);
     u32  read32(u32, bool ldr = false);
+    u32  readUnused(u32);
     void write8(u32, u8);
     void write16(u32, u16);
     void write32(u32, u32);
@@ -203,4 +209,7 @@ private:
     u8   barrelShift(u32, u32 &, u8);
     bool checkState();
     void print();
+
+    // get address of current instruction (i.e. [$ + 4])
+    u32 dollar() { return pipeline[0].address; }
 };

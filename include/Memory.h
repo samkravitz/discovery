@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <vector>
 
+#include "APU.h"
 #include "Gamepad.h"
 #include "LcdStat.h"
 #include "common.h"
@@ -19,7 +20,7 @@
 #include "mmio.h"
 #include "log.h"
 #include "Backup.h"
-#include "Watcher.h"
+#include "audio_stat.h"
 
 // start and end addresses of internal memory regions
 constexpr u32 MEM_BIOS_END          = 0x3FFF;
@@ -52,10 +53,8 @@ constexpr u32 MEM_SIZE             = 0x8000000;
 class Memory
 {
     public:
-        Memory(LcdStat *, Timer *, Gamepad *);
+        Memory(LcdStat *, Timer *, Gamepad *, AudioStat *, APU *);
         ~Memory();
-
-        Watcher *watcher;
 
         u8 memory[MEM_SIZE];
 
@@ -89,6 +88,20 @@ class Memory
 
         u8 haltcnt;
 
+        enum class Region
+        {
+            BIOS,
+            EWRAM,
+            IWRAM,
+            MMIO,
+            PALRAM,
+            VRAM,
+            OAM,
+            ROM,
+            RAM,
+            UNKNOWN,
+        };
+
         void reset();
         bool loadRom(std::string const &);
         bool loadBios(std::string const &);
@@ -113,7 +126,7 @@ class Memory
         // DMA transfer routine
         void _dma(int);
 
-
+        static Region getMemoryRegion(u32);
 
     private:
         void dma0();
@@ -123,5 +136,7 @@ class Memory
 
         void writeFlash(u32, u8);
 
+        APU *apu;
+        AudioStat *audio_stat;
         Backup *backup;
 };

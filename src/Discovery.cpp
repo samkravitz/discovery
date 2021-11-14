@@ -15,6 +15,7 @@
 #include "util.h"
 #include "IRQ.h"
 #include "config.h"
+#include "audio_stat.h"
 
 // global IRQ handler
 IRQ *irq;
@@ -24,12 +25,13 @@ Discovery::Discovery()
     gamepad   = new Gamepad();
     stat   = new LcdStat();
     scheduler = new Scheduler();
-    timer     = new Timer(scheduler);
+    timer     = new Timer();
+    auto *audio_stat = new AudioStat();
 
-    mem       = new Memory(stat, timer, gamepad);
+    apu       = new APU(audio_stat);
+    mem       = new Memory(stat, timer, gamepad, audio_stat, apu);
     cpu       = new Arm7(mem);
     ppu       = new PPU(mem, stat, scheduler);
-    apu       = new APU(mem, scheduler);
     irq       = new IRQ();
 }
 
@@ -83,7 +85,7 @@ void Discovery::frame()
     int cycles = 0;
     int cycles_elapsed;
 
-    while (cycles < gba::CYCLES_PER_FRAME)
+    while (cycles < 280896)
     {
         // tick hardware (not cpu) if in halt state
         if (mem->haltcnt)
@@ -97,8 +99,8 @@ void Discovery::frame()
 
         cpu->fetch();
         cpu->decode();
-        cycles_elapsed = cpu->execute(cpu->pipeline[0]);
-        scheduler->advance(cycles_elapsed);
+        cycles_elapsed = cpu->execute(cpu->pipeline[0].opcode);
+        //scheduler->advance(cycles_elapsed);
 
         cpu->handleInterrupt();
 
@@ -111,6 +113,8 @@ void Discovery::frame()
         {
             ++cycles;
             ppu->tick();
+            timer->tick();
+            apu->tick();
         }
     }
 

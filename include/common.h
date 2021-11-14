@@ -24,15 +24,8 @@ using s16 = std::int16_t;
 using s32 = std::int32_t;
 using s64 = std::int64_t;
 
-// define gba hardware-related constants
-namespace gba
-{
-    // GBA hardware timer frequency, 2^24hz
-    const u32 CPU_FREQ = 16777216;
-
-    // number of cpu clock cycles per rendered frame
-    const u32 CYCLES_PER_FRAME = 280896;
-};
+// clock speed of cpu, in hz
+constexpr u32 CLOCK_SPEED = 16780000;
 
 // register mnemonics
 constexpr u32 r0   = 0;

@@ -152,14 +152,14 @@ void Arm7::fetch()
         switch (getState())
         {
             case State::ARM:
-                pipeline[0] = read32(registers.r15); registers.r15 += 4;
-                pipeline[1] = read32(registers.r15); registers.r15 += 4;
-                pipeline[2] = read32(registers.r15);
+                pipeline[0] = { read32(registers.r15), registers.r15 }; registers.r15 += 4;
+                pipeline[1] = { read32(registers.r15), registers.r15 }; registers.r15 += 4;
+                pipeline[2] = { read32(registers.r15), registers.r15 };
                 break;
             case State::THUMB:
-                pipeline[0] = read16(registers.r15); registers.r15 += 2;
-                pipeline[1] = read16(registers.r15); registers.r15 += 2;
-                pipeline[2] = read16(registers.r15);
+                pipeline[0] = { read16(registers.r15), registers.r15 }; registers.r15 += 2;
+                pipeline[1] = { read16(registers.r15), registers.r15 }; registers.r15 += 2;
+                pipeline[2] = { read16(registers.r15), registers.r15 };
                 break;
         }
 
@@ -170,10 +170,10 @@ void Arm7::fetch()
     switch (getState())
     {
         case State::ARM:
-            pipeline[2] = read32(registers.r15);
+            pipeline[2] = { read32(registers.r15), registers.r15 };
             break;
         case State::THUMB:
-            pipeline[2] = read16(registers.r15);
+            pipeline[2] = { read16(registers.r15), registers.r15 };
             break;
     }
 }
@@ -911,41 +911,14 @@ u32 Arm7::read8(u32 address)
     if (address <= 0x3FFF && registers.r15 > 0x3FFF)
     {
         log(LogLevel::Error, "Invalid read from BIOS u8: {0:#x}\n", last_read_bios);
-
-        //u32 value = last_read_bios;
-        
-        // switch (address & 0x3)
-        // {
-        //     case 0: value >>= 0;  break;
-        //     case 1: value >>= 8;  break;
-        //     case 2: value >>= 16; break;
-        //     case 3: value >>= 24; break;
-        // }
-
         return last_read_bios & 0xFF;
     }
 
     if ((address >= 0x4000 && address <= 0x1FFFFFF) || address >= 0x10000000)
     {
         log(LogLevel::Warning, "UNUSED U8\n");
-        switch (getState())
-        {
-            case State::ARM: return mem->read32(registers.r15);
-            case State::THUMB:
-                return mem->read32(registers.r15);
-                break;
-        }
+        return readUnused(address);
     }
-
-
-    // if (!mem_check_read(address))
-    // {
-    //     std::cout << "mem check u8 failed " << std::hex << address << "\n";
-    //     // exit(0);
-    //     // return last_read_bios & 0xFF;
-    // }
-
-    //if ()
 
     return mem->read8(address);
 }
@@ -998,8 +971,6 @@ u32 Arm7::read16(u32 address, bool sign)
         case REG_WIN1H:
         case REG_WIN0V:
         case REG_WIN1V:
-        case REG_WININ:
-        case REG_WINOUT:
         case REG_MOSAIC:
         case REG_MOSAIC + 2:
         case REG_DMA0SAD:
@@ -1014,21 +985,13 @@ u32 Arm7::read16(u32 address, bool sign)
         case REG_DMA3SAD:
         case REG_DMA3DAD:
         case REG_DMA3CNT:
-            log(LogLevel::Error, "Invalid read from u16 mmio\n");
-            return 0;
+            return readUnused(address);
     }
 
     if ((address >= 0x4000 && address <= 0x1FFFFFF) || address >= 0x10000000)
     {
         std::cout << "UNUSED U16\n";
-        
-        switch (getState())
-        {
-            case State::ARM: return mem->read32(registers.r15);
-            case State::THUMB:
-                exit(0);
-                break;
-        }
+        return readUnused(address);
     }
 
     u32 data;
@@ -1093,21 +1056,8 @@ u32 Arm7::read32(u32 address, bool ldr)
     if ((address >= 0x4000 && address <= 0x1FFFFFF) || address >= 0x10000000)
     {
         std::cout << "UNUSED U32\n";
-        switch (getState())
-        {
-            
-            case State::ARM: return mem->read32(registers.r15);
-            case State::THUMB:
-                exit(0);
-                break;
-        }
+        return readUnused(address);
     }
-
-    // if (!mem_check_read(address))
-    // {
-    //     std::cout << "mem check u32 failed " << std::hex << address << "\n";
-    //     return last_read_bios;
-    // }
     
     // read from forcibly aligned address
     u32 data = mem->read32(address & ~3);
@@ -1241,6 +1191,74 @@ inline bool Arm7::memCheckRead(u32 &address)
     // }
     
     return true;
+}
+
+u32 Arm7::readUnused(u32 address)
+{
+    if (getState() == State::ARM)
+    {
+        return mem->read32(dollar() + 8);
+    }
+
+    else
+    {
+        log(LogLevel::Warning, "Reading unused in thumb mode!\n");
+        u16 lsw, msw;
+        switch (Memory::getMemoryRegion(address))
+        {
+            case Memory::Region::EWRAM:
+            case Memory::Region::PALRAM:
+            case Memory::Region::VRAM:
+            case Memory::Region::ROM:
+                lsw = mem->read16(dollar() + 4);
+                msw = mem->read16(dollar() + 4);
+                break;
+            
+            case Memory::Region::BIOS:
+            case Memory::Region::OAM:
+                // address is 4 byte aligned
+                if ((address & 0x3) == 0)
+                {
+                    lsw = mem->read16(dollar() + 4);
+                    msw = mem->read16(dollar() + 6);
+                }
+
+                else
+                {
+                    lsw = mem->read16(dollar() + 2);
+                    msw = mem->read16(dollar() + 4);
+                }
+
+                break;
+            
+            case Memory::Region::IWRAM:
+                // address is 4 byte aligned
+                if ((address & 0x3) == 0)
+                {
+                    lsw = mem->read16(dollar() + 4);
+                    msw = mem->read16(dollar() + 2);
+                }
+
+                else
+                {
+                    lsw = mem->read16(dollar() + 2);
+                    msw = mem->read16(dollar() + 4);
+                }
+
+                break;
+            
+            case Memory::Region::MMIO:
+                lsw = mem->read16(dollar() + 4);
+                msw = mem->read16(dollar() + 4);
+                break;
+            
+            default:
+                log(LogLevel::Error, "Invalid unused thumb read\n");
+                return 0;
+        }
+
+        return msw << 16 | lsw;
+    }
 }
 
 // determine if a write at the specified address is allowed

@@ -26,13 +26,13 @@ extern IRQ *irq;
 
 namespace fs = std::experimental::filesystem;
 
-Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad) :
+Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad, AudioStat *audio_stat, APU *apu) :
     stat(stat),
     timer(timer),
-    gamepad(gamepad)
+    gamepad(gamepad),
+    audio_stat(audio_stat),
+    apu(apu)
 {
-    this->watcher = new Watcher();
-    std::cout<<"constructed watcher"<<std::endl;
     backup = nullptr;
     cart_ram = nullptr;
 
@@ -43,7 +43,6 @@ Memory::~Memory()
 {
     // dump cart ram contents to backup file
     backup->writeChip();
-    delete this->watcher;    
 }
 
 void Memory::reset()
@@ -450,12 +449,20 @@ void Memory::write8(u32 address, u8 value)
         case REG_BG0CNT:    [[fallthrough]];
         case REG_BG0CNT + 1:
             stat->bgcnt[0].raw = (memory[REG_BG0CNT + 1] << 8) | (memory[REG_BG0CNT]);
+            // bit 13 (affine_wrap) is unused in BG0CNT
+            stat->bgcnt[0].affine_wrap = 0;
+            memory[REG_BG0CNT + 1] = stat->bgcnt[0].raw >> 8;
+            memory[REG_BG0CNT] = stat->bgcnt[0].raw;
             break;
 
         // REG_BG1CNT
         case REG_BG1CNT:    [[fallthrough]];
         case REG_BG1CNT + 1:
             stat->bgcnt[1].raw = (memory[REG_BG1CNT + 1] << 8) | (memory[REG_BG1CNT]);
+            // bit 13 (affine_wrap) is unused in BG1CNT
+            stat->bgcnt[1].affine_wrap = 0;
+            memory[REG_BG1CNT + 1] = stat->bgcnt[1].raw >> 8;
+            memory[REG_BG1CNT] = stat->bgcnt[1].raw;
             break;
 
         // REG_BG2CNT
@@ -596,23 +603,77 @@ void Memory::write8(u32 address, u8 value)
         
         // REG_WININ
         case REG_WININ:
+            // bits 6 - 7 not used
+            value &= 0x3F;
+            memory[address] = value;
             stat->writeWindowContent(CONTENT_WIN0, value);
             break;
         
         // REG_WININ + 1
         case REG_WININ + 1:
+            // bits 13 - 14 not used
+            value &= 0x3F;
+            memory[address] = value;
             stat->writeWindowContent(CONTENT_WIN1, value);
             break;
         
         // REG_WINOUT
         case REG_WINOUT:
+            // bits 6 - 7 not used
+            value &= 0x3F;
+            memory[address] = value;
             stat->writeWindowContent(CONTENT_WINOUT, value);
             break;
         
         // REG_WINOUT + 1
         case REG_WINOUT + 1:
+            // bits 13 - 14 not used
+            value &= 0x3F;
+            memory[address] = value;
             stat->writeWindowContent(CONTENT_WINOBJ, value);
             break;
+        
+        // Sound
+
+        // REG_SOUNDCNT_X
+        case REG_SOUNDCNT_X:
+            break;
+       
+        // REG_SOUND1CNT_L
+        case REG_SOUND1CNT_L:
+        case REG_SOUND1CNT_L + 1:
+            audio_stat->sndcnt1_l.raw = (memory[REG_SOUND1CNT_L + 1] << 8) | (memory[REG_SOUND1CNT_L]);
+            apu->bufferChannel1();
+            break;
+
+        // REG_SOUND1CNT_H
+        case REG_SOUND1CNT_H:
+        case REG_SOUND1CNT_H + 1:
+            audio_stat->sndcnt1_h.raw = (memory[REG_SOUND1CNT_H + 1] << 8) | (memory[REG_SOUND1CNT_H]);
+            apu->bufferChannel1();
+            break;
+        
+        // REG_SOUND1CNT_X
+        case REG_SOUND1CNT_X:
+        case REG_SOUND1CNT_X + 1:
+            audio_stat->sndcnt1_x.raw = (memory[REG_SOUND1CNT_X + 1] << 8) | (memory[REG_SOUND1CNT_X]);
+            apu->bufferChannel1();
+            break;
+
+        // REG_SOUNDCNT2_L
+        case REG_SOUND2CNT_L:
+        case REG_SOUND2CNT_L + 1:
+            audio_stat->sndcnt2_l.raw = (memory[REG_SOUND2CNT_L + 1] << 8) | (memory[REG_SOUND2CNT_L]);
+            apu->bufferChannel2();
+            break;
+        
+        // REG_SOUNDCNT2_H
+        case REG_SOUND2CNT_H:
+        case REG_SOUND2CNT_H + 1:
+            audio_stat->sndcnt2_h.raw = (memory[REG_SOUND2CNT_H + 1] << 8) | (memory[REG_SOUND2CNT_H]);
+            apu->bufferChannel2();
+            break;
+
 
         // DMA
 
@@ -801,13 +862,7 @@ void Memory::write8(u32 address, u8 value)
         case REG_IME + 1:
             irq->setIME(memory[REG_IME + 1] << 8 | memory[REG_IME]);
             break;
-        // case REG_SOUNDCNT_L:
-            // 
-        // case REG_SOUNDCNT_H:
-        // case REG_SOUNDCNT_X:
-
     }
-    this->watcher->checkRegister(address, value);
 
 }
 
@@ -846,7 +901,6 @@ void Memory::write16Unsafe(u32 address, u16 value)
 void Memory::write8Unsafe(u32 address, u8 value)
 {
     memory[address] = value;
-    this->watcher->checkRegister(address, value);
 }
 
 void Memory::_dma(int n)
@@ -1227,6 +1281,31 @@ void Memory::dma3()
     }
         
     //log(LogLevel::Debug, "DMA 3 Done\n");
+}
+
+Memory::Region Memory::getMemoryRegion(u32 address)
+{
+    switch (address >> 24)
+    {
+        case 0x0: return Region::BIOS;       
+        case 0x2: return Region::EWRAM;
+        case 0x3: return Region::IWRAM;
+        case 0x4: return Region::MMIO;
+        case 0x5: return Region::PALRAM;
+        case 0x6: return Region::VRAM;
+        case 0x7: return Region::OAM;
+        case 0xA:
+        case 0xB:
+        case 0xC:
+        case 0xD: return Region::ROM;
+        case 0xF:
+        case 0xE: return Region::RAM;
+        case 0x1:
+        case 0x8:
+        case 0x9:
+        default:
+            return Region::UNKNOWN;
+    }
 }
 
 // std::cout << "([a-zA-Z0-9 \\n]+)"

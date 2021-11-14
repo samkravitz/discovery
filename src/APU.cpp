@@ -126,20 +126,33 @@ void APU::bufferChannel(int ch)
     float max_time = reg_time_to_sec(reg_time);
     float time_elapsed = 0;
 
+    float freq = reg_freq_to_hz(start_freq);
+    int period = SAMPLE_RATE / freq;
+    int hperiod = period / 2;
+
+    // number of samples wave will be low or high, per wave duty
+    int lo, hi;
+    switch (stat->sndcnt2_l.wave_duty)
+    {
+        case 0: lo = period * .875f; hi = period * .125f; break;
+        case 1: lo = period * .75f;  hi = period * .25f;  break;
+        case 2: lo = period * .5f;   hi = period * .5f;   break;
+        case 3: lo = period * .25f;  hi = period * .75f;  break;
+        default:
+            log(LogLevel::Error, "Invalid wave duty for sound channel 2!\n");
+    }
+
     while (1)
     {
         samples_buffered++;
-        float freq = reg_freq_to_hz(start_freq);
-        int period = SAMPLE_RATE / freq;
-        int hperiod = period / 2;
 
         if (volume == 0)
             break;
 
-        for (int j = 0; j < hperiod; j++)
+        for (int i = 0; i < lo; i++)
             chan.push(volume);
         
-        for (int j = 0; j < hperiod; j++)
+        for (int i = 0; i < hi; i++)
             chan.push(-volume);
         
         time_elapsed += static_cast<float>(period) / SAMPLE_RATE;

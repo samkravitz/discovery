@@ -112,6 +112,8 @@ struct AudioStat
 
     AudioStat()
     {
+        sndcnt1_l.raw = 0;
+        sndcnt1_h.raw = 0;
         sndcnt1_x.raw = 0;
         sndcnt2_l.raw = 0;
         sndcnt2_h.raw = 0; 

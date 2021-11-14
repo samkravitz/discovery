@@ -8,7 +8,6 @@ BACKUPDIR = $(INCLUDE)/backup
 OBJ = \
 	Arm7.o \
 	arm_isa.o \
-	Watcher.o \
 	APU.o \
 	config.o \
 	Discovery.o \

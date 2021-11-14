@@ -32,6 +32,53 @@ struct AudioStat
         };
     } sndcnt_x;
 
+    struct Sound1CntL
+    {
+        union
+        {
+            struct
+            {
+                u8 sweep_shifts      : 3;
+                u8 sweep_direction   : 1; // 0 => increase/addition, 1 => decrease/subtraction
+                u8 sweep_time        : 3;
+                u16 unused            : 9;
+            };
+            u16 raw;
+        };
+    } sndcnt1_l;
+
+    struct Sound1CntH
+    {
+        union
+        {
+            struct
+            {
+                u8 len             : 6;
+                u8 wave_duty       : 2;
+                u8 env_step        : 3;
+                u8 env_mode        : 1; // 0 => env decrease, 1 => env increase
+                u8 env_init        : 4; 
+            };
+            u16 raw;
+        };
+    } sndcnt1_h; 
+
+    struct Sound1CntX
+    {
+        union
+        {
+            struct
+            {
+                u16 freq  : 11;
+                u8 unused : 3;
+                u8 timed  : 1; // set if timed, 0 if continuous
+                u8 reset  : 1;
+            };
+            u16 raw;
+        };
+    } sndcnt1_x;
+
+
     struct Sound2CntL
     {
         union
@@ -109,7 +156,9 @@ struct AudioStat
 
     AudioStat()
     {
-        sndcnt_x.raw = 0;
+        sndcnt1_l.raw = 0;
+        sndcnt1_h.raw = 0;
+        sndcnt1_x.raw = 0;
         sndcnt2_l.raw = 0;
         sndcnt2_h.raw = 0;
         sndcnt3_l.raw = 0;

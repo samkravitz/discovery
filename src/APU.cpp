@@ -108,14 +108,23 @@ void APU::bufferChannel(int ch)
     int volume = AMPLITUDE;
     
     int samples_buffered = 0;
-    bool is_low = false;
 
     auto reg_freq_to_hz = [](int reg_freq) -> float
     {
         return 4194304 / (32 * (2048 - reg_freq));
     };
 
+    auto reg_time_to_sec = [](int reg_time) -> float
+    {
+        return (64 - reg_time) * (1.0f / 256.0f);
+    };
+
     int start_freq = stat->sndcnt2_h.freq;
+
+    bool timed = stat->sndcnt2_h.timed;
+    int reg_time = stat->sndcnt2_l.len;
+    float max_time = reg_time_to_sec(reg_time);
+    float time_elapsed = 0;
 
     while (1)
     {
@@ -132,6 +141,11 @@ void APU::bufferChannel(int ch)
         
         for (int j = 0; j < hperiod; j++)
             chan.push(-volume);
+        
+        time_elapsed += static_cast<float>(period) / SAMPLE_RATE;
+        // time has elapsed longer than the sound should be played for
+        if (timed && time_elapsed >= max_time)
+            return;
         
         if (samples_buffered % 100 == 0)
             volume /= 2;

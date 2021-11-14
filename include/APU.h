@@ -27,7 +27,10 @@ public:
 
     std::queue<s16> channel[4];
 
-    void bufferChannel(int);
+    void bufferChannel1();
+    void bufferChannel2();
+    void bufferChannel3();
+    void bufferChannel4();
     void tick();
 	
 private:

@@ -643,14 +643,14 @@ void Memory::write8(u32 address, u8 value)
         case REG_SOUND2CNT_L:
         case REG_SOUND2CNT_L + 1:
             audio_stat->sndcnt2_l.raw = (memory[REG_SOUND2CNT_L + 1] << 8) | (memory[REG_SOUND2CNT_L]);
-            apu->bufferChannel(2);
+            apu->bufferChannel2();
             break;
         
         // REG_SOUNDCNT2_H
         case REG_SOUND2CNT_H:
         case REG_SOUND2CNT_H + 1:
             audio_stat->sndcnt2_h.raw = (memory[REG_SOUND2CNT_H + 1] << 8) | (memory[REG_SOUND2CNT_H]);
-            apu->bufferChannel(2);
+            apu->bufferChannel2();
             break;
 
 

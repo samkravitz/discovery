@@ -92,10 +92,11 @@ void APU::tick()
 
 void APU::bufferChannel1()
 {
+    SDL_LockAudioDevice(driver_id);
     auto &chan = channel[1];
 
-    std::queue<s16> empty;
-    std::swap(chan, empty);
+    while (!chan.empty())
+        chan.pop();
     
     int samples_buffered = 0;
 
@@ -221,7 +222,7 @@ void APU::bufferChannel1()
 
         // time has elapsed longer than the sound should be played for
         if (timed && time_elapsed >= max_time)
-            return;
+            break;
 
         if (env_enabled && time_since_last_env_step >= step_time)
         {
@@ -237,20 +238,16 @@ void APU::bufferChannel1()
         if (samples_buffered > 1000)
             break;
     }
-
-    // queue up one frame's worth of audio
-    if (ticks % 280896 == 0)
-    {
-    }
+    SDL_UnlockAudioDevice(driver_id);
 }
 
 void APU::bufferChannel2()
 {
+    SDL_LockAudioDevice(driver_id);
     auto &chan = channel[2];
 
-    // "gracefully" empty channel
-    std::queue<s16> empty;
-    std::swap(chan, empty);
+    while (!chan.empty())
+        chan.pop();
     
     int samples_buffered = 0;
 
@@ -323,7 +320,7 @@ void APU::bufferChannel2()
 
         // time has elapsed longer than the sound should be played for
         if (timed && time_elapsed >= max_time)
-            return;
+            break;
 
         if (env_enabled && time_since_last_env_step >= step_time)
         {
@@ -339,7 +336,7 @@ void APU::bufferChannel2()
         if (samples_buffered > 1000)
             break;        
     }
-
+    SDL_UnlockAudioDevice(driver_id);
 }
 void APU::bufferChannel3() { }
 

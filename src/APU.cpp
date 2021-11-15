@@ -168,6 +168,11 @@ void APU::bufferChannel1()
 
     while (1)
     {
+        // make sure we don't overflow the buffer
+        // TODO - find out if there's an actual reason the buffer is being overflowed
+        if (chan.size() >= 10000)
+            break;
+
         samples_buffered++;
         
         if (current_step == 0)

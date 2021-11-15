@@ -13,7 +13,7 @@
 #include <iostream>
 #include "APU.h"
 
-constexpr int AMPLITUDE   = 14000;
+constexpr int AMPLITUDE   = 5000;
 constexpr int SAMPLE_RATE = 48000;
 constexpr int BUFFER_SIZE = 2048;
 
@@ -196,7 +196,7 @@ void APU::bufferChannel1()
         else
             volume = AMPLITUDE;
 
-                // push samples according to wave cycle
+        // push samples according to wave cycle
         for (int i = 0; i < lo; i++)
             chan.push(volume);
         for (int i = 0; i < hi; i++)

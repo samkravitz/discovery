@@ -92,6 +92,9 @@ void APU::tick()
 
 void APU::bufferChannel1()
 {
+    if (stat->sndcnt1_x.reset == 0)
+        return;
+
     SDL_LockAudioDevice(driver_id);
     auto &chan = channel[1];
 
@@ -238,11 +241,15 @@ void APU::bufferChannel1()
         if (samples_buffered > 1000)
             break;
     }
+    stat->sndcnt1_x.reset = 0;
     SDL_UnlockAudioDevice(driver_id);
 }
 
 void APU::bufferChannel2()
 {
+    if (stat->sndcnt2_h.reset == 0)
+        return;
+
     SDL_LockAudioDevice(driver_id);
     auto &chan = channel[2];
 
@@ -336,6 +343,7 @@ void APU::bufferChannel2()
         if (samples_buffered > 1000)
             break;        
     }
+    stat->sndcnt2_h.reset = 0;
     SDL_UnlockAudioDevice(driver_id);
 }
 void APU::bufferChannel3() { }

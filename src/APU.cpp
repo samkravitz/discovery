@@ -82,10 +82,8 @@ void APU::tick()
 {
     ++ticks;
 
-    static bool is_low = true;
-
-    // queue up one frame's worth of audio
-    if (ticks % 280896 == 0)
+    // queue up channel 3 if necessary
+    if (stat->sndcnt3_l.enabled && (ticks % 100000 == 0))
     {
     }
 }
@@ -351,5 +349,54 @@ void APU::bufferChannel2()
     stat->sndcnt2_h.reset = 0;
     SDL_UnlockAudioDevice(driver_id);
 }
-void APU::bufferChannel3() { }
+
+void APU::bufferChannel3()
+{
+    // TODO - channel 3
+    return;
+    SDL_LockAudioDevice(driver_id);
+    auto &chan = channel[3];
+
+    while (!chan.empty())
+        chan.pop();
+    
+    // upper and lower 4-bit sample from wave ram
+    u8 upper, lower;
+
+    // wave ram is 1x64 bank
+    if (stat->sndcnt3_l.bank_mode == 1)
+    {
+        for (int i = 0; i < 32; ++i)
+        {
+            upper = stat->wave_ram[i] >> 4;
+            lower = stat->wave_ram[i] & 0xF;
+            chan.push(upper / 15.0 * AMPLITUDE);
+            chan.push(lower / 15.0 * AMPLITUDE);
+        }
+    }
+
+    // wave ram is 2x32 banks
+    else
+    {
+        // determine if using upper or lower bank
+        u8 *wave_ram;
+        if (stat->sndcnt3_l.bank_select == 0)
+            wave_ram = &stat->wave_ram[0];
+        else
+            wave_ram = &stat->wave_ram[16];
+
+        for (int i = 0; i < 16; ++i)
+        {
+            upper = wave_ram[i] >> 4;
+            lower = wave_ram[i] & 0xF;
+            chan.push(upper / 15.0 * AMPLITUDE);
+            chan.push(lower / 15.0 * AMPLITUDE);
+        }
+    }
+    
+    //log("buffer 3\n");
+    
+    
+    SDL_UnlockAudioDevice(driver_id);
+}
 

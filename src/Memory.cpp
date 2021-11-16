@@ -695,14 +695,22 @@ void Memory::write8(u32 address, u8 value)
             break;
         
         // REG_WAVE_RAMX
-        case REG_WAVE_RAM0_L:   [[fallthrough]];
-        case REG_WAVE_RAM0_H:   [[fallthrough]];
-        case REG_WAVE_RAM1_L:   [[fallthrough]];
-        case REG_WAVE_RAM1_H:   [[fallthrough]];
-        case REG_WAVE_RAM2_L:   [[fallthrough]];
-        case REG_WAVE_RAM2_H:   [[fallthrough]];
-        case REG_WAVE_RAM3_L:   [[fallthrough]];
-        case REG_WAVE_RAM3_H:
+        case REG_WAVE_RAM0_L:       [[fallthrough]];
+        case REG_WAVE_RAM0_L + 1:   [[fallthrough]];
+        case REG_WAVE_RAM0_H:       [[fallthrough]];
+        case REG_WAVE_RAM0_H + 1:   [[fallthrough]];
+        case REG_WAVE_RAM1_L:       [[fallthrough]];
+        case REG_WAVE_RAM1_L + 1:   [[fallthrough]];
+        case REG_WAVE_RAM1_H:       [[fallthrough]];
+        case REG_WAVE_RAM1_H + 1:   [[fallthrough]];
+        case REG_WAVE_RAM2_L:       [[fallthrough]];
+        case REG_WAVE_RAM2_L + 1:   [[fallthrough]];
+        case REG_WAVE_RAM2_H:       [[fallthrough]];
+        case REG_WAVE_RAM2_H + 1:   [[fallthrough]];
+        case REG_WAVE_RAM3_L:       [[fallthrough]];
+        case REG_WAVE_RAM3_L + 1:   [[fallthrough]];
+        case REG_WAVE_RAM3_H:       [[fallthrough]];
+        case REG_WAVE_RAM3_H + 1:
         {
             int offset = address - REG_WAVE_RAM0_L;
             // write to bank 1

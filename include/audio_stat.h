@@ -110,6 +110,52 @@ struct AudioStat
         };
     } sndcnt2_h;
 
+    struct Sound3CntL
+    {
+        union
+        {
+            struct
+            {
+                u8 unused      : 5;
+                u8 bank_mode   : 1;
+                u8 bank_select : 1;
+                u8 enabled     : 1;
+            };
+            u16 raw;
+        };
+    } sndcnt3_l;
+
+    struct Sound3CntH
+    {
+        union
+        {
+            struct
+            {
+                u8 len          : 8;
+                u8 unused       : 5;
+                u8 volume_ratio : 4; 
+            };
+            u16 raw;
+        };
+    } sndcnt3_h; 
+
+    struct Sound3CntX
+    {
+        union
+        {
+            struct
+            {
+                u16 freq  : 11;
+                u8 unused : 3;
+                u8 timed  : 1; // set if timed, 0 if continuous
+                u8 reset  : 1;
+            };
+            u16 raw;
+        };
+    } sndcnt3_x;
+
+    u8 wave_ram[32];
+
     AudioStat()
     {
         sndcnt1_l.raw = 0;
@@ -119,3 +165,13 @@ struct AudioStat
         sndcnt2_h.raw = 0; 
     }
 };
+        sndcnt2_h.raw = 0;
+        sndcnt3_l.raw = 0;
+        sndcnt3_h.raw = 0;
+        sndcnt3_x.raw = 0;
+
+        for (int i = 0; i < 32; ++i)
+            wave_ram[i] = 0;
+    }
+};
+

@@ -674,6 +674,51 @@ void Memory::write8(u32 address, u8 value)
             apu->bufferChannel2();
             break;
 
+        // REG_SOUND3CNT_L
+        case REG_SOUND3CNT_L:
+        case REG_SOUND3CNT_L + 1:
+            audio_stat->sndcnt3_l.raw = (memory[REG_SOUND3CNT_L + 1] << 8) | (memory[REG_SOUND3CNT_L]);
+            break;
+
+        // REG_SOUND3CNT_H
+        case REG_SOUND3CNT_H:
+        case REG_SOUND3CNT_H + 1:
+            audio_stat->sndcnt3_h.raw = (memory[REG_SOUND3CNT_H + 1] << 8) | (memory[REG_SOUND3CNT_H]);
+            break;
+        
+        // REG_SOUND3CNT_X
+        case REG_SOUND3CNT_X:
+        case REG_SOUND3CNT_X + 1:
+            audio_stat->sndcnt3_x.raw = (memory[REG_SOUND3CNT_X + 1] << 8) | (memory[REG_SOUND3CNT_X]);
+            if (audio_stat->sndcnt3_x.reset == 1)
+                apu->bufferChannel3();
+            break;
+        
+        // REG_WAVE_RAMX
+        case REG_WAVE_RAM0_L:       [[fallthrough]];
+        case REG_WAVE_RAM0_L + 1:   [[fallthrough]];
+        case REG_WAVE_RAM0_H:       [[fallthrough]];
+        case REG_WAVE_RAM0_H + 1:   [[fallthrough]];
+        case REG_WAVE_RAM1_L:       [[fallthrough]];
+        case REG_WAVE_RAM1_L + 1:   [[fallthrough]];
+        case REG_WAVE_RAM1_H:       [[fallthrough]];
+        case REG_WAVE_RAM1_H + 1:   [[fallthrough]];
+        case REG_WAVE_RAM2_L:       [[fallthrough]];
+        case REG_WAVE_RAM2_L + 1:   [[fallthrough]];
+        case REG_WAVE_RAM2_H:       [[fallthrough]];
+        case REG_WAVE_RAM2_H + 1:   [[fallthrough]];
+        case REG_WAVE_RAM3_L:       [[fallthrough]];
+        case REG_WAVE_RAM3_L + 1:   [[fallthrough]];
+        case REG_WAVE_RAM3_H:       [[fallthrough]];
+        case REG_WAVE_RAM3_H + 1:
+        {
+            int offset = address - REG_WAVE_RAM0_L;
+            // write to bank 1
+            if (audio_stat->sndcnt3_l.bank_select == 0)
+                offset += 32;
+            audio_stat->wave_ram[offset] = value;
+            break;
+        }
 
         // DMA
 

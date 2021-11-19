@@ -13,7 +13,7 @@
 #include <iostream>
 #include "APU.h"
 
-constexpr int AMPLITUDE   = 14000;
+constexpr int AMPLITUDE   = 5000;
 constexpr int SAMPLE_RATE = 48000;
 constexpr int BUFFER_SIZE = 2048;
 
@@ -81,20 +81,23 @@ void APU::tick()
 {
     ++ticks;
 
-    static bool is_low = true;
-
-    // queue up one frame's worth of audio
-    if (ticks % 280896 == 0)
+    // queue up channel 3 if necessary
+    if (stat->sndcnt3_l.enabled && (ticks % 280896 == 0))
     {
+       bufferChannel3();
     }
 }
 
 void APU::bufferChannel1()
 {
-    auto &chan = channel[1];
+    if (stat->sndcnt1_x.reset == 0)
+        return;
 
-    std::queue<s16> empty;
-    std::swap(chan, empty);
+    SDL_LockAudioDevice(driver_id);
+    auto &chan = channel[0];
+
+    while (!chan.empty())
+        chan.pop();
     
     int samples_buffered = 0;
 
@@ -163,7 +166,7 @@ void APU::bufferChannel1()
 
     while (1)
     {
-        samples_buffered++;
+       samples_buffered++;
         
         if (current_step == 0)
             break;
@@ -186,7 +189,7 @@ void APU::bufferChannel1()
         else
             volume = AMPLITUDE;
 
-                // push samples according to wave cycle
+        // push samples according to wave cycle
         for (int i = 0; i < lo; i++)
             chan.push(volume);
         for (int i = 0; i < hi; i++)
@@ -241,11 +244,14 @@ void APU::bufferChannel1()
 
 void APU::bufferChannel2()
 {
-    auto &chan = channel[2];
+    if (stat->sndcnt2_h.reset == 0)
+        return;
 
-    // "gracefully" empty channel
-    std::queue<s16> empty;
-    std::swap(chan, empty);
+    SDL_LockAudioDevice(driver_id);
+    auto &chan = channel[1];
+
+    while (!chan.empty())
+        chan.pop();
     
     int samples_buffered = 0;
 
@@ -318,7 +324,7 @@ void APU::bufferChannel2()
 
         // time has elapsed longer than the sound should be played for
         if (timed && time_elapsed >= max_time)
-            return;
+            break;
 
         if (env_enabled && time_since_last_env_step >= step_time)
         {
@@ -334,7 +340,40 @@ void APU::bufferChannel2()
         if (samples_buffered > 1000)
             break;        
     }
-
+    stat->sndcnt2_h.reset = 0;
+    SDL_UnlockAudioDevice(driver_id);
 }
-void APU::bufferChannel3() { }
-void APU::bufferChannel4() { }
+
+void APU::bufferChannel3()
+{
+    SDL_LockAudioDevice(driver_id);
+    auto &chan = channel[2];
+
+    while (!chan.empty())
+        chan.pop();
+    
+    auto reg_freq_to_hz = [](int reg_freq) -> float
+    {
+        return 4194304 / (32 * (2048 - reg_freq));
+    };
+    
+    // upper and lower 4-bit sample from wave ram
+    s8 upper, lower;
+
+    int start_freq = stat->sndcnt3_x.freq;
+    float freq = reg_freq_to_hz(start_freq);
+    int period = SAMPLE_RATE / freq;
+    int hperiod = period / 2;
+    int qperiod = period / 4;
+
+    // wave ram is 1x64 bank
+    if (stat->sndcnt3_l.bank_mode == 1)
+    {
+        //for (int i = 0; i < 32; ++i)
+        //{
+        //    upper = stat->wave_ram[i] >> 4;
+        //    lower = stat->wave_ram[i] & 0xF;
+        //    chan.push(upper / 15.0 * AMPLITUDE);
+        //    chan.push(lower / 15.0 * AMPLITUDE);
+        //}
+

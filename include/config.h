@@ -16,5 +16,10 @@ namespace config
     extern std::string backup_path;
     extern std::string bios_name;
     extern bool show_help;
-    extern bool debug;
-}
+    extern bool debug; 
+    
+    // handle config file
+    extern std::string config_file;
+    void read_config_file(void);
+};
+

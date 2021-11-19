@@ -9,10 +9,10 @@
 template <int end, int start>
 inline u32 bitseq(u32 val)
 {
-	if (end < start)
-		return 0;
+	  if (end < start)
+		    return 0;
 
-	static u32 mask = ~0;
+	  static u32 mask = ~0;
     val &= mask >> (31 - end);
     val >>= start;
     return val;
@@ -21,10 +21,10 @@ inline u32 bitseq(u32 val)
 template <int end, int start>
 inline u16 bitseq(u16 val)
 {
-	if (end < start)
+	  if (end < start)
 		return 0;
 
-	static u16 mask = ~0;
+  	static u16 mask = ~0;
     val &= mask >> (15 - end);
     val >>= start;
     return val;

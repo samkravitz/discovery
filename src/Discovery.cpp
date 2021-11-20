@@ -64,8 +64,10 @@ void Discovery::printArgHelp()
 	  log("-i, --input\n");
 	  log("  Specifies input file for rom\n");
 	  log("-b, --bios\n");
-	  log("  Specifies GBA bios file\n");
-	  log("-h, --help\n");
+	  log("  Specifies GBA bios file, default is 'gba_bios.bin'\n");
+	  log("-c, --config\n");
+	  log("  Specifies config file, default is 'discovery.config'\n");
+    log("-h, --help\n");
 	  log("  Show help...\n");
 }
 

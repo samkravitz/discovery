@@ -101,7 +101,6 @@ void config::read_config_file()
             {
                 if(std::regex_search(line, group, reg))  
                 {
-                    std::cout<<"matches: "<<line<<"\n";
                     if(group.size()) 
                         config.insert({group[1].str(), group[2].str()});
                     else
@@ -115,7 +114,6 @@ void config::read_config_file()
         for(auto it = config.begin(); it != config.end(); it++)
         {
             std::string key = it->first, val = it->second;
-            std::cout << key << ": " << val << std::endl;
             auto keymap_code = KeyboardInput.find(val);
             if(keymap_code != KeyboardInput.end())
             {

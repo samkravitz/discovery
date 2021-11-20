@@ -66,6 +66,7 @@ namespace config
     // default config file
     std::string config_file = "discovery.config";
 
+    // define default keymap
     struct Keymap *keymap = new Keymap{
         gba_a: KeyboardInput["x"],
         gba_b: KeyboardInput["z"],

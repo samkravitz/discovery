@@ -44,10 +44,12 @@ void Discovery::parseArgs()
         // ROM name
         if (i == 0 && util::pathExists(argv[i]))
             config::rom_name = argv[i];
-    		else if ((argv[i] == "-i" || argv[i] == "--input") && i != argv.size() -1)
+    		else if ((argv[i] == "-i" || argv[i] == "--input") && i != argv.size()-1)
 		      	config::rom_name = argv[++i];
-        else if ((argv[i] == "-b" || argv[i] == "--bios") && i != argv.size() - 1)
+        else if ((argv[i] == "-b" || argv[i] == "--bios") && i != argv.size()-1)
             config::bios_name = argv[++i];
+        else if ((argv[i] == "-c" || argv[i] == "--config") && i != argv.size()-1)
+            config::config_file = argv[++i];
 		    else if ((argv[i] == "-h" || argv[i] == "--help") && i == 0)
 			      config::show_help = true;
     }

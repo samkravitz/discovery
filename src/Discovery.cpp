@@ -44,8 +44,8 @@ void Discovery::parseArgs()
         // ROM name
         if (i == 0 && util::pathExists(argv[i]))
             config::rom_name = argv[i];
-    		else if ((argv[i] == "-i" || argv[i] == "--input") && i != argv.size()-1)
-		      	config::rom_name = argv[++i];
+    	else if ((argv[i] == "-i" || argv[i] == "--input") && i != argv.size()-1)
+		    config::rom_name = argv[++i];
         else if ((argv[i] == "-b" || argv[i] == "--bios") && i != argv.size()-1)
             config::bios_name = argv[++i];
         else if ((argv[i] == "-c" || argv[i] == "--config") && i != argv.size()-1)
@@ -57,24 +57,24 @@ void Discovery::parseArgs()
 
 void Discovery::printArgHelp()
 {
-	  log("Usage:\n");
-	  log("discovery path/to/rom.gba\n");
-	  log("\n");
-	  log("Flags:\n");
-	  log("-i, --input\n");
-	  log("  Specifies input file for rom\n");
-	  log("-b, --bios\n");
-	  log("  Specifies GBA bios file, default is 'gba_bios.bin'\n");
-	  log("-c, --config\n");
-	  log("  Specifies config file, default is 'discovery.config'\n");
+	log("Usage:\n");
+	log("discovery path/to/rom.gba\n");
+	log("\n");
+	log("Flags:\n");
+	log("-i, --input\n");
+	log("  Specifies input file for rom\n");
+	log("-b, --bios\n");
+	log("  Specifies GBA bios file, default is 'gba_bios.bin'\n");
+	log("-c, --config\n");
+	log("  Specifies config file, default is 'discovery.config'\n");
     log("-h, --help\n");
-	  log("  Show help...\n");
+	log("  Show help...\n");
 }
 
 void Discovery::shutdown()
 {
     // free resources and shutdown
-	  delete cpu;
+	delete cpu;
     delete ppu;
     //delete apu;
     delete mem;

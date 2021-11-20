@@ -9,6 +9,7 @@
 
 #include "Timer.h"
 #include "IRQ.h"
+#include "log.h"
 
 extern IRQ *irq;
 

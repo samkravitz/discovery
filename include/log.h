@@ -10,7 +10,6 @@
 #pragma once
 
 #include "common.h"
-
 #include <fmt/format.h>
 #include <fmt/color.h>
 

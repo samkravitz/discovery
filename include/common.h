@@ -13,7 +13,6 @@
 #include <cstring>
 #include <map>
 #include <SDL2/SDL.h>
-#include "log.h"
 
 using u8  = std::uint8_t;
 using u16 = std::uint16_t;
@@ -210,5 +209,4 @@ enum WindowContent
     CONTENT_WINOUT = 2,
     CONTENT_WINOBJ = 3
 };
-
 

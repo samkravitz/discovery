@@ -6,10 +6,27 @@
  * DATE: December 7th, 2020
  * DESCRIPTION: global configuration data for discovery
  */
+
 #pragma once
 
 #include <SDL2/SDL.h>
 #include <string>
+
+struct Keymap 
+{
+    SDL_Scancode gba_a;
+    SDL_Scancode gba_b;
+    SDL_Scancode gba_sel;
+    SDL_Scancode gba_start;
+    SDL_Scancode gba_dpad_right;
+    SDL_Scancode gba_dpad_left;
+    SDL_Scancode gba_dpad_up;
+    SDL_Scancode gba_dpad_down;
+    SDL_Scancode gba_r;
+    SDL_Scancode gba_l;
+};
+
+
 
 namespace config
 {
@@ -23,20 +40,35 @@ namespace config
     extern std::string config_file;
     void read_config_file(void);
 
-    // gba keymap codes
-    // std::vector<std::string> keymap_codes = {
-    //     "gba_a",
-    //     "gba_b",
-    //     "gba_sel",
-    //     "gba_start",
-    //     "gba_dpad_right",
-    //     "gba_dpad_left",
-    //     "gba_dpad_up",
-    //     "gba_dpad_down",
-    //     "gba_r",
-    //     "gba_l"
+    extern struct Keymap *keymap;
+
+    // default keymap
+//     extern struct Keymap {
+//         SDL_Scancode gba_a = KeyboardInput["x"];
+//         SDL_Scancode gba_b = KeyboardInput["z"];
+//         SDL_Scancode gba_sel = KeyboardInput["bs"];
+//         SDL_Scancode gba_start = KeyboardInput["cr"];
+//         SDL_Scancode gba_dpad_right = KeyboardInput["right"];
+//         SDL_Scancode gba_dpad_left = KeyboardInput["left"];
+//         SDL_Scancode gba_dpad_up = KeyboardInput["up"];
+//         SDL_Scancode gba_dpad_down = KeyboardInput["down"];
+//         SDL_Scancode gba_r = KeyboardInput["s"];
+//         SDL_Scancode gba_l = KeyboardInput["a"];
+//     } keymap;
+
+    // struct Keymap 
+    // {
+    //     SDL_Scancode gba_a;
+    //     SDL_Scancode gba_b;
+    //     SDL_Scancode gba_sel;
+    //     SDL_Scancode gba_start;
+    //     SDL_Scancode gba_dpad_right;
+    //     SDL_Scancode gba_dpad_left;
+    //     SDL_Scancode gba_dpad_up;
+    //     SDL_Scancode gba_dpad_down;
+    //     SDL_Scancode gba_r;
+    //     SDL_Scancode gba_l;
     // };
+
 };
-
-
 

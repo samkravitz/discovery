@@ -13,23 +13,8 @@
 #include <map>
 #include <exception>
 #include <algorithm>
-#include <SDL2/SDL.h>
 #include "config.h" 
 #include "Discovery.h"
-
-// // gba keymap codes
-// std::vector<std::string> keymap_codes = {
-//     "gba_a",
-//     "gba_b",
-//     "gba_sel",
-//     "gba_start",
-//     "gba_dpad_right",
-//     "gba_dpad_left",
-//     "gba_dpad_up",
-//     "gba_dpad_down",
-//     "gba_r",
-//     "gba_l"
-// };
 
 std::map<std::string, SDL_Scancode> KeyboardInput = 
 {
@@ -69,7 +54,6 @@ std::map<std::string, SDL_Scancode> KeyboardInput =
     }
 };
 
-
 namespace config 
 {
     // default config values
@@ -82,19 +66,18 @@ namespace config
     // default config file
     std::string config_file = "discovery.config";
 
-    // default keymap
-    struct Keymap {
-        SDL_Scancode gba_a = KeyboardInput["x"];
-        SDL_Scancode gba_b = KeyboardInput["z"];
-        SDL_Scancode gba_sel = KeyboardInput["bs"];
-        SDL_Scancode gba_start = KeyboardInput["cr"];
-        SDL_Scancode gba_dpad_right = KeyboardInput["right"];
-        SDL_Scancode gba_dpad_left = KeyboardInput["left"];
-        SDL_Scancode gba_dpad_up = KeyboardInput["up"];
-        SDL_Scancode gba_dpad_down = KeyboardInput["down"];
-        SDL_Scancode gba_r = KeyboardInput["s"];
-        SDL_Scancode gba_l = KeyboardInput["a"];
-    } keymap;
+    struct Keymap *keymap = new Keymap{
+        gba_a: KeyboardInput["x"],
+        gba_b: KeyboardInput["z"],
+        gba_start: KeyboardInput["cr"],
+        gba_dpad_right: KeyboardInput["right"],
+        gba_dpad_left: KeyboardInput["left"],
+        gba_dpad_up: KeyboardInput["up"],
+        gba_dpad_down: KeyboardInput["down"],
+        gba_r: KeyboardInput["s"],
+        gba_l: KeyboardInput["a"]
+    };
+
 }
 
 void config::read_config_file()
@@ -135,24 +118,22 @@ void config::read_config_file()
             auto keymap_code = KeyboardInput.find(val);
             if(keymap_code != KeyboardInput.end())
             {
-                if(key == "gba_a") keymap.gba_a = keymap_code->second;
-                else if(key == "gba_b") keymap.gba_b = keymap_code->second;
-                else if(key == "gba_sel") keymap.gba_sel = keymap_code->second;
-                else if(key == "gba_start") keymap.gba_start = keymap_code->second;
-                else if(key == "gba_dpad_right") keymap.gba_dpad_right = keymap_code->second;
-                else if(key == "gba_dpad_left") keymap.gba_dpad_left = keymap_code->second;
-                else if(key == "gba_dpad_up") keymap.gba_dpad_up = keymap_code->second;
-                else if(key == "gba_dpad_down") keymap.gba_dpad_down = keymap_code->second;
-                else if(key == "gba_r") keymap.gba_r = keymap_code->second;
-                else if(key == "gba_l") keymap.gba_l = keymap_code->second;
+                if(key == "gba_a") keymap->gba_a = keymap_code->second;
+                else if(key == "gba_b") keymap->gba_b = keymap_code->second;
+                else if(key == "gba_sel") keymap->gba_sel = keymap_code->second;
+                else if(key == "gba_start") keymap->gba_start = keymap_code->second;
+                else if(key == "gba_dpad_right") keymap->gba_dpad_right = keymap_code->second;
+                else if(key == "gba_dpad_left") keymap->gba_dpad_left = keymap_code->second;
+                else if(key == "gba_dpad_up") keymap->gba_dpad_up = keymap_code->second;
+                else if(key == "gba_dpad_down") keymap->gba_dpad_down = keymap_code->second;
+                else if(key == "gba_r") keymap->gba_r = keymap_code->second;
             }
         }
-        std::cout<<"gba_a mapped to " << keymap.gba_a << "\n";
     } 
     catch(std::exception &e)
     {
         // handle no config file
-        log(LogLevel::Warning, "Couldn't read");
+        log(LogLevel::Warning, "Could not read Discovery config file.");
     }
 }
 

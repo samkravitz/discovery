@@ -15,6 +15,7 @@
 #include "util.h"
 #include "IRQ.h"
 #include "config.h"
+#include "log.h"
 
 // global IRQ handler
 IRQ *irq;

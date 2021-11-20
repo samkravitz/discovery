@@ -8,6 +8,7 @@
  */
 #pragma once
 
+#include <SDL2/SDL.h>
 #include <string>
 
 namespace config
@@ -21,5 +22,21 @@ namespace config
     // handle config file
     extern std::string config_file;
     void read_config_file(void);
+
+    // gba keymap codes
+    // std::vector<std::string> keymap_codes = {
+    //     "gba_a",
+    //     "gba_b",
+    //     "gba_sel",
+    //     "gba_start",
+    //     "gba_dpad_right",
+    //     "gba_dpad_left",
+    //     "gba_dpad_up",
+    //     "gba_dpad_down",
+    //     "gba_r",
+    //     "gba_l"
+    // };
 };
+
+
 

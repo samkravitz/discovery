@@ -55,7 +55,7 @@ void Discovery::parseArgs()
 void Discovery::printArgHelp()
 {
 	  log("Usage:\n");
-	  log("./discovery ./path/to/rom.gba\n");
+	  log("discovery path/to/rom.gba\n");
 	  log("\n");
 	  log("Flags:\n");
 	  log("-i, --input\n");

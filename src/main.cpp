@@ -61,6 +61,7 @@ int main(int argc, char **argv)
 
         // draw final_screen pixels on screen
         SDL_UpdateWindowSurface(window);
+        std::cout << frame << "\n";
         
         // calculate fps
         if (++frame == 60)
@@ -103,7 +104,13 @@ int main(int argc, char **argv)
                         std::cout << "w: " << width << ", h: " << height << ", SCREENW: " << SCREEN_WIDTH << ", SCREENH: " << SCREEN_HEIGHT << "\n";
 //                         SCREEN_WIDTH = scale_rect.w = width;
 //                         SCREEN_HEIGHT = scale_rect.h = height;
-                        SDL_SetWindowSize(window, width, height);                  
+                        SDL_SetWindowSize(window, width, height);
+                        final_screen = SDL_GetWindowSurface(window);
+                        scale_rect.w = width;
+                        scale_rect.h = height;
+                        SDL_BlitScaled(original_screen, nullptr, final_screen, &scale_rect);
+                        //SDL_FreeSurface(original_screen);
+                        //original_screen = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
   
                     }
             }

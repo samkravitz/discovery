@@ -20,8 +20,8 @@
 #include "common.h"
 #include "mmio.h"
 
-constexpr int SCREEN_WIDTH        = 240*2;
-constexpr int SCREEN_HEIGHT       = 160*2;
+constexpr int SCREEN_WIDTH        = 240;
+constexpr int SCREEN_HEIGHT       = 160;
 
 constexpr int HDRAW_CYCLES        = 960;    // # of cycles in hbraw
 constexpr int HBLANK_CYCLES       = 272;    // # of cycles in hblank

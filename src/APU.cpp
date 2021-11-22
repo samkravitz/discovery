@@ -40,8 +40,7 @@ void callback(void *userdata, u8 *stream, int len)
             auto &channel = apu->channel[c];
             if (!channel.empty())
             {
-                if (c == 2)
-                    merged_stream_data += channel.front();
+                merged_stream_data += channel.front();
                 channel.pop();
             }
         }
@@ -85,7 +84,7 @@ void APU::tick()
     ++ticks;
 
     // queue up channel 3 if necessary
-    if (stat->sndcnt3_l.enabled && (ticks % 280896 == 0))
+    if (stat->sndcnt3_l.enabled && (ticks == ticks_until_next_buffer))
     {
        bufferChannel3();
     }
@@ -365,57 +364,40 @@ void APU::bufferChannel3()
     {
         return 4194304 / (32 * (2048 - reg_freq));
     };
-    
-    // upper and lower 4-bit sample from wave ram
-    s8 upper, lower;
 
     int start_freq = stat->sndcnt3_x.freq;
     float freq = reg_freq_to_hz(start_freq);
-    int period = SAMPLE_RATE / freq;
-    int hperiod = period / 2;
-    int qperiod = period / 4;
+    
+    int samples_per_wave = SAMPLE_RATE / freq / 32;
 
-    // wave ram is 1x64 bank
-    if (stat->sndcnt3_l.bank_mode == 1)
-    {
-        //for (int i = 0; i < 32; ++i)
-        //{
-        //    upper = stat->wave_ram[i] >> 4;
-        //    lower = stat->wave_ram[i] & 0xF;
-        //    chan.push(upper / 15.0 * AMPLITUDE);
-        //    chan.push(lower / 15.0 * AMPLITUDE);
-        //}
-    }
+    float sound_len_sec = stat->sndcnt3_h.len / 256.0f;
+    if (sound_len_sec == 0)
+        sound_len_sec = 1.0;
 
-    // wave ram is 2x32 banks
-    else
+    int max_samples = SAMPLE_RATE * sound_len_sec;
+    int samples_buffered = 0;
+
+    s8 upper, lower;
+
+    while (1)
     {
-        // determine if using upper or lower bank
-        u8 *wave_ram;
-        if (stat->sndcnt3_l.bank_select == 0)
-            wave_ram = &stat->wave_ram[0];
-        else
-            wave_ram = &stat->wave_ram[16];
-        
-        for (int i = 15; i >= 0; --i)
+        for (int i = 0; i < 32; i++)
         {
-            upper = wave_ram[i] >> 4;
-            lower = wave_ram[i] & 0xF;
-            //if (upper <= 8)
-                upper -= 8;
-            //if (lower <= 8)
-                lower -= 8;
-            float upper_ratio = upper / 8.0;
-            float lower_ratio = lower / 8.0;
-            //log("{} {} {} {}\n", lower, upper, lower_ratio, upper_ratio); 
-
-           
-            for (int i = 0; i < period / 64.0; i++)
-                chan.push(upper_ratio * AMPLITUDE);
-             for (int i = 0; i < period / 64.0; i++)
-                chan.push(lower_ratio * AMPLITUDE);
+            upper = (stat->wave_ram[i] >> 4) - 8;
+            lower = (stat->wave_ram[i] & 0xF) - 8;
+            for (int k = 0; k < samples_per_wave; k++, samples_buffered++)
+                chan.push(upper / 8.0 * AMPLITUDE);
+            for (int k = 0; k < samples_per_wave; k++, samples_buffered++)
+                chan.push(lower / 8.0 * AMPLITUDE);
         }
+
+        if (samples_buffered >= max_samples)
+            break;
     }
+
+    int ticks_elapsed = sound_len_sec * CLOCK_SPEED;
+    ticks_until_next_buffer = ticks + ticks_elapsed;
+
     SDL_UnlockAudioDevice(driver_id);
 }
 

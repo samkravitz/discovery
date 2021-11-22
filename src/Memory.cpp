@@ -678,20 +678,21 @@ void Memory::write8(u32 address, u8 value)
         case REG_SOUND3CNT_L:
         case REG_SOUND3CNT_L + 1:
             audio_stat->sndcnt3_l.raw = (memory[REG_SOUND3CNT_L + 1] << 8) | (memory[REG_SOUND3CNT_L]);
+            apu->bufferChannel3();
             break;
 
         // REG_SOUND3CNT_H
         case REG_SOUND3CNT_H:
         case REG_SOUND3CNT_H + 1:
             audio_stat->sndcnt3_h.raw = (memory[REG_SOUND3CNT_H + 1] << 8) | (memory[REG_SOUND3CNT_H]);
+            apu->bufferChannel3();
             break;
         
         // REG_SOUND3CNT_X
         case REG_SOUND3CNT_X:
         case REG_SOUND3CNT_X + 1:
             audio_stat->sndcnt3_x.raw = (memory[REG_SOUND3CNT_X + 1] << 8) | (memory[REG_SOUND3CNT_X]);
-            if (audio_stat->sndcnt3_x.reset == 1)
-                apu->bufferChannel3();
+            apu->bufferChannel3();
             break;
         
         // REG_WAVE_RAMX

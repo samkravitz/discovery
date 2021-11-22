@@ -16,7 +16,7 @@
 
 class Gamepad
 {
-    public:
+public:
 
     Gamepad()
     {

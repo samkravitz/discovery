@@ -50,7 +50,15 @@ std::map<std::string, SDL_Scancode> KeyboardInput =
         { "right", SDL_SCANCODE_RIGHT },
         { "left", SDL_SCANCODE_LEFT },
         { "up", SDL_SCANCODE_UP },
-        { "down", SDL_SCANCODE_DOWN }
+        { "down", SDL_SCANCODE_DOWN },
+        { "space", SDL_SCANCODE_SPACE },
+        { "tab", SDL_SCANCODE_TAB },
+        { "rshift", SDL_SCANCODE_RSHIFT },
+        { "lshift", SDL_SCANCODE_LSHIFT },
+        { "rctrl", SDL_SCANCODE_RCTRL },
+        { "lctrl", SDL_SCANCODE_LCTRL },
+        { ",", SDL_SCANCODE_COMMA },
+        { ".", SDL_SCANCODE_PERIOD }
     }
 };
 
@@ -83,7 +91,8 @@ namespace config
 
 void config::read_config_file()
 {
-    try {
+    try 
+    {
         std::ifstream file;
         std::map<std::string, std::string> config;
         file.open(config_file, std::ios::binary);

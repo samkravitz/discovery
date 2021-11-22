@@ -31,7 +31,7 @@ void callback(void *userdata, u8 *stream, int len)
     // zero stream
     std::memset(stream, 0, len);
 
-    s16 merged_stream_data;
+    s32 merged_stream_data;
 	for(int i = 0; i < len / 2; i++)
 	{
         merged_stream_data = 0;
@@ -40,7 +40,8 @@ void callback(void *userdata, u8 *stream, int len)
             auto &channel = apu->channel[c];
             if (!channel.empty())
             {
-                merged_stream_data += channel.front();
+                if (c == 2)
+                    merged_stream_data += channel.front();
                 channel.pop();
             }
         }
@@ -75,7 +76,8 @@ APU::APU(AudioStat *stat) :
 
 APU::~APU()
 {
-	SDL_CloseAudio();
+    SDL_Delay(1);
+	SDL_CloseAudioDevice(driver_id);
 }
 
 void APU::tick()
@@ -195,7 +197,7 @@ void APU::bufferChannel1()
         else
             volume = AMPLITUDE;
 
-        // push samples according to wave cycle
+        //// push samples according to wave cycle
         for (int i = 0; i < lo; i++)
             chan.push(volume);
         for (int i = 0; i < hi; i++)
@@ -399,18 +401,19 @@ void APU::bufferChannel3()
         {
             upper = wave_ram[i] >> 4;
             lower = wave_ram[i] & 0xF;
-            if (upper >= 8)
+            //if (upper <= 8)
                 upper -= 8;
-            if (lower >= 8)
+            //if (lower <= 8)
                 lower -= 8;
-            float upper_ratio = upper / 15.0;
-            float lower_ratio = lower / 15.0;
+            float upper_ratio = upper / 8.0;
+            float lower_ratio = lower / 8.0;
             //log("{} {} {} {}\n", lower, upper, lower_ratio, upper_ratio); 
 
-            for (int i = 0; i < period / 16.0; i++)
-                chan.push(lower_ratio * AMPLITUDE);
-            for (int i = 0; i < period / 16.0; i++)
+           
+            for (int i = 0; i < period / 64.0; i++)
                 chan.push(upper_ratio * AMPLITUDE);
+             for (int i = 0; i < period / 64.0; i++)
+                chan.push(lower_ratio * AMPLITUDE);
         }
     }
     SDL_UnlockAudioDevice(driver_id);

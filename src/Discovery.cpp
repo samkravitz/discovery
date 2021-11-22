@@ -68,10 +68,11 @@ void Discovery::printArgHelp()
 
 void Discovery::shutdown()
 {
+    //SDL_PauseAudioDevice(1, 1);
     // free resources and shutdown
 	delete cpu;
     delete ppu;
-    delete apu;
+    //delete apu;
     delete mem;
     delete stat;
     delete gamepad;

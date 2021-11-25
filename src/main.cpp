@@ -106,15 +106,11 @@ int main(int argc, char **argv)
                         float prop = real_rat / gbas_rat;
                         float ratw = prop > 1.0f ? height*gbas_rat : width;
                         float rath = prop > 1.0f ? height : height*prop;
-                        std::cout << "w: " << width << ", h: " << height << ", SCREENW: " << SCREEN_WIDTH << ", SCREENH: " 
-                          << SCREEN_HEIGHT << ", ratio: " << gbas_rat << ", real rat: " << real_rat << ", proportion: " << prop << "\n";
                         SDL_SetWindowSize(window, width, height);
                         final_screen = SDL_GetWindowSurface(window);
                         scale_rect.w = ratw;
                         scale_rect.h = rath;
                         SDL_BlitScaled(original_screen, nullptr, final_screen, &scale_rect);
-                        //SDL_FreeSurface(original_screen);
-                        //original_screen = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
                     }
             }
         }

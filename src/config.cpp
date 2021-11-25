@@ -135,6 +135,7 @@ void config::read_config_file()
                 else if(key == "gba_dpad_up") keymap->gba_dpad_up = keymap_code->second;
                 else if(key == "gba_dpad_down") keymap->gba_dpad_down = keymap_code->second;
                 else if(key == "gba_r") keymap->gba_r = keymap_code->second;
+                else if(key == "gba_r") keymap->gba_l = keymap_code->second;
             }
         }
     } 

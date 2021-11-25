@@ -26,10 +26,10 @@ Discovery will attempt to load a BIOS in the same directory as the executable ca
 
 |Flag | Type | Description|
 |----|----|----|
-`-i || --input` | `string` | Specify the input ROM
-`-b || --bios` | `string` | Specify the BIOS Discovery will use
-`-c || --config` | `string` | Specify the config file Discovery will use
-`-h || --help` | `boolean` | Print Discovery help
+`-i &#124;&#124; --input` | `string` | Specify the input ROM
+`-b &#124;&#124; --bios` | `string` | Specify the BIOS Discovery will use
+`-c &#124;&#124; --config` | `string` | Specify the config file Discovery will use
+`-h &#124;&#124;--help` | `boolean` | Print Discovery help
 
 ## Configuration
 

@@ -61,7 +61,7 @@ int main(int argc, char **argv)
 
         // draw final_screen pixels on screen
         SDL_UpdateWindowSurface(window);
-        std::cout << frame << "\n";
+        // std::cout << frame << "\n";
         
         // calculate fps
         if (++frame == 60)
@@ -101,17 +101,20 @@ int main(int argc, char **argv)
                     if(e.window.event == SDL_WINDOWEVENT_RESIZED)
                     {
                         int width = e.window.data1, height = e.window.data2;
-                        std::cout << "w: " << width << ", h: " << height << ", SCREENW: " << SCREEN_WIDTH << ", SCREENH: " << SCREEN_HEIGHT << "\n";
-//                         SCREEN_WIDTH = scale_rect.w = width;
-//                         SCREEN_HEIGHT = scale_rect.h = height;
+                        float real_rat = (float) width / (float) height;
+                        float gbas_rat = (float) SCREEN_WIDTH / (float) SCREEN_HEIGHT;
+                        float prop = real_rat / gbas_rat;
+                        float ratw = prop > 1.0f ? height*gbas_rat : width;
+                        float rath = prop > 1.0f ? height : height*prop;
+                        std::cout << "w: " << width << ", h: " << height << ", SCREENW: " << SCREEN_WIDTH << ", SCREENH: " 
+                          << SCREEN_HEIGHT << ", ratio: " << gbas_rat << ", real rat: " << real_rat << ", proportion: " << prop << "\n";
                         SDL_SetWindowSize(window, width, height);
                         final_screen = SDL_GetWindowSurface(window);
-                        scale_rect.w = width;
-                        scale_rect.h = height;
+                        scale_rect.w = ratw;
+                        scale_rect.h = rath;
                         SDL_BlitScaled(original_screen, nullptr, final_screen, &scale_rect);
                         //SDL_FreeSurface(original_screen);
                         //original_screen = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
-  
                     }
             }
         }

@@ -106,10 +106,14 @@ int main(int argc, char **argv)
                         float prop = real_rat / gbas_rat;
                         float ratw = prop > 1.0f ? height*gbas_rat : width;
                         float rath = prop > 1.0f ? height : height*prop;
+                        float cx = prop > 1.0f ? (width-ratw)/2 : 0;
+                        float cy = prop > 1.0f ? 0: (height-rath)/2;
                         SDL_SetWindowSize(window, width, height);
                         final_screen = SDL_GetWindowSurface(window);
                         scale_rect.w = ratw;
                         scale_rect.h = rath;
+                        scale_rect.x = cx;
+                        scale_rect.y = cy;
                         SDL_BlitScaled(original_screen, nullptr, final_screen, &scale_rect);
                     }
             }

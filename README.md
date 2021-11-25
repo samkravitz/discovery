@@ -51,16 +51,16 @@ Below is a table describing the keys Discovery will recognize.
 
 |Key | Description|
 |----|----|
-gba_a | Map the A button to the specified key
-gba_b | Map the B button to the specified key
-gba_sel | Map the Select button to the specified key
-gba_start | Map the Start button to the specified key
-gba_dpad_right |Map right on the dpad to the specified key
-gba_dpad_left | Map left on the dpad to the specified key
-gba_dpad_up  | Map up on the dpad to the specified key
-gba_dpad_down | Map down on the dpad the specified key
-gba_r | Map the R button to the specified key
-gba_l | Map the L button to the specified key
+`gba_a         `  | Map the A button to the specified key
+`gba_b         `  | Map the B button to the specified key
+`gba_sel       `  | Map the Select button to the specified key
+`gba_start     `  | Map the Start button to the specified key
+`gba_dpad_right`  | Map right on the dpad to the specified key
+`gba_dpad_left `  | Map left on the dpad to the specified key
+`gba_dpad_up   `  | Map up on the dpad to the specified key
+`gba_dpad_down `  | Map down on the dpad the specified key
+`gba_r         `  | Map the R button to the specified key
+`gba_l         `  | Map the L button to the specified key
 
 #### Example
 

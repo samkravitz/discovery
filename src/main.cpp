@@ -6,6 +6,8 @@
 #include <ctime>
 #include <sstream>
 #include <iomanip>
+#include <chrono>
+#include <thread>
 
 SDL_Window  *window;
 SDL_Surface *final_screen;
@@ -63,24 +65,32 @@ int main(int argc, char **argv)
         SDL_UpdateWindowSurface(window);
         // std::cout << frame << "\n";
         
+        double fps, duration;
+        double ideal = 1.0f / 60.0f;
         // calculate fps
         if (++frame == 60)
         {
             frame = 0;
-
-            double duration;
+            double last_dur = duration;
             clock_t new_time = std::clock();
             duration = (new_time - old_time) / (double) CLOCKS_PER_SEC;
             old_time = new_time;
+            fps = 60 / duration;
+            
 
             std::stringstream stream;
-            stream << std::fixed << std::setprecision(1) << (60 / duration);
+            stream << std::fixed << std::setprecision(1) << fps;
             std::string title("");
             title += "discovery - ";
             title += stream.str();
             title += " fps";
             SDL_SetWindowTitle(window, title.c_str());
+            std::cout << duration << " s, " << ideal<<" s, " << fps << " fps\n";
         }
+            if(duration <= (1000 / fps))
+                SDL_Delay(((1000 / fps) - duration));
+        
+
 
         while (SDL_PollEvent(&e))
         {

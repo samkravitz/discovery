@@ -103,7 +103,7 @@ int main(int argc, char **argv)
                     // Click X on window
                     running = false;
                     break;
-                case SDL_KEYDOWN: [[fallthrough]]
+                case SDL_KEYDOWN: [[fallthrough]];
                 case SDL_KEYUP:
                     // Key press event
                     if (e.key.keysym.sym == SDLK_ESCAPE)

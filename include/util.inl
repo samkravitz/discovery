@@ -32,7 +32,7 @@ inline u16 bitseq(u16 val)
 
 inline s8 signum(double val) 
 {
-    if(std::isnan(val)) throw std::invalid_argument("Invalid argument passed to util::signum");
+    if(val != val) throw std::invalid_argument("Invalid argument passed to util::signum");
     else return (s8) (0. < val) - (val < 0.);
 }
 

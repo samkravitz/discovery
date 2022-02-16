@@ -1,5 +1,5 @@
 CXX = g++
-LIBS = -lstdc++fs -lSDL2 -lfmt
+LIBS = -lSDL2 -lfmt
 CXXFLAGS = -g -std=c++2a -I $(INCLUDE) -I $(BACKUPDIR)
 BIN = bin
 SOURCE = src
@@ -27,10 +27,16 @@ OBJ = \
 LIST = $(addprefix $(BIN)/, $(OBJ))
 VPATH = $(SOURCE) $(SOURCE)/backup
 
+# Handle compiler version caveats
+OS = $(uname -s)
+ifeq ($(OS), Linux)
+	LIBS += -lstdc++fs
+endif
+
 # Use compiler optimizations
 # run `make opt=1`
 ifdef opt
-CXXFLAGS += -Ofast
+	CXXFLAGS += -Ofast
 endif
 
 all: discovery

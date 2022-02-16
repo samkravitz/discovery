@@ -52,6 +52,7 @@ int main(int argc, char **argv)
     SDL_Event e;
     int frame = 0;
     clock_t old_time = std::clock();
+    u32 old_ticks = SDL_GetTicks();
 
     while (running)
     {
@@ -66,13 +67,19 @@ int main(int argc, char **argv)
         
         // calculate fps
         double fps, duration;
+        u32 new_ticks;
         if (++frame == 60)
         {
             frame = 0;
             double last_dur = duration;
             clock_t new_time = std::clock();
             duration = (new_time - old_time) / (double) CLOCKS_PER_SEC;
+            new_ticks = SDL_GetTicks() - old_ticks;
+            std::cout << "old ticks: " << old_ticks << std::endl;
+            std::cout << "new ticks: " << new_ticks << std::endl;
+            std::cout << "dur: " << duration << std::endl;
             old_time = new_time;
+            old_ticks = new_ticks;
             fps = 60 / duration;
 
             std::stringstream stream;
@@ -84,8 +91,9 @@ int main(int argc, char **argv)
             SDL_SetWindowTitle(window, title.c_str());
         }
             
-        if(duration <= (1000 / fps))
+        if(duration <= (1000 / fps)) {
             SDL_Delay(((1000 / fps) - duration));
+        }
 
         while (SDL_PollEvent(&e))
         {

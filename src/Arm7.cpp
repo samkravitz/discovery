@@ -916,7 +916,7 @@ u32 Arm7::read8(u32 address)
 
     if ((address >= 0x4000 && address <= 0x1FFFFFF) || address >= 0x10000000)
     {
-        log(LogLevel::Warning, "UNUSED U8\n");
+        log(LogLevel::Warning, "Unused address from u8: {0:#x}\n", address);
         return readUnused(address);
     }
 
@@ -990,7 +990,7 @@ u32 Arm7::read16(u32 address, bool sign)
 
     if ((address >= 0x4000 && address <= 0x1FFFFFF) || address >= 0x10000000)
     {
-        std::cout << "UNUSED U16\n";
+        log(LogLevel::Warning, "Unused address from u16: {0:#x}\n", address);
         return readUnused(address);
     }
 
@@ -1055,7 +1055,7 @@ u32 Arm7::read32(u32 address, bool ldr)
 
     if ((address >= 0x4000 && address <= 0x1FFFFFF) || address >= 0x10000000)
     {
-        std::cout << "UNUSED U32\n";
+        log(LogLevel::Warning, "Unused address from u32: {0:#x}\n", address);
         return readUnused(address);
     }
     
@@ -1253,7 +1253,7 @@ u32 Arm7::readUnused(u32 address)
                 break;
             
             default:
-                log(LogLevel::Error, "Invalid unused thumb read\n");
+                log(LogLevel::Error, "Invalid unused thumb read at address: {0:#x}\n", address);
                 return 0;
         }
 

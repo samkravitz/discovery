@@ -19,6 +19,9 @@
 class Arm7
 {
 public:
+    // 2 << 23 cycles/second ~ 16.78Mhz
+    u32 CLOCKS_PER_SECOND = 2 << 23;
+
     Arm7(Memory *mem);
     
     Memory *mem;

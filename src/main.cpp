@@ -73,17 +73,20 @@ int main(int argc, char **argv)
             frame = 0;
             double last_dur = duration;
             clock_t new_time = std::clock();
-            duration = (new_time - old_time) / (double) CLOCKS_PER_SEC;
+            duration = (new_time - old_time) / (double) emulator.cpu->CLOCKS_PER_SECOND;
             new_ticks = SDL_GetTicks() - old_ticks;
+            std::cout << "clocks p s: " << emulator.cpu->CLOCKS_PER_SECOND << std::endl;
             std::cout << "old ticks: " << old_ticks << std::endl;
             std::cout << "new ticks: " << new_ticks << std::endl;
             std::cout << "dur: " << duration << std::endl;
+            std::cout << "1-dur: " << 1-duration << std::endl;
+            std::cout << "fps: " << fps << std::endl;
             old_time = new_time;
             old_ticks = new_ticks;
-            fps = 60 / duration;
+            fps = 60 / (double) (1. - duration);
 
             std::stringstream stream;
-            stream << std::fixed << std::setprecision(1) << fps / 2;
+            stream << std::fixed << std::setprecision(1) << fps;
             std::string title("");
             title += "discovery - ";
             title += stream.str();
@@ -91,8 +94,14 @@ int main(int argc, char **argv)
             SDL_SetWindowTitle(window, title.c_str());
         }
             
-        if(duration <= (1000 / fps)) {
-            SDL_Delay(((1000 / fps) - duration));
+        // cause a delay if frame rate is over 60
+        if(std::round(fps) > 60) {
+            u16 real_time_diff_ms = (u16) std::round(10 - ((1 - duration) * 10));
+            u16 delay = ((u16) std::ceil(std::abs(duration - (new_ticks / old_ticks)))) + real_time_diff_ms;
+            // std::cout << "real time diff: " << real_time_diff_ms << ", delay: " << delay << std::endl;
+            SDL_Delay(delay);
+        } else {
+          std::cout << "fps <= 60, won't delay\n";
         }
 
         while (SDL_PollEvent(&e))
@@ -144,7 +153,13 @@ void init()
 {
     assert(SDL_Init(SDL_INIT_VIDEO) >= 0);
 
-    window = SDL_CreateWindow("discovery", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2, SDL_WINDOW_RESIZABLE);
+    window = SDL_CreateWindow(
+        "discovery", 
+        SDL_WINDOWPOS_CENTERED, 
+        SDL_WINDOWPOS_CENTERED, 
+        SCREEN_WIDTH * 2, 
+        SCREEN_HEIGHT * 2, 
+        SDL_WINDOW_RESIZABLE);
     assert(window);
 
     final_screen = SDL_GetWindowSurface(window);

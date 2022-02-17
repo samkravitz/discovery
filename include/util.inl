@@ -36,3 +36,14 @@ inline s8 signum(double val)
     else return (s8) (0. < val) - (val < 0.);
 }
 
+// convert lapsed processor time to milliseconds
+inline double systime_to_ms(double time)
+{
+  return (double) time / CLOCKS_PER_SEC * 1000;
+}
+
+// convert lapsed processor time to seconds
+inline double systime_to_sec(double time)
+{
+  return (double) time / CLOCKS_PER_SEC;
+}

@@ -10,6 +10,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 #include "Arm7.h"
 #include "PPU.h"

@@ -1,5 +1,6 @@
 #include "Discovery.h"
 #include "config.h"
+#include "util.h"
 
 #include <SDL2/SDL.h>
 #include <cassert>
@@ -49,10 +50,13 @@ int main(int argc, char **argv)
     
 
     bool running = true;
+    u32 seconds_running = 0;
     SDL_Event e;
     int frame = 0;
-    clock_t old_time = std::clock();
+    clock_t old_frame_time = std::clock();
+    clock_t old_tick_time = std::clock();
     u32 old_ticks = SDL_GetTicks();
+    double ideal_tick_time = emulator.cpu->CLOCKS_PER_SECOND / 60 / 60 / 1000;
 
     while (running)
     {
@@ -72,8 +76,8 @@ int main(int argc, char **argv)
         {
             frame = 0;
             double last_dur = duration;
-            clock_t new_time = std::clock();
-            duration = (new_time - old_time) / (double) emulator.cpu->CLOCKS_PER_SECOND;
+            clock_t new_frame_time = std::clock();
+            duration = (new_frame_time - old_frame_time) / (double) emulator.cpu->CLOCKS_PER_SECOND;
             new_ticks = SDL_GetTicks() - old_ticks;
             std::cout << "clocks p s: " << emulator.cpu->CLOCKS_PER_SECOND << std::endl;
             std::cout << "old ticks: " << old_ticks << std::endl;
@@ -81,7 +85,7 @@ int main(int argc, char **argv)
             std::cout << "dur: " << duration << std::endl;
             std::cout << "1-dur: " << 1-duration << std::endl;
             std::cout << "fps: " << fps << std::endl;
-            old_time = new_time;
+            old_frame_time = new_frame_time;
             old_ticks = new_ticks;
             fps = 60 / (double) (1. - duration);
 
@@ -95,11 +99,21 @@ int main(int argc, char **argv)
         }
             
         // cause a delay if frame rate is over 60
-        if(std::round(fps) > 60) {
+        clock_t new_tick_time = std::clock();
+        double tick_time = util::systime_to_ms(new_tick_time - old_tick_time);
+        s32 tick_time_diff = (s32) std::round((tick_time - ideal_tick_time));
+        old_tick_time = new_tick_time;
+        std::cout << "tick_time: " << tick_time << std::endl;
+        std::cout << "ideal time: " << ideal_tick_time << std::endl;
+        std::cout << "diff from ideal time: " << tick_time_diff << std::endl;
+
+        SDL_Delay(tick_time_diff);
+
+        if(tick_time_diff >= 0) {
             u16 real_time_diff_ms = (u16) std::round(10 - ((1 - duration) * 10));
             u16 delay = ((u16) std::ceil(std::abs(duration - (new_ticks / old_ticks)))) + real_time_diff_ms;
             // std::cout << "real time diff: " << real_time_diff_ms << ", delay: " << delay << std::endl;
-            SDL_Delay(delay);
+            // SDL_Delay(delay);
         } else {
           std::cout << "fps <= 60, won't delay\n";
         }

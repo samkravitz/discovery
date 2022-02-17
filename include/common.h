@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <cstring>
 #include <map>
+#include <ctime>
 #include <SDL2/SDL.h>
 
 using u8  = std::uint8_t;

@@ -9,8 +9,11 @@
 
 #pragma once
 
-#include "common.h"
 #include <string>
+#include <ctime>
+#include <cmath>
+
+#include "common.h"
 
 using std::string;
 

@@ -34,29 +34,35 @@ int main(int argc, char **argv)
 
     // parse command line args
     emulator.parseArgs();
-	if(config::show_help)
-	{
-		emulator.printArgHelp();
-		return 0;
-	}
+	  if(config::show_help)
+	  {
+		    emulator.printArgHelp();
+		    return 0;
+	  }
 
     init();
 
-	log("Welcome to Discovery!\n");
+	  log("Welcome to Discovery!\n");
 
     // load bios, rom, and launch game loop
     emulator.mem->loadBios(config::bios_name);
     emulator.mem->loadRom(config::rom_name);
-    
 
     bool running = true;
-    u32 seconds_running = 0;
     SDL_Event e;
+    std::chrono::duration<int, std::ratio<1>> second(1);
+    std::chrono::duration<int, std::ratio<1>> seconds_running(0);
     int frame = 0;
-    clock_t old_frame_time = std::clock();
-    clock_t old_tick_time = std::clock();
+    volatile u32 total_frames = 0;
+    volatile clock_t old_frame_time = std::clock();
+    std::chrono::steady_clock::time_point old_frame_wall_time = std::chrono::steady_clock::now();
+    volatile u32 total_ticks = 0;
+    volatile clock_t old_tick_time = std::clock();
+    std::chrono::steady_clock::time_point old_tick_wall_time = old_frame_wall_time;
     u32 old_ticks = SDL_GetTicks();
-    double ideal_tick_time = emulator.cpu->CLOCKS_PER_SECOND / 60 / 60 / 1000;
+    const double ideal_tick_time = emulator.cpu->CLOCKS_PER_SECOND / 60 / 60 / 1000;
+    u32 delay_queue = 0;
+    u16 delay_rate = 0.;
 
     while (running)
     {
@@ -78,6 +84,21 @@ int main(int argc, char **argv)
             double last_dur = duration;
             clock_t new_frame_time = std::clock();
             duration = (new_frame_time - old_frame_time) / (double) emulator.cpu->CLOCKS_PER_SECOND;
+            std::chrono::steady_clock::time_point new_frame_wall_time = std::chrono::steady_clock::now();
+            auto frame_wall_time = std::chrono::duration_cast<std::chrono::milliseconds>(new_frame_wall_time - old_frame_wall_time).count(); 
+            old_frame_wall_time = new_frame_wall_time;
+
+            if(frame_wall_time < 1000) {
+                // queue delay in milliseconds to dispurse throughout
+                // the next one second (60 frames)
+                delay_queue = 1000 - frame_wall_time;
+                delay_rate = (u16) std::round((double) delay_queue / 60);
+                std::cout<<"delay queue: " << delay_queue<<std::endl;
+                std::cout<<"delay rate: " << delay_rate<<std::endl;
+            } else {
+                delay_queue = 0;
+            }
+
             new_ticks = SDL_GetTicks() - old_ticks;
             std::cout << "clocks p s: " << emulator.cpu->CLOCKS_PER_SECOND << std::endl;
             std::cout << "old ticks: " << old_ticks << std::endl;
@@ -85,9 +106,12 @@ int main(int argc, char **argv)
             std::cout << "dur: " << duration << std::endl;
             std::cout << "1-dur: " << 1-duration << std::endl;
             std::cout << "fps: " << fps << std::endl;
+            std::cout << "wall diff: " << frame_wall_time << std::endl;
+            std::cout<<"--------------\n";
             old_frame_time = new_frame_time;
             old_ticks = new_ticks;
             fps = 60 / (double) (1. - duration);
+            total_frames++;
 
             std::stringstream stream;
             stream << std::fixed << std::setprecision(1) << fps;
@@ -100,22 +124,27 @@ int main(int argc, char **argv)
             
         // cause a delay if frame rate is over 60
         clock_t new_tick_time = std::clock();
+        std::chrono::steady_clock::time_point new_tick_wall_time = std::chrono::steady_clock::now();
         double tick_time = util::systime_to_ms(new_tick_time - old_tick_time);
-        s32 tick_time_diff = (s32) std::round((tick_time - ideal_tick_time));
+        auto tick_wall_time = std::chrono::duration_cast<std::chrono::milliseconds>(new_tick_wall_time - old_tick_wall_time).count();
+        s32 tick_time_diff = (s32) std::floor((tick_time - ideal_tick_time));
         old_tick_time = new_tick_time;
-        std::cout << "tick_time: " << tick_time << std::endl;
-        std::cout << "ideal time: " << ideal_tick_time << std::endl;
-        std::cout << "diff from ideal time: " << tick_time_diff << std::endl;
+        old_tick_wall_time = new_tick_wall_time;
 
-        SDL_Delay(tick_time_diff);
+        // std::cout << "tick_time: " << tick_time << std::endl;
+        // std::cout << "tick_wall_time: " << tick_wall_time << std::endl;
+        // std::cout << "processor vs wall: " << (tick_time - tick_wall_time) << std::endl;
+        // std::cout << "ideal time: " << ideal_tick_time << std::endl;
+        // std::cout << "diff from ideal time: " << tick_time_diff << std::endl;
+        // std::cout << "second: " << seconds_running.count() << std::endl;
+  
+        if(tick_time_diff > 0) SDL_Delay(tick_time_diff);
 
-        if(tick_time_diff >= 0) {
-            u16 real_time_diff_ms = (u16) std::round(10 - ((1 - duration) * 10));
-            u16 delay = ((u16) std::ceil(std::abs(duration - (new_ticks / old_ticks)))) + real_time_diff_ms;
-            // std::cout << "real time diff: " << real_time_diff_ms << ", delay: " << delay << std::endl;
-            // SDL_Delay(delay);
-        } else {
-          std::cout << "fps <= 60, won't delay\n";
+        // std::cout<<"delay rate: "<<delay_rate<<std::endl;
+        // std::cout<<"delay queue: "<<delay_queue<<std::endl;
+        if(delay_queue > 0) {
+            SDL_Delay(delay_rate);
+            delay_queue -= delay_rate;
         }
 
         while (SDL_PollEvent(&e))
@@ -154,6 +183,8 @@ int main(int argc, char **argv)
                     }
             }
         }
+
+        total_ticks++;
     }
 
     emulator.shutdown();

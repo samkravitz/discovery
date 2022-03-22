@@ -21,21 +21,21 @@ constexpr int BUFFER_SIZE = 2048;
  * SDL audio callback
  * @param userdata pointer to instance of APU
  * @param stream pointer to the audio data buffer to be filled
- * @param len length of that buffer in bytes
+ * @param len length of that buffein bytes
  */
 void callback(void *userdata, u8 *stream, int len)
 {
     APU *apu = reinterpret_cast<APU*>(userdata);
-	s16 *snd = reinterpret_cast<s16*>(stream);
+    s16 *snd = reinterpret_cast<s16*>(stream);
 
     // zero stream
     std::memset(stream, 0, len);
 
-    s16 merged_stream_data;
-	for(int i = 0; i < len / 2; i++)
-	{
+    s32 merged_stream_data;
+    for(int i = 0; i < len / 2; i++)
+    {
         merged_stream_data = 0;
-        for (int c = 0; c < 4; c++)
+        for (int c = 0; c < 3; c++)
         {
             auto &channel = apu->channel[c];
             if (!channel.empty())
@@ -45,7 +45,7 @@ void callback(void *userdata, u8 *stream, int len)
             }
         }
         snd[i] = merged_stream_data;
-	}
+    }
 }
 
 APU::APU(AudioStat *stat) :
@@ -73,8 +73,10 @@ APU::APU(AudioStat *stat) :
 	std::cout << "SDL_SOUNDISPLAYING: " << SDL_AUDIO_PLAYING << std::endl;
 }
 
-APU::~APU() {
-	SDL_CloseAudio();
+APU::~APU()
+{
+    SDL_Delay(1);
+	SDL_CloseAudioDevice(driver_id);
 }
 
 void APU::tick()
@@ -82,7 +84,7 @@ void APU::tick()
     ++ticks;
 
     // queue up channel 3 if necessary
-    if (stat->sndcnt3_l.enabled && (ticks % 280896 == 0))
+    if (stat->sndcnt3_l.enabled && (ticks == ticks_until_next_buffer))
     {
        bufferChannel3();
     }
@@ -96,8 +98,9 @@ void APU::bufferChannel1()
     SDL_LockAudioDevice(driver_id);
     auto &chan = channel[0];
 
-    while (!chan.empty())
-        chan.pop();
+    while (!chan.empty()) {
+            chan.pop();
+    }
     
     int samples_buffered = 0;
 
@@ -190,11 +193,18 @@ void APU::bufferChannel1()
             volume = AMPLITUDE;
 
         // push samples according to wave cycle
-        for (int i = 0; i < lo; i++)
-            chan.push(volume);
-        for (int i = 0; i < hi; i++)
-            chan.push(-volume);
-       
+        // if max play time has elapsed, fill buffer with silence
+        for (int i = 0; i < lo; i++) 
+        {
+            if(timed && time_elapsed >= max_time) chan.push(0);
+            else chan.push(volume);
+        }
+        for (int i = 0; i < hi; i++) 
+        {
+            if(timed && time_elapsed >= max_time) chan.push(0);
+            else chan.push(-volume);
+        }
+      
         // sweep shift envelope 
         if (sweep_enabled && time_since_last_sweep_step >= sweep_time)
         {
@@ -221,10 +231,6 @@ void APU::bufferChannel1()
         time_since_last_env_step += static_cast<float>(period) / SAMPLE_RATE;
         time_since_last_sweep_step += static_cast<float>(period) / SAMPLE_RATE;
 
-        // time has elapsed longer than the sound should be played for
-        if (timed && time_elapsed >= max_time)
-            return;
-
         if (env_enabled && time_since_last_env_step >= step_time)
         {
             if (stat->sndcnt1_h.env_mode)
@@ -240,6 +246,7 @@ void APU::bufferChannel1()
             break;
     }
 
+    SDL_UnlockAudioDevice(driver_id);
 }
 
 void APU::bufferChannel2()
@@ -250,7 +257,7 @@ void APU::bufferChannel2()
     SDL_LockAudioDevice(driver_id);
     auto &chan = channel[1];
 
-    while (!chan.empty())
+    while (!chan.empty()) 
         chan.pop();
     
     int samples_buffered = 0;
@@ -313,11 +320,18 @@ void APU::bufferChannel2()
         if (current_step == 0)
             break;
 
-        for (int i = 0; i < lo; i++)
-            chan.push(volume);
-        
-        for (int i = 0; i < hi; i++)
-            chan.push(-volume);
+        // push samples according to wave cycle
+        // if max play time has elapsed, fill buffer with silence
+        for (int i = 0; i < lo; i++) 
+        {
+            if(timed && time_elapsed >= max_time) chan.push(0);
+            else chan.push(volume);
+        }
+        for (int i = 0; i < hi; i++) 
+        {
+            if(timed && time_elapsed >= max_time) chan.push(0);
+            else chan.push(-volume);
+        }
         
         time_elapsed += static_cast<float>(period) / SAMPLE_RATE;
         time_since_last_env_step += static_cast<float>(period) / SAMPLE_RATE;
@@ -349,31 +363,47 @@ void APU::bufferChannel3()
     SDL_LockAudioDevice(driver_id);
     auto &chan = channel[2];
 
-    while (!chan.empty())
+    while (!chan.empty()) 
         chan.pop();
     
     auto reg_freq_to_hz = [](int reg_freq) -> float
     {
         return 4194304 / (32 * (2048 - reg_freq));
     };
-    
-    // upper and lower 4-bit sample from wave ram
-    s8 upper, lower;
 
     int start_freq = stat->sndcnt3_x.freq;
     float freq = reg_freq_to_hz(start_freq);
-    int period = SAMPLE_RATE / freq;
-    int hperiod = period / 2;
-    int qperiod = period / 4;
+    
+    int samples_per_wave = SAMPLE_RATE / freq / 32;
 
-    // wave ram is 1x64 bank
-    if (stat->sndcnt3_l.bank_mode == 1)
+    float sound_len_sec = stat->sndcnt3_h.len / 256.0f;
+    if (sound_len_sec == 0)
+        sound_len_sec = 1.0;
+
+    int max_samples = SAMPLE_RATE * sound_len_sec;
+    int samples_buffered = 0;
+
+    s8 upper, lower;
+
+    while (1)
     {
-        //for (int i = 0; i < 32; ++i)
-        //{
-        //    upper = stat->wave_ram[i] >> 4;
-        //    lower = stat->wave_ram[i] & 0xF;
-        //    chan.push(upper / 15.0 * AMPLITUDE);
-        //    chan.push(lower / 15.0 * AMPLITUDE);
-        //}
+        for (int i = 0; i < 32; i++)
+        {
+            upper = (stat->wave_ram[i] >> 4) - 8;
+            lower = (stat->wave_ram[i] & 0xF) - 8;
+            for (int k = 0; k < samples_per_wave; k++, samples_buffered++)
+                chan.push(upper / 8.0 * AMPLITUDE);
+            for (int k = 0; k < samples_per_wave; k++, samples_buffered++)
+                chan.push(lower / 8.0 * AMPLITUDE);
+        }
+
+        if (samples_buffered >= max_samples)
+            break;
+    }
+
+    int ticks_elapsed = sound_len_sec * CLOCK_SPEED;
+    ticks_until_next_buffer = ticks + ticks_elapsed;
+
+    SDL_UnlockAudioDevice(driver_id);
+}
 

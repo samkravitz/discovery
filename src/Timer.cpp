@@ -9,6 +9,7 @@
 
 #include "Timer.h"
 #include "IRQ.h"
+#include "log.h"
 
 extern IRQ *irq;
 
@@ -114,3 +115,32 @@ void Timer::cascade(int ch)
             
     }
 }
+
+// void Timer::overflow(int ch)
+// {   
+//     auto &tmr = channel[ch];
+//     tmr.data = tmr.reload;
+
+//     // overflow irq
+//     if (tmr.irq)
+//     {
+//         log("Timer {} IRQ\n", ch);
+        
+//         switch (ch)
+//         {
+//             case 0: irq->raise(InterruptOccasion::TIMER0); break;
+//             case 1: irq->raise(InterruptOccasion::TIMER1); break;
+//             case 2: irq->raise(InterruptOccasion::TIMER2); break;
+//             case 3: irq->raise(InterruptOccasion::TIMER3); break;
+//         }
+//     }
+
+//     tmr.cycle_started = scheduler->cycles;
+
+//     // add next overflow event to scheduler
+//     int cycles_until_overflow = (0xFFFF - tmr.data) * tmr.prescalar;
+//     scheduler->add(cycles_until_overflow, tmr.onOverflow, ch);
+
+//     // cascade
+//     cascade(ch);
+// }

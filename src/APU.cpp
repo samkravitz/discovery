@@ -12,6 +12,7 @@
 #include <cstring>
 #include <iostream>
 #include "APU.h"
+#include "log.h"
 
 constexpr int AMPLITUDE   = 5000;
 constexpr int SAMPLE_RATE = 48000;

@@ -22,6 +22,65 @@ Discovery will attempt to load a BIOS in the same directory as the executable ca
 
 `./discovery path/to/rom -b path/to/bios`
 
+### Flags
+
+| Flag | | Type | Description|
+|----|----|----|----|
+`-i` | `--input` | `string` | Specify the input ROM
+`-b` | `--bios` | `string` | Specify the BIOS Discovery will use
+`-c` | `--config` | `string` | Specify the config file Discovery will use
+`-h` | `--help` | `boolean` | Print Discovery help
+
+## Configuration
+
+By default Discovery will load and read settings from a file named `discovery.config`. Alternatively, you can load from a different config file
+using: 
+
+`./discovery -c my_alt_config.file`
+
+The syntax for a config file is very simple. Key-value pairs are set like so:
+
+```
+# this is a comment
+set_key = values_like_this
+```
+
+Below is a table describing the keys Discovery will recognize.
+
+### Configuration options
+
+|Key | Description|
+|----|----|
+`gba_a         `  | Map the A button to the specified key
+`gba_b         `  | Map the B button to the specified key
+`gba_sel       `  | Map the Select button to the specified key
+`gba_start     `  | Map the Start button to the specified key
+`gba_dpad_right`  | Map right on the dpad to the specified key
+`gba_dpad_left `  | Map left on the dpad to the specified key
+`gba_dpad_up   `  | Map up on the dpad to the specified key
+`gba_dpad_down `  | Map down on the dpad the specified key
+`gba_r         `  | Map the R button to the specified key
+`gba_l         `  | Map the L button to the specified key
+
+#### Example
+
+This example config file will map controls to WASD keys, using the k, l, o, and p 
+keys for the A, B, L and R buttons, respectively:
+
+```
+# map buttons to WASD controls
+gba_dpad_up = w 
+gba_dpad_down = s
+gba_dpad_left = a
+gba_dpad_right = d
+gba_a = k
+gba_b = l
+gba_r = o
+gba_l = p
+gba_start = cr
+gba_sel = bs
+```
+
 ## Building on Linux based systems
 Discovery has the following dependencies:
 - make

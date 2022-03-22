@@ -9,6 +9,7 @@
  */
 #include "Gamepad.h"
 #include "IRQ.h"
+#include "config.h"
 
 extern IRQ *irq;
 
@@ -32,16 +33,16 @@ void Gamepad::poll()
     //SDL_PumpEvents();
     auto *state = SDL_GetKeyboardState(nullptr);
 
-    keys.a     = state[SDL_SCANCODE_X]         ? 0 : 1;
-    keys.b     = state[SDL_SCANCODE_Z]         ? 0 : 1;
-    keys.sel   = state[SDL_SCANCODE_BACKSPACE] ? 0 : 1;
-    keys.start = state[SDL_SCANCODE_RETURN]    ? 0 : 1;
-    keys.right = state[SDL_SCANCODE_RIGHT]     ? 0 : 1;
-    keys.left  = state[SDL_SCANCODE_LEFT]      ? 0 : 1;
-    keys.up    = state[SDL_SCANCODE_UP]        ? 0 : 1;
-    keys.down  = state[SDL_SCANCODE_DOWN]      ? 0 : 1;
-    keys.r     = state[SDL_SCANCODE_S]         ? 0 : 1;
-    keys.l     = state[SDL_SCANCODE_A]         ? 0 : 1;
+    keys.a     = state[config::keymap->gba_a]              ? 0 : 1;
+    keys.b     = state[config::keymap->gba_b]              ? 0 : 1;
+    keys.sel   = state[config::keymap->gba_sel]            ? 0 : 1;
+    keys.start = state[config::keymap->gba_start]          ? 0 : 1;
+    keys.right = state[config::keymap->gba_dpad_right]     ? 0 : 1;
+    keys.left  = state[config::keymap->gba_dpad_left]      ? 0 : 1;
+    keys.up    = state[config::keymap->gba_dpad_up]        ? 0 : 1;
+    keys.down  = state[config::keymap->gba_dpad_down]      ? 0 : 1;
+    keys.r     = state[config::keymap->gba_r]              ? 0 : 1;
+    keys.l     = state[config::keymap->gba_l]              ? 0 : 1;
 
     if (keycnt.irq) // key interrupts enabled
         checkInterrupt();

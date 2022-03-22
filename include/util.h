@@ -23,7 +23,7 @@ namespace util
     ThumbInstruction getInstructionFormat(u16);
 
     // test if path exists
-    bool pathExists(string const &);
+    bool pathExists(std::string const &);
 
     /**
      * get subset of bits for purposes like destination register, opcode, shifts

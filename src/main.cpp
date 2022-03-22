@@ -60,6 +60,7 @@ int main(int argc, char **argv)
 
         // draw final_screen pixels on screen
         SDL_UpdateWindowSurface(window);
+        // std::cout << frame << "\n";
         
         // calculate fps
         if (++frame == 60)
@@ -83,17 +84,38 @@ int main(int argc, char **argv)
 
         while (SDL_PollEvent(&e))
         {
-            // Click X on window
-            if (e.type == SDL_QUIT)
-                running = false;
-        
-            // Key press event
-            if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)
+            switch(e.type)
             {
-                if (e.key.keysym.sym == SDLK_ESCAPE)
+                case SDL_QUIT:
+                    // Click X on window
                     running = false;
-
-                emulator.gamepad->poll();
+                    break;
+                case SDL_KEYDOWN: [[fallthrough]]
+                case SDL_KEYUP:
+                    // Key press event
+                    if (e.key.keysym.sym == SDLK_ESCAPE)
+                        running = false;                     
+                    emulator.gamepad->poll();
+                    break;
+                case SDL_WINDOWEVENT:
+                    if(e.window.event == SDL_WINDOWEVENT_RESIZED)
+                    {
+                        int width = e.window.data1, height = e.window.data2;
+                        float real_rat = (float) width / (float) height;
+                        float gbas_rat = (float) SCREEN_WIDTH / (float) SCREEN_HEIGHT;
+                        float prop = real_rat / gbas_rat;
+                        float ratw = prop > 1.0f ? height*gbas_rat : width;
+                        float rath = prop > 1.0f ? height : height*prop;
+                        float cx = prop > 1.0f ? (width-ratw)/2 : 0;
+                        float cy = prop > 1.0f ? 0: (height-rath)/2;
+                        SDL_SetWindowSize(window, width, height);
+                        final_screen = SDL_GetWindowSurface(window);
+                        scale_rect.w = ratw;
+                        scale_rect.h = rath;
+                        scale_rect.x = cx;
+                        scale_rect.y = cy;
+                        SDL_BlitScaled(original_screen, nullptr, final_screen, &scale_rect);
+                    }
             }
         }
     }
@@ -109,7 +131,7 @@ void init()
 {
     // assert(SDL_Init(SDL_INIT_VIDEO) >= 0);
 
-    window = SDL_CreateWindow("discovery", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2, 0);
+    window = SDL_CreateWindow("discovery", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2, SDL_WINDOW_RESIZABLE);
     assert(window);
 
     final_screen = SDL_GetWindowSurface(window);
@@ -120,3 +142,4 @@ void init()
     scale_rect.x = 0;
     scale_rect.y = 0;
 }
+

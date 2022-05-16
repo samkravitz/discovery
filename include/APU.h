@@ -35,7 +35,8 @@ public:
 	
 private:
     AudioStat *stat;
-	int driver_id; // SDL audio device driver
+  	int driver_id; // SDL audio device driver
     u64 ticks;
     u64 ticks_until_next_buffer = 0;
 };
+

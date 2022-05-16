@@ -6,10 +6,10 @@ SOURCE = src
 INCLUDE = include
 BACKUPDIR = $(INCLUDE)/backup
 OBJ = \
+	config.o \
 	APU.o \
 	Arm7.o \
 	arm_isa.o \
-	config.o \
 	Discovery.o \
 	Flash.o \
 	Gamepad.o \
@@ -31,6 +31,12 @@ VPATH = $(SOURCE) $(SOURCE)/backup
 # run `make opt=1`
 ifdef opt
 CXXFLAGS += -Ofast
+endif
+
+# Use verbose output
+# run `make verbose=1`
+ifdef verbose
+CXXFLAGS += -Wall -pedantic
 endif
 
 all: discovery

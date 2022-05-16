@@ -12,6 +12,7 @@
 
 #include <SDL2/SDL.h>
 #include "common.h"
+#include "log.h"
 
 class Gamepad
 {
@@ -78,6 +79,6 @@ public:
     void writeCnt(u16 val) { keycnt.raw = val; }
     void poll();
 
-private:
+    private:
     void checkInterrupt();
 };

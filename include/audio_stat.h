@@ -162,7 +162,7 @@ struct AudioStat
         sndcnt1_h.raw = 0;
         sndcnt1_x.raw = 0;
         sndcnt2_l.raw = 0;
-        sndcnt2_h.raw = 0;
+        sndcnt2_h.raw = 0; 
         sndcnt3_l.raw = 0;
         sndcnt3_h.raw = 0;
         sndcnt3_x.raw = 0;
@@ -171,3 +171,4 @@ struct AudioStat
             wave_ram[i] = 0;
     }
 };
+

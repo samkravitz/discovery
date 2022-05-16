@@ -679,7 +679,7 @@ void Arm7::updateCPSR(u32 value, bool flags_only)
         log(LogLevel::Warning, "Software is changing T-Bit in CPSR!\n");
 
     // validate CPSR wasn't given an invalid state
-    assert(getMode());
+    // assert(getMode());
 
     // if (sr.state == IRQ && registers.cpsr.i == 1) return; // irq disabled bit set
     // if (sr.state == FIQ && registers.cpsr.f == 1) return; // fiq disabled bit set
@@ -1301,40 +1301,36 @@ bool Arm7::checkState()
 }
 
 void Arm7::print() {
-    std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << getRegister(0) << 
-				" -- R4  : 0x" << std::setw(8) << std::setfill('0') << getRegister(4) << 
-				" -- R8  : 0x" << std::setw(8) << std::setfill('0') << getRegister(8) << 
-				" -- R12 : 0x" << std::setw(8) << std::setfill('0') << getRegister(12) << "\n";
+std::cout<< std::hex <<"R0 : 0x" << std::setw(8) << std::setfill('0') << getRegister(0) << 
+            " -- R4  : 0x" << std::setw(8) << std::setfill('0') << getRegister(4) << 
+            " -- R8  : 0x" << std::setw(8) << std::setfill('0') << getRegister(8) << 
+            " -- R12 : 0x" << std::setw(8) << std::setfill('0') << getRegister(12) << "\n";
 
-			std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << getRegister(1) << 
-				" -- R5  : 0x" << std::setw(8) << std::setfill('0') << getRegister(5) << 
-				" -- R9  : 0x" << std::setw(8) << std::setfill('0') << getRegister(9) << 
-				" -- R13 : 0x" << std::setw(8) << std::setfill('0') << getRegister(13) << "\n";
+        std::cout<< std::hex <<"R1 : 0x" << std::setw(8) << std::setfill('0') << getRegister(1) << 
+            " -- R5  : 0x" << std::setw(8) << std::setfill('0') << getRegister(5) << 
+            " -- R9  : 0x" << std::setw(8) << std::setfill('0') << getRegister(9) << 
+            " -- R13 : 0x" << std::setw(8) << std::setfill('0') << getRegister(13) << "\n";
 
-			std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << getRegister(2) << 
-				" -- R6  : 0x" << std::setw(8) << std::setfill('0') << getRegister(6) << 
-				" -- R10 : 0x" << std::setw(8) << std::setfill('0') << getRegister(10) << 
-				" -- R14 : 0x" << std::setw(8) << std::setfill('0') << getRegister(14) << "\n";
+        std::cout<< std::hex <<"R2 : 0x" << std::setw(8) << std::setfill('0') << getRegister(2) << 
+            " -- R6  : 0x" << std::setw(8) << std::setfill('0') << getRegister(6) << 
+            " -- R10 : 0x" << std::setw(8) << std::setfill('0') << getRegister(10) << 
+            " -- R14 : 0x" << std::setw(8) << std::setfill('0') << getRegister(14) << "\n";
 
-			std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << getRegister(3) << 
-				" -- R7  : 0x" << std::setw(8) << std::setfill('0') << getRegister(7) << 
-				" -- R11 : 0x" << std::setw(8) << std::setfill('0') << getRegister(11) << 
-				" -- R15 : 0x" << std::setw(8) << std::setfill('0') << getRegister(15) << "\n";
+        std::cout<< std::hex <<"R3 : 0x" << std::setw(8) << std::setfill('0') << getRegister(3) << 
+            " -- R7  : 0x" << std::setw(8) << std::setfill('0') << getRegister(7) << 
+            " -- R11 : 0x" << std::setw(8) << std::setfill('0') << getRegister(11) << 
+            " -- R15 : 0x" << std::setw(8) << std::setfill('0') << getRegister(15) << "\n";
 
-	
-			std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << registers.cpsr.raw << "\t";
-            if (getConditionCodeFlag(ConditionFlag::N))
-                std::cout << "N";
-            if (getConditionCodeFlag(ConditionFlag::Z))
-                std::cout << "Z";
-            if (getConditionCodeFlag(ConditionFlag::C))
-                std::cout << "C";
-            if (getConditionCodeFlag(ConditionFlag::V))
-                std::cout << "V";
-            std::cout << "\n";
-            //std:: cout << std::dec << ii << " instructions\n";
-    }
 
-// #include "HandlerArm.cpp"
-// #include "HandlerThumb.cpp"
-// #include "swi.cpp"
+        std::cout<< std::hex <<"CPSR : 0x" << std::setw(8) << std::setfill('0') << registers.cpsr.raw << "\t";
+        if (getConditionCodeFlag(ConditionFlag::N))
+            std::cout << "N";
+        if (getConditionCodeFlag(ConditionFlag::Z))
+            std::cout << "Z";
+        if (getConditionCodeFlag(ConditionFlag::C))
+            std::cout << "C";
+        if (getConditionCodeFlag(ConditionFlag::V))
+            std::cout << "V";
+        std::cout << "\n";
+        //std:: cout << std::dec << ii << " instructions\n";
+}

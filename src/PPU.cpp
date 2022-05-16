@@ -13,6 +13,7 @@
 #include "PPU.h"
 #include "util.h"
 #include "IRQ.h"
+#include "log.h"
 
 extern IRQ *irq;
 
@@ -178,7 +179,6 @@ void PPU::tick()
 void PPU::render()
 {
     //std::cout << "Executing graphics mode: " << (int) (stat->dispcnt.mode) << "\n";
-
     
 }
 
@@ -529,7 +529,7 @@ void PPU::renderScanlineBitmap(int mode)
             if (stat->dispcnt.ps)
                 pal_ptr += 0xA000;
 
-            for (int x = 0; x < 160; +x)
+            for (int x = 0; x < 160; ++x)
             {
                 // multiply by 2 because each entry in palram is 2 bytes
                 palette_index = vram[pal_ptr++] * 2;

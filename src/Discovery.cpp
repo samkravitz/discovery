@@ -16,6 +16,7 @@
 #include "IRQ.h"
 #include "config.h"
 #include "audio_stat.h"
+#include "log.h"
 
 // global IRQ handler
 IRQ *irq;
@@ -33,6 +34,8 @@ Discovery::Discovery()
     cpu       = new Arm7(mem);
     ppu       = new PPU(mem, stat, scheduler);
     irq       = new IRQ();
+
+    config::read_config_file();
 }
 
 // parse command line args
@@ -43,36 +46,40 @@ void Discovery::parseArgs()
         // ROM name
         if (i == 0 && util::pathExists(argv[i]))
             config::rom_name = argv[i];
-		else if ((argv[i] == "-i" || argv[i] == "--input") && i != argv.size() -1)
-			config::rom_name = argv[++i];
-        else if ((argv[i] == "-b" || argv[i] == "--bios") && i != argv.size() - 1)
+    	else if ((argv[i] == "-i" || argv[i] == "--input") && i != argv.size()-1)
+		    config::rom_name = argv[++i];
+        else if ((argv[i] == "-b" || argv[i] == "--bios") && i != argv.size()-1)
             config::bios_name = argv[++i];
-		else if ((argv[i] == "-h" || argv[i] == "--help") && i == 0)
-			config::show_help = true;
+        else if ((argv[i] == "-c" || argv[i] == "--config") && i != argv.size()-1)
+            config::config_file = argv[++i];
+		    else if ((argv[i] == "-h" || argv[i] == "--help") && i == 0)
+			    config::show_help = true;
     }
 }
 
 void Discovery::printArgHelp()
 {
-	log("Usage:\n");
-	log("./discovery ./path/to/rom.gba\n");
-	log("\n");
-	log("Flags:\n");
-	log("-i, --input\n");
-	log("  Specifies input file for rom\n");
-	log("-b, --bios\n");
-	log("  Specifies GBA bios file\n");
-	log("-h, --help\n");
-	log("  Show help...\n");
+    log("Usage:\n");
+    log("discovery path/to/rom.gba\n");
+    log("\n");
+    log("Flags:\n");
+    log("-i, --input\n");
+    log("  Specifies input file for rom\n");
+    log("-b, --bios\n");
+    log("  Specifies GBA bios file, default is 'gba_bios.bin'\n");
+    log("-c, --config\n");
+    log("  Specifies config file, default is 'discovery.config'\n");
+    log("-h, --help\n");
+  	log("  Show help...\n");
 }
 
 void Discovery::shutdown()
 {
-    //SDL_PauseAudioDevice(1, 1);
+    // SDL_PauseAudioDevice(1, 1);
     // free resources and shutdown
 	delete cpu;
     delete ppu;
-    //delete apu;
+    // delete apu;
     delete mem;
     delete stat;
     delete gamepad;
@@ -101,7 +108,7 @@ void Discovery::frame()
         cpu->fetch();
         cpu->decode();
         cycles_elapsed = cpu->execute(cpu->pipeline[0].opcode);
-        //scheduler->advance(cycles_elapsed);
+        // scheduler->advance(cycles_elapsed);
 
         cpu->handleInterrupt();
 

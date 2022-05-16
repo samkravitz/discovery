@@ -61,7 +61,7 @@ ArmInstruction util::getInstructionFormat(u32 instruction)
             if ((instruction >> 4 & 0xF) == 0x9)
             {
                 if (instruction & 0x2000000) // 25th bit is 1
-                    return ArmInstruction::DP; 
+                    return ArmInstruction::DP;
                 else if (((instruction >> 23) & 0x3) == 0x2) // bits 24-23 are 10
                     return ArmInstruction::SWP;
                 else if (instruction & 0x800000) // 23rd bit is 1

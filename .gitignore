@@ -11,3 +11,6 @@ roms/
 third_party/fmt
 bios.bin
 *.sav
+*.swp
+./.tags
+

@@ -42,7 +42,7 @@ Memory::Memory(LcdStat *stat, Timer *timer, Gamepad *gamepad, AudioStat *audio_s
 Memory::~Memory()
 {
     // dump cart ram contents to backup file
-    backup->writeChip();    
+    backup->writeChip();
 }
 
 void Memory::reset()
@@ -329,7 +329,6 @@ void Memory::write16(u32 address, u16 value)
 
 void Memory::write8(u32 address, u8 value)
 {
-
     switch (address >> 24)
     {
         case 0x0:
@@ -411,7 +410,7 @@ void Memory::write8(u32 address, u8 value)
     //game rom
     if (address >= MEM_SIZE)
     {
-        //std::cerr << "Warning: writing to game rom\n";
+        // std::cerr << "Warning: writing to game rom\n";
         cart_rom[address - MEM_SIZE] = value;
         // std::cerr << "Done\n";
         return;
@@ -655,7 +654,7 @@ void Memory::write8(u32 address, u8 value)
         
         // REG_SOUND1CNT_X
         case REG_SOUND1CNT_X:
-        case REG_SOUND1CNT_X + 1:
+        case REG_SOUND1CNT_X + 1: 
             audio_stat->sndcnt1_x.raw = (memory[REG_SOUND1CNT_X + 1] << 8) | (memory[REG_SOUND1CNT_X]);
             apu->bufferChannel1();
             break;
@@ -678,14 +677,14 @@ void Memory::write8(u32 address, u8 value)
         case REG_SOUND3CNT_L:
         case REG_SOUND3CNT_L + 1:
             audio_stat->sndcnt3_l.raw = (memory[REG_SOUND3CNT_L + 1] << 8) | (memory[REG_SOUND3CNT_L]);
-            apu->bufferChannel3();
+            // apu->bufferChannel3();
             break;
 
         // REG_SOUND3CNT_H
         case REG_SOUND3CNT_H:
         case REG_SOUND3CNT_H + 1:
             audio_stat->sndcnt3_h.raw = (memory[REG_SOUND3CNT_H + 1] << 8) | (memory[REG_SOUND3CNT_H]);
-            apu->bufferChannel3();
+            // apu->bufferChannel3();
             break;
         
         // REG_SOUND3CNT_X
@@ -909,6 +908,7 @@ void Memory::write8(u32 address, u8 value)
             irq->setIME(memory[REG_IME + 1] << 8 | memory[REG_IME]);
             break;
     }
+
 }
 
 u32 Memory::read32Unsafe(u32 address)
